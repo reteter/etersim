@@ -42,6 +42,15 @@ describe("gameStore", () => {
     expect(store().world!.tick).toBe(0); // pre-pause 0.9 carry was dropped
   });
 
+  it("ignores negative frame deltas without consuming queued commands", () => {
+    store().newGame("trade");
+    const shipId = store().world!.company.ships[0].id;
+    store().dispatch({ kind: "buy", shipId, good: "grain", qty: 1 });
+    store().advance(-16); // rAF first-frame quirk
+    expect(store().world!.tick).toBe(0);
+    expect(store().pendingCommands).toHaveLength(1);
+  });
+
   it("scales with speed and clamps runaway backlogs", () => {
     store().newGame(7);
     store().setSpeed(100);

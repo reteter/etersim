@@ -27,6 +27,11 @@ describe("speed control", () => {
     });
   });
 
+  it("treats negative elapsed time as zero (rAF first-frame quirk)", () => {
+    expect(elapsedToTicks(1, -500, 0)).toEqual({ ticks: 0, carryMs: 0 });
+    expect(elapsedToTicks(100, -500, 300)).toEqual({ ticks: 0, carryMs: 300 });
+  });
+
   it("carries the sub-tick remainder across calls", () => {
     const first = elapsedToTicks(1, 600, 0);
     expect(first).toEqual({ ticks: 0, carryMs: 600 });

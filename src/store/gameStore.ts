@@ -56,10 +56,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
   reset: () => set(INITIAL),
 
-  setSpeed: (speed) =>
-    // Pausing drops the carry (see elapsedToTicks) — mirror it here so a
-    // long pause can't smuggle time into the next running frame.
-    set(speed === "paused" ? { speed, carryMs: 0 } : { speed }),
+  // Pause-drops-carry is owned by elapsedToTicks; the next frame applies it.
+  setSpeed: (speed) => set({ speed }),
 
   select: (selection) => set({ selection }),
 
