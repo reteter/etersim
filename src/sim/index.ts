@@ -7,6 +7,20 @@
  */
 
 export { createWorld, type World } from "./world";
+export { GOOD_IDS, GOODS, type GoodDef, type GoodId } from "./goods";
+export {
+  ARCHETYPE_PROFILES,
+  PORT_ARCHETYPES,
+  type ArchetypeProfile,
+  type Lane,
+  type LaneId,
+  type MarketGood,
+  type Port,
+  type PortArchetype,
+  type PortId,
+  type Region,
+} from "./region";
+export { HEARTLAND, type RegionTemplate } from "./template";
 export { tick, type Command } from "./tick";
 export {
   elapsedToTicks,
