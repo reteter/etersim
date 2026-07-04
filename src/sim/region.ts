@@ -20,9 +20,9 @@ export const PORT_ARCHETYPES: readonly PortArchetype[] = [
 ];
 
 /**
- * An archetype's economic profile as net flows per world day — the unit the
- * spec's balance table uses. Market code converts to per-tick via
- * TICKS_PER_DAY. A good appears in production or consumption, never both.
+ * An archetype's economic profile as net flows per world day — exact
+ * integers, the unit the spec's balance table uses. The market tick divides
+ * by TICKS_PER_DAY. A good appears in production or consumption, never both.
  */
 export interface ArchetypeProfile {
   readonly productionPerDay: Partial<Record<GoodId, number>>;

@@ -8,7 +8,8 @@ import type { PortArchetype } from "./region";
 export interface RegionTemplate {
   readonly portCountRange: readonly [min: number, max: number];
   readonly archetypeWeights: Record<PortArchetype, number>;
-  /** Fraction of candidate edges kept beyond the spanning tree, (0, 1]. */
+  /** Fraction of all candidate edges kept in total (never below the
+   *  spanning tree), (0, 1] — sparse on purpose so routing matters. */
   readonly laneDensity: number;
   /** Lane euclidean length maps linearly into this tick range. */
   readonly voyageTicksRange: readonly [min: number, max: number];
