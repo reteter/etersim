@@ -6,7 +6,25 @@
  * Public API of the sim; the UI imports from here only.
  */
 
-export { createWorld, type World } from "./world";
+export {
+  createWorld,
+  snapshotPrices,
+  STARTING_HOLD,
+  STARTING_THALERS,
+  type Company,
+  type World,
+} from "./world";
+export { applyCommand } from "./commands";
+export { shortestRoute } from "./pathfinding";
+export {
+  advanceShip,
+  cargoUsed,
+  emptyCargo,
+  type RouteStep,
+  type Ship,
+  type ShipId,
+  type ShipLocation,
+} from "./ship";
 export { GOOD_IDS, GOODS, type GoodDef, type GoodId } from "./goods";
 export {
   ARCHETYPE_PROFILES,
