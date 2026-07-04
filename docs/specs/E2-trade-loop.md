@@ -34,7 +34,8 @@ timber is the endgame freight of E2, not a building commodity.
 ### Ports & archetypes
 
 Each port gets one **port archetype** at worldgen. Profiles are net flows per world day
-(24 ticks; stored per tick internally). Initial values, tuned during implementation:
+(24 ticks) and are stored per day — exact integers; the market tick divides by 24 when
+applying them. Initial values, tuned during implementation:
 
 | Archetype | Produces /day | Consumes /day |
 | --- | --- | --- |
@@ -84,9 +85,9 @@ the sim feel random). Each price shows a trend arrow vs. the last day-boundary s
 RegionTemplate {
   portCountRange: [4, 6]
   archetypeWeights: { agrarian: 1, industrial: 1, urban: 1, mining: 1, verdant: 1 }
-  laneDensity: 0.6            // fraction of candidate edges kept beyond the spanning tree
+  laneDensity: 0.6            // fraction of all candidate edges kept in total (min: spanning tree)
   voyageTicksRange: [48, 120] // lane length → duration mapping bounds
-  namePools: { ports: [...] }
+  portNamePool: [...]
 }
 ```
 
@@ -96,8 +97,8 @@ v1 ships one default template (`heartland`). The template is data, not code — 
 Algorithm: draw port count from the range → assign archetypes (shuffle all five first so every
 archetype appears once before weighted repeats — keeps the arbitrage invariant) → place ports
 on a unit plane with minimum-distance rejection sampling → connect with a random spanning tree,
-then add extra edges up to `laneDensity` (sparse graph: routing must matter) → map each lane's
-euclidean length linearly into `voyageTicksRange`.
+then add random extra edges until `laneDensity` of all candidate edges is kept (sparse graph:
+routing must matter) → map each lane's euclidean length linearly into `voyageTicksRange`.
 
 ### Ship & travel
 
