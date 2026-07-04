@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextFloat, nextInt, nextUint32, seedRng, type RngState } from "./rng";
+import { nextFloat, nextInt, nextShuffle, nextUint32, seedRng, type RngState } from "./rng";
 
 describe("seeded RNG", () => {
   it("produces an identical sequence for an identical seed", () => {
@@ -61,6 +61,17 @@ describe("seeded RNG", () => {
       state = next;
     }
     expect(seen).toEqual(new Set([3, 4, 5, 6]));
+  });
+
+  it("nextShuffle permutes without mutating and is seed-deterministic", () => {
+    const input = [1, 2, 3, 4, 5, 6, 7, 8];
+    const frozen = [...input];
+    const [shuffledA] = nextShuffle(seedRng(5), input);
+    const [shuffledB] = nextShuffle(seedRng(5), input);
+    expect(input).toEqual(frozen);
+    expect(shuffledA).toEqual(shuffledB);
+    expect([...shuffledA].sort((a, b) => a - b)).toEqual(frozen);
+    expect(shuffledA).not.toEqual(frozen); // 1/8! chance of false alarm — fixed seed makes it stable
   });
 
   it("keeps state JSON-serializable (a plain number)", () => {

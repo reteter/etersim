@@ -40,3 +40,15 @@ export function nextInt(state: RngState, min: number, max: number): [number, Rng
   const [fraction, next] = nextFloat(state);
   return [min + Math.floor(fraction * (max - min + 1)), next];
 }
+
+/** Returns a Fisher–Yates-shuffled copy; the input is left untouched. */
+export function nextShuffle<T>(state: RngState, items: readonly T[]): [T[], RngState] {
+  const shuffled = [...items];
+  let current = state;
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const [j, next] = nextInt(current, 0, i);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    current = next;
+  }
+  return [shuffled, current];
+}

@@ -11,7 +11,7 @@ time controls, save/load. No magic, no contracts, no fleet, no upgrades.
 ### Player experience
 
 Start with 500 thalers and one ship (hold 50) docked somewhere in a procedurally generated
-region of ~5 ports. Read the live price board, buy cheap, pick a destination, sail for 2–5 world
+region of 5–6 ports. Read the live price board, buy cheap, pick a destination, sail for 2–5 world
 days while the economy keeps moving, sell higher, climb the goods ladder from grain runs toward
 timber freight. Voyages are long on purpose: prices drift while you fly, so a route chosen at
 departure is a bet, not a sure thing.
@@ -83,7 +83,7 @@ the sim feel random). Each price shows a trend arrow vs. the last day-boundary s
 
 ```
 RegionTemplate {
-  portCountRange: [4, 6]
+  portCountRange: [5, 6]  // min 5: fewer ports than archetypes would leave a good with no producer
   archetypeWeights: { agrarian: 1, industrial: 1, urban: 1, mining: 1, verdant: 1 }
   laneDensity: 0.6            // fraction of all candidate edges kept in total (min: spanning tree)
   voyageTicksRange: [48, 120] // lane length → duration mapping bounds
