@@ -49,7 +49,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
 
   const ship: Ship = {
     id: "s0",
-    holdCapacity: STARTING_HOLD,
+    hold: STARTING_HOLD,
     cargo: emptyCargo(),
     location: { kind: "docked", portId: region.ports[homeIndex].id },
   };

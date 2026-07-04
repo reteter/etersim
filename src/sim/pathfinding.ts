@@ -1,18 +1,18 @@
 import type { PortId, Region } from "./region";
-import type { RouteStep } from "./ship";
+import type { Voyage } from "./ship";
 
 /**
  * Dijkstra over lane voyage durations. Deterministic: ports and lanes are
  * scanned in array order, and a shorter distance strictly wins — ties keep
  * the earlier port. O(V²), plenty for single-digit port counts.
  *
- * Returns the route as steps, [] when from === to, null when unreachable.
+ * Returns the route as voyages, [] when from === to, null when unreachable.
  */
-export function shortestRoute(region: Region, from: PortId, to: PortId): RouteStep[] | null {
+export function shortestRoute(region: Region, from: PortId, to: PortId): Voyage[] | null {
   if (from === to) return [];
 
   const dist = new Map<PortId, number>();
-  const arrivedBy = new Map<PortId, RouteStep & { fromPort: PortId }>();
+  const arrivedBy = new Map<PortId, Voyage & { fromPort: PortId }>();
   const done = new Set<PortId>();
   dist.set(from, 0);
 
@@ -41,11 +41,11 @@ export function shortestRoute(region: Region, from: PortId, to: PortId): RouteSt
     }
   }
 
-  const steps: RouteStep[] = [];
+  const voyages: Voyage[] = [];
   for (let at = to; at !== from; ) {
-    const step = arrivedBy.get(at)!;
-    steps.unshift({ laneId: step.laneId, to: step.to });
-    at = step.fromPort;
+    const arrival = arrivedBy.get(at)!;
+    voyages.unshift({ laneId: arrival.laneId, to: arrival.to });
+    at = arrival.fromPort;
   }
-  return steps;
+  return voyages;
 }

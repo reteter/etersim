@@ -20,10 +20,11 @@ export {
   advanceShip,
   cargoUsed,
   emptyCargo,
-  type RouteStep,
+  etaTicks,
   type Ship,
   type ShipId,
   type ShipLocation,
+  type Voyage,
 } from "./ship";
 export { GOOD_IDS, GOODS, type GoodDef, type GoodId } from "./goods";
 export {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { quoteBuy, quoteSell } from "./market";
 import { tick } from "./tick";
-import { cargoUsed, type Ship } from "./ship";
+import { cargoUsed, etaTicks, type Ship } from "./ship";
 import { createWorld, STARTING_HOLD, STARTING_THALERS, type World } from "./world";
 
 const world0 = createWorld("test-seed");
@@ -21,7 +21,7 @@ describe("createWorld", () => {
   it("starts the company with one docked ship and the spec thalers/hold", () => {
     expect(world0.company.thalers).toBe(STARTING_THALERS);
     expect(world0.company.ships).toHaveLength(1);
-    expect(ship(world0).holdCapacity).toBe(STARTING_HOLD);
+    expect(ship(world0).hold).toBe(STARTING_HOLD);
     expect(ship(world0).location.kind).toBe("docked");
     expect(cargoUsed(ship(world0))).toBe(0);
   });
@@ -52,6 +52,13 @@ describe("buy command", () => {
 
   it("rejects a buy that would overflow the hold", () => {
     const next = tick(world0, [{ kind: "buy", shipId, good: "grain", qty: STARTING_HOLD + 1 }]);
+    expect(next).toEqual(tick(world0, []));
+  });
+
+  it("rejects a buy over the port's stock", () => {
+    const port = homePort(world0);
+    const overStock = Math.floor(port.market.grain.stock) + 1;
+    const next = tick(world0, [{ kind: "buy", shipId, good: "grain", qty: overStock }]);
     expect(next).toEqual(tick(world0, []));
   });
 
@@ -97,21 +104,18 @@ describe("sailTo command", () => {
     }
   });
 
-  it("docks at the destination after the route's total ticks", () => {
+  it("docks at the destination after exactly etaTicks more ticks", () => {
     let w = tick(world0, [{ kind: "sailTo", shipId, portId: target.id }]);
-    const loc = ship(w).location;
-    if (loc.kind !== "underway") throw new Error("expected underway");
-    const total = loc.route.reduce(
-      (sum, step) => sum + w.region.lanes.find((l) => l.id === step.laneId)!.voyageTicks,
-      0,
-    );
-    // the command tick already sailed hour 1, so total-1 ticks remain
-    for (let t = 1; t < total - 1; t++) {
+    // the command tick already sailed hour 1; etaTicks reports what's left
+    const eta = etaTicks(ship(w), w.region);
+    expect(eta).toBeGreaterThan(0);
+    for (let t = 0; t < eta - 1; t++) {
       w = tick(w, []);
       expect(ship(w).location.kind).toBe("underway");
     }
     w = tick(w, []);
     expect(ship(w).location).toEqual({ kind: "docked", portId: target.id });
+    expect(etaTicks(ship(w), w.region)).toBe(0);
   });
 
   it("rejects sailing while underway and sailing to the current port", () => {

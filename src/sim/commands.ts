@@ -19,16 +19,15 @@ export type Command =
 export function applyCommand(world: World, command: Command): World {
   const ship = world.company.ships.find((s) => s.id === command.shipId);
   if (!ship || ship.location.kind !== "docked") return world;
-  const port = world.region.ports.find(
-    (p) => ship.location.kind === "docked" && p.id === ship.location.portId,
-  )!;
+  const dockedAt = ship.location.portId;
+  const port = world.region.ports.find((p) => p.id === dockedAt)!;
 
   switch (command.kind) {
     case "buy": {
       const total = quoteBuy(command.good, port.market[command.good], command.qty);
       if (total === null) return world;
       if (total > world.company.thalers) return world;
-      if (cargoUsed(ship) + command.qty > ship.holdCapacity) return world;
+      if (cargoUsed(ship) + command.qty > ship.hold) return world;
       return applyTrade(world, ship, port, command.good, -command.qty, -total);
     }
     case "sell": {
@@ -47,8 +46,8 @@ export function applyCommand(world: World, command: Command): World {
         location: {
           kind: "underway",
           route,
-          legIndex: 0,
-          legProgressTicks: 0,
+          voyageIndex: 0,
+          voyageProgressTicks: 0,
           destination: command.portId,
         },
       };
