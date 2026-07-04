@@ -12,7 +12,7 @@ import { nextFloat, nextInt, nextShuffle, type RngState } from "./rng";
 import type { RegionTemplate } from "./template";
 
 /** Ports closer than this on the unit plane are rejected during placement. */
-const MIN_PORT_DISTANCE = 0.25;
+export const MIN_PORT_DISTANCE = 0.25;
 /** Longest possible lane on the unit plane; anchors the duration mapping. */
 const MAX_LANE_LENGTH = Math.SQRT2;
 
@@ -130,24 +130,27 @@ function connectPorts(
   for (let i = 0; i < ports.length; i++) {
     for (let j = i + 1; j < ports.length; j++) candidates.push([i, j]);
   }
-  const [shuffled, state] = nextShuffle(rng, candidates);
+  const [order, state] = nextShuffle(
+    rng,
+    candidates.map((_, c) => c),
+  );
 
   // Union-find over port indices.
   const parent = ports.map((_, i) => i);
   const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
 
   const chosen = new Set<number>(); // indices into `candidates`
-  for (const edge of shuffled) {
-    const [rootA, rootB] = [find(edge[0]), find(edge[1])];
+  for (const c of order) {
+    const [rootA, rootB] = [find(candidates[c][0]), find(candidates[c][1])];
     if (rootA !== rootB) {
       parent[rootA] = rootB;
-      chosen.add(candidates.indexOf(edge));
+      chosen.add(c);
     }
   }
   const target = Math.max(ports.length - 1, Math.round(template.laneDensity * candidates.length));
-  for (const edge of shuffled) {
+  for (const c of order) {
     if (chosen.size >= target) break;
-    chosen.add(candidates.indexOf(edge));
+    chosen.add(c);
   }
 
   // Emit in canonical candidate order so lane ids are stable and readable.

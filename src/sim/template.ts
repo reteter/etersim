@@ -18,7 +18,9 @@ export interface RegionTemplate {
 
 /** The default v1 region (docs/specs/E2-trade-loop.md — Worldgen). */
 export const HEARTLAND: RegionTemplate = {
-  portCountRange: [4, 6],
+  // Min 5: with fewer ports than archetypes one good loses its only
+  // producer and turns into dead cargo (arbitrage invariant).
+  portCountRange: [5, 6],
   archetypeWeights: { agrarian: 1, industrial: 1, urban: 1, mining: 1, verdant: 1 },
   laneDensity: 0.6,
   voyageTicksRange: [48, 120],

@@ -4,7 +4,7 @@ import { HEARTLAND } from "./template";
 
 describe("HEARTLAND region template", () => {
   it("matches the spec parameters", () => {
-    expect(HEARTLAND.portCountRange).toEqual([4, 6]);
+    expect(HEARTLAND.portCountRange).toEqual([5, 6]);
     expect(HEARTLAND.laneDensity).toBe(0.6);
     expect(HEARTLAND.voyageTicksRange).toEqual([48, 120]);
   });

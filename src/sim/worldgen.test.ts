@@ -3,7 +3,7 @@ import { GOOD_IDS } from "./goods";
 import type { PortId, Region } from "./region";
 import { seedRng } from "./rng";
 import { HEARTLAND } from "./template";
-import { generateRegion } from "./worldgen";
+import { generateRegion, MIN_PORT_DISTANCE } from "./worldgen";
 
 const genAt = (seed: number): Region => generateRegion(seedRng(seed), HEARTLAND)[0];
 
@@ -33,11 +33,11 @@ describe("worldgen", () => {
     expect(counts.size).toBeGreaterThan(1); // the range is actually sampled
   });
 
-  it("covers distinct archetypes before repeating any (arbitrage invariant)", () => {
+  it("covers all five archetypes in every region (arbitrage invariant)", () => {
     for (const seed of SEEDS) {
       const region = genAt(seed);
       const distinct = new Set(region.ports.map((p) => p.archetype));
-      expect(distinct.size).toBe(Math.min(5, region.ports.length));
+      expect(distinct.size).toBe(5);
     }
   });
 
@@ -107,7 +107,7 @@ describe("worldgen", () => {
       for (let i = 0; i < ports.length; i++) {
         for (let j = i + 1; j < ports.length; j++) {
           const d = Math.hypot(ports[i].x - ports[j].x, ports[i].y - ports[j].y);
-          expect(d).toBeGreaterThanOrEqual(0.2);
+          expect(d).toBeGreaterThanOrEqual(MIN_PORT_DISTANCE);
         }
       }
     }
