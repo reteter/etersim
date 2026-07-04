@@ -1,5 +1,9 @@
 import type { GoodId } from "./goods";
 
+/** 1 tick = 1 world hour (ADR-0003); 24 ticks make a world day. Lives here
+ *  because archetype flows are per-day and the market divides them down. */
+export const TICKS_PER_DAY = 24;
+
 /**
  * Region model (docs/specs/E2-trade-loop.md — Ports & archetypes). Types
  * only; worldgen (#11) fills the values, market rules (#12) move them.
