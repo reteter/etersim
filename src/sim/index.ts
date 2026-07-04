@@ -22,7 +22,16 @@ export {
 } from "./region";
 export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
-export { tick, type Command } from "./tick";
+export { tick, TICKS_PER_DAY, type Command } from "./tick";
+export {
+  marketTick,
+  NEUTRAL_MODIFIERS,
+  price,
+  quoteBuy,
+  quoteSell,
+  STOCK_CAP,
+  type FlowModifiers,
+} from "./market";
 export {
   elapsedToTicks,
   MAX_TICKS_PER_CALL,
