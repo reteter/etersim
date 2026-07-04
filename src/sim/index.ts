@@ -8,5 +8,14 @@
 
 export { createWorld, type World } from "./world";
 export { tick, type Command } from "./tick";
-export { elapsedToTicks, MS_PER_TICK_AT_1X, SPEEDS, type Speed } from "./speed";
-export { nextFloat, nextInt, nextUint32, seedRng, type RngState } from "./rng";
+export {
+  elapsedToTicks,
+  MAX_TICKS_PER_CALL,
+  MS_PER_TICK_AT_1X,
+  SPEEDS,
+  type Speed,
+} from "./speed";
+// RNG draw functions stay internal: the UI must never consume sim
+// randomness outside tick() (ADR-0003). Only the state type leaks out,
+// because World embeds it.
+export type { RngState } from "./rng";

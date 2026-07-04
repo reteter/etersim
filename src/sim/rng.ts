@@ -9,6 +9,8 @@
 
 export type RngState = number;
 
+const UINT32_RANGE = 2 ** 32;
+
 /** Scrambles the raw seed (splitmix32 finalizer) so consecutive integer
  *  seeds (1, 2, 3…) start from well-separated states. */
 export function seedRng(seed: number): RngState {
@@ -30,7 +32,7 @@ export function nextUint32(state: RngState): [number, RngState] {
 /** Draws a float in [0, 1). */
 export function nextFloat(state: RngState): [number, RngState] {
   const [value, next] = nextUint32(state);
-  return [value / 4294967296, next];
+  return [value / UINT32_RANGE, next];
 }
 
 /** Draws an integer in [min, max], both ends inclusive. */
