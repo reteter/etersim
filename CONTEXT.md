@@ -26,6 +26,14 @@ _Avoid_: path, link, connection
 A directional flow along a lane that shortens or lengthens voyage time.
 _Avoid_: wind, stream
 
+**Port archetype** (PL: archetyp portu):
+A port's economic role assigned at worldgen (agrarian, industrial, urban, mining, verdant); defines its production/consumption profile.
+_Avoid_: port type, class, specialization
+
+**Region template** (PL: szablon regionu):
+Data describing how to generate a region: port count range, archetype weights, lane density, name pools. Worldgen = seed + template.
+_Avoid_: map config, preset
+
 ### Trade & economy
 
 **Good** (PL: towar):
