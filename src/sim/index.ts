@@ -21,6 +21,7 @@ export {
   type Region,
 } from "./region";
 export { HEARTLAND, type RegionTemplate } from "./template";
+export { generateRegion } from "./worldgen";
 export { tick, type Command } from "./tick";
 export {
   elapsedToTicks,
