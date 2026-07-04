@@ -31,28 +31,29 @@ export default tseslint.config(
     // imports reaching outside src/sim, and (CLAUDE.md) no non-deterministic
     // wall-clock time or randomness.
     files: ["src/sim/**/*.{ts,tsx}"],
-    languageOptions: {
-      globals: {},
-    },
     rules: {
       "no-restricted-imports": [
         "error",
         {
-          paths: [
+          // `paths` only matches exact specifiers, so subpath imports like
+          // "react-dom/client" or "zustand/vanilla" would slip through it.
+          // Ban whole packages (and their subpaths) via `patterns` globs
+          // instead; the `ignore`-based matcher these compile to also
+          // matches "../*" against any depth of "../" escapes (proven
+          // empirically: "../*" flags "../a", "../../a", "../../../a", ...).
+          patterns: [
             {
-              name: "react",
+              group: ["react", "react/**"],
               message: "src/sim is pure TS (ADR-0002): no React imports.",
             },
             {
-              name: "react-dom",
+              group: ["react-dom", "react-dom/**"],
               message: "src/sim is pure TS (ADR-0002): no React DOM imports.",
             },
             {
-              name: "zustand",
+              group: ["zustand", "zustand/**"],
               message: "src/sim is pure TS (ADR-0002): no store/UI framework imports.",
             },
-          ],
-          patterns: [
             {
               group: ["../*"],
               message: "src/sim must not import from outside src/sim (ADR-0002).",
