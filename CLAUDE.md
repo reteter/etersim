@@ -19,7 +19,12 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - Feature branches + PR (`Closes #n`), conventional commits. Before merge: tests, typecheck, lint, `/code-review`.
 - Spec drift: updating the spec is part of the task.
 - Determinism is sacred: all sim randomness flows from the seeded RNG; no `Math.random`, no `Date.now` inside `src/sim`.
+- Session start: check open work with `gh issue list`.
 
 ## Commands
 
-App not scaffolded yet (issue #1). After scaffold, record here: dev, test, typecheck, lint.
+- `npm run dev` — start the Vite dev server.
+- `npm run build` — typecheck (`tsc -b`) then production build (`vite build`).
+- `npm test` — run the Vitest suite once.
+- `npm run typecheck` — typecheck the whole project (`tsc -b`).
+- `npm run lint` — lint with ESLint (flat config, `eslint.config.js`).
