@@ -19,7 +19,7 @@ idea → grill → feature spec → user approval → GH issues → implementati
 3. **Approval** — user signs off on the spec before any issue is created.
 4. **Issues** — via `gh`. One GitHub **milestone per epic** (`E1 — Foundation`, …). Issue title: imperative English. Body: context, acceptance criteria, link to spec section. Labels: `type:feat|bug|infra|spec|docs` + `area:sim|ui|docs`.
 5. **Implementation** — branch `feat/<issue>-<slug>` (or `fix/`, `chore/`). Conventional commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`). Sim code (`src/sim`) grows test-first (TDD, Vitest).
-6. **PR** — body links `Closes #<n>`. Before merge: tests green, typecheck + lint clean, `/code-review` run.
+6. **PR** — body links `Closes #<n>`. Before merge: tests green, typecheck + lint clean, `/code-review` run. Exception: for a trivial one-file infra/docs diff an inline Orchestrator review suffices; any change touching `src/sim` or UI code always gets the full two-axis `/code-review`. The user merges — final call on every PR.
 7. **Spec sync** — if implementation drifted from the spec, updating the spec is part of the task, not optional cleanup.
 
 ## Definition of done (per issue)
