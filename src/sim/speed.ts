@@ -28,7 +28,9 @@ export function elapsedToTicks(
   if (speed === "paused") {
     return { ticks: 0, carryMs: 0 };
   }
-  const budgetMs = carryMs + elapsedMs * speed;
+  // Clamp: rAF can hand out a first-frame timestamp earlier than the
+  // mount-time performance.now(), i.e. negative elapsed time.
+  const budgetMs = carryMs + Math.max(0, elapsedMs) * speed;
   const ticks = Math.floor(budgetMs / MS_PER_TICK_AT_1X);
   if (ticks > MAX_TICKS_PER_CALL) {
     return { ticks: MAX_TICKS_PER_CALL, carryMs: 0 };
