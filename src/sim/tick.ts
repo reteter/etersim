@@ -1,8 +1,5 @@
 import type { World } from "./world";
 
-/** 1 tick = 1 world hour (ADR-0003); 24 ticks make a world day. */
-export const TICKS_PER_DAY = 24;
-
 /**
  * Command: a player order applied at a tick boundary (CONTEXT.md). No
  * commands exist yet — E2 (trade loop) adds the first ones — so the union

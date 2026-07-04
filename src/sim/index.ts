@@ -11,6 +11,7 @@ export { GOOD_IDS, GOODS, type GoodDef, type GoodId } from "./goods";
 export {
   ARCHETYPE_PROFILES,
   PORT_ARCHETYPES,
+  TICKS_PER_DAY,
   type ArchetypeProfile,
   type Lane,
   type LaneId,
@@ -22,14 +23,14 @@ export {
 } from "./region";
 export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
-export { tick, TICKS_PER_DAY, type Command } from "./tick";
+export { tick, type Command } from "./tick";
 export {
   marketTick,
   NEUTRAL_MODIFIERS,
   price,
   quoteBuy,
   quoteSell,
-  STOCK_CAP,
+  STOCK_CAP_MULTIPLIER,
   type FlowModifiers,
 } from "./market";
 export {

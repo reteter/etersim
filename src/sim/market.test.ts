@@ -114,6 +114,37 @@ describe("marketTick", () => {
     expect(doubled.textiles.stock).toBe(300); // consumption zeroed by modifier
   });
 
+  it("leaves stock already above the cap untouched by the clamp (player sales)", () => {
+    // A player dump can push stock past 4×equilibrium; the cap must only
+    // stop production, never confiscate the excess.
+    const market = fullMarket(1500, 300); // cap = 1200
+    const next = marketTick(market, ARCHETYPE_PROFILES.agrarian, NEUTRAL);
+    expect(next.grain.stock).toBe(1500); // production blocked, stock kept
+    expect(next.textiles.stock).toBeCloseTo(1500 - 6 / 24, 10); // consumption still runs
+  });
+
+  it("defaults modifiers to neutral", () => {
+    const market = fullMarket(300);
+    expect(marketTick(market, ARCHETYPE_PROFILES.agrarian)).toEqual(
+      marketTick(market, ARCHETYPE_PROFILES.agrarian, NEUTRAL),
+    );
+  });
+
+  it("is deterministic: same inputs => deep-equal output", () => {
+    const market = fullMarket(287.5, 300);
+    expect(marketTick(market, ARCHETYPE_PROFILES.mining, NEUTRAL)).toEqual(
+      marketTick(market, ARCHETYPE_PROFILES.mining, NEUTRAL),
+    );
+    expect(quoteBuy("timber", mg(97, 300), 13)).toBe(quoteBuy("timber", mg(97, 300), 13));
+  });
+
+  it("makes a buy-then-sell round trip exactly break even (bit-identical walks)", () => {
+    const start = mg(120, 300);
+    const buy = quoteBuy("electronics", start, 7)!;
+    const sell = quoteSell("electronics", mg(start.stock - 7, 300), 7)!;
+    expect(sell).toBe(buy);
+  });
+
   it("keeps stock within [0, cap] over 10 000 ticks for every archetype", () => {
     for (const archetype of ["agrarian", "industrial", "urban", "mining", "verdant"] as const) {
       let market = fullMarket(300);
