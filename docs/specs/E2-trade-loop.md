@@ -1,7 +1,8 @@
 # E2 — Trade Loop
 
 Feature spec for epic E2 (milestone M1, [PRD](../PRD.md)). Terms per [CONTEXT.md](../../CONTEXT.md).
-Grilled and decided with the owner on 2026-07-04 (issue #4). Status: **awaiting approval**.
+Grilled and decided with the owner on 2026-07-04 (issue #4). Status: **approved** (2026-07-04);
+sim core (#10–#14) and map/top bar UI (#15) implemented.
 
 Scope in one line: one region, live per-port markets, one ship sailed manually, map + panels UI,
 time controls, save/load. No magic, no contracts, no fleet, no upgrades.
@@ -133,7 +134,8 @@ Single screen, no view switching (readable depth: the map never leaves sight):
 ```
 
 Map: SVG — ports as nodes (name + archetype glyph), lanes as edges, ship moving along its
-lane proportionally to voyage progress. Clicking a port while docked there enables trading;
+lane proportionally to voyage progress. World date convention: Day 1 starts at tick 0,
+hour = tick mod 24 (decided during #15; nothing earlier defined it). Clicking a port while docked there enables trading;
 remote ports show the same live market table read-only.
 
 ### Save / load
