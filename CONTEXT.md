@@ -80,6 +80,14 @@ _Avoid_: trip, journey
 The atomic simulation step; 1 tick = 1 world hour. All state changes happen on tick boundaries.
 _Avoid_: frame, step, update
 
+**Command** (PL: rozkaz):
+A player order handed to the simulation and applied at a tick boundary (e.g. buy, sell, assign route).
+_Avoid_: action, order, input (in identifiers)
+
+**Speed** (PL: prędkość):
+The UI-selected playback rate of world time: paused, 1x, 10x or 100x. Purely presentational — it never changes what a tick does.
+_Avoid_: time scale, game speed (in identifiers)
+
 **World** (PL: świat):
 The complete simulation state; serializable and deterministic given seed and player commands.
 _Avoid_: game state, universe

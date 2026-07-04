@@ -3,10 +3,10 @@
  * time, no non-deterministic randomness — ever. Enforced by ESLint
  * (see eslint.config.js override for `src/sim/**`).
  *
- * This is a placeholder. The real tick engine lands in issue #3.
+ * Public API of the sim; the UI imports from here only.
  */
 
-/** Advances a tick counter by one. A trivial, honest placeholder. */
-export function advanceTickCount(current: number): number {
-  return current + 1;
-}
+export { createWorld, type World } from "./world";
+export { tick, type Command } from "./tick";
+export { elapsedToTicks, MS_PER_TICK_AT_1X, SPEEDS, type Speed } from "./speed";
+export { nextFloat, nextInt, nextUint32, seedRng, type RngState } from "./rng";
