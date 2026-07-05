@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { MAX_TICKS_PER_CALL, MS_PER_TICK_AT_1X, quoteBuy } from "../sim";
 import { useGameStore } from "./gameStore";
+import { loadAutosave, type StorageLike } from "./persistence";
 
 const store = () => useGameStore.getState();
 
@@ -109,5 +110,54 @@ describe("gameStore", () => {
     store().loadWorld(snapshot);
     expect(store().world).toEqual(snapshot);
     expect(store().speed).toBe("paused");
+  });
+});
+
+describe("gameStore autosave", () => {
+  // saveAutosave/loadAutosave default to globalThis.localStorage, resolved per
+  // call — so a global fake exercises the real default path without a browser.
+  let store_: Map<string, string>;
+
+  beforeEach(() => {
+    store_ = new Map<string, string>();
+    const fake: StorageLike = {
+      getItem: (k) => store_.get(k) ?? null,
+      setItem: (k, v) => {
+        store_.set(k, v);
+      },
+      removeItem: (k) => {
+        store_.delete(k);
+      },
+    };
+    (globalThis as { localStorage?: StorageLike }).localStorage = fake;
+  });
+
+  afterEach(() => {
+    delete (globalThis as { localStorage?: StorageLike }).localStorage;
+  });
+
+  it("autosaves when an advance crosses a 24-tick boundary", () => {
+    store().newGame(7);
+    store().setSpeed(1);
+    store().advance(23 * MS_PER_TICK_AT_1X); // reaches tick 23 — no boundary yet
+    expect(loadAutosave()).toBeNull();
+    store().advance(1 * MS_PER_TICK_AT_1X); // reaches tick 24 — boundary crossed
+    expect(loadAutosave()?.tick).toBe(24);
+  });
+
+  it("autosaves once even when an advance folds past many boundaries", () => {
+    store().newGame(7);
+    store().setSpeed(100);
+    store().advance(MS_PER_TICK_AT_1X); // 100 ticks in one advance
+    expect(loadAutosave()?.tick).toBe(100);
+  });
+
+  it("autosaves the current world on pause", () => {
+    store().newGame(7);
+    store().setSpeed(1);
+    store().advance(5 * MS_PER_TICK_AT_1X); // tick 5, below the first boundary
+    expect(loadAutosave()).toBeNull();
+    store().setSpeed("paused");
+    expect(loadAutosave()?.tick).toBe(5);
   });
 });

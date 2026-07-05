@@ -36,6 +36,112 @@ body {
   margin-left: auto;
 }
 
+.top-bar__menu {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.menu-btn {
+  background: #1e2530;
+  color: #e6e6e6;
+  border: 1px solid #2a3040;
+  border-radius: 4px;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+}
+
+.menu-btn:not(:disabled):hover {
+  background: #263041;
+}
+
+.menu-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.menu-file {
+  display: none;
+}
+
+/* Start screen */
+.start-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  background-color: #10141a;
+  color: #e6e6e6;
+}
+
+.start-screen__panel {
+  width: 320px;
+  padding: 2rem;
+  background-color: #161b24;
+  border: 1px solid #2a3040;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.start-screen__title {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+}
+
+.start-screen__tagline {
+  margin: 0.25rem 0 1.5rem;
+  color: #8891a3;
+}
+
+.start-btn {
+  width: 100%;
+  background: #1e2530;
+  color: #e6e6e6;
+  border: 1px solid #2a3040;
+  border-radius: 4px;
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.start-btn:hover {
+  background: #263041;
+}
+
+.start-btn--primary {
+  margin-bottom: 1.5rem;
+  background: #3a5f8a;
+  border-color: #4c7bab;
+}
+
+.start-btn--primary:hover {
+  background: #436a99;
+}
+
+.start-screen__new {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+}
+
+.start-screen__label {
+  font-size: 0.85rem;
+  color: #a8b2c2;
+}
+
+.start-screen__note {
+  color: #6b7488;
+}
+
+.start-screen__seed {
+  background: #10141a;
+  color: #e6e6e6;
+  border: 1px solid #2a3040;
+  border-radius: 4px;
+  padding: 0.4rem 0.5rem;
+}
+
 .speed-btn {
   background: #1e2530;
   color: #e6e6e6;

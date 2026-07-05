@@ -10,6 +10,7 @@ import {
   type Speed,
   type World,
 } from "../sim";
+import { AUTOSAVE_INTERVAL_TICKS, saveAutosave } from "./persistence";
 
 /**
  * The thin bridge between the pure sim and React (ADR-0002): holds the
@@ -56,7 +57,14 @@ export const useGameStore = create<GameState>()((set, get) => ({
   reset: () => set(INITIAL),
 
   // Pause-drops-carry is owned by elapsedToTicks; the next frame applies it.
-  setSpeed: (speed) => set({ speed }),
+  // Pausing is also an autosave point (spec: autosave on pause).
+  setSpeed: (speed) => {
+    set({ speed });
+    if (speed === "paused") {
+      const { world } = get();
+      if (world) saveAutosave(world);
+    }
+  },
 
   select: (selection) => set({ selection }),
 
@@ -77,5 +85,11 @@ export const useGameStore = create<GameState>()((set, get) => ({
     let next = world;
     for (let i = 0; i < ticks; i++) next = tick(next, []);
     set({ world: next, carryMs: nextCarry });
+    // Autosave once whenever this advance crossed a 24-tick boundary, however
+    // many ticks it folded (spec: autosave every 24 ticks).
+    const interval = AUTOSAVE_INTERVAL_TICKS;
+    if (Math.floor(next.tick / interval) > Math.floor(world.tick / interval)) {
+      saveAutosave(next);
+    }
   },
 }));
