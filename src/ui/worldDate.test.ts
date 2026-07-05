@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { formatWorldDate } from "./worldDate";
+import { formatWorldDate, worldDay } from "./worldDate";
+
+describe("worldDay", () => {
+  it("is Day 1 for the whole first day (ticks 0..23)", () => {
+    expect(worldDay(0)).toBe(1);
+    expect(worldDay(23)).toBe(1);
+  });
+
+  it("rolls to Day 2 at tick 24", () => {
+    expect(worldDay(24)).toBe(2);
+  });
+});
 
 describe("formatWorldDate", () => {
   it("starts at Day 1, 00:00 on tick 0", () => {

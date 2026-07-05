@@ -1,6 +1,7 @@
 import { useRef, type ChangeEvent } from "react";
 import { useGameStore } from "../store/gameStore";
 import { exportWorldJson, parseWorldJson } from "../store/persistence";
+import { worldDay } from "./worldDate";
 
 /**
  * Save menu (docs/specs/E2-trade-loop.md — Save/load): export the current
@@ -18,7 +19,7 @@ export function GameMenu() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `etersim-day${Math.floor(world.tick / 24) + 1}.json`;
+    anchor.download = `etersim-day${worldDay(world.tick)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   };
