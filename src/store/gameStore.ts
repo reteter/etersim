@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import {
+  applyCommand,
   createWorld,
   elapsedToTicks,
   tick,
@@ -13,7 +14,7 @@ import {
 /**
  * The thin bridge between the pure sim and React (ADR-0002): holds the
  * current World plus UI state, folds real elapsed time into ticks, and
- * queues player commands into the next tick. No sim logic lives here.
+ * applies player commands immediately (ADR-0005). No sim logic lives here.
  */
 
 export type Selection =
@@ -26,14 +27,13 @@ interface GameState {
   readonly speed: Speed;
   readonly carryMs: number;
   readonly selection: Selection;
-  readonly pendingCommands: readonly Command[];
 
   newGame(seed: number | string): void;
   loadWorld(world: World): void;
   reset(): void;
   setSpeed(speed: Speed): void;
   select(selection: Selection): void;
-  /** Queues a command for the next tick (docs/specs/E2-trade-loop.md). */
+  /** Applies a command immediately (ADR-0005; docs/specs/E2-trade-loop.md). */
   dispatch(command: Command): void;
   /** Folds elapsed real ms into world ticks; the rAF loop feeds this. */
   advance(elapsedMs: number): void;
@@ -44,7 +44,6 @@ const INITIAL = {
   speed: "paused" as Speed,
   carryMs: 0,
   selection: null,
-  pendingCommands: [] as readonly Command[],
 };
 
 export const useGameStore = create<GameState>()((set, get) => ({
@@ -61,19 +60,22 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
   select: (selection) => set({ selection }),
 
-  dispatch: (command) => set({ pendingCommands: [...get().pendingCommands, command] }),
+  dispatch: (command) => {
+    const { world } = get();
+    if (!world) return;
+    set({ world: applyCommand(world, command) });
+  },
 
   advance: (elapsedMs) => {
-    const { world, speed, carryMs, pendingCommands } = get();
+    const { world, speed, carryMs } = get();
     if (!world) return;
     const { ticks, carryMs: nextCarry } = elapsedToTicks(speed, elapsedMs, carryMs);
     if (ticks === 0) {
       set({ carryMs: nextCarry });
       return;
     }
-    // Queued commands enter the first folded tick only.
-    let next = tick(world, pendingCommands);
-    for (let i = 1; i < ticks; i++) next = tick(next, []);
-    set({ world: next, carryMs: nextCarry, pendingCommands: [] });
+    let next = world;
+    for (let i = 0; i < ticks; i++) next = tick(next, []);
+    set({ world: next, carryMs: nextCarry });
   },
 }));
