@@ -1,9 +1,9 @@
-import { useEffect } from "react";
 import { useGameStore } from "./store/gameStore";
 import { useGameLoop } from "./store/useGameLoop";
 import { PortPanel } from "./ui/PortPanel";
 import { RegionMap } from "./ui/RegionMap";
 import { ShipPanel } from "./ui/ShipPanel";
+import { StartScreen } from "./ui/StartScreen";
 import { TopBar } from "./ui/TopBar";
 
 /**
@@ -31,21 +31,10 @@ function SidePanel() {
 function App() {
   useGameLoop();
   const world = useGameStore((s) => s.world);
-  const newGame = useGameStore((s) => s.newGame);
 
-  // No StartScreen yet (that's a later issue): bootstrap a fresh world once
-  // on mount. Guarded against React StrictMode's double effect invocation.
-  useEffect(() => {
-    if (!useGameStore.getState().world) newGame(Date.now());
-  }, [newGame]);
-
-  if (!world) {
-    return (
-      <main className="app">
-        <p>Generating world...</p>
-      </main>
-    );
-  }
+  // No active world → the entry screen (Continue / New game). Starting or
+  // loading a world flips this and swaps in the game view.
+  if (!world) return <StartScreen />;
 
   return (
     <div className="app">

@@ -1,5 +1,6 @@
 import { SPEEDS, type Speed } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { GameMenu } from "./GameMenu";
 import { formatWorldDate } from "./worldDate";
 
 const SPEED_LABELS: Record<Speed, string> = {
@@ -34,6 +35,7 @@ export function TopBar() {
           </button>
         ))}
       </div>
+      <GameMenu />
     </header>
   );
 }
