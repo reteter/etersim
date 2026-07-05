@@ -188,8 +188,10 @@ runs worldgen and threads the RNG state into the world.
 
 - Zustand store holds the current `World` + UI state (selection, speed, carryMs); a
   `requestAnimationFrame` loop feeds real elapsed ms through `elapsedToTicks` and folds
-  `tick()` the returned number of times. Commands dispatch through the store into the next
-  tick's command list.
+  `tick()` the returned number of times with empty command lists. Player commands apply
+  immediately via `applyCommand` on dispatch instead of queuing (ADR-0005) — this enables
+  pausing to trade; determinism is preserved because `tick()` applies commands at the start
+  of a tick, so `applyCommand` now + `tick(world, [])` later equals `tick(world, [cmd])`.
 - Components: `TopBar`, `RegionMap` (SVG), `PortPanel`, `ShipPanel`, `StartScreen`.
 - Persistence adapter lives in `src/store` (localStorage is banned inside `src/sim`).
 

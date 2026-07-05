@@ -42,13 +42,10 @@ describe("gameStore", () => {
     expect(store().world!.tick).toBe(0); // pre-pause 0.9 carry was dropped
   });
 
-  it("ignores negative frame deltas without consuming queued commands", () => {
+  it("ignores negative frame deltas", () => {
     store().newGame("trade");
-    const shipId = store().world!.company.ships[0].id;
-    store().dispatch({ kind: "buy", shipId, good: "grain", qty: 1 });
     store().advance(-16); // rAF first-frame quirk
     expect(store().world!.tick).toBe(0);
-    expect(store().pendingCommands).toHaveLength(1);
   });
 
   it("scales with speed and clamps runaway backlogs", () => {
@@ -60,7 +57,7 @@ describe("gameStore", () => {
     expect(store().world!.tick).toBe(100 + MAX_TICKS_PER_CALL);
   });
 
-  it("dispatches queued commands into the first folded tick, then clears them", () => {
+  it("dispatch applies a command immediately, without waiting for advance", () => {
     store().newGame("trade");
     const world = store().world!;
     const ship = world.company.ships[0];
@@ -70,28 +67,29 @@ describe("gameStore", () => {
     const cost = quoteBuy("grain", port.market.grain, 5)!;
 
     store().dispatch({ kind: "buy", shipId: ship.id, good: "grain", qty: 5 });
-    expect(store().world).toEqual(world); // queued, not applied yet
-    store().advance(2 * MS_PER_TICK_AT_1X);
 
     const after = store().world!;
     expect(after.company.thalers).toBe(world.company.thalers - cost);
     expect(after.company.ships[0].cargo.grain).toBe(5);
-    expect(store().pendingCommands).toEqual([]);
 
     store().advance(MS_PER_TICK_AT_1X); // must not re-apply
     expect(store().world!.company.ships[0].cargo.grain).toBe(5);
   });
 
-  it("keeps commands queued across a pause", () => {
+  it("dispatch applies immediately even while paused", () => {
     store().newGame("trade");
     const shipId = store().world!.company.ships[0].id;
     store().setSpeed("paused");
     store().dispatch({ kind: "buy", shipId, good: "grain", qty: 1 });
-    store().advance(5000);
-    expect(store().pendingCommands).toHaveLength(1);
-    store().setSpeed(1);
-    store().advance(MS_PER_TICK_AT_1X);
     expect(store().world!.company.ships[0].cargo.grain).toBe(1);
+  });
+
+  it("rejects an invalid command, leaving world unchanged", () => {
+    store().newGame("trade");
+    const world = store().world!;
+    const shipId = world.company.ships[0].id;
+    store().dispatch({ kind: "buy", shipId, good: "grain", qty: 1_000_000 });
+    expect(store().world).toEqual(world);
   });
 
   it("selection tracks ports and ships and clears on newGame", () => {
