@@ -6,3 +6,6 @@ coverage/
 .env.*
 .DS_Store
 Thumbs.db
+
+# Duplicate skills mirror (canonical copy lives in .claude/skills)
+.agents/
