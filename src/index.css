@@ -105,11 +105,8 @@ body {
 }
 
 .market__header span:nth-child(2),
-.market-row__price {
-  text-align: right;
-}
-
 .market__header span:last-child,
+.market-row__price,
 .market-row__stock {
   text-align: right;
 }

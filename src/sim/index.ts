@@ -21,6 +21,7 @@ export {
   cargoUsed,
   emptyCargo,
   etaTicks,
+  routeTicks,
   type Ship,
   type ShipId,
   type ShipLocation,

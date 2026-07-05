@@ -130,7 +130,9 @@ export function PortPanel({ portId }: { portId: PortId }) {
   const port = world.region.ports.find((p) => p.id === portId);
   if (!port) return null;
 
+  // E2 runs a single ship (docs/specs/E2-trade-loop.md — Ship & travel).
   const ship = world.company.ships[0];
+  if (!ship) return null;
   const dockedHere = ship.location.kind === "docked" && ship.location.portId === port.id;
   const snapshot = world.priceSnapshots[port.id];
 

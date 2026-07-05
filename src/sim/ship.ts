@@ -41,15 +41,22 @@ export function cargoUsed(ship: Ship): number {
   return GOOD_IDS.reduce((sum, good) => sum + ship.cargo[good], 0);
 }
 
+/** Total voyage duration of a route, in ticks — the sum of its lanes'
+ *  durations. The single home for route→ticks arithmetic (etaTicks and the
+ *  UI's sailTo preview both build on it). */
+export function routeTicks(region: Region, route: readonly Voyage[]): number {
+  let ticks = 0;
+  for (const voyage of route) {
+    ticks += region.lanes.find((l) => l.id === voyage.laneId)!.voyageTicks;
+  }
+  return ticks;
+}
+
 /** Ticks until the ship docks; 0 when already docked. */
 export function etaTicks(ship: Ship, region: Region): number {
   if (ship.location.kind !== "underway") return 0;
   const { route, voyageIndex, voyageProgressTicks } = ship.location;
-  let eta = -voyageProgressTicks;
-  for (let i = voyageIndex; i < route.length; i++) {
-    eta += region.lanes.find((l) => l.id === route[i].laneId)!.voyageTicks;
-  }
-  return eta;
+  return routeTicks(region, route.slice(voyageIndex)) - voyageProgressTicks;
 }
 
 /**
