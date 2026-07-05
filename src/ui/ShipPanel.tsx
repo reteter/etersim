@@ -7,6 +7,7 @@ import { useGameStore } from "../store/gameStore";
  */
 export function ShipPanel({ shipId }: { shipId: ShipId }) {
   const world = useGameStore((s) => s.world);
+  const select = useGameStore((s) => s.select);
   if (!world) return null;
 
   const ship = world.company.ships.find((s) => s.id === shipId);
@@ -15,17 +16,29 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
   const portName = (id: string) => world.region.ports.find((p) => p.id === id)?.name ?? id;
   const used = cargoUsed(ship);
   const loaded = GOOD_IDS.filter((good) => ship.cargo[good] > 0);
+  const location = ship.location;
 
   return (
     <aside className="side-panel">
       <h2 className="side-panel__title">Ship</h2>
-      {ship.location.kind === "docked" ? (
-        <p className="side-panel__subtitle">Docked at {portName(ship.location.portId)}</p>
+      {location.kind === "docked" ? (
+        <p className="side-panel__subtitle">Docked at {portName(location.portId)}</p>
       ) : (
         <p className="side-panel__subtitle">
-          Underway to {portName(ship.location.destination)} — ETA{" "}
-          {etaTicks(ship, world.region)} ticks
+          Underway to {portName(location.destination)} — ETA {etaTicks(ship, world.region)} ticks
         </p>
+      )}
+
+      {/* The docked port's ⛵ overlaps its node on the map and wins the click,
+          so open its market from here — the panel path to trading. */}
+      {location.kind === "docked" && (
+        <button
+          type="button"
+          className="sail-btn"
+          onClick={() => select({ kind: "port", id: location.portId })}
+        >
+          Open market
+        </button>
       )}
 
       <h3 className="side-panel__heading">
