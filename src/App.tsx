@@ -1,19 +1,19 @@
 import { useEffect } from "react";
-import { etaTicks } from "./sim";
 import { useGameStore } from "./store/gameStore";
 import { useGameLoop } from "./store/useGameLoop";
+import { PortPanel } from "./ui/PortPanel";
 import { RegionMap } from "./ui/RegionMap";
+import { ShipPanel } from "./ui/ShipPanel";
 import { TopBar } from "./ui/TopBar";
 
 /**
- * Contextual side panel slot (docs/specs/E2-trade-loop.md — UI layout).
- * Lightweight placeholder for now: full market/ship panels are #16.
+ * Contextual side panel slot (docs/specs/E2-trade-loop.md — UI layout):
+ * the market panel for a selected port, the hold/ETA panel for the ship.
  */
 function SidePanel() {
-  const world = useGameStore((s) => s.world);
   const selection = useGameStore((s) => s.selection);
 
-  if (!world || !selection) {
+  if (!selection) {
     return (
       <aside className="side-panel">
         <p className="side-panel__hint">Select a port or the ship to see details.</p>
@@ -21,33 +21,10 @@ function SidePanel() {
     );
   }
 
-  if (selection.kind === "port") {
-    const port = world.region.ports.find((p) => p.id === selection.id);
-    if (!port) return null;
-    return (
-      <aside className="side-panel">
-        <h2>{port.name}</h2>
-        <p>Archetype: {port.archetype}</p>
-      </aside>
-    );
-  }
-
-  const ship = world.company.ships.find((s) => s.id === selection.id);
-  if (!ship) return null;
-  const location = ship.location;
-  return (
-    <aside className="side-panel">
-      <h2>Ship</h2>
-      {location.kind === "docked" ? (
-        <p>Docked at {world.region.ports.find((p) => p.id === location.portId)?.name}</p>
-      ) : (
-        <p>
-          Underway to {world.region.ports.find((p) => p.id === location.destination)?.name}
-          {" — ETA "}
-          {etaTicks(ship, world.region)} ticks
-        </p>
-      )}
-    </aside>
+  return selection.kind === "port" ? (
+    <PortPanel portId={selection.id} />
+  ) : (
+    <ShipPanel shipId={selection.id} />
   );
 }
 
