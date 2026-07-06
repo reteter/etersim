@@ -1,6 +1,6 @@
 # etersim — Product Requirements Document
 
-Living document. Owner: Jakub. Terms per [CONTEXT.md](../CONTEXT.md). Last updated: 2026-07-04.
+Living document. Owner: Jakub. Terms per [CONTEXT.md](../CONTEXT.md). Last updated: 2026-07-07.
 
 ## Vision
 
@@ -34,7 +34,7 @@ Milestones group epics. Every epic starts with a grilling session and an approve
 ### M1 — Trade Loop (prove the core is fun)
 
 - **E1 Foundation**: app scaffold, CI, tick engine with seeded RNG, world model skeleton. Spec: ADRs 0001–0004.
-- **E2 Trade Loop**: worldgen (5–6 ports), market simulation, ship travel over lanes, map view + market panel + ship panel, time controls, save/load. No magic, no contracts, no fleet.
+- **E2 Trade Loop**: worldgen (5–6 ports), market simulation, ship travel over lanes, map view + market panel + ship panel, time controls, save/load. No magic, no contracts, no fleet. Baseline shipped (#10–#17); playtest follow-ups (#28–#37, #25) spec'd and open.
 
 **M1 success criteria:**
 - Same seed + same commands ⇒ identical world (asserted by test).

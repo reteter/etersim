@@ -10,7 +10,7 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - `docs/adr/` — settled decisions; add an ADR for hard-to-reverse choices, don't relitigate existing ones.
 - `docs/specs/` — one feature spec per epic (Design + Tech sections).
 - `docs/personas/` — Designer/Engineer hats and Orchestrator role.
-- `docs/design-notes/` — parking lot for the owner's playtest observations and deferred ideas, not yet grilled or spec'd. `trade-loop-followups.md` is the running list; each item later becomes a spec update + issue, or a new epic.
+- `docs/design-notes/` — parking lot for playtest observations and deferred ideas. Items may be grilled and locked before implementation; `trade-loop-followups.md` tracks E2 post-playtest follow-ups (spec'd, issues filed, not yet shipped).
 
 ## Rules
 

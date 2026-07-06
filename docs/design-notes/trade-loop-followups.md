@@ -1,9 +1,10 @@
 # Trade-loop follow-ups — design-session inputs
 
 Parking lot for owner feedback gathered while playtesting E2 (PR #29, issue #16).
-High-level decisions locked (2026-07-07). Each item now ready for spec update + GitHub issue (or new epic).
-Each item, once decided, becomes either a spec update to
-[E2-trade-loop.md](../specs/E2-trade-loop.md) + a GitHub issue, or a new epic.
+High-level decisions locked (2026-07-07). Spec notes added to
+[E2-trade-loop.md](../specs/E2-trade-loop.md); GitHub issues filed (#25, #28, #32–#37).
+Implementation tracked per issue — none of the follow-ups below are shipped yet (see spec
+**Implementation status** table).
 
 Terms per [CONTEXT.md](../../CONTEXT.md); process per [WORKFLOW.md](../WORKFLOW.md).
 
@@ -38,12 +39,12 @@ See #28 for full context and the grill log. All E2 follow-up items locked high-l
 - #2: Voyage ticks mapping more proportional to distance (smaller floor, better triangle inequality).
 - #3: Geometry-aware `connectPorts` (distance-biased selection).
 
-Follow-ups (do przygotowania w issue impl):
+Follow-ups (implementation, tracked in #25):
 - Determinism tests for new topology.
-- Spec sync in E2-trade-loop.md (worldgen section).
 - Placement review (if needed for better geometry support).
 - Playtest verification / map readability check.
-- (ADR not needed — recorded in #25 + follow-ups + spec).
+- (ADR not needed — recorded in #25 + follow-ups + spec.)
+- Spec decision text synced ✓ (E2 worldgen section).
 
 ## 2. Marginal pricing — make it legible (not a change, a clarification)
 How trading already works today (`src/sim/market.ts`): buying/selling is **marginal, per
@@ -93,13 +94,15 @@ A place for user settings — first tenant is the item 4 auto-pause toggle. **Ov
 - Settings and save/load (export/import) live together in one place.
 - Persistence: separate localStorage key for settings (simple and independent of game saves; can fold later).
 
-Spec note added. GitHub issue: [#37](https://github.com/reteter/etersim/issues/37). Ready for reconciliation with #17 before issuing.
+Spec note added. GitHub issue: [#37](https://github.com/reteter/etersim/issues/37). Reconciled
+with #17 at design level (options extend existing menu; save/load + settings together).
 
 ---
 
 ### Orchestrator notes (post-lock)
-All high-level decisions locked.
-- #25 A + #2 + #3 locked (worldgen topology).
-- Ready for main E2 follow-up issue: geometry-aware worldgen + mapping.
-- Remaining #25 follow-ups: determinism tests, spec sync, placement, verification.
-- Polish items (3,4,5) ready for their issues.
+All high-level decisions locked. Spec/docs synced (2026-07-07); implementation open.
+- **#28 + #32** first — Controlled Ship store field + header + Harbor unblock #33, #36.
+- **#25** sim-only — geometry-aware `connectPorts`; independent of UI follow-ups.
+- **#35, #36, #37** can proceed in parallel once #28 store model exists (#36 default-On can
+  ship before #37 settings UI).
+- E2E (`e2e/ui.spec.ts`) covers baseline #15 UX; update when #28 ships. E2E not yet in CI.
