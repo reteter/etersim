@@ -3,7 +3,7 @@
 **Created**: 2026-07-07 (during E2 follow-up design session)  
 **Origin**: Controlled Ship header design (follow-up to #28 / issue #32)
 
-## Current State (as of now)
+## Current State (baseline shipped — pre-#28)
 
 - The project uses **only Unicode glyphs/emojis** for all visual icons. No icon libraries, no SVG icon set, no font icons.
 - **Map (SVG in RegionMap.tsx)**:
