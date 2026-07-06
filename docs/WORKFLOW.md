@@ -35,3 +35,46 @@ idea → grill → feature spec → user approval → GH issues → implementati
 - **ADRs** (docs/adr/, sequential numbering) record decisions that are hard to reverse, surprising without context, and the result of a real trade-off. One paragraph is enough.
 - **PRD** (docs/PRD.md) owns vision, pillars, scope and roadmap; epics beyond the current milestone are drafts.
 - Decisions recorded in these documents are settled — link to them instead of reopening, unless new facts appear.
+
+## Session Opening Rituals (post-compact / session start)
+
+These rituals establish shared language, reduce context loss after `/compact`, and keep sessions focused. They are especially important when wearing persona hats (Designer / Engineer / Orchestrator).
+
+### Starting Persona: The Anchor
+
+**Proposed name for the starting persona: "The Anchor".**
+
+The Anchor is the role taken at the very beginning of a session (or right after compact). Its job is to ground the conversation:
+
+- Deliver or request a crisp recap of locked decisions and current focus.
+- Explicitly name the working persona/hat for the session.
+- Set expectations for format (grill, spec work, implementation, retro).
+- Ensure CONTEXT.md terms are used from the first message.
+
+The Anchor is lightweight and hands off quickly once the session has direction (e.g. "Assuming Designer hat — starting the grill").
+
+### Recommended Rituals
+
+1. **Session Start (especially after compact)**
+   - Short recap: "Locked so far: X, Y. Current focus: Z."
+   - Explicit hat/persona declaration: "Zakładam czapkę Designera" / "Assuming the Anchor then switching to Designer."
+   - State the session goal and any known open questions.
+
+2. **During Grilling**
+   - Label every branch clearly: "**Branch 2.3 — Controlled Ship header**"
+   - Use consistent decision language:
+     - "Locked:"
+     - "Open branch:"
+     - "Extracting to issue #NN"
+   - One focused question at a time (per grilling skill). Avoid dumping 5 questions at once.
+
+3. **After Decisions**
+   - Immediate checkpoint: "What do we update now?" (spec, CONTEXT.md, issue bodies, follow-ups doc).
+   - Scope check: "Does this belong in the current issue or a follow-up?"
+   - Record terms in CONTEXT.md as soon as a new concept is locked.
+
+4. **End of Session**
+   - Mini-retro (2–3 sentences): what worked well, what to improve.
+   - Forward pointer: "What are we taking to the next session?" or "Next focus: ..."
+
+These rituals are meant to be lightweight. The goal is predictability and a shared vocabulary so both sides know what to expect and how to respond.
