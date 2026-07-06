@@ -95,11 +95,11 @@ RegionTemplate {
 v1 ships one default template (`heartland`). The template is data, not code — future regions
 (e.g. mining-heavy frontiers, different port counts) are new templates, no worldgen changes.
 
-Algorithm: draw port count from the range → assign archetypes (shuffle all five first so every
-archetype appears once before weighted repeats — keeps the arbitrage invariant) → place ports
-on a unit plane with minimum-distance rejection sampling → connect with a random spanning tree,
-then add random extra edges until `laneDensity` of all candidate edges is kept (sparse graph:
-routing must matter) → map each lane's euclidean length linearly into `voyageTicksRange`.
+**Lane topology decision (locked 2026-07-07, see #25):**
+- **A** (map as space): topology geometry-aware. `connectPorts` favors short connections (distance-biased, reduced crossings). Positions matter for readability.
+- Voyage ticks mapping: more proportional to distance (smaller floor, better triangle inequality).
+
+Implementation and tests to follow in dedicated issue.
 
 ### Ship & travel
 
@@ -136,12 +136,49 @@ Map: SVG — ports as nodes (name + archetype glyph), lanes as edges, ship(s) mo
 lane proportionally to voyage progress. World date convention: Day 1 starts at tick 0,
 hour = tick mod 24 (decided during #15; nothing earlier defined it). 
 
-Clicking a port always opens its view first: the **Harbor** section (list of docked Ships — player's ships in one subsection, others in another; hover shows Hold + Cargo summary) appears above the market. A small always-visible header indicates the current **Controlled Ship**.
+Clicking a port always opens its view first: the **Harbor** section (list of docked Ships — player's ships in one subsection, others in another; hover shows Hold + Cargo summary) appears above the market. 
+
+A thin, always-visible **Controlled Ship header** sits at the very top of the right-hand context panel (above the Harbor when a port is selected). It is persistent across panel states and shows:
+- A ship glyph + short identifier
+- Current status and location: "Docked at <PortName>" or "Underway to <PortName> • ~<ETA ticks>"
+- Hold usage (e.g. "12/50")
+
+Clicking the header designates the ship as the current Controlled Ship (if not already) and opens its ShipPanel. 
+
+When the Controlled Ship is docked at the currently viewed port, the header indicates this (e.g. "Docked here") and the ship is visually distinguished in the Harbor list.
 
 - If the Controlled Ship is docked here: market enables trading (buy/sell).
-- Remote ports: read-only market + prominent "Sail [Controlled Ship name] here (~N)" button (reuses `previewRouteTicks`).
+- Remote ports: Harbor on top, followed by a prominent "Sail [Controlled Ship name] here (~N)" action button directly under the Harbor section (more visually distinct than standard market buttons), then the read-only market below (reuses `previewRouteTicks`).
 
-Docked player Ships are primarily accessed via the Harbor list (port click wins over docked ship icons). Clicking an eligible player Ship on the map (e.g. underway) or in the Harbor list designates it as the Controlled Ship and opens its ShipPanel. The legacy "Open market" button in ShipPanel is an interim affordance.
+Docked player Ships are primarily accessed via the Harbor list (port click wins over docked ship icons). Clicking an eligible player Ship on the map (e.g. underway) or in the Harbor list designates it as the Controlled Ship and opens its ShipPanel.
+
+The "Open market" button has been removed from ShipPanel; market access happens via port selection (which always shows the Harbor above the market). 
+
+For remote ports the Sail button is available only when the Controlled Ship is docked at a different port. The button always targets the current Controlled Ship (as shown in the header), regardless of how many player ships appear in the Harbor list.
+
+**Note:** Exact glyph choice and any color/tinting treatment for the header are deferred to follow-up work (#34).
+
+### Buy / sell improvements (high-level, E2 follow-up)
+The market row in PortPanel supports:
+- Qty input clamped to the currently tradable maximum.
+- "Max" buttons for buy and sell (Buy max = min(available stock, hold space, thalers ÷ marginal cost of next unit); Sell max = held quantity of the good).
+- The marginal price of the *next single unit* is always visible alongside the lot-total quote on the action buttons. This makes the marginal (walking) pricing behaviour legible.
+
+"Max" values and unit price are expected to update live with market changes. Layout remains compact within the existing 320 px panel.
+
+### Auto-pause on arrival (high-level, E2 follow-up)
+When the Controlled Ship docks at its *final destination*, the game auto-pauses (default On). 
+- Applies only on destination arrival (not intermediate ports).
+- No-op if already paused.
+- Toggle lives in future options/settings (see item 5 / #17 reconciliation).
+- Persists via localStorage (tied to save/load mechanics in the store layer).
+
+### Options / settings view (high-level, E2 follow-up)
+A unified settings surface (first tenant: auto-pause toggle from item 4).
+- Reconciled with #17 (start screen + menu with export/import) — no duplicate menus.
+- Settings and save/load (JSON export/import) live together in the same place.
+- Persistence: settings use a separate localStorage key (independent of game saves for simplicity; can be folded later if needed).
+- Presentation: extends the existing menu structure (modal or dedicated section within the #17 menu flow).
 
 ### Save / load
 

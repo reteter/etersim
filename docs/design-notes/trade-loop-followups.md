@@ -1,7 +1,7 @@
 # Trade-loop follow-ups — design-session inputs
 
 Parking lot for owner feedback gathered while playtesting E2 (PR #29, issue #16).
-**Not yet grilled or spec'd** — this is the agenda for a dedicated Designer session.
+High-level decisions locked (2026-07-07). Each item now ready for spec update + GitHub issue (or new epic).
 Each item, once decided, becomes either a spec update to
 [E2-trade-loop.md](../specs/E2-trade-loop.md) + a GitHub issue, or a new epic.
 
@@ -21,11 +21,29 @@ Introduced:
 - Direct sail affordance lives in the remote port view (not as extra map gesture for now): "Sail [Controlled Ship name] here (~N)" button.
 - Docked player Ships are reached via the Harbor list (map clicks on docked ships do not win over port).
 
-Remaining open design questions extracted to:
-- [#32](https://github.com/reteter/etersim/issues/32) — Always-visible Controlled Ship header design
-- [#33](https://github.com/reteter/etersim/issues/33) — Direct sail action placement, labeling and legacy cleanup
+**Grill follow-up status (2026-07-07):**
+- [#28](https://github.com/reteter/etersim/issues/28) + [#32](https://github.com/reteter/etersim/issues/32) + [#33](https://github.com/reteter/etersim/issues/33) — Map/Controlled Ship/Sail follow-ups: **locked**.
+- [#35](https://github.com/reteter/etersim/issues/35) — Better buy/sell UI: **locked** (high-level). 
+- [#36](https://github.com/reteter/etersim/issues/36) — Auto-pause on arrival: **locked** (high-level).
+- [#37](https://github.com/reteter/etersim/issues/37) — Options/settings view: **locked** (high-level). Reconciled with #17.
+- Additional E2: [#34](https://github.com/reteter/etersim/issues/34) (UI icons), #25 + #2 + #3: **locked** (A + mapping + connectPorts). 
 
-See #28 for full context and the grill log. Spec update in progress.
+**#25 + #2 + #3** — decyzja A potwierdzona, high-level kierunki zablokowane. Reszta jako follow-upy.
+
+See #28 for full context and the grill log. All E2 follow-up items locked high-level (incl. #25 A + #2/#3). Spec notes added for 3–5 + #25.
+
+## 25. Worldgen: geometry-aware lane topology
+**Locked (2026-07-07, #25):**
+- **A** (map as space): topology geometry-aware. `connectPorts` favors short connections (distance-biased, reduced crossings). Positions matter for readability.
+- #2: Voyage ticks mapping more proportional to distance (smaller floor, better triangle inequality).
+- #3: Geometry-aware `connectPorts` (distance-biased selection).
+
+Follow-ups (do przygotowania w issue impl):
+- Determinism tests for new topology.
+- Spec sync in E2-trade-loop.md (worldgen section).
+- Placement review (if needed for better geometry support).
+- Playtest verification / map readability check.
+- (ADR not needed — recorded in #25 + follow-ups + spec).
 
 ## 2. Marginal pricing — make it legible (not a change, a clarification)
 How trading already works today (`src/sim/market.ts`): buying/selling is **marginal, per
@@ -44,31 +62,44 @@ Owner asks for:
 - **Clamp the qty input** to the max tradable amount (no typing an arbitrary number that the
   command will just reject).
 
-Design questions: which "unit price" to surface (next-unit marginal vs. average-per-unit of
-the current lot)? Does "max" recompute live as prices drift? Layout in the 320px panel.
-Likely: spec drift on E2 "UI layout" + a `type:feat area:ui` issue extending `PortPanel`.
+**Locked high-level (2026-07-07):**
+- Max buttons implemented per the formulas above.
+- Next-unit marginal price always surfaced (makes marginal pricing legible).
+- Qty input clamped live to current max tradable.
+- Max values and unit price recompute live with market changes.
+- Compact layout inside existing market-row (no bloat to 320px panel).
+
+Spec note added to E2-trade-loop.md. GitHub issue: [#35](https://github.com/reteter/etersim/issues/35).
 
 ## 4. Auto-pause on arrival
 Owner: when the ship **docks at its destination**, auto-pause the game so time doesn't keep
 running (e.g. at 100×) while the player is away and prices run off. Default **On**,
 overridable in options (item 5).
 
-Design questions: pause only on destination arrival (not on passing intermediate ports —
-those don't dock anyway)? No-op if already paused. Where the setting lives and how it
-persists (localStorage; ties to #17 save/load and item 5). This likely touches the store /
-game loop, not `src/sim` (determinism: a pause is a speed change, already in the store).
+**Locked high-level (2026-07-07):**
+- Trigger only on final destination arrival (not intermediate ports).
+- Default **On**; no-op if already paused.
+- Toggle in options/settings (item 5); persists via localStorage tied to save/load.
+- Lives in store/game loop layer only (no sim changes).
+
+Spec note added. GitHub issue: [#36](https://github.com/reteter/etersim/issues/36). Default-On behaviour can ship before full options UI.
 
 ## 5. Options / settings view
 A place for user settings — first tenant is the item 4 auto-pause toggle. **Overlaps
 [#17](https://github.com/reteter/etersim/issues/17)** (start screen + menu with export/import).
-Decide in session: is "options" a modal, a distinct screen, or part of the #17 menu? Should
-save/load (export/import JSON) and settings live together? Persistence shape for settings
-(separate localStorage key vs. folded into the save).
+
+**Locked high-level (2026-07-07):**
+- Reconciled with #17: options extend the existing menu structure (no separate/duplicate menu).
+- Settings and save/load (export/import) live together in one place.
+- Persistence: separate localStorage key for settings (simple and independent of game saves; can fold later).
+
+Spec note added. GitHub issue: [#37](https://github.com/reteter/etersim/issues/37). Ready for reconciliation with #17 before issuing.
 
 ---
 
-### Orchestrator notes (dependencies)
-- 3 is independent and closest to issue-ready (pure `PortPanel` extension).
-- 4 depends on 5 for its toggle; 4's default-On behaviour can ship before the options UI.
-- 5 should be reconciled with #17 before either is issued (avoid two menus).
-- 1 (#28) is orthogonal to the rest.
+### Orchestrator notes (post-lock)
+All high-level decisions locked.
+- #25 A + #2 + #3 locked (worldgen topology).
+- Ready for main E2 follow-up issue: geometry-aware worldgen + mapping.
+- Remaining #25 follow-ups: determinism tests, spec sync, placement, verification.
+- Polish items (3,4,5) ready for their issues.
