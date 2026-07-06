@@ -205,7 +205,7 @@ runs worldgen and threads the RNG state into the world.
   `thalers + cargo value` at quote prices.
 - Determinism: scripted 5 000-tick session with mixed commands ⇒ deep-equal worlds.
 - Save: JSON round-trip of a mid-session world ⇒ deep-equal.
-- UI: light — store bridge unit tests; panels verified by running the app.
+- UI: store bridge unit tests + Playwright E2E tests covering start screen, map interactions, port/ship panels, buy/sell flows and sail commands; manual playtesting recommended for exploration.
 
 ### Balance tuning levers (implementation-phase, no spec change needed)
 

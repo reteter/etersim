@@ -9,3 +9,7 @@ Thumbs.db
 
 # Duplicate skills mirror (canonical copy lives in .claude/skills)
 .agents/
+
+# Playwright
+playwright-report/
+test-results/
