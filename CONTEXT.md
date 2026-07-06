@@ -18,6 +18,10 @@ _Avoid_: sector, galaxy, system
 Any dockable location with a market — a planet harbor, a station, a floating enclave.
 _Avoid_: city, planet, station (as gameplay terms)
 
+**Harbor** (PL: przystań):
+The docking area of a Port where Ships reside while docked. Selecting a Port in the UI displays its Harbor (player's ships separated from others) above the market; hover on a listed Ship shows a summary (Hold usage and Cargo). Docked player Ships are accessed via the Harbor list rather than direct map clicks.
+_Avoid_: dock, berth (as first-class terms)
+
 **Lane** (PL: szlak):
 A navigable connection between two ports; an edge of the region graph.
 _Avoid_: path, link, connection
@@ -65,6 +69,10 @@ _Avoid_: player (in sim code), corporation
 **Ship** (PL: statek):
 A vessel owned by a company; carries cargo along lanes.
 _Avoid_: vessel, boat
+
+**Controlled Ship** (PL: kontrolowany statek):
+The Ship that the player has designated to receive Commands (e.g. `sailTo`, `buy`, `sell`). The UI maintains exactly one Controlled Ship at a time. Designating happens by clicking a player Ship on the map (when appropriate) or in the Harbor list, or by opening its ShipPanel. A small always-visible header shows the current Controlled Ship.
+_Avoid_: active ship, selected ship (to distinguish from UI panel selection)
 
 **Hold** (PL: ładownia):
 A ship's cargo capacity.

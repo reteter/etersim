@@ -11,10 +11,21 @@ Terms per [CONTEXT.md](../../CONTEXT.md); process per [WORKFLOW.md](../WORKFLOW.
 
 ## 1. Port click priority on the map
 **Tracked in [#28](https://github.com/reteter/etersim/issues/28)** (retitled "Map click
-interaction: port-click priority"). Owner's call: clicking a port node should open the
-**port panel directly**, even when the ship is docked there (today the ⛵ is drawn on top
-and wins the click; the "Open market" button in `ShipPanel` is an interim stopgap).
-Open question: how the ship is then selected/reached. See #28 for the full note.
+interaction: port-click priority"). 
+
+**Grilled (2026-07-06)**: Port always receives the click first. 
+
+Introduced:
+- **Harbor** (see CONTEXT.md): when a Port is selected, a Harbor section (list of docked Ships) is always shown above the market. Player's ships are separated from others; hover shows summary (Hold + Cargo).
+- **Controlled Ship** (see CONTEXT.md): the designated Ship that receives player Commands (`sailTo` etc.). A small always-visible header will show it. Opening ShipPanel designates it.
+- Direct sail affordance lives in the remote port view (not as extra map gesture for now): "Sail [Controlled Ship name] here (~N)" button.
+- Docked player Ships are reached via the Harbor list (map clicks on docked ships do not win over port).
+
+Remaining open design questions extracted to:
+- [#32](https://github.com/reteter/etersim/issues/32) — Always-visible Controlled Ship header design
+- [#33](https://github.com/reteter/etersim/issues/33) — Direct sail action placement, labeling and legacy cleanup
+
+See #28 for full context and the grill log. Spec update in progress.
 
 ## 2. Marginal pricing — make it legible (not a change, a clarification)
 How trading already works today (`src/sim/market.ts`): buying/selling is **marginal, per

@@ -103,10 +103,10 @@ routing must matter) → map each lane's euclidean length linearly into `voyageT
 
 ### Ship & travel
 
-One ship, hold 50. Commands available while docked: buy, sell, sail to port. `sailTo` runs
+One ship (hold 50) in E2; design supports designating a **Controlled Ship** (see CONTEXT.md) to receive Commands while docked: buy, sell, `sailTo`. `sailTo` runs
 Dijkstra over lane durations, assigns the resulting **route**, and the ship traverses it
 voyage by voyage, passing intermediate ports without docking. No route loops or automation
-(that's E4). While underway the ship shows destination and ETA in ticks.
+(that's E4). While underway the ship shows destination and ETA in ticks. The UI designates the Controlled Ship via map click (when eligible) or Harbor list; opening its ShipPanel also designates it.
 
 ### Time controls
 
@@ -121,22 +121,27 @@ Single screen, no view switching (readable depth: the map never leaves sight):
 ┌─────────────────────────────────────────────┐
 │ ₸ 1 240      Day 12, 07:00     ⏸ 1x 10x 100x │  top bar
 ├───────────────────────────┬─────────────────┤
-│        REGION MAP         │ context panel   │
-│   ○ port    ○             │                 │
-│     \      / \            │ port clicked →  │
-│      ○────○   ○           │  market table   │
-│        ⛵ ship             │  (price, trend, │
-│                           │   stock, buy/   │
-│                           │   sell + qty)   │
-│                           │ ship clicked →  │
-│                           │  hold, dest, ETA│
+│        REGION MAP         │ context panel          │
+│   ○ port    ○             │ Controlled Ship hdr  │
+│     \      / \            │ Harbor (docked list) │
+│      ○────○   ○           │ market table         │
+│        ⛵ ship             │ (or Sail button)     │
+│                           │ ship clicked →       │
+│                           │  ShipPanel (hold,    │
+│                           │  dest, ETA)          │
 └───────────────────────────┴─────────────────┘
 ```
 
-Map: SVG — ports as nodes (name + archetype glyph), lanes as edges, ship moving along its
+Map: SVG — ports as nodes (name + archetype glyph), lanes as edges, ship(s) moving along their
 lane proportionally to voyage progress. World date convention: Day 1 starts at tick 0,
-hour = tick mod 24 (decided during #15; nothing earlier defined it). Clicking a port while docked there enables trading;
-remote ports show the same live market table read-only.
+hour = tick mod 24 (decided during #15; nothing earlier defined it). 
+
+Clicking a port always opens its view first: the **Harbor** section (list of docked Ships — player's ships in one subsection, others in another; hover shows Hold + Cargo summary) appears above the market. A small always-visible header indicates the current **Controlled Ship**.
+
+- If the Controlled Ship is docked here: market enables trading (buy/sell).
+- Remote ports: read-only market + prominent "Sail [Controlled Ship name] here (~N)" button (reuses `previewRouteTicks`).
+
+Docked player Ships are primarily accessed via the Harbor list (port click wins over docked ship icons). Clicking an eligible player Ship on the map (e.g. underway) or in the Harbor list designates it as the Controlled Ship and opens its ShipPanel. The legacy "Open market" button in ShipPanel is an interim affordance.
 
 ### Save / load
 
@@ -186,12 +191,13 @@ runs worldgen and threads the RNG state into the world.
 
 ### Store bridge & UI (`src/store`, `src/ui`)
 
-- Zustand store holds the current `World` + UI state (selection, speed, carryMs); a
+- Zustand store holds the current `World` + UI state (selection, Controlled Ship, speed, carryMs); a
   `requestAnimationFrame` loop feeds real elapsed ms through `elapsedToTicks` and folds
   `tick()` the returned number of times with empty command lists. Player commands apply
   immediately via `applyCommand` on dispatch instead of queuing (ADR-0005) — this enables
   pausing to trade; determinism is preserved because `tick()` applies commands at the start
   of a tick, so `applyCommand` now + `tick(world, [])` later equals `tick(world, [cmd])`.
+  Commands are always targeted at the current Controlled Ship.
 - Components: `TopBar`, `RegionMap` (SVG), `PortPanel`, `ShipPanel`, `StartScreen`.
 - Persistence adapter lives in `src/store` (localStorage is banned inside `src/sim`).
 
@@ -205,7 +211,7 @@ runs worldgen and threads the RNG state into the world.
   `thalers + cargo value` at quote prices.
 - Determinism: scripted 5 000-tick session with mixed commands ⇒ deep-equal worlds.
 - Save: JSON round-trip of a mid-session world ⇒ deep-equal.
-- UI: store bridge unit tests + Playwright E2E tests covering start screen, map interactions, port/ship panels, buy/sell flows and sail commands; manual playtesting recommended for exploration.
+- UI: store bridge unit tests + Playwright E2E tests covering start screen, map interactions (port priority, Harbor lists, Controlled Ship designation), port/ship panels (including always-visible Controlled Ship header), buy/sell flows and sail commands (targeting Controlled Ship); manual playtesting recommended for exploration.
 
 ### Balance tuning levers (implementation-phase, no spec change needed)
 
