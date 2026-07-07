@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { MAX_TICKS_PER_CALL, MS_PER_TICK_AT_1X, quoteBuy } from "../sim";
+import {
+  etaTicks,
+  MAX_TICKS_PER_CALL,
+  MS_PER_TICK_AT_1X,
+  quoteBuy,
+  shortestRoute,
+  type PortId,
+} from "../sim";
 import { useGameStore } from "./gameStore";
 import { loadAutosave, type StorageLike } from "./persistence";
 
@@ -134,6 +141,114 @@ describe("gameStore Controlled Ship", () => {
     store().openShip("s0");
     expect(store().controlledShipId).toBe("s0");
     expect(store().selection).toEqual({ kind: "ship", id: "s0" });
+  });
+});
+
+describe("gameStore auto-pause on arrival", () => {
+  // autoPauseOnArrival is a persisted preference, deliberately untouched by
+  // the top-level beforeEach's reset() — pin it explicitly per test.
+  beforeEach(() => {
+    store().setAutoPauseOnArrival(true);
+  });
+
+  function homePortId(): PortId {
+    const ship = store().world!.company.ships[0];
+    if (ship.location.kind !== "docked") throw new Error("ship not docked");
+    return ship.location.portId;
+  }
+
+  /** Sails the Controlled Ship to `portId` and returns the ticks left to arrive. */
+  function sailAndGetEta(portId: PortId): number {
+    const shipId = store().world!.company.ships[0].id;
+    store().dispatch({ kind: "sailTo", shipId, portId });
+    return etaTicks(store().world!.company.ships[0], store().world!.region);
+  }
+
+  it("defaults to on for a fresh store", () => {
+    expect(store().autoPauseOnArrival).toBe(true);
+  });
+
+  it("auto-pauses when the Controlled Ship docks at its final destination", () => {
+    store().newGame(7);
+    const home = homePortId();
+    const target = store().world!.region.ports.find((p) => p.id !== home)!;
+    const eta = sailAndGetEta(target.id);
+    expect(eta).toBeGreaterThan(0);
+
+    store().advance(eta * MS_PER_TICK_AT_1X);
+
+    expect(store().world!.company.ships[0].location).toEqual({
+      kind: "docked",
+      portId: target.id,
+    });
+    expect(store().speed).toBe("paused");
+  });
+
+  it("stays running on arrival when the setting is off", () => {
+    store().newGame(7);
+    store().setAutoPauseOnArrival(false);
+    const home = homePortId();
+    const target = store().world!.region.ports.find((p) => p.id !== home)!;
+    const eta = sailAndGetEta(target.id);
+
+    store().advance(eta * MS_PER_TICK_AT_1X);
+
+    expect(store().world!.company.ships[0].location).toEqual({
+      kind: "docked",
+      portId: target.id,
+    });
+    expect(store().speed).toBe(1);
+  });
+
+  it("does not pause on intermediate lane hops, only the final destination", () => {
+    // Seed 0's home port has a known 2-lane shortest route to some port —
+    // exercises voyageIndex advancing (still underway) before the final dock.
+    store().newGame(0);
+    const home = homePortId();
+    const region = store().world!.region;
+    const target = store().world!.region.ports.find(
+      (p) => p.id !== home && (shortestRoute(region, home, p.id)?.length ?? 0) > 1,
+    )!;
+    expect(target).toBeDefined();
+    const eta = sailAndGetEta(target.id);
+
+    for (let i = 0; i < eta - 1; i++) {
+      store().advance(MS_PER_TICK_AT_1X);
+      expect(store().world!.company.ships[0].location.kind).toBe("underway");
+      expect(store().speed).toBe(1);
+    }
+    store().advance(MS_PER_TICK_AT_1X);
+
+    expect(store().world!.company.ships[0].location).toEqual({
+      kind: "docked",
+      portId: target.id,
+    });
+    expect(store().speed).toBe("paused");
+  });
+
+  it("is a no-op if already paused", () => {
+    store().newGame(7);
+    const home = homePortId();
+    const target = store().world!.region.ports.find((p) => p.id !== home)!;
+    const eta = sailAndGetEta(target.id);
+    store().setSpeed("paused");
+
+    store().advance(eta * MS_PER_TICK_AT_1X); // paused: elapsedToTicks folds 0 ticks
+
+    expect(store().world!.company.ships[0].location.kind).toBe("underway");
+    expect(store().speed).toBe("paused");
+  });
+
+  it("does not auto-pause before the destination is reached", () => {
+    store().newGame(7);
+    const home = homePortId();
+    const target = store().world!.region.ports.find((p) => p.id !== home)!;
+    const eta = sailAndGetEta(target.id);
+
+    store().advance((eta - 1) * MS_PER_TICK_AT_1X);
+
+    expect(store().world!.company.ships[0].location.kind).toBe("underway");
+    expect(store().speed).toBe(1);
   });
 });
 

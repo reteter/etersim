@@ -6,11 +6,13 @@ import {
   tick,
   type Command,
   type PortId,
+  type Ship,
   type ShipId,
   type Speed,
   type World,
 } from "../sim";
 import { AUTOSAVE_INTERVAL_TICKS, saveAutosave } from "./persistence";
+import { loadSettings, saveSettings } from "./settings";
 
 /**
  * The thin bridge between the pure sim and React (ADR-0002): holds the
@@ -34,11 +36,19 @@ interface GameState {
    * focus. Exactly one at a time; null before a world exists.
    */
   readonly controlledShipId: ShipId | null;
+  /**
+   * Auto-pause on arrival (docs/design-notes/trade-loop-followups.md item 4):
+   * pauses the game when the Controlled Ship docks at its final destination.
+   * A player preference, persisted separately from the game save (item 5) —
+   * untouched by newGame/loadWorld/reset.
+   */
+  readonly autoPauseOnArrival: boolean;
 
   newGame(seed: number | string): void;
   loadWorld(world: World): void;
   reset(): void;
   setSpeed(speed: Speed): void;
+  setAutoPauseOnArrival(value: boolean): void;
   select(selection: Selection): void;
   /** Designates a ship as Controlled and focuses its ShipPanel — the shared
    *  path for map, Harbor and header clicks (docs/specs/E2-trade-loop.md). */
@@ -62,8 +72,29 @@ function initialControlledShip(world: World): ShipId | null {
   return world.company.ships[0]?.id ?? null;
 }
 
+/**
+ * True when `before` was underway to some destination and `after` is now
+ * docked at that same destination — i.e. a *final* arrival, not an
+ * intermediate lane hop. `advanceShip` (src/sim/ship.ts) only transitions a
+ * ship from "underway" to "docked" once its route is exhausted; an
+ * intermediate voyage completing instead rolls straight into the next
+ * voyage, keeping the ship "underway" with the same `destination`. So this
+ * underway→docked transition can only fire on the final destination.
+ */
+function arrivedAtFinalDestination(before: Ship, after: Ship): boolean {
+  return (
+    before.location.kind === "underway" &&
+    after.location.kind === "docked" &&
+    after.location.portId === before.location.destination
+  );
+}
+
 export const useGameStore = create<GameState>()((set, get) => ({
   ...INITIAL,
+  // Read once at store creation (docs/specs — Options / settings view: "load
+  // the setting when the store initializes"); not part of INITIAL so
+  // newGame/loadWorld/reset never reset a player's persisted preference.
+  autoPauseOnArrival: loadSettings().autoPauseOnArrival,
 
   newGame: (seed) => {
     const world = createWorld(seed);
@@ -85,6 +116,11 @@ export const useGameStore = create<GameState>()((set, get) => ({
     }
   },
 
+  setAutoPauseOnArrival: (value) => {
+    set({ autoPauseOnArrival: value });
+    saveSettings({ autoPauseOnArrival: value });
+  },
+
   select: (selection) => set({ selection }),
 
   openShip: (id) => set({ controlledShipId: id, selection: { kind: "ship", id } }),
@@ -96,13 +132,14 @@ export const useGameStore = create<GameState>()((set, get) => ({
   },
 
   advance: (elapsedMs) => {
-    const { world, speed, carryMs } = get();
+    const { world, speed, carryMs, controlledShipId, autoPauseOnArrival } = get();
     if (!world) return;
     const { ticks, carryMs: nextCarry } = elapsedToTicks(speed, elapsedMs, carryMs);
     if (ticks === 0) {
       set({ carryMs: nextCarry });
       return;
     }
+    const shipBefore = world.company.ships.find((s) => s.id === controlledShipId) ?? null;
     let next = world;
     for (let i = 0; i < ticks; i++) next = tick(next, []);
     set({ world: next, carryMs: nextCarry });
@@ -111,6 +148,16 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const interval = AUTOSAVE_INTERVAL_TICKS;
     if (Math.floor(next.tick / interval) > Math.floor(world.tick / interval)) {
       saveAutosave(next);
+    }
+    // Auto-pause on arrival (design-notes item 4): only on the Controlled
+    // Ship's final-destination arrival, never intermediate ports; a no-op if
+    // already paused (reuses setSpeed so it also autosaves, matching the
+    // regular pause path).
+    if (autoPauseOnArrival && speed !== "paused" && shipBefore) {
+      const shipAfter = next.company.ships.find((s) => s.id === controlledShipId);
+      if (shipAfter && arrivedAtFinalDestination(shipBefore, shipAfter)) {
+        get().setSpeed("paused");
+      }
     }
   },
 }));
