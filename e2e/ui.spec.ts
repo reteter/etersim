@@ -176,6 +176,22 @@ test.describe('main game UI after start', () => {
     await expect(harborIcon).toHaveCSS('color', 'rgb(224, 168, 64)');
   });
 
+  test('selecting a port accents its incident lanes and shows tick labels; deselecting hides them (#45)', async ({
+    page,
+  }) => {
+    const map = page.locator('svg.region-map');
+    await page.locator('g.port').first().click({ force: true });
+
+    await expect(map.locator('.lane--port-accent')).not.toHaveCount(0);
+    await expect(map.locator('.lane__label')).not.toHaveCount(0);
+
+    // Opening the Controlled Ship moves selection off the port — its lane
+    // accents and tick labels disappear (default map stays clean).
+    await openControlledShip(page);
+    await expect(map.locator('.lane--port-accent')).toHaveCount(0);
+    await expect(map.locator('.lane__label')).toHaveCount(0);
+  });
+
   test('port panel shows market table with prices and trends', async ({ page }) => {
     // Select first port on map (click the group that has the handler)
     await page.locator('g.port').first().click({ force: true });
@@ -266,5 +282,29 @@ test.describe('trading interactions (when docked)', () => {
       await page.locator('.ctrl-ship').click();
       await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
     }
+  });
+
+  test('underway Controlled Ship shows an accented, directional course with a tick label (#45)', async ({
+    page,
+  }) => {
+    // Seed is random (blank seed → Date.now(), src/ui/StartScreen.tsx), so
+    // the home port index varies; probe ports until a remote one shows the
+    // Sail control (portCountRange is [5, 6], src/sim/template.ts, so one
+    // always exists).
+    const portGroups = page.locator('g.port');
+    const count = await portGroups.count();
+    const sailBtn = page.getByRole('button', { name: /sail here/i });
+    for (let i = 0; i < count; i++) {
+      await portGroups.nth(i).click({ force: true });
+      if (await sailBtn.count()) break;
+    }
+    await expect(sailBtn).toBeVisible();
+    await sailBtn.click();
+
+    const map = page.locator('svg.region-map');
+    const courseLanes = map.locator('.lane--course-accent');
+    await expect(courseLanes).not.toHaveCount(0);
+    await expect(courseLanes.first()).toHaveAttribute('marker-end', /course-arrow/);
+    await expect(map.locator('.lane__label')).not.toHaveCount(0);
   });
 });

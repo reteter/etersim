@@ -1,5 +1,5 @@
 import type { ComponentType, CSSProperties, SVGProps } from "react";
-import type { Port, PortArchetype, Region, Ship } from "../sim";
+import type { LaneId, Port, PortArchetype, PortId, Region, Ship, Voyage } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { AgrarianIcon, IndustrialIcon, MiningIcon, ShipIcon, UrbanIcon, VerdantIcon } from "./icons";
 import { projectToViewBox } from "./mapProjection";
@@ -41,6 +41,21 @@ function project(point: Pick<Port, "x" | "y">): { x: number; y: number } {
   };
 }
 
+const LANE_LABEL_OFFSET = 2.5;
+
+/** Midpoint of an accented lane, nudged perpendicular to the line so the
+ *  tick label doesn't sit on top of the stroke (docs/specs/E10-orrery-view.md
+ *  — Lane presentation: labels appear only on accented lanes). */
+function laneLabelPosition(a: { x: number; y: number }, b: { x: number; y: number }) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = Math.hypot(dx, dy) || 1;
+  return {
+    x: (a.x + b.x) / 2 + (-dy / length) * LANE_LABEL_OFFSET,
+    y: (a.y + b.y) / 2 + (dx / length) * LANE_LABEL_OFFSET,
+  };
+}
+
 /**
  * SVG region map (docs/specs/E2-trade-loop.md — UI layout): ports as nodes,
  * lanes as edges, the ship positioned by shipPosition(). Clicking a port or
@@ -56,6 +71,17 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
   const shipPos = project(shipPosition(ship, region));
   const center = project(CENTER);
 
+  // Controlled Ship's active course (docs/specs/E10-orrery-view.md — Lane
+  // presentation): the remaining voyages of its route while underway. A
+  // docked ship has no route to show, so "or selected" adds nothing beyond
+  // "underway" in practice — selecting a docked Controlled Ship just yields
+  // an empty course.
+  const courseVoyages: readonly Voyage[] =
+    ship.id === controlledShipId && ship.location.kind === "underway"
+      ? ship.location.route.slice(ship.location.voyageIndex)
+      : [];
+  const courseDestinationByLane = new Map<LaneId, PortId>(courseVoyages.map((v) => [v.laneId, v.to]));
+
   return (
     <svg
       className="region-map"
@@ -69,6 +95,19 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
           <stop offset="55%" stopColor="#f2c46b" />
           <stop offset="100%" stopColor="#c98a2e" stopOpacity="0" />
         </radialGradient>
+        {/* Arrowhead for the Controlled Ship's course accent — direction
+            comes from the voyage's `to`, not the lane's fixed a/b order. */}
+        <marker
+          id="course-arrow"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="3.5"
+          markerHeight="3.5"
+          orient="auto-start-reverse"
+        >
+          <path d="M0,0 L10,5 L0,10 Z" fill="#e0a840" />
+        </marker>
       </defs>
       {/* Star: pure decoration (docs/specs/E10-orrery-view.md — Planets, star,
           glow), not clickable, no mechanics. */}
@@ -98,9 +137,43 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
       </g>
       <g className="region-map__lanes">
         {region.lanes.map((lane) => {
-          const a = project(portsById.get(lane.a)!);
-          const b = project(portsById.get(lane.b)!);
-          return <line key={lane.id} className="lane" x1={a.x} y1={a.y} x2={b.x} y2={b.y} />;
+          const isPortAccented = selection?.kind === "port" && (lane.a === selection.id || lane.b === selection.id);
+          const courseTo = courseDestinationByLane.get(lane.id);
+          const isCourseAccented = courseTo !== undefined;
+
+          // Lanes are undirected (a/b); orient the endpoints toward the
+          // voyage's destination so the course arrowhead points the right way.
+          const fromId = isCourseAccented && courseTo === lane.a ? lane.b : lane.a;
+          const toId = isCourseAccented && courseTo === lane.a ? lane.a : lane.b;
+          const from = project(portsById.get(fromId)!);
+          const to = project(portsById.get(toId)!);
+
+          const className = [
+            "lane",
+            isPortAccented && "lane--port-accent",
+            isCourseAccented && "lane--course-accent",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const label = laneLabelPosition(from, to);
+
+          return (
+            <g key={lane.id}>
+              <line
+                className={className}
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+                markerEnd={isCourseAccented ? "url(#course-arrow)" : undefined}
+              />
+              {(isPortAccented || isCourseAccented) && (
+                <text className="lane__label" x={label.x} y={label.y} textAnchor="middle">
+                  {lane.voyageTicks}t
+                </text>
+              )}
+            </g>
+          );
         })}
       </g>
       <g className="region-map__ports">

@@ -497,8 +497,7 @@ body {
 }
 
 /* Orbit rings: weakest layer in the visual hierarchy — planets > accented
-   lanes > default lanes > rings (accents land in #45). Thin and very faint
-   on purpose. */
+   lanes > default lanes > rings. Thin and very faint on purpose. */
 .orbit-ring {
   fill: none;
   stroke: #2a3040;
@@ -507,9 +506,45 @@ body {
   pointer-events: none;
 }
 
+/* Lanes (docs/specs/E10-orrery-view.md — Lane presentation): subtle threads
+   by default, below planets in visual weight. Accents carry information on
+   demand — selecting a port highlights its incident lanes; the Controlled
+   Ship's active course gets a distinct directional/animated style so the
+   two accent triggers stay visually separable. */
 .lane {
   stroke: #3a4356;
   stroke-width: 0.5;
+}
+
+.lane--port-accent {
+  stroke: #e0a840;
+  stroke-width: 0.7;
+  filter: drop-shadow(0 0 1px #e0a840);
+}
+
+.lane--course-accent {
+  stroke: #e0a840;
+  stroke-width: 0.8;
+  stroke-dasharray: 2 1.2;
+  animation: course-flow 1.2s linear infinite;
+}
+
+@keyframes course-flow {
+  to {
+    stroke-dashoffset: -3.2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lane--course-accent {
+    animation: none;
+  }
+}
+
+.lane__label {
+  font-size: 2px;
+  fill: #e0a840;
+  pointer-events: none;
 }
 
 .port {
