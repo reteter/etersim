@@ -149,7 +149,8 @@ function MarketRow({
   // Qty is shared by both actions, so it's clamped to whichever side allows
   // more — each button still disables independently via canBuy/canSell.
   const maxQty = Math.max(buyMax, sellMax);
-  const clampedQty = maxQty <= 0 ? 0 : Math.min(Math.max(qty, 1), maxQty);
+  const clampQty = (n: number) => (maxQty <= 0 ? 0 : Math.min(Math.max(n, 1), maxQty));
+  const clampedQty = clampQty(qty);
 
   const buyTotal = trading ? quoteBuy(good, entry, clampedQty) : null;
   const sellTotal = trading ? quoteSell(good, entry, clampedQty) : null;
@@ -183,34 +184,33 @@ function MarketRow({
               value={clampedQty}
               disabled={maxQty <= 0}
               aria-label={`${GOODS[good].name} quantity`}
-              onChange={(e) => {
-                const raw = Math.floor(Number(e.target.value) || 0);
-                setQty(maxQty <= 0 ? 0 : Math.min(Math.max(raw, 1), maxQty));
-              }}
+              onChange={(e) => setQty(clampQty(Math.floor(Number(e.target.value) || 0)))}
             />
-            {/* Named to avoid overlapping the "Buy"/"Sell" action buttons'
-                accessible names below (e2e locates those via /buy|sell/i). */}
             <button
               type="button"
               disabled={buyMax <= 0}
-              aria-label={`Fill max ${GOODS[good].name}`}
+              aria-label={`Buy max ${GOODS[good].name}`}
               onClick={() => setQty(buyMax)}
             >
-              Fill max
+              Buy max
             </button>
             <button
               type="button"
               disabled={sellMax <= 0}
-              aria-label={`Unload max ${GOODS[good].name}`}
+              aria-label={`Sell max ${GOODS[good].name}`}
               onClick={() => setQty(sellMax)}
             >
-              Unload max
+              Sell max
             </button>
           </div>
           <div className="market-row__trade">
+            {/* Explicit aria-labels keep the action buttons' accessible names
+                distinct from the "Buy max"/"Sell max" buttons above (exact
+                names: e2e and assistive tech disambiguate on them). */}
             <button
               type="button"
               disabled={!canBuy}
+              aria-label={`Buy ${GOODS[good].name}`}
               onClick={() => dispatch({ kind: "buy", shipId: ship.id, good, qty: clampedQty })}
             >
               Buy {quoteLabel(buyTotal)}
@@ -219,6 +219,7 @@ function MarketRow({
             <button
               type="button"
               disabled={!canSell}
+              aria-label={`Sell ${GOODS[good].name}`}
               onClick={() => dispatch({ kind: "sell", shipId: ship.id, good, qty: clampedQty })}
             >
               Sell {quoteLabel(sellTotal)}

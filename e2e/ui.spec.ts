@@ -122,7 +122,7 @@ test.describe('trading interactions (when docked)', () => {
     const qtyInput = grainRow.getByRole('spinbutton', { name: /grain quantity/i });
     await qtyInput.fill('5');
 
-    const buyButton = grainRow.getByRole('button', { name: /buy/i });
+    const buyButton = grainRow.getByRole('button', { name: 'Buy Grain', exact: true });
     await expect(buyButton).toBeEnabled();
     await buyButton.click();
 
@@ -141,11 +141,11 @@ test.describe('trading interactions (when docked)', () => {
     // Buy first
     const qtyInput = grainRow.getByRole('spinbutton', { name: /grain quantity/i });
     await qtyInput.fill('3');
-    await grainRow.getByRole('button', { name: /buy/i }).click();
+    await grainRow.getByRole('button', { name: 'Buy Grain', exact: true }).click();
 
     // Now sell back
     await qtyInput.fill('2');
-    const sellButton = grainRow.getByRole('button', { name: /sell/i });
+    const sellButton = grainRow.getByRole('button', { name: 'Sell Grain', exact: true });
     await expect(sellButton).toBeEnabled();
     await sellButton.click();
 
