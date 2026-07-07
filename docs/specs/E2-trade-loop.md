@@ -12,7 +12,8 @@ Grilled and decided with the owner on 2026-07-04 (issue #4). Status: **approved*
 | Baseline map + panels | #15, #16 | **Shipped** (pre–#28 UX; see §UI layout — shipped) |
 | Save / load | #17 | **Shipped** (export/import; settings reconciliation in #37) |
 | Controlled Ship + Harbor | #28, #32 | **Shipped** — port-click priority, Harbor list, `controlledShipId` store model, always-visible header |
-| Remaining follow-ups | #33–#37, #25, #34 | **Spec'd, not shipped** — locked design in §UI layout — follow-ups and follow-up sections below |
+| Remaining follow-ups | #33–#37 | **Spec'd, not shipped** — locked design in §UI layout — follow-ups and follow-up sections below |
+| Moved to E10 | #25, #34 | **Re-scoped** — land in [E10 — Orrery view](E10-orrery-view.md) (spec approved 2026-07-07) |
 
 Scope in one line: one region, live per-port markets, one ship sailed manually, map + panels UI,
 time controls, save/load. No magic, no contracts, no fleet, no upgrades.
@@ -107,11 +108,14 @@ v1 ships one default template (`heartland`). The template is data, not code — 
 
 **Lane topology decision (locked 2026-07-07, see #25):**
 - **A** (map as space): topology geometry-aware. `connectPorts` favors short connections (distance-biased, reduced crossings). Positions matter for readability.
-- Voyage ticks mapping: more proportional to distance (smaller floor, better triangle inequality).
+- Voyage ticks mapping: purely proportional to distance. (Correction 2026-07-07: the old
+  48-tick floor never broke the triangle inequality — an affine cost with a positive
+  intercept penalizes every extra hop; its real harm was compressing distance
+  differences, e.g. the 206-vs-207 near-tie.)
 
-Implementation moved to **E10 Orrery view (PRD M2, locked 2026-07-07)**: the decision-A
-geometry becomes the static orbit-ring placement, and #25 lands on top of it — blocked
-until that placement exists, so the distance-bias work isn't done twice.
+Designed in full in **[E10 — Orrery view](E10-orrery-view.md)** (spec approved
+2026-07-07): the decision-A geometry lands on top of the static orbit-ring placement
+there. This section is superseded by that spec.
 
 ### Ship & travel
 
@@ -171,7 +175,7 @@ hour = tick mod 24 (decided during #15; nothing earlier defined it).
 - **Save/load menu:** export/import JSON buttons in top bar (`GameMenu`); no settings surface
   yet (#37).
 
-#### Follow-ups — Controlled Ship + Harbor shipped (#28, #32); sail placement & glyph pending (#33, #34)
+#### Follow-ups — Controlled Ship + Harbor shipped (#28, #32); sail placement pending (#33); glyph work moved to E10 (#34)
 
 Clicking a port always opens its view first: the **Harbor** section (list of docked Ships —
 player's ships in one subsection, others in another; hover shows Hold + Cargo summary) appears
@@ -208,7 +212,9 @@ different port. The button always targets the current Controlled Ship. Its label
 relabel and move under the Harbor are tracked in **#33**.
 
 **Note:** Exact glyph choice and any color/tinting treatment for the header are deferred to
-follow-up work (#34). See `docs/design-notes/icon-implementation-handoff.md`.
+follow-up work (#34). Now spec'd in [E10 — Orrery view](E10-orrery-view.md) §Icons
+(SVG/Unicode boundary, Controlled gold semantics); see also
+`docs/design-notes/icon-implementation-handoff.md`.
 
 ### Buy / sell improvements (high-level, E2 follow-up)
 The market row in PortPanel supports:

@@ -29,7 +29,7 @@ Buy goods at a port → assign ship a route → time passes in ticks, the world 
 
 ## Milestones & epics
 
-Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); its epics still need per-epic specs. Epics beyond M2 are drafts and will be re-grilled before work starts.
+Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); E10 is spec'd ([specs/E10-orrery-view.md](specs/E10-orrery-view.md), approved 2026-07-07), E8/E9 still need per-epic specs. Epics beyond M2 are drafts and will be re-grilled before work starts.
 
 ### M1 — Trade Loop (prove the core is fun)
 
@@ -66,7 +66,8 @@ Orchestration is progression, not a replacement for manual trade.
   rings around a central star (set dressing, no mechanics); lanes subtle by default,
   accented when a port is selected; tintable monochrome icon set (#34; game-icons.net is
   the lead candidate); #25 geometry-aware lane topology lands here, on top of the orbital
-  placement.
+  placement. Spec: [specs/E10-orrery-view.md](specs/E10-orrery-view.md) (approved
+  2026-07-07); runs before E8/E9 so the new geometry sits under their playtests.
 
 **M2 success criteria:**
 - Autonomy: 30 player-idle world days ⇒ no good at any port stays pinned at the price

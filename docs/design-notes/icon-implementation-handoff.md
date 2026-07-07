@@ -3,6 +3,11 @@
 **Created**: 2026-07-07 (during E2 follow-up design session)  
 **Origin**: Controlled Ship header design (follow-up to #28 / issue #32)
 
+> **Resolved (2026-07-07):** strategy locked in the approved
+> [E10 spec §Icons](../specs/E10-orrery-view.md) — game-world entities get vendored
+> monochrome SVG (game-icons.net, `currentColor`), UI chrome stays Unicode; gold =
+> Controlled Ship. Implementation tracked in #34 (milestone E10). Kept for history.
+
 ## Current State (baseline shipped — pre-#28)
 
 - The project uses **only Unicode glyphs/emojis** for all visual icons. No icon libraries, no SVG icon set, no font icons.
@@ -88,4 +93,4 @@ When done, feed decisions back into the main trade-loop follow-up work.
 
 ---
 
-**Status**: Ready for separate focused work. Main design session paused on this subtopic.
+**Status**: Resolved into the E10 spec (2026-07-07); implementation tracked in #34.

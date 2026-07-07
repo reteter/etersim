@@ -39,6 +39,11 @@ decision-A geometry is implemented on top of the static orbit-ring placement. Bl
 until that placement exists (see [PRD](../PRD.md) M2 and
 [playtest note](playtest-2026-07-07-market-legibility.md) §5).
 
+**Update (2026-07-07, E10 grill):** [E10 spec](../specs/E10-orrery-view.md) approved —
+MST + non-crossing fill (always-planar lanes), purely proportional `voyageTicksPerUnit`
+mapping. The "better triangle inequality" claim below is corrected in the spec: the old
+floor never broke it, it only compressed distance differences.
+
 **Locked (2026-07-07, #25):**
 - **A** (map as space): topology geometry-aware. `connectPorts` favors short connections (distance-biased, reduced crossings). Positions matter for readability.
 - #2: Voyage ticks mapping more proportional to distance (smaller floor, better triangle inequality).

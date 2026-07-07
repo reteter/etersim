@@ -35,6 +35,13 @@ _Avoid_: wind, stream
 A port's economic role assigned at worldgen (agrarian, industrial, urban, mining, verdant); defines its production/consumption profile.
 _Avoid_: port type, class, specialization
 
+**Archetype palette** (PL: paleta archetypów):
+The five design-token colors, one per Port archetype, used consistently across the map
+(planet disc tint), panels and future charts. Color aids recognition; the archetype icon
+carries the meaning (colorblind-safe).
+_Implementation_: E10 (spec approved 2026-07-07) — not in build yet.
+_Avoid_: theme colors, port colors (as identifiers)
+
 **Region template** (PL: szablon regionu):
 Data describing how to generate a region: port count range, archetype weights, lane density, name pools. Worldgen = seed + template.
 _Avoid_: map config, preset
@@ -43,8 +50,15 @@ _Avoid_: map config, preset
 The map presentation of a Region as a planetary system: ports on static orbit rings around
 a central star. Purely visual in M2 — positions do not change over world time (real orbital
 motion is a parked E5 candidate) and the star has no mechanics.
-_Implementation_: E10 (PRD M2) — not in build yet.
+_Implementation_: E10 ([spec](docs/specs/E10-orrery-view.md) approved 2026-07-07) — not in build yet.
 _Avoid_: solar system, starmap (as identifiers)
+
+**Orbit ring** (PL: pierścień orbity):
+A concentric circle around the Region's center on which exactly one Port sits. Radii are
+deterministic (evenly spaced across the template's range); the port's angle is the seeded
+randomness. Presentation-side geometry — a port's radius carries no mechanics.
+_Implementation_: E10 (spec approved 2026-07-07) — not in build yet.
+_Avoid_: orbit (alone, in identifiers), track
 
 ### Trade & economy
 

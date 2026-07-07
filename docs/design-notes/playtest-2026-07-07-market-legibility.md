@@ -85,6 +85,11 @@ minimal fix; NPC flows are the thematic one.
 
 ## 5. Presentation: planetary system model; lanes too dominant
 
+> **Resolved (2026-07-07):** grilled into the approved
+> [E10 spec](../specs/E10-orrery-view.md) — static rings (one port per ring), decision-A
+> topology + proportional ticks, selection/course lane accents, aether-glow package.
+> The open questions below are answered there.
+
 Owner (strong preference): the region should present as a **planetary system** — a star
 in the center, ports as planets around it. "Absolutely — this would completely improve
 the experience."
