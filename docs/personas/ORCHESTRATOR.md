@@ -23,3 +23,7 @@ When you fan out to ≥2 coder subagents at once, dispatch each with `isolation:
 Observed 2026-07-07 (parallel #35 + #36 batch): the #36 coder never ran its own `git switch` yet found itself on the #35 branch with the #35 coder's uncommitted `PortPanel.tsx` in its tree; it correctly refused to commit and backed its work up to the scratchpad, and the orchestrator recovered the store changes onto a clean branch off `main` by hand. Disjoint files kept it recoverable, but the incident was pure avoidable friction.
 
 Rule: **file-disjoint packages are a necessary but not sufficient condition for parallel coders — they also need disjoint worktrees.** One isolated worktree per coder ⇒ each has its own branch, HEAD, and index; no cross-contamination. Review still runs read-only against the branch (`git diff main...<branch>`), so the two-axis `/code-review` gate is unaffected.
+
+## Dispatching coders: where the truth lives
+
+An issue's **newest acceptance-criteria comment supersedes its body** (WORKFLOW.md §Issues) — read comments before dispatching. The coder prompt should carry everything the task needs, pre-resolved: the criteria pasted verbatim, pointers to the exact spec sections, explicit **scope boundaries** (what neighboring issues own — e.g. "do not touch `connectPorts`, that is #25"), and known environment traps (worktrees start without `node_modules`; dev-server ports may belong to other projects; `gh` multiline args need `--body-file` on Windows). A coder that has to guess scope or rediscover the environment burns its context on the wrong problem.
