@@ -297,10 +297,9 @@ runs worldgen and threads the RNG state into the world.
 **Shipped (#28, #32):**
 
 - Store holds `controlledShipId` (separate from panel `selection`). `openShip(id)` designates a
-  ship Controlled and focuses its panel; `setControlledShip(id)` designates without changing focus.
-  Commands target the Controlled Ship. Designation via Harbor list, map click (underway ship), or
-  the always-visible header. `controlledShipId` is not serialized — `newGame`/`loadWorld` seed it
-  from `company.ships[0]`.
+  ship Controlled and focuses its panel — the shared path for Harbor, map (underway ship) and
+  header clicks. Commands target the Controlled Ship. `controlledShipId` is not serialized —
+  `newGame`/`loadWorld` seed it from `company.ships[0]`.
 
 ### Testing plan (TDD for sim)
 

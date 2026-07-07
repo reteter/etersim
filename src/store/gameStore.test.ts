@@ -129,15 +129,6 @@ describe("gameStore Controlled Ship", () => {
     expect(store().controlledShipId).toBe(snapshot.company.ships[0].id);
   });
 
-  it("setControlledShip designates without touching panel selection", () => {
-    store().newGame("trade");
-    const portId = store().world!.region.ports[0].id;
-    store().select({ kind: "port", id: portId });
-    store().setControlledShip("s0");
-    expect(store().controlledShipId).toBe("s0");
-    expect(store().selection).toEqual({ kind: "port", id: portId });
-  });
-
   it("openShip designates the ship and focuses its panel", () => {
     store().newGame("trade");
     store().openShip("s0");

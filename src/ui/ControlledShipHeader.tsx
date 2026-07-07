@@ -1,5 +1,6 @@
 import { cargoUsed, etaTicks } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { portName } from "./portName";
 
 /**
  * Thin, always-visible header for the Controlled Ship (docs/specs/E2-trade-loop.md
@@ -18,15 +19,15 @@ export function ControlledShipHeader() {
   const ship = world.company.ships.find((s) => s.id === controlledShipId);
   if (!ship) return null;
 
-  const portName = (id: string) => world.region.ports.find((p) => p.id === id)?.name ?? id;
   const loc = ship.location;
+  const name = (id: string) => portName(world.region, id);
 
   let status: string;
   if (loc.kind === "docked") {
     const viewingThisPort = selection?.kind === "port" && selection.id === loc.portId;
-    status = viewingThisPort ? `Docked here — ${portName(loc.portId)}` : `Docked at ${portName(loc.portId)}`;
+    status = viewingThisPort ? `Docked here — ${name(loc.portId)}` : `Docked at ${name(loc.portId)}`;
   } else {
-    status = `Underway to ${portName(loc.destination)} • ~${etaTicks(ship, world.region)}`;
+    status = `Underway to ${name(loc.destination)} • ~${etaTicks(ship, world.region)}`;
   }
 
   return (

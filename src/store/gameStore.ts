@@ -40,8 +40,6 @@ interface GameState {
   reset(): void;
   setSpeed(speed: Speed): void;
   select(selection: Selection): void;
-  /** Designates a ship as the Controlled Ship without changing panel focus. */
-  setControlledShip(id: ShipId): void;
   /** Designates a ship as Controlled and focuses its ShipPanel — the shared
    *  path for map, Harbor and header clicks (docs/specs/E2-trade-loop.md). */
   openShip(id: ShipId): void;
@@ -88,8 +86,6 @@ export const useGameStore = create<GameState>()((set, get) => ({
   },
 
   select: (selection) => set({ selection }),
-
-  setControlledShip: (id) => set({ controlledShipId: id }),
 
   openShip: (id) => set({ controlledShipId: id, selection: { kind: "ship", id } }),
 
