@@ -10,6 +10,19 @@ const genAt = (seed: number): Region => generateRegion(seedRng(seed), HEARTLAND)
 /** Regions across a spread of seeds — most assertions must hold for all. */
 const SEEDS = Array.from({ length: 50 }, (_, i) => i * 37 + 1);
 
+/** Standalone proper-segment-intersection detector (independent copy from
+ *  the implementation under test, so the planarity sweep below doesn't just
+ *  check the code against itself — see the positive/negative controls). */
+type Pt = { x: number; y: number };
+const cross = (o: Pt, a: Pt, b: Pt) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+const properlyIntersect = (p1: Pt, p2: Pt, p3: Pt, p4: Pt) => {
+  const d1 = cross(p3, p4, p1);
+  const d2 = cross(p3, p4, p2);
+  const d3 = cross(p1, p2, p3);
+  const d4 = cross(p1, p2, p4);
+  return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+};
+
 describe("worldgen", () => {
   it("is deterministic: same seed + template => deep-equal region and RNG state", () => {
     expect(generateRegion(seedRng(42), HEARTLAND)).toEqual(generateRegion(seedRng(42), HEARTLAND));
@@ -100,13 +113,55 @@ describe("worldgen", () => {
     expect(sawIncomplete).toBe(true); // routing must matter at least somewhere
   });
 
-  it("maps lane durations into the template voyage range", () => {
+  it("maps lane duration purely proportionally to length: voyageTicks = round(voyageTicksPerUnit * length)", () => {
     for (const seed of SEEDS) {
-      for (const lane of genAt(seed).lanes) {
-        const [min, max] = HEARTLAND.voyageTicksRange;
-        expect(lane.voyageTicks).toBeGreaterThanOrEqual(min);
-        expect(lane.voyageTicks).toBeLessThanOrEqual(max);
+      const region = genAt(seed);
+      const byId = new Map(region.ports.map((p) => [p.id, p]));
+      for (const lane of region.lanes) {
+        const a = byId.get(lane.a)!;
+        const b = byId.get(lane.b)!;
+        const length = Math.hypot(a.x - b.x, a.y - b.y);
+        expect(lane.voyageTicks).toBe(Math.round(HEARTLAND.voyageTicksPerUnit * length));
         expect(Number.isInteger(lane.voyageTicks)).toBe(true);
+      }
+    }
+  });
+
+  it("planarity detector: positive/negative controls (so the seed sweep below isn't circular)", () => {
+    // A known crossing: diagonals of the unit square.
+    expect(properlyIntersect({ x: 0, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }, { x: 1, y: 0 })).toBe(
+      true,
+    );
+    // Clean non-crossing (parallel, disjoint) segments.
+    expect(
+      properlyIntersect({ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 }),
+    ).toBe(false);
+    // Touching only at a shared endpoint is not a proper crossing.
+    expect(
+      properlyIntersect({ x: 0, y: 0 }, { x: 1, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 0 }),
+    ).toBe(false);
+  });
+
+  it("keeps the lane network planar: no two lanes properly cross, across many seeds", () => {
+    // "Properly cross" = interior intersection; lanes sharing a port are
+    // never a crossing regardless of geometry.
+    for (let seed = 0; seed < 500; seed++) {
+      const region = genAt(seed);
+      const byId = new Map(region.ports.map((p) => [p.id, p]));
+      const lanes = region.lanes;
+      for (let i = 0; i < lanes.length; i++) {
+        for (let j = i + 1; j < lanes.length; j++) {
+          const l1 = lanes[i];
+          const l2 = lanes[j];
+          if (l1.a === l2.a || l1.a === l2.b || l1.b === l2.a || l1.b === l2.b) continue;
+          const crosses = properlyIntersect(
+            byId.get(l1.a)!,
+            byId.get(l1.b)!,
+            byId.get(l2.a)!,
+            byId.get(l2.b)!,
+          );
+          expect(crosses).toBe(false);
+        }
       }
     }
   });

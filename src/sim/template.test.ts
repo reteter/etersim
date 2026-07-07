@@ -6,7 +6,7 @@ describe("HEARTLAND region template", () => {
   it("matches the spec parameters", () => {
     expect(HEARTLAND.portCountRange).toEqual([5, 6]);
     expect(HEARTLAND.laneDensity).toBe(0.6);
-    expect(HEARTLAND.voyageTicksRange).toEqual([48, 120]);
+    expect(HEARTLAND.voyageTicksPerUnit).toBe(130);
     expect(HEARTLAND.orbitRadiusRange).toEqual([0.18, 0.46]);
   });
 
@@ -22,9 +22,9 @@ describe("HEARTLAND region template", () => {
     expect(HEARTLAND.portNamePool.length).toBeGreaterThanOrEqual(maxPorts);
   });
 
-  it("keeps ranges ordered and density within (0, 1]", () => {
+  it("keeps ranges ordered, density within (0, 1], and voyageTicksPerUnit positive", () => {
     expect(HEARTLAND.portCountRange[0]).toBeLessThanOrEqual(HEARTLAND.portCountRange[1]);
-    expect(HEARTLAND.voyageTicksRange[0]).toBeLessThanOrEqual(HEARTLAND.voyageTicksRange[1]);
+    expect(HEARTLAND.voyageTicksPerUnit).toBeGreaterThan(0);
     expect(HEARTLAND.laneDensity).toBeGreaterThan(0);
     expect(HEARTLAND.laneDensity).toBeLessThanOrEqual(1);
   });

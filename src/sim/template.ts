@@ -11,8 +11,9 @@ export interface RegionTemplate {
   /** Fraction of all candidate edges kept in total (never below the
    *  spanning tree), (0, 1] — sparse on purpose so routing matters. */
   readonly laneDensity: number;
-  /** Lane euclidean length maps linearly into this tick range. */
-  readonly voyageTicksRange: readonly [min: number, max: number];
+  /** Lane duration is purely proportional to euclidean length: `voyageTicks
+   *  = round(voyageTicksPerUnit * length)` — no floor, no clamp. */
+  readonly voyageTicksPerUnit: number;
   /** Orbit ring radii (distance from the region center (0.5, 0.5) on the
    *  unit plane) are evenly spaced across this range for the generated
    *  port count — one ring per port (docs/specs/E10-orrery-view.md). */
@@ -27,7 +28,7 @@ export const HEARTLAND: RegionTemplate = {
   portCountRange: [5, 6],
   archetypeWeights: { agrarian: 1, industrial: 1, urban: 1, mining: 1, verdant: 1 },
   laneDensity: 0.6,
-  voyageTicksRange: [48, 120],
+  voyageTicksPerUnit: 130,
   // Fits the unit plane with margin; ring spacing for 6 ports ≈ 0.056, so
   // MIN_PORT_DISTANCE does real work between neighboring rings.
   orbitRadiusRange: [0.18, 0.46],

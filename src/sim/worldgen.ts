@@ -13,8 +13,6 @@ import type { RegionTemplate } from "./template";
 
 /** Ports closer than this on the unit plane are rejected during placement. */
 export const MIN_PORT_DISTANCE = 0.25;
-/** Longest possible lane on the unit plane; anchors the duration mapping. */
-const MAX_LANE_LENGTH = Math.SQRT2;
 
 /**
  * Procedural region generation (docs/specs/E2-trade-loop.md — Worldgen).
@@ -166,8 +164,36 @@ function seedMarket(
   return [market, state];
 }
 
-/** Random spanning tree (Kruskal over shuffled candidates), then random
- *  extra edges until laneDensity of all candidate edges is kept. */
+type Point = { x: number; y: number };
+
+/** Orientation of `b` relative to the ray `o -> a` (cross product sign). */
+function cross(o: Point, a: Point, b: Point): number {
+  return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+}
+
+/** True if segments `p1-p2` and `p3-p4` **properly** cross: they meet at a
+ *  single point interior to both segments. Touching at a shared endpoint or
+ *  collinear overlap does not count — callers must check for shared
+ *  endpoints themselves (two lanes sharing a port never count as a
+ *  crossing, regardless of geometry). */
+function segmentsProperlyIntersect(p1: Point, p2: Point, p3: Point, p4: Point): boolean {
+  const d1 = cross(p3, p4, p1);
+  const d2 = cross(p3, p4, p2);
+  const d3 = cross(p1, p2, p3);
+  const d4 = cross(p1, p2, p4);
+  return (d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)
+    ? (d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0)
+    : false;
+}
+
+/** Geometry-aware, deterministic lane topology (docs/specs/E10-orrery-view.md
+ *  — Lane topology): Euclidean minimum spanning tree (Kruskal, ties broken
+ *  by canonical candidate index) guarantees connectivity without ever
+ *  self-crossing, then extra edges are added shortest-first, skipping any
+ *  candidate that properly crosses an already-chosen lane, until the
+ *  laneDensity target — best effort, since planarity may run out of
+ *  non-crossing candidates first. No RNG draws: topology is fully
+ *  determined by port positions, which are already seeded. */
 function connectPorts(
   rng: RngState,
   ports: readonly Port[],
@@ -177,12 +203,15 @@ function connectPorts(
   for (let i = 0; i < ports.length; i++) {
     for (let j = i + 1; j < ports.length; j++) candidates.push([i, j]);
   }
-  const [order, state] = nextShuffle(
-    rng,
-    candidates.map((_, c) => c),
+  const lengths = candidates.map(([i, j]) =>
+    Math.hypot(ports[i].x - ports[j].x, ports[i].y - ports[j].y),
   );
+  // Ascending by length; ties broken by canonical candidate index.
+  const order = candidates
+    .map((_, c) => c)
+    .sort((a, b) => lengths[a] - lengths[b] || a - b);
 
-  // Union-find over port indices.
+  // Union-find over port indices (Kruskal MST).
   const parent = ports.map((_, i) => i);
   const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
 
@@ -194,29 +223,37 @@ function connectPorts(
       chosen.add(c);
     }
   }
+
+  // Extra edges, shortest first, skipping proper crossings against
+  // whatever has been chosen so far (MST edges and earlier extra edges).
   const target = Math.max(ports.length - 1, Math.round(template.laneDensity * candidates.length));
   for (const c of order) {
     if (chosen.size >= target) break;
-    chosen.add(c);
+    if (chosen.has(c)) continue;
+    const [i, j] = candidates[c];
+    let crosses = false;
+    for (const cc of chosen) {
+      const [ci, cj] = candidates[cc];
+      if (ci === i || ci === j || cj === i || cj === j) continue; // shared endpoint: not a crossing
+      if (segmentsProperlyIntersect(ports[i], ports[j], ports[ci], ports[cj])) {
+        crosses = true;
+        break;
+      }
+    }
+    if (!crosses) chosen.add(c);
   }
 
   // Emit in canonical candidate order so lane ids are stable and readable.
   const lanes: Lane[] = [];
-  const [minTicks, maxTicks] = template.voyageTicksRange;
   for (let c = 0; c < candidates.length; c++) {
     if (!chosen.has(c)) continue;
     const [i, j] = candidates[c];
-    const length = Math.hypot(ports[i].x - ports[j].x, ports[i].y - ports[j].y);
-    const t = Math.min(
-      1,
-      Math.max(0, (length - MIN_PORT_DISTANCE) / (MAX_LANE_LENGTH - MIN_PORT_DISTANCE)),
-    );
     lanes.push({
       id: `l${lanes.length}`,
       a: ports[i].id,
       b: ports[j].id,
-      voyageTicks: Math.round(minTicks + t * (maxTicks - minTicks)),
+      voyageTicks: Math.round(template.voyageTicksPerUnit * lengths[c]),
     });
   }
-  return [lanes, state];
+  return [lanes, rng];
 }
