@@ -22,6 +22,11 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - Determinism is sacred: all sim randomness flows from the seeded RNG; no `Math.random`, no `Date.now` inside `src/sim`.
 - Session start: check open work with `gh issue list`.
 
+## Git & worktrees
+
+- `.claude/worktrees/agent-*` directories are not always real `git worktree` entries — some turn out to be plain subdirectories nested inside the main repo (e.g. `.claude/worktrees/<name>`, 3 levels below repo root). Check `git worktree list` before trusting `pwd`; if the directory isn't listed there, `git rev-parse --show-toplevel` still resolves to the main repo root, so `git add`/`git status` paths are relative to that root, not to `pwd` — use absolute paths (or `git -C <toplevel>`) to avoid pathspec errors.
+- Clean up branches right after each merge, not later: `git worktree remove` before `git branch -D` (branch delete fails while a worktree holds it). After `gh pr merge --delete-branch`, verify the remote branch actually got deleted (`git branch -a` / `git fetch --prune`) — it silently fails when the branch is still checked out in a worktree, leaving stale remote/local branches to accumulate.
+
 ## Commands
 
 - `npm run dev` — start the Vite dev server.
