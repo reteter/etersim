@@ -30,6 +30,7 @@ function project(point: Pick<Port, "x" | "y">): { x: number; y: number } {
 export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
   const selection = useGameStore((s) => s.selection);
   const select = useGameStore((s) => s.select);
+  const openShip = useGameStore((s) => s.openShip);
 
   const portsById = new Map(region.ports.map((p) => [p.id, p]));
   const shipPos = project(shipPosition(ship, region));
@@ -69,10 +70,16 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
           );
         })}
       </g>
-      {/* Drawn last so it wins the hit test when overlapping a docked port. */}
+      {/* Drawn last so it stays visible on top, but a docked ship is
+          click-through (pointer-events: none) so the port beneath wins the
+          hit test — port-click priority (#28). Underway it stays clickable to
+          designate it Controlled and open its ShipPanel. */}
       <g
-        className={selection?.kind === "ship" ? "ship ship--selected" : "ship"}
-        onClick={() => select({ kind: "ship", id: ship.id })}
+        className={
+          (selection?.kind === "ship" ? "ship ship--selected" : "ship") +
+          (ship.location.kind === "docked" ? " ship--docked" : "")
+        }
+        onClick={() => openShip(ship.id)}
       >
         <text className="ship__glyph" x={shipPos.x} y={shipPos.y + 1} textAnchor="middle">
           ⛵

@@ -6,6 +6,16 @@ async function startNewGame(page: Page) {
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
+/**
+ * Open the Controlled Ship's panel via the always-visible header (#32).
+ * A docked ship on the map is click-through (port-click priority, #28), so the
+ * header/Harbor is the way to reach it.
+ */
+async function openControlledShip(page: Page) {
+  await page.locator('.ctrl-ship').click();
+  await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
+}
+
 test.describe('etersim start screen', () => {
   test('shows start screen and can start new game', async ({ page }) => {
     await page.goto('/');
@@ -38,9 +48,8 @@ test.describe('main game UI after start', () => {
     const map = page.locator('svg.region-map');
     await expect(map).toBeVisible();
 
-    // Click ship icon via its group
-    await page.locator('g.ship').click({ force: true });
-    await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
+    // Ship panel is reached via the Controlled Ship header (#32).
+    await openControlledShip(page);
 
     // Click a port group (handler is on g.port). Use first non-overlapping if possible.
     const ports = page.locator('g.port');
@@ -52,12 +61,30 @@ test.describe('main game UI after start', () => {
     await expect(sideTitle).not.toHaveText('Ship');
   });
 
-  test('ship panel shows hold and docked location', async ({ page }) => {
-    await page.locator('g.ship').click({ force: true });
+  test('controlled ship header is always visible and shows docked status', async ({ page }) => {
+    // Visible before any selection.
+    await expect(page.locator('.ctrl-ship')).toBeVisible();
+    await expect(page.locator('.ctrl-ship__status')).toContainText('Docked');
+    await expect(page.locator('.ctrl-ship__hold')).toContainText('/');
+  });
 
-    await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
+  test('ship panel shows hold and docked location', async ({ page }) => {
+    await openControlledShip(page);
+
     await expect(page.locator('.side-panel__subtitle')).toContainText('Docked at');
     await expect(page.getByText(/Hold \d+\/\d+/)).toBeVisible();
+  });
+
+  test('port view shows the Harbor with the docked ship', async ({ page }) => {
+    // Open the Controlled Ship, then its docked market (via Open market).
+    await openControlledShip(page);
+    await page.getByRole('button', { name: /open market/i }).click();
+
+    // Harbor lists the docked ship above the market.
+    const harbor = page.locator('.harbor');
+    await expect(harbor).toBeVisible();
+    await expect(harbor.locator('.harbor__ship')).toHaveCount(1);
+    await expect(harbor.locator('.harbor__ship--controlled')).toHaveCount(1);
   });
 
   test('port panel shows market table with prices and trends', async ({ page }) => {
@@ -79,8 +106,8 @@ test.describe('main game UI after start', () => {
 test.describe('trading interactions (when docked)', () => {
   test.beforeEach(async ({ page }) => {
     await startNewGame(page);
-    // Open the current docked port's market
-    await page.locator('g.ship').click({ force: true });
+    // Open the current docked port's market via the Controlled Ship header.
+    await openControlledShip(page);
     await page.getByRole('button', { name: /open market/i }).click();
   });
 
@@ -103,7 +130,7 @@ test.describe('trading interactions (when docked)', () => {
     await expect(page.locator('.top-bar__thalers')).not.toHaveText(initialThalersText);
 
     // Switch to ship panel and verify cargo
-    await page.locator('g.ship').click({ force: true });
+    await page.locator('.ctrl-ship').click();
     await expect(page.locator('.hold')).toContainText('Grain');
     await expect(page.locator('.hold')).toContainText('5');
   });
@@ -123,7 +150,7 @@ test.describe('trading interactions (when docked)', () => {
     await sellButton.click();
 
     // Hold should reflect partial sell
-    await page.locator('g.ship').click({ force: true });
+    await page.locator('.ctrl-ship').click();
     await expect(page.locator('.hold')).toContainText('Grain');
     // We don't assert exact number to avoid race, but presence of Grain after sell
   });
@@ -147,7 +174,7 @@ test.describe('trading interactions (when docked)', () => {
       await expect(sailBtn).toBeVisible();
       // Clicking sail should change ship state
       await sailBtn.click();
-      await page.locator('g.ship').click({ force: true });
+      await page.locator('.ctrl-ship').click();
       await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
     }
   });

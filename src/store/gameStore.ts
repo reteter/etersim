@@ -28,12 +28,23 @@ interface GameState {
   readonly speed: Speed;
   readonly carryMs: number;
   readonly selection: Selection;
+  /**
+   * The Controlled Ship (CONTEXT.md): the ship that receives player Commands
+   * (buy, sell, sailTo). Distinct from `selection`, which only drives panel
+   * focus. Exactly one at a time; null before a world exists.
+   */
+  readonly controlledShipId: ShipId | null;
 
   newGame(seed: number | string): void;
   loadWorld(world: World): void;
   reset(): void;
   setSpeed(speed: Speed): void;
   select(selection: Selection): void;
+  /** Designates a ship as the Controlled Ship without changing panel focus. */
+  setControlledShip(id: ShipId): void;
+  /** Designates a ship as Controlled and focuses its ShipPanel — the shared
+   *  path for map, Harbor and header clicks (docs/specs/E2-trade-loop.md). */
+  openShip(id: ShipId): void;
   /** Applies a command immediately (ADR-0005; docs/specs/E2-trade-loop.md). */
   dispatch(command: Command): void;
   /** Folds elapsed real ms into world ticks; the rAF loop feeds this. */
@@ -45,14 +56,24 @@ const INITIAL = {
   speed: "paused" as Speed,
   carryMs: 0,
   selection: null,
+  controlledShipId: null,
 };
+
+/** The Controlled Ship a fresh world starts with — the company's first ship. */
+function initialControlledShip(world: World): ShipId | null {
+  return world.company.ships[0]?.id ?? null;
+}
 
 export const useGameStore = create<GameState>()((set, get) => ({
   ...INITIAL,
 
-  newGame: (seed) => set({ ...INITIAL, world: createWorld(seed), speed: 1 }),
+  newGame: (seed) => {
+    const world = createWorld(seed);
+    set({ ...INITIAL, world, speed: 1, controlledShipId: initialControlledShip(world) });
+  },
 
-  loadWorld: (world) => set({ ...INITIAL, world }),
+  loadWorld: (world) =>
+    set({ ...INITIAL, world, controlledShipId: initialControlledShip(world) }),
 
   reset: () => set(INITIAL),
 
@@ -67,6 +88,10 @@ export const useGameStore = create<GameState>()((set, get) => ({
   },
 
   select: (selection) => set({ selection }),
+
+  setControlledShip: (id) => set({ controlledShipId: id }),
+
+  openShip: (id) => set({ controlledShipId: id, selection: { kind: "ship", id } }),
 
   dispatch: (command) => {
     const { world } = get();

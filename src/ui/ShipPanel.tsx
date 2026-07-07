@@ -19,7 +19,7 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
   const location = ship.location;
 
   return (
-    <aside className="side-panel">
+    <>
       <h2 className="side-panel__title">Ship</h2>
       {location.kind === "docked" ? (
         <p className="side-panel__subtitle">Docked at {portName(location.portId)}</p>
@@ -56,6 +56,6 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
           ))}
         </ul>
       )}
-    </aside>
+    </>
   );
 }

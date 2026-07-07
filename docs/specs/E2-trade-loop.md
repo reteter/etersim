@@ -11,7 +11,8 @@ Grilled and decided with the owner on 2026-07-04 (issue #4). Status: **approved*
 | Store bridge + time fold | #14, #26 | **Shipped** (ADR-0005 immediate commands) |
 | Baseline map + panels | #15, #16 | **Shipped** (pre–#28 UX; see §UI layout — shipped) |
 | Save / load | #17 | **Shipped** (export/import; settings reconciliation in #37) |
-| Playtest follow-ups | #28–#37, #25 | **Spec'd, not shipped** — locked design in §UI layout — follow-ups and follow-up sections below |
+| Controlled Ship + Harbor | #28, #32 | **Shipped** — port-click priority, Harbor list, `controlledShipId` store model, always-visible header |
+| Remaining follow-ups | #33–#37, #25, #34 | **Spec'd, not shipped** — locked design in §UI layout — follow-ups and follow-up sections below |
 
 Scope in one line: one region, live per-port markets, one ship sailed manually, map + panels UI,
 time controls, save/load. No magic, no contracts, no fleet, no upgrades.
@@ -153,22 +154,24 @@ Map: SVG — ports as nodes (name + archetype glyph), lanes as edges, ship(s) mo
 lane proportionally to voyage progress. World date convention: Day 1 starts at tick 0,
 hour = tick mod 24 (decided during #15; nothing earlier defined it).
 
-#### Shipped (baseline — #15, #16)
+#### Shipped (baseline — #15, #16; superseded where noted by #28, #32)
 
 - **Top bar:** thalers, world date, pause / 1x / 10x / 100x (`TopBar`).
-- **Side panel:** port view *or* ship view — toggled by map/panel selection (`App` `SidePanel`).
-- **Map click:** ship icon is drawn on top of docked ports and **wins the hit test** when
-  overlapping (opposite of follow-up #28).
+- **Side panel:** port view *or* ship view — toggled by map/panel selection (`App` `SidePanel`),
+  now with the Controlled Ship header always on top (#32).
+- **Map click:** ~~ship icon is drawn on top of docked ports and wins the hit test~~ — *superseded by
+  #28:* a docked ship is click-through so the port beneath wins (port-click priority); the ship
+  stays clickable while underway.
 - **Port view:** market table with buy/sell when the player's ship is docked at that port;
   read-only market + `Sail here (~N ticks)` button below the table for remote ports
-  (`PortPanel`). Commands target `company.ships[0]` (single-ship shortcut; no Controlled Ship
-  store field yet).
+  (`PortPanel`). Commands ~~target `company.ships[0]`~~ — *superseded by #28:* target the
+  Controlled Ship (`controlledShipId`).
 - **Ship view:** hold, docked/underway status, ETA; **Open market** button still present
   (`ShipPanel`) — interim affordance until #28/#33.
 - **Save/load menu:** export/import JSON buttons in top bar (`GameMenu`); no settings surface
   yet (#37).
 
-#### Follow-ups — locked, not shipped (#28, #32, #33, #34)
+#### Follow-ups — Controlled Ship + Harbor shipped (#28, #32); sail placement & glyph pending (#33, #34)
 
 Clicking a port always opens its view first: the **Harbor** section (list of docked Ships —
 player's ships in one subsection, others in another; hover shows Hold + Cargo summary) appears
@@ -195,12 +198,14 @@ Docked player Ships are primarily accessed via the Harbor list (port click wins 
 icons). Clicking an eligible player Ship on the map (e.g. underway) or in the Harbor list
 designates it as the Controlled Ship and opens its ShipPanel.
 
-The "Open market" button is removed from ShipPanel; market access happens via port selection
-(which always shows the Harbor above the market).
+Market access happens via port selection (which always shows the Harbor above the market). The
+interim "Open market" button remains in ShipPanel as a convenience; its removal and the sail
+action's relabel/placement are tracked in **#33**.
 
 For remote ports the Sail button is available only when the Controlled Ship is docked at a
-different port. The button always targets the current Controlled Ship (as shown in the header),
-regardless of how many player ships appear in the Harbor list.
+different port. The button always targets the current Controlled Ship. Its label stays
+`Sail here (~N)` and it sits below the market for now; the `Sail [Controlled Ship name] here`
+relabel and move under the Harbor are tracked in **#33**.
 
 **Note:** Exact glyph choice and any color/tinting treatment for the header are deferred to
 follow-up work (#34). See `docs/design-notes/icon-implementation-handoff.md`.
@@ -285,14 +290,17 @@ runs worldgen and threads the RNG state into the world.
   of a tick, so `applyCommand` now + `tick(world, [])` later equals `tick(world, [cmd])`.
 - UI panels pass `company.ships[0].id` to `dispatch` (valid for E2's single ship; not yet a
   Controlled Ship designation model).
-- Components: `TopBar`, `RegionMap` (SVG), `PortPanel`, `ShipPanel`, `StartScreen`, `GameMenu`.
+- Components: `TopBar`, `RegionMap` (SVG), `PortPanel`, `ShipPanel`, `ControlledShipHeader`,
+  `StartScreen`, `GameMenu`.
 - Persistence adapter lives in `src/store` (localStorage is banned inside `src/sim`).
 
-**Planned (#28):**
+**Shipped (#28, #32):**
 
-- Add `controlledShipId` to store state (separate from panel `selection`). Commands are always
-  targeted at the current Controlled Ship. Designation via Harbor list, map click (when eligible),
-  Controlled Ship header, or opening ShipPanel.
+- Store holds `controlledShipId` (separate from panel `selection`). `openShip(id)` designates a
+  ship Controlled and focuses its panel; `setControlledShip(id)` designates without changing focus.
+  Commands target the Controlled Ship. Designation via Harbor list, map click (underway ship), or
+  the always-visible header. `controlledShipId` is not serialized — `newGame`/`loadWorld` seed it
+  from `company.ships[0]`.
 
 ### Testing plan (TDD for sim)
 
@@ -304,12 +312,13 @@ runs worldgen and threads the RNG state into the world.
   `thalers + cargo value` at quote prices.
 - Determinism: scripted 5 000-tick session with mixed commands ⇒ deep-equal worlds.
 - Save: JSON round-trip of a mid-session world ⇒ deep-equal.
-- UI — **[shipped]** store bridge unit tests; Playwright E2E for start screen, top bar, map
-  click (ship/port), ship panel, port market table, buy/sell via Open market, sail to remote
-  port (`e2e/ui.spec.ts`). E2E runs locally; not yet in CI.
-- UI — **[#28–#37]** E2E to extend when follow-ups ship: port-click priority, Harbor lists,
-  Controlled Ship designation and header, buy/sell max/clamp, auto-pause, Continue/autosave,
-  export/import. Manual playtesting recommended for exploration.
+- UI — **[shipped]** store bridge unit tests (incl. `controlledShipId`, `openShip`); Playwright
+  E2E for start screen, top bar, port-click priority, Controlled Ship header, Harbor list, ship
+  panel, port market table, buy/sell, sail to remote port (`e2e/ui.spec.ts`). E2E runs locally;
+  not yet in CI.
+- UI — **[#33–#37]** E2E to extend when the rest ship: sail relabel/placement + Open market
+  removal, buy/sell max/clamp, auto-pause, Continue/autosave, export/import. Manual playtesting
+  recommended for exploration.
 
 ### Balance tuning levers (implementation-phase, no spec change needed)
 

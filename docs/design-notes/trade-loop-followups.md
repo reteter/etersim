@@ -106,7 +106,8 @@ with #17 at design level (options extend existing menu; save/load + settings tog
 
 ### Orchestrator notes (post-lock)
 All high-level decisions locked. Spec/docs synced (2026-07-07); implementation open.
-- **#28 + #32** first — Controlled Ship store field + header + Harbor unblock #33, #36.
+- **#28 + #32** — **shipped** (`controlledShipId` store model + `openShip`, always-visible header,
+  Harbor list, port-click priority via click-through docked ship). Unblocks #33, #36.
 - **#25** sim-only — geometry-aware `connectPorts`; since the v2 grill (2026-07-07) it
   belongs to E10 and waits for the orbit-ring placement (no longer independent).
 - **#35, #36, #37** can proceed in parallel once #28 store model exists (#36 default-On can

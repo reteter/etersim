@@ -113,6 +113,39 @@ describe("gameStore", () => {
   });
 });
 
+describe("gameStore Controlled Ship", () => {
+  it("newGame designates the first ship as Controlled and clears on reset", () => {
+    store().newGame("etersim");
+    expect(store().controlledShipId).toBe(store().world!.company.ships[0].id);
+    store().reset();
+    expect(store().controlledShipId).toBeNull();
+  });
+
+  it("loadWorld designates the loaded world's first ship", () => {
+    store().newGame("origin");
+    const snapshot = store().world!;
+    store().reset();
+    store().loadWorld(snapshot);
+    expect(store().controlledShipId).toBe(snapshot.company.ships[0].id);
+  });
+
+  it("setControlledShip designates without touching panel selection", () => {
+    store().newGame("trade");
+    const portId = store().world!.region.ports[0].id;
+    store().select({ kind: "port", id: portId });
+    store().setControlledShip("s0");
+    expect(store().controlledShipId).toBe("s0");
+    expect(store().selection).toEqual({ kind: "port", id: portId });
+  });
+
+  it("openShip designates the ship and focuses its panel", () => {
+    store().newGame("trade");
+    store().openShip("s0");
+    expect(store().controlledShipId).toBe("s0");
+    expect(store().selection).toEqual({ kind: "ship", id: "s0" });
+  });
+});
+
 describe("gameStore autosave", () => {
   // saveAutosave/loadAutosave default to globalThis.localStorage, resolved per
   // call — so a global fake exercises the real default path without a browser.

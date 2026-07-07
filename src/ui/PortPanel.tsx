@@ -8,15 +8,80 @@ import {
   quoteSell,
   type GoodId,
   type MarketGood,
+  type Port,
   type PortId,
   type Region,
   type Ship,
+  type ShipId,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { priceTrend, type Trend } from "./priceTrend";
 import { previewRouteTicks } from "./routePreview";
 
 const TREND_GLYPH: Record<Trend, string> = { up: "▲", down: "▼", flat: "–" };
+
+/** Compact cargo summary for a Harbor hover tooltip, e.g. "Grain 5, Iron 2". */
+function cargoSummary(ship: Ship): string {
+  const held = GOOD_IDS.filter((good) => ship.cargo[good] > 0).map(
+    (good) => `${GOODS[good].name} ${ship.cargo[good]}`,
+  );
+  return held.length === 0 ? "empty" : held.join(", ");
+}
+
+/**
+ * Harbor section (CONTEXT.md; #28): the player's Ships docked at this Port,
+ * shown above the market. Each entry designates the ship as Controlled and
+ * opens its ShipPanel on click; the current Controlled Ship is highlighted.
+ * Other companies' ships are not modelled in E2, so only the player's
+ * subsection renders for now.
+ */
+function Harbor({
+  port,
+  ships,
+  controlledShipId,
+}: {
+  port: Port;
+  ships: readonly Ship[];
+  controlledShipId: ShipId | null;
+}) {
+  const openShip = useGameStore((s) => s.openShip);
+  const docked = ships.filter(
+    (s) => s.location.kind === "docked" && s.location.portId === port.id,
+  );
+
+  return (
+    <div className="harbor">
+      <h3 className="side-panel__heading">Harbor</h3>
+      {docked.length === 0 ? (
+        <p className="side-panel__hint">No ships docked here.</p>
+      ) : (
+        <ul className="harbor__list">
+          {docked.map((ship) => {
+            const controlled = ship.id === controlledShipId;
+            return (
+              <li key={ship.id}>
+                <button
+                  type="button"
+                  className={controlled ? "harbor__ship harbor__ship--controlled" : "harbor__ship"}
+                  title={`Hold ${cargoUsed(ship)}/${ship.hold} • ${cargoSummary(ship)}`}
+                  onClick={() => openShip(ship.id)}
+                >
+                  <span className="harbor__glyph" aria-hidden="true">
+                    ⛵
+                  </span>
+                  <span className="harbor__id">{ship.id}</span>
+                  <span className="harbor__hold">
+                    {cargoUsed(ship)}/{ship.hold}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 /** Marginal quote total, or "—" when the quantity is not tradable. */
 function quoteLabel(total: number | null): string {
@@ -125,21 +190,26 @@ function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; reg
  */
 export function PortPanel({ portId }: { portId: PortId }) {
   const world = useGameStore((s) => s.world);
+  const controlledShipId = useGameStore((s) => s.controlledShipId);
   if (!world) return null;
 
   const port = world.region.ports.find((p) => p.id === portId);
   if (!port) return null;
 
-  // E2 runs a single ship (docs/specs/E2-trade-loop.md — Ship & travel).
-  const ship = world.company.ships[0];
+  // Commands target the Controlled Ship (CONTEXT.md); fall back to the first
+  // ship if none is designated yet.
+  const ship =
+    world.company.ships.find((s) => s.id === controlledShipId) ?? world.company.ships[0];
   if (!ship) return null;
   const dockedHere = ship.location.kind === "docked" && ship.location.portId === port.id;
   const snapshot = world.priceSnapshots[port.id];
 
   return (
-    <aside className="side-panel">
+    <>
       <h2 className="side-panel__title">{port.name}</h2>
       <p className="side-panel__subtitle">{port.archetype}</p>
+
+      <Harbor port={port} ships={world.company.ships} controlledShipId={controlledShipId} />
 
       <div className="market" role="table" aria-label={`${port.name} market`}>
         <div className="market__header" role="row">
@@ -161,6 +231,6 @@ export function PortPanel({ portId }: { portId: PortId }) {
       </div>
 
       {!dockedHere && <SailControl ship={ship} portId={port.id} region={world.region} />}
-    </aside>
+    </>
   );
 }
