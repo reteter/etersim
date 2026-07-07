@@ -173,15 +173,16 @@ of the E2 worldgen (combinatorial topology + geometric durations).
 
 ## Issue cut
 
-Milestone **E10 — Orrery view**; #25 and #34 move here from E2. Two parallel tracks:
+Milestone **E10 — Orrery view** (filed 2026-07-07); #25 and #34 moved here from E2.
+Two parallel tracks:
 
-| # | Track | Issue | Depends on |
+| Issue | Track | Scope | Depends on |
 | --- | --- | --- | --- |
-| 1 | sim | `feat(sim)`: orbit-ring port placement in worldgen (placement, template `orbitRadiusRange`, determinism tests) | — |
-| 2 | sim | `feat(sim)`: geometry-aware lane topology + proportional voyage ticks (**= #25**: MST + non-crossing fill, `voyageTicksPerUnit`, planarity tests, E2 spec correction) | 1 |
-| 3 | ui | `feat(ui)`: tintable SVG icon set + ADR + credits (**= #34**: vendored icons, header swap, gold semantics) | — |
-| 4 | ui | `feat(ui)`: orrery map rendering (star, rings, planet discs, archetype palette, glow package) | 1, 3 |
-| 5 | ui | `feat(ui)`: lane accents + voyage tick labels (port selection, Controlled Ship course, labels on accent only) | 4 |
+| #43 | sim | `feat(sim)`: orbit-ring port placement in worldgen (placement, template `orbitRadiusRange`, determinism tests) | — |
+| #25 | sim | `feat(sim)`: geometry-aware lane topology + proportional voyage ticks (MST + non-crossing fill, `voyageTicksPerUnit`, planarity tests, E2 spec correction) | #43 |
+| #34 | ui | `feat(ui)`: tintable SVG icon set + ADR + credits (vendored icons, header swap, gold semantics) | — |
+| #44 | ui | `feat(ui)`: orrery map rendering (star, rings, planet discs, archetype palette, glow package) | #43, #34 |
+| #45 | ui | `feat(ui)`: lane accents + voyage tick labels (port selection, Controlled Ship course, labels on accent only) | #44 |
 
 Sequencing note: E10 runs **before E8/E9** (owner, 2026-07-07) — it touches no economy
 code, and the new geometry changes how routes feel, so it should sit under the E8/E9
