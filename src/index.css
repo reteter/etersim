@@ -1,6 +1,16 @@
 :root {
   color-scheme: dark;
   font-family: system-ui, sans-serif;
+
+  /* Archetype palette (CONTEXT.md: Archetype palette) — one color per Port
+     archetype, the design token for archetype recognition across the map,
+     panels and future charts. The icon (not color alone) carries the
+     meaning, so hues are chosen for distinctness rather than semantics. */
+  --archetype-agrarian: #79943c;
+  --archetype-industrial: #ab5a36;
+  --archetype-urban: #437ab6;
+  --archetype-mining: #7e55ab;
+  --archetype-verdant: #369169;
 }
 
 html,
@@ -448,25 +458,91 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Star (docs/specs/E10-orrery-view.md — Planets, star, glow): pure
+   decoration, not an entity to read. Idle radial-gradient disc + a soft
+   blurred glow behind it; the disc slowly pulses — the map's only ambient
+   motion. */
+.region-map__star {
+  pointer-events: none;
+}
+
+.star__glow {
+  fill: #f2c46b;
+  opacity: 0.18;
+  filter: blur(2.5px);
+}
+
+.star__disc {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: star-pulse 5s ease-in-out infinite;
+}
+
+@keyframes star-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.06);
+    filter: brightness(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star__disc {
+    animation: none;
+  }
+}
+
+/* Orbit rings: weakest layer in the visual hierarchy — planets > accented
+   lanes > default lanes > rings (accents land in #45). Thin and very faint
+   on purpose. */
+.orbit-ring {
+  fill: none;
+  stroke: #2a3040;
+  stroke-width: 0.25;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 .lane {
   stroke: #3a4356;
   stroke-width: 0.5;
 }
 
-.port circle {
-  fill: #263041;
-  stroke: #4c7bab;
-  stroke-width: 0.5;
+.port {
   cursor: pointer;
 }
 
-.port--selected circle {
-  stroke: #e0a840;
-  stroke-width: 1;
+/* Planet disc: tinted per archetype (--port-color, set inline from the
+   --archetype-* token — CONTEXT.md: Archetype palette). Idle glow uses the
+   same token explicitly (not currentColor) so the icon's contrasting fill
+   stays decoupled from the disc tint (docs/specs/E10-orrery-view.md —
+   Aether glow package). */
+.planet__disc {
+  fill: var(--port-color);
+  stroke: var(--port-color);
+  stroke-width: 0.3;
+  filter: drop-shadow(0 0 1.2px var(--port-color));
+  transition: filter 0.15s ease;
 }
 
-.port__glyph {
-  font-size: 3px;
+.port:hover .planet__disc {
+  filter: drop-shadow(0 0 2.5px var(--port-color));
+}
+
+/* Selection: golden glow, stronger than idle/hover ambient so it always
+   visually wins over the archetype tint. `.port.port--selected` matches the
+   hover rule's specificity so selection wins even while hovered. */
+.port.port--selected .planet__disc {
+  stroke: #e0a840;
+  filter: drop-shadow(0 0 3px #e0a840) drop-shadow(0 0 1.5px #e0a840);
+}
+
+.planet__icon {
+  color: #f2f4f8;
   pointer-events: none;
 }
 
