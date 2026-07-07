@@ -23,9 +23,9 @@ Buy goods at a port → assign ship a route → time passes in ticks, the world 
 
 ## Scope
 
-**In v1:** one region, simulated per-port markets, player company with ships and routes, time controls (pause/1x/10x/100x), save/load, arcane goods, contracts and guilds (later epics), events/hazards (later epics).
+**In scope (full product):** one region, simulated per-port markets, player company with ships and routes, time controls (pause/1x/10x/100x), save/load, arcane goods, contracts and guilds (later epics), events/hazards (later epics).
 
-**Out of v1 (hard no, see ADR-0004):** multiplayer, backend/accounts, mobile, Steam/desktop packaging, 3D, direct combat (piracy may exist only as an abstract voyage hazard).
+**Out of scope (hard no, see ADR-0004):** multiplayer, backend/accounts, mobile, Steam/desktop packaging, 3D, direct combat (piracy may exist only as an abstract voyage hazard).
 
 ## Milestones & epics
 

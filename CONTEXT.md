@@ -39,6 +39,13 @@ _Avoid_: port type, class, specialization
 Data describing how to generate a region: port count range, archetype weights, lane density, name pools. Worldgen = seed + template.
 _Avoid_: map config, preset
 
+**Orrery view** (PL: widok planetarium):
+The map presentation of a Region as a planetary system: ports on static orbit rings around
+a central star. Purely visual in M2 — positions do not change over world time (real orbital
+motion is a parked E5 candidate) and the star has no mechanics.
+_Implementation_: E10 (PRD M2) — not in build yet.
+_Avoid_: solar system, starmap (as identifiers)
+
 ### Trade & economy
 
 **Good** (PL: towar):
@@ -60,6 +67,18 @@ _Avoid_: inventory, supply (in identifiers)
 **Thaler** (PL: talar):
 The currency of the world.
 _Avoid_: credit, gold, money (in identifiers)
+
+**Equilibrium** (PL: równowaga):
+A market good's reference stock level; the price formula compares current Stock against it,
+and production/consumption push stock toward it. Worldgen sets it per port archetype.
+_Avoid_: baseline, target stock
+
+**Trade osmosis** (PL: osmoza handlowa):
+Background goods flow along Lanes from cheaper ports to more expensive ones, proportional
+to the price gap. The region's self-balancing mechanism; rendered as ambient ships on
+lanes, but it is a flow — no simulated NPC agents.
+_Implementation_: E8 (PRD M2) — not in build yet.
+_Avoid_: NPC trade, AI traders (as sim terms)
 
 ### Player & ships
 
@@ -85,8 +104,20 @@ The goods currently aboard a ship.
 _Avoid_: freight, load
 
 **Route** (PL: trasa):
-An ordered sequence of lanes a ship is assigned to follow.
+A looping, ordered list of port Stops assigned to a Ship; the ship sails them in order and
+starts over after the last. Routes carry no price or wait conditions — a route is a frozen
+bet that its spreads keep paying.
+_Implementation_: E9 (PRD M2) — not in build yet. ⚠ Naming collision to resolve in the E9
+spec: current sim code uses `route` (`shortestRoute`, `Ship.location.route`, `routeTicks`)
+for a pathfinding result — a lane sequence for one `sailTo`. That internal concept needs a
+new name (candidate: **Course**, PL: kurs) so `Route` can mean the player-facing loop.
 _Avoid_: itinerary, plan
+
+**Stop** (PL: przystanek):
+One entry of a Route: a Port plus its load/unload orders (unload good → all; load good →
+fill available Hold). Executed on docking, then the ship sails on immediately.
+_Implementation_: E9 (PRD M2) — not in build yet.
+_Avoid_: waypoint, leg
 
 **Voyage** (PL: rejs):
 One traversal of a lane by a ship, taking a number of ticks.
