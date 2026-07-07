@@ -32,8 +32,21 @@ of the E2 worldgen (combinatorial topology + geometric durations).
   order (radius must stay mechanically meaningless).
 - **Angles are the randomness.** Each port draws a random angle on its ring; draws that
   violate `MIN_PORT_DISTANCE` against already-placed ports are rejected and redrawn
-  (bounded attempts, as today). Seed variety in topology flows entirely from angles:
-  different angles ⇒ different distances ⇒ different lane graph.
+  (bounded attempts). Seed variety in topology flows entirely from angles: different
+  angles ⇒ different distances ⇒ different lane graph.
+  - **Implementation finding (2026-07-07, issue #43):** sequential per-ring angle
+    placement has no backtracking, so an early ring can occasionally corner a later one
+    into a genuine dead end — confirmed empirically (200k attempts on the stuck ring
+    still failed; it's geometric, not a budget shortfall). Observed only at the
+    template's max port count (6 rings across `[0.18, 0.46]`), ~1.3% of seeds. The old
+    single-attempt guard (adequate for the free 2D placement it replaced) is therefore
+    insufficient here. Fix: `placePorts` retries the **whole placement attempt** (fresh
+    ring shuffle + fresh angle draws) up to a bounded number of times before the hard
+    stop — still fully deterministic (same seed ⇒ same number of retries ⇒ same region)
+    and invisible to the ~98.7% of seeds that succeed on the first attempt. Flagged for
+    the owner: recalibrating `orbitRadiusRange`/`MIN_PORT_DISTANCE`/`portCountRange`
+    could reduce or eliminate retries, but wasn't done here since those constants were
+    locked in this same session — the retry keeps generation correct either way.
 - **No star exclusion zone.** Lanes may in principle pass near the center, but the
   distance bias disfavors the long cross-system chords that would — YAGNI until a
   playtest shows an ugly seed.
@@ -116,9 +129,13 @@ of the E2 worldgen (combinatorial topology + geometric durations).
 - `placePorts` → orbital placement: center `(0.5, 0.5)` on the unit plane;
   radii `r_i` evenly spaced across `template.orbitRadiusRange` for `portCount` rings;
   ring↔port assignment via `nextShuffle`; angle via `nextFloat` per port with
-  `MIN_PORT_DISTANCE` rejection and the existing bounded-attempts guard. Ports keep
-  plain `x`/`y` — serialized world shape unchanged; the orrery is derivable (radius =
-  distance from center) so nothing new is persisted.
+  `MIN_PORT_DISTANCE` rejection and a bounded-attempts guard per ring. Because
+  sequential per-ring placement has no backtracking, a whole placement attempt can rarely
+  corner itself (see the implementation finding above); the guard therefore retries the
+  **whole attempt** (fresh ring shuffle + fresh angles) a bounded number of times before
+  hard-stopping — deterministic and a no-op for the large majority of seeds that succeed
+  first try. Ports keep plain `x`/`y` — serialized world shape unchanged; the orrery is
+  derivable (radius = distance from center) so nothing new is persisted.
 - `connectPorts` → sort candidates by Euclidean length ascending (ties broken by
   canonical candidate index, for determinism); Kruskal MST; then fill shortest-first
   with a proper-segment-intersection test (shared endpoints are not crossings) until
@@ -160,8 +177,11 @@ of the E2 worldgen (combinatorial topology + geometric durations).
 
 ## Testing
 
-- Sim (Vitest, TDD): determinism (same seed ⇒ deep-equal region); one port per ring
-  with expected radii; pairwise `MIN_PORT_DISTANCE` holds; lane graph connected;
+- Sim (Vitest, TDD): determinism (same seed ⇒ deep-equal region, including a seed that
+  requires a whole-attempt retry — see the implementation finding above); one port per
+  ring with expected radii; ring shuffle decorrelated from generation order; pairwise
+  `MIN_PORT_DISTANCE` holds; a no-throw regression sweep across thousands of seeds (the
+  retry fix's reason for existing); lane graph connected;
   **planarity** (no proper segment intersections across all lanes, many seeds);
   `voyageTicks === round(voyageTicksPerUnit × length)` for every lane; template
   invariants updated (`voyageTicksPerUnit > 0`, `orbitRadiusRange` ordered and within

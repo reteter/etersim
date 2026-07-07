@@ -7,6 +7,7 @@ describe("HEARTLAND region template", () => {
     expect(HEARTLAND.portCountRange).toEqual([5, 6]);
     expect(HEARTLAND.laneDensity).toBe(0.6);
     expect(HEARTLAND.voyageTicksRange).toEqual([48, 120]);
+    expect(HEARTLAND.orbitRadiusRange).toEqual([0.18, 0.46]);
   });
 
   it("weights every archetype positively (equal weights in v1)", () => {
@@ -26,5 +27,14 @@ describe("HEARTLAND region template", () => {
     expect(HEARTLAND.voyageTicksRange[0]).toBeLessThanOrEqual(HEARTLAND.voyageTicksRange[1]);
     expect(HEARTLAND.laneDensity).toBeGreaterThan(0);
     expect(HEARTLAND.laneDensity).toBeLessThanOrEqual(1);
+  });
+
+  it("keeps orbitRadiusRange ordered, positive, and fitting the unit plane", () => {
+    const [minR, maxR] = HEARTLAND.orbitRadiusRange;
+    expect(minR).toBeGreaterThan(0);
+    expect(minR).toBeLessThanOrEqual(maxR);
+    // Center is (0.5, 0.5); a ring radius must stay under 0.5 to fit the
+    // unit plane with margin.
+    expect(maxR).toBeLessThan(0.5);
   });
 });

@@ -25,7 +25,7 @@ export function generateRegion(rng: RngState, template: RegionTemplate): [Region
   const [portCount, s1] = nextInt(rng, template.portCountRange[0], template.portCountRange[1]);
   const [archetypes, s2] = drawArchetypes(s1, portCount, template);
   const [names, s3] = nextShuffle(s2, template.portNamePool);
-  const [positions, s4] = placePorts(s3, portCount);
+  const [positions, s4] = placePorts(s3, portCount, template.orbitRadiusRange);
 
   let state = s4;
   const ports: Port[] = [];
@@ -77,24 +77,71 @@ function drawWeighted(
   return [PORT_ARCHETYPES[PORT_ARCHETYPES.length - 1], state];
 }
 
-/** Rejection sampling on the unit plane with a minimum pairwise distance. */
-function placePorts(rng: RngState, portCount: number): [Array<{ x: number; y: number }>, RngState] {
-  let state = rng;
+/** Evenly spaced ring radii across [min, max], inclusive endpoints — one
+ *  ring per port, no RNG draw (docs/specs/E10-orrery-view.md). */
+function ringRadii(portCount: number, range: readonly [number, number]): number[] {
+  const [min, max] = range;
+  if (portCount === 1) return [min];
+  return Array.from({ length: portCount }, (_, i) => min + (i * (max - min)) / (portCount - 1));
+}
+
+/** Ring assignment + per-port angle draws for one placement attempt.
+ *  Returns `undefined` (with the advanced RNG state) if a ring runs out of
+ *  attempts — sequential angle placement has no backtracking, so an early
+ *  ring can occasionally corner a later one; the caller retries the whole
+ *  attempt with fresh draws. */
+function tryPlacePorts(
+  rng: RngState,
+  portCount: number,
+  orbitRadiusRange: readonly [number, number],
+): [Array<{ x: number; y: number }> | undefined, RngState] {
+  const [ringOrder, s1] = nextShuffle(rng, ringRadii(portCount, orbitRadiusRange));
+
+  let state = s1;
   const placed: Array<{ x: number; y: number }> = [];
-  let attempts = 0;
-  while (placed.length < portCount) {
-    if (++attempts > 1000) {
-      // Statistically unreachable for ≤6 ports at distance 0.25; a hard
-      // stop keeps a bad template from spinning forever.
-      throw new Error(`worldgen: could not place ${portCount} ports`);
+  for (const radius of ringOrder) {
+    let placedOnRing = false;
+    for (let attempts = 0; attempts < 1000; attempts++) {
+      let angle: number;
+      [angle, state] = nextFloat(state);
+      angle *= 2 * Math.PI;
+      const x = 0.5 + radius * Math.cos(angle);
+      const y = 0.5 + radius * Math.sin(angle);
+      const tooClose = placed.some((p) => Math.hypot(p.x - x, p.y - y) < MIN_PORT_DISTANCE);
+      if (!tooClose) {
+        placed.push({ x, y });
+        placedOnRing = true;
+        break;
+      }
     }
-    let x: number, y: number;
-    [x, state] = nextFloat(state);
-    [y, state] = nextFloat(state);
-    const tooClose = placed.some((p) => Math.hypot(p.x - x, p.y - y) < MIN_PORT_DISTANCE);
-    if (!tooClose) placed.push({ x, y });
+    if (!placedOnRing) return [undefined, state];
   }
   return [placed, state];
+}
+
+/** Orbital placement: center (0.5, 0.5); one port per orbit ring, radii
+ *  evenly spaced across `orbitRadiusRange` (deterministic, no RNG draw).
+ *  Ring↔port assignment is shuffled via the seeded RNG so radius carries
+ *  no meaning about archetype or generation order; each port then draws a
+ *  random angle on its ring, rejecting draws that violate
+ *  MIN_PORT_DISTANCE against already-placed ports (bounded attempts).
+ *  Sequential angle placement has no backtracking, so a whole attempt can
+ *  rarely corner itself; retrying the attempt with fresh draws (bounded)
+ *  keeps generation a hard stop away from spinning forever. */
+function placePorts(
+  rng: RngState,
+  portCount: number,
+  orbitRadiusRange: readonly [number, number],
+): [Array<{ x: number; y: number }>, RngState] {
+  let state = rng;
+  for (let restart = 0; restart < 1000; restart++) {
+    let result: Array<{ x: number; y: number }> | undefined;
+    [result, state] = tryPlacePorts(state, portCount, orbitRadiusRange);
+    if (result) return [result, state];
+  }
+  // Statistically unreachable for ≤6 ports at distance 0.25; a hard stop
+  // keeps a bad template from spinning forever.
+  throw new Error(`worldgen: could not place ${portCount} ports`);
 }
 
 /** equilibrium = max(100, 10 × daily gross flow); stock = equilibrium ± 25%. */
