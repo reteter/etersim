@@ -5,8 +5,9 @@ seed `playtestorb`, main at 6c9208c. Terms per [CONTEXT.md](../../CONTEXT.md);
 Analyst hat per [personas/ANALYST.md](../personas/ANALYST.md).
 
 Status: **triaged 2026-07-07 (inline, same session)** — routing locked with the owner:
-item 1 → #44 + #25 (dispatched); item 2 → E8 (no action now); item 3 → small UI issue
-(filed same day); item 4 → parked as E8 grill input (starting-capital calibration).
+item 1 → #44 + #25 (dispatched, **shipped with #45** — E10 complete 2026-07-08); item 2 →
+E8 (no action now); item 3 → small UI issue (filed same day, #48, open); item 4 → parked as
+E8 grill input (starting-capital calibration).
 
 ---
 

@@ -97,11 +97,15 @@ the sim feel random). Each price shows a trend arrow vs. the last day-boundary s
 RegionTemplate {
   portCountRange: [5, 6]  // min 5: fewer ports than archetypes would leave a good with no producer
   archetypeWeights: { agrarian: 1, industrial: 1, urban: 1, mining: 1, verdant: 1 }
-  laneDensity: 0.6            // fraction of all candidate edges kept in total (min: spanning tree)
-  voyageTicksRange: [48, 120] // lane length → duration mapping bounds
+  laneDensity: 0.6              // fraction of all candidate edges kept in total (min: spanning tree)
+  voyageTicksPerUnit: 130       // lane length → duration: voyageTicks = round(voyageTicksPerUnit × length)
+  orbitRadiusRange: [0.18, 0.46] // orbit-ring radii, evenly spaced per port (E10)
   portNamePool: [...]
 }
 ```
+
+(Shape as of E10 — see that spec's Tech section for the authoritative fields; this
+snapshot is kept current so it doesn't silently contradict the code.)
 
 v1 ships one default template (`heartland`). The template is data, not code — future regions
 (e.g. mining-heavy frontiers, different port counts) are new templates, no worldgen changes.

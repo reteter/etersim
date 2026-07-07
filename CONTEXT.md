@@ -52,7 +52,8 @@ The map presentation of a Region as a planetary system: ports on static orbit ri
 a central star. Purely visual in M2 — positions do not change over world time (real orbital
 motion is a parked E5 candidate) and the star has no mechanics.
 _Implementation_: E10 ([spec](docs/specs/E10-orrery-view.md)) — positions from #43, rendering
-(star, rings, planet discs, glow) shipped in #44; lane accents + tick labels are #45.
+(star, rings, planet discs, glow) shipped in #44, lane accents + tick labels in #45. Epic
+complete (#43/#25/#34/#44/#45 all merged).
 _Avoid_: solar system, starmap (as identifiers)
 
 **Orbit ring** (PL: pierścień orbity):
@@ -128,6 +129,11 @@ _Implementation_: E9 (PRD M2) — not in build yet. ⚠ Naming collision to reso
 spec: current sim code uses `route` (`shortestRoute`, `Ship.location.route`, `routeTicks`)
 for a pathfinding result — a lane sequence for one `sailTo`. That internal concept needs a
 new name (candidate: **Course**, PL: kurs) so `Route` can mean the player-facing loop.
+⚠ E10 (#45) already used "course" as a UI-only identifier prefix (`RegionMap.tsx`:
+`courseVoyages`, `isCourseAccented`, CSS `.lane--course-accent`) for "the Controlled Ship's
+active course" (spec wording) — a presentational read of the same `Ship.location.route`
+data. Not a domain-term lock, but the E9 grill should account for it when resolving the
+collision (rename together, or confirm the UI usage stays compatible with the final name).
 _Avoid_: itinerary, plan
 
 **Stop** (PL: przystanek):

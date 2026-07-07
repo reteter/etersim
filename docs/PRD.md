@@ -67,7 +67,8 @@ Orchestration is progression, not a replacement for manual trade.
   accented when a port is selected; tintable monochrome icon set (#34; game-icons.net is
   the lead candidate); #25 geometry-aware lane topology lands here, on top of the orbital
   placement. Spec: [specs/E10-orrery-view.md](specs/E10-orrery-view.md) (approved
-  2026-07-07); runs before E8/E9 so the new geometry sits under their playtests.
+  2026-07-07); runs before E8/E9 so the new geometry sits under their playtests. Shipped
+  (#43, #25, #34, #44, #45).
 
 **M2 success criteria:**
 - Autonomy: 30 player-idle world days ⇒ no good at any port stays pinned at the price
