@@ -88,6 +88,36 @@ function quoteLabel(total: number | null): string {
   return total === null ? "—" : `₸${total}`;
 }
 
+/** Inline "(₸n/u)" hint for the next single unit's marginal price, or "" when untradable. */
+function unitHint(total: number | null): string {
+  return total === null ? "" : ` (₸${total}/u)`;
+}
+
+/**
+ * Largest buyable quantity: bounded by available stock and hold space, then
+ * walked unit-by-unit (via `quoteBuy`, which itself sums the marginal price
+ * per unit) to find the most units affordable within `thalers`. The walk is
+ * capped at `min(stock, hold space)` up front, so it's bounded by the ship's
+ * hold size regardless of market stock (docs/specs/E2-trade-loop.md — Buy /
+ * sell improvements).
+ */
+function computeBuyMax(good: GoodId, entry: MarketGood, ship: Ship, thalers: number): number {
+  const cap = Math.min(Math.floor(entry.stock), ship.hold - cargoUsed(ship));
+  let max = 0;
+  for (let qty = 1; qty <= cap; qty++) {
+    const total = quoteBuy(good, entry, qty);
+    if (total === null || total > thalers) break;
+    max = qty;
+  }
+  return max;
+}
+
+/** Largest sellable quantity: held cargo, bounded by what `quoteSell` accepts. */
+function computeSellMax(good: GoodId, entry: MarketGood, ship: Ship): number {
+  const held = ship.cargo[good];
+  return held > 0 && quoteSell(good, entry, held) !== null ? held : 0;
+}
+
 /**
  * One good's market row: price, trend arrow vs. the last day snapshot and
  * stock — plus buy/sell controls with a live marginal quote when the
@@ -114,12 +144,25 @@ function MarketRow({
   const unitPrice = price(good, entry);
   const trend = priceTrend(unitPrice, snapshotPrice);
 
-  const buyTotal = trading ? quoteBuy(good, entry, qty) : null;
-  const sellTotal = trading ? quoteSell(good, entry, qty) : null;
+  const buyMax = trading ? computeBuyMax(good, entry, ship, thalers) : 0;
+  const sellMax = trading ? computeSellMax(good, entry, ship) : 0;
+  // Qty is shared by both actions, so it's clamped to whichever side allows
+  // more — each button still disables independently via canBuy/canSell.
+  const maxQty = Math.max(buyMax, sellMax);
+  const clampQty = (n: number) => (maxQty <= 0 ? 0 : Math.min(Math.max(n, 1), maxQty));
+  const clampedQty = clampQty(qty);
+
+  const buyTotal = trading ? quoteBuy(good, entry, clampedQty) : null;
+  const sellTotal = trading ? quoteSell(good, entry, clampedQty) : null;
+  const nextBuyUnit = trading ? quoteBuy(good, entry, 1) : null;
+  const nextSellUnit = trading ? quoteSell(good, entry, 1) : null;
 
   const canBuy =
-    buyTotal !== null && buyTotal <= thalers && cargoUsed(ship) + qty <= ship.hold;
-  const canSell = sellTotal !== null && ship.cargo[good] >= qty;
+    clampedQty > 0 &&
+    buyTotal !== null &&
+    buyTotal <= thalers &&
+    cargoUsed(ship) + clampedQty <= ship.hold;
+  const canSell = clampedQty > 0 && sellTotal !== null && ship.cargo[good] >= clampedQty;
 
   return (
     <div className="market-row">
@@ -131,31 +174,59 @@ function MarketRow({
         <span className="market-row__stock">{Math.floor(entry.stock)}</span>
       </div>
       {trading && (
-        <div className="market-row__trade">
-          <input
-            className="market-row__qty"
-            type="number"
-            min={1}
-            step={1}
-            value={qty}
-            aria-label={`${GOODS[good].name} quantity`}
-            onChange={(e) => setQty(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
-          />
-          <button
-            type="button"
-            disabled={!canBuy}
-            onClick={() => dispatch({ kind: "buy", shipId: ship.id, good, qty })}
-          >
-            Buy {quoteLabel(buyTotal)}
-          </button>
-          <button
-            type="button"
-            disabled={!canSell}
-            onClick={() => dispatch({ kind: "sell", shipId: ship.id, good, qty })}
-          >
-            Sell {quoteLabel(sellTotal)}
-          </button>
-        </div>
+        <>
+          <div className="market-row__trade">
+            <input
+              className="market-row__qty"
+              type="number"
+              min={1}
+              step={1}
+              value={clampedQty}
+              disabled={maxQty <= 0}
+              aria-label={`${GOODS[good].name} quantity`}
+              onChange={(e) => setQty(clampQty(Math.floor(Number(e.target.value) || 0)))}
+            />
+            <button
+              type="button"
+              disabled={buyMax <= 0}
+              aria-label={`Buy max ${GOODS[good].name}`}
+              onClick={() => setQty(buyMax)}
+            >
+              Buy max
+            </button>
+            <button
+              type="button"
+              disabled={sellMax <= 0}
+              aria-label={`Sell max ${GOODS[good].name}`}
+              onClick={() => setQty(sellMax)}
+            >
+              Sell max
+            </button>
+          </div>
+          <div className="market-row__trade">
+            {/* Explicit aria-labels keep the action buttons' accessible names
+                distinct from the "Buy max"/"Sell max" buttons above (exact
+                names: e2e and assistive tech disambiguate on them). */}
+            <button
+              type="button"
+              disabled={!canBuy}
+              aria-label={`Buy ${GOODS[good].name}`}
+              onClick={() => dispatch({ kind: "buy", shipId: ship.id, good, qty: clampedQty })}
+            >
+              Buy {quoteLabel(buyTotal)}
+              {unitHint(nextBuyUnit)}
+            </button>
+            <button
+              type="button"
+              disabled={!canSell}
+              aria-label={`Sell ${GOODS[good].name}`}
+              onClick={() => dispatch({ kind: "sell", shipId: ship.id, good, qty: clampedQty })}
+            >
+              Sell {quoteLabel(sellTotal)}
+              {unitHint(nextSellUnit)}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
