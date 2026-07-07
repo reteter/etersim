@@ -110,6 +110,11 @@ All high-level decisions locked. Spec/docs synced (2026-07-07); implementation o
   Harbor list, port-click priority via click-through docked ship). Unblocks #33, #36.
 - **#25** sim-only — geometry-aware `connectPorts`; since the v2 grill (2026-07-07) it
   belongs to E10 and waits for the orbit-ring placement (no longer independent).
-- **#35, #36, #37** can proceed in parallel once #28 store model exists (#36 default-On can
-  ship before #37 settings UI).
+- **#35** — **shipped** (PR #41): Buy max / Sell max buttons, live qty clamp, next-unit marginal
+  price surfaced on the action buttons.
+- **#36** — **shipped** (PR #42): auto-pause on Controlled Ship final-destination arrival
+  (default On, `etersim.settings` localStorage key, `setAutoPauseOnArrival` action for #37 to wire).
+- **#37** can proceed next (settings UI; wires the #36 toggle into the #17 menu).
+- **#34** (tintable ship glyph) deferred to a dedicated Designer→Engineer session — it carries
+  open design questions (colour semantics, glyph strategy), not a straight coder package.
 - E2E (`e2e/ui.spec.ts`) covers baseline #15 UX; update when #28 ships. E2E not yet in CI.
