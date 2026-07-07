@@ -13,6 +13,10 @@ export interface RegionTemplate {
   readonly laneDensity: number;
   /** Lane euclidean length maps linearly into this tick range. */
   readonly voyageTicksRange: readonly [min: number, max: number];
+  /** Orbit ring radii (distance from the region center (0.5, 0.5) on the
+   *  unit plane) are evenly spaced across this range for the generated
+   *  port count — one ring per port (docs/specs/E10-orrery-view.md). */
+  readonly orbitRadiusRange: readonly [min: number, max: number];
   readonly portNamePool: readonly string[];
 }
 
@@ -24,6 +28,9 @@ export const HEARTLAND: RegionTemplate = {
   archetypeWeights: { agrarian: 1, industrial: 1, urban: 1, mining: 1, verdant: 1 },
   laneDensity: 0.6,
   voyageTicksRange: [48, 120],
+  // Fits the unit plane with margin; ring spacing for 6 ports ≈ 0.056, so
+  // MIN_PORT_DISTANCE does real work between neighboring rings.
+  orbitRadiusRange: [0.18, 0.46],
   portNamePool: [
     "Velharrow",
     "Kruxhaven",

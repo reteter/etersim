@@ -8,11 +8,27 @@ import { generateRegion, MIN_PORT_DISTANCE } from "./worldgen";
 const genAt = (seed: number): Region => generateRegion(seedRng(seed), HEARTLAND)[0];
 
 /** Regions across a spread of seeds — most assertions must hold for all. */
-const SEEDS = Array.from({ length: 25 }, (_, i) => i * 37 + 1);
+const SEEDS = Array.from({ length: 50 }, (_, i) => i * 37 + 1);
 
 describe("worldgen", () => {
   it("is deterministic: same seed + template => deep-equal region and RNG state", () => {
     expect(generateRegion(seedRng(42), HEARTLAND)).toEqual(generateRegion(seedRng(42), HEARTLAND));
+  });
+
+  it("is deterministic on the whole-attempt-retry path (seed 4 needs a retry)", () => {
+    // Seed 4 hits the sequential-placement dead end (no backtracking) on
+    // its first attempt and requires placePorts to retry the whole
+    // attempt; pins that this retry path is itself deterministic.
+    expect(generateRegion(seedRng(4), HEARTLAND)).toEqual(generateRegion(seedRng(4), HEARTLAND));
+  });
+
+  it("never throws while placing ports, across thousands of seeds", () => {
+    // Regression guard: sequential per-ring angle placement has no
+    // backtracking, so an early ring can corner a later one. Without a
+    // retry-the-whole-attempt fallback this threw for ~1.3% of seeds.
+    for (let seed = 0; seed < 2000; seed++) {
+      expect(() => generateRegion(seedRng(seed), HEARTLAND)).not.toThrow();
+    }
   });
 
   it("advances the RNG state (does not return it untouched)", () => {
@@ -95,7 +111,7 @@ describe("worldgen", () => {
     }
   });
 
-  it("spreads ports on the unit plane with breathing room", () => {
+  it("keeps ports on the unit plane with breathing room", () => {
     for (const seed of SEEDS) {
       const { ports } = genAt(seed);
       for (const port of ports) {
@@ -111,6 +127,37 @@ describe("worldgen", () => {
         }
       }
     }
+  });
+
+  it("places exactly one port per orbit ring: radii evenly spaced across orbitRadiusRange", () => {
+    const [minR, maxR] = HEARTLAND.orbitRadiusRange;
+    for (const seed of SEEDS) {
+      const { ports } = genAt(seed);
+      const n = ports.length;
+      const expectedRadii = Array.from(
+        { length: n },
+        (_, i) => minR + (i * (maxR - minR)) / (n - 1),
+      );
+      const actualRadii = ports
+        .map((p) => Math.hypot(p.x - 0.5, p.y - 0.5))
+        .sort((a, b) => a - b);
+      for (let i = 0; i < n; i++) {
+        expect(actualRadii[i]).toBeCloseTo(expectedRadii[i], 6);
+      }
+    }
+  });
+
+  it("shuffles ring assignment so radius does not correlate with generation order", () => {
+    // Track which ring rank (0 = smallest radius) the first-generated port
+    // lands on across seeds; a fixed order would always give the same rank.
+    const firstPortRanks = new Set<number>();
+    for (const seed of SEEDS) {
+      const { ports } = genAt(seed);
+      const distances = ports.map((p) => Math.hypot(p.x - 0.5, p.y - 0.5));
+      const sorted = [...distances].sort((a, b) => a - b);
+      firstPortRanks.add(sorted.indexOf(distances[0]));
+    }
+    expect(firstPortRanks.size).toBeGreaterThan(1);
   });
 
   it("sets equilibrium = max(100, 10 × daily gross flow) and stock within ±25% jitter", () => {
