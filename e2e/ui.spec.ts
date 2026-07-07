@@ -44,6 +44,20 @@ test.describe('main game UI after start', () => {
     await expect(page.getByRole('button', { name: '1x' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  test('credits entry is reachable and lists CC BY attribution (#34)', async ({ page }) => {
+    await page.getByRole('button', { name: /credits/i }).click();
+
+    const dialog = page.getByRole('dialog', { name: /credits/i });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText(/lorc/i);
+    await expect(dialog).toContainText(/delapouite/i);
+    await expect(dialog).toContainText(/game-icons\.net/i);
+    await expect(dialog).toContainText(/CC BY 3\.0/i);
+
+    await dialog.getByRole('button', { name: /close/i }).click();
+    await expect(dialog).not.toBeVisible();
+  });
+
   test('map is visible and clickable', async ({ page }) => {
     const map = page.locator('svg.region-map');
     await expect(map).toBeVisible();
@@ -68,6 +82,20 @@ test.describe('main game UI after start', () => {
     await expect(page.locator('.ctrl-ship__hold')).toContainText('/');
   });
 
+  test('header and map show the ship icon tinted gold for the Controlled Ship (#34)', async ({
+    page,
+  }) => {
+    // Header: always the Controlled Ship, so its icon is always gold.
+    const headerIcon = page.locator('.ctrl-ship__glyph');
+    await expect(headerIcon).toBeVisible();
+    await expect(headerIcon).toHaveCSS('color', 'rgb(224, 168, 64)');
+
+    // Map: the ship group carries the Controlled marker class, same tint.
+    const mapShip = page.locator('g.ship--controlled .ship__glyph');
+    await expect(mapShip).toBeVisible();
+    await expect(mapShip).toHaveCSS('color', 'rgb(224, 168, 64)');
+  });
+
   test('ship panel shows hold and docked location', async ({ page }) => {
     await openControlledShip(page);
 
@@ -85,6 +113,11 @@ test.describe('main game UI after start', () => {
     await expect(harbor).toBeVisible();
     await expect(harbor.locator('.harbor__ship')).toHaveCount(1);
     await expect(harbor.locator('.harbor__ship--controlled')).toHaveCount(1);
+
+    // Its ship icon is tinted gold (Controlled Ship, #34).
+    const harborIcon = harbor.locator('.harbor__glyph--controlled');
+    await expect(harborIcon).toHaveCount(1);
+    await expect(harborIcon).toHaveCSS('color', 'rgb(224, 168, 64)');
   });
 
   test('port panel shows market table with prices and trends', async ({ page }) => {

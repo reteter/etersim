@@ -1,17 +1,20 @@
-import { useRef, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { useGameStore } from "../store/gameStore";
 import { exportWorldJson, parseWorldJson } from "../store/persistence";
+import { CreditsOverlay } from "./CreditsOverlay";
 import { worldDay } from "./worldDate";
 
 /**
- * Save menu (docs/specs/E2-trade-loop.md — Save/load): export the current
- * world to a downloaded JSON file, or import one from disk. Lives in the top
- * bar. File I/O is browser-standard (Blob download + hidden file input).
+ * Save/Credits menu (docs/specs/E2-trade-loop.md — Save/load): export the
+ * current world to a downloaded JSON file, or import one from disk. Lives in
+ * the top bar. File I/O is browser-standard (Blob download + hidden file
+ * input). Also hosts the CC BY attribution entry (#34).
  */
 export function GameMenu() {
   const world = useGameStore((s) => s.world);
   const loadWorld = useGameStore((s) => s.loadWorld);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [creditsOpen, setCreditsOpen] = useState(false);
 
   const onExport = () => {
     if (!world) return;
@@ -51,6 +54,10 @@ export function GameMenu() {
         aria-label="Import save file"
         onChange={onImportFile}
       />
+      <button type="button" className="menu-btn" onClick={() => setCreditsOpen(true)}>
+        Credits
+      </button>
+      {creditsOpen && <CreditsOverlay onClose={() => setCreditsOpen(false)} />}
     </div>
   );
 }

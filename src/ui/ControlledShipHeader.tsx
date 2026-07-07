@@ -1,13 +1,14 @@
 import { cargoUsed, etaTicks } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { ShipIcon } from "./icons";
 import { portName } from "./portName";
 
 /**
  * Thin, always-visible header for the Controlled Ship (docs/specs/E2-trade-loop.md
  * — #32). Sits at the top of the side panel across all panel states. Shows the
- * ship's glyph + id, its status/location, and hold usage; clicking it designates
- * the ship as Controlled and opens its ShipPanel. Glyph/tint treatment is
- * deferred to #34 — this uses the plain ⛵ for now.
+ * ship's icon + id, its status/location, and hold usage; clicking it designates
+ * the ship as Controlled and opens its ShipPanel. The icon is always gold here
+ * — this header only ever shows the Controlled Ship (#34).
  */
 export function ControlledShipHeader() {
   const world = useGameStore((s) => s.world);
@@ -37,9 +38,7 @@ export function ControlledShipHeader() {
       onClick={() => openShip(ship.id)}
       aria-label={`Controlled ship ${ship.id}`}
     >
-      <span className="ctrl-ship__glyph" aria-hidden="true">
-        ⛵
-      </span>
+      <ShipIcon className="ctrl-ship__glyph" />
       <span className="ctrl-ship__id">{ship.id}</span>
       <span className="ctrl-ship__status">{status}</span>
       <span className="ctrl-ship__hold">

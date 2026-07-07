@@ -119,8 +119,9 @@ of the E2 worldgen (combinatorial topology + geometric durations).
   ships (E9), muted = other companies' ships (E8 rich variant).
 - **CC BY attribution**: a credits entry (game menu / start screen) linking
   game-icons.net and the icon authors — part of the issue's acceptance criteria.
-- The strategy (boundary, tinting, attribution) is recorded as an **ADR** — every
-  future icon (events, goods, guilds) follows the same path.
+- The strategy (boundary, tinting, attribution) is recorded as an **ADR**
+  (docs/adr/0006-svg-icon-strategy.md) — every future icon (events, goods, guilds)
+  follows the same path.
 
 ## Tech
 
