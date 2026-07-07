@@ -30,8 +30,8 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
         </p>
       )}
 
-      {/* The docked port's ⛵ overlaps its node on the map and wins the click,
-          so open its market from here — the panel path to trading. */}
+      {/* The docked port's ship icon overlaps its node on the map and wins the
+          click, so open its market from here — the panel path to trading. */}
       {location.kind === "docked" && (
         <button
           type="button"

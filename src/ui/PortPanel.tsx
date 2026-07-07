@@ -15,6 +15,7 @@ import {
   type ShipId,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { ShipIcon } from "./icons";
 import { priceTrend, type Trend } from "./priceTrend";
 import { previewRouteTicks } from "./routePreview";
 
@@ -66,9 +67,11 @@ function Harbor({
                   title={`Hold ${cargoUsed(ship)}/${ship.hold} • ${cargoSummary(ship)}`}
                   onClick={() => openShip(ship.id)}
                 >
-                  <span className="harbor__glyph" aria-hidden="true">
-                    ⛵
-                  </span>
+                  <ShipIcon
+                    className={
+                      controlled ? "harbor__glyph harbor__glyph--controlled" : "harbor__glyph"
+                    }
+                  />
                   <span className="harbor__id">{ship.id}</span>
                   <span className="harbor__hold">
                     {cargoUsed(ship)}/{ship.hold}

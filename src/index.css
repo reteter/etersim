@@ -63,6 +63,39 @@ body {
   display: none;
 }
 
+/* Credits overlay (#34): minimal CC BY attribution, opened from the menu. */
+.credits-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 10, 14, 0.7);
+  z-index: 10;
+}
+
+.credits-overlay__panel {
+  max-width: 26rem;
+  padding: 1.25rem 1.5rem;
+  background: #161b24;
+  border: 1px solid #2a3040;
+  border-radius: 8px;
+  color: #e6e6e6;
+}
+
+.credits-overlay__title {
+  margin: 0 0 0.75rem;
+}
+
+.credits-overlay__text {
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.credits-overlay__text a {
+  color: #7fb4e0;
+}
+
 /* Start screen */
 .start-screen {
   display: flex;
@@ -206,7 +239,12 @@ body {
 }
 
 .ctrl-ship__glyph {
-  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  /* Always the Controlled Ship here — gold is a permanent marker, not a
+     hover/selection state (#34). */
+  color: #e0a840;
 }
 
 .ctrl-ship__id {
@@ -263,7 +301,15 @@ body {
 }
 
 .harbor__glyph {
-  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: #a8b2c2;
+}
+
+.harbor__glyph--controlled {
+  /* Gold marks the Controlled Ship (#34), same tint as the header. */
+  color: #e0a840;
 }
 
 .harbor__id {
@@ -441,9 +487,11 @@ body {
 }
 
 .ship__glyph {
-  font-size: 4px;
+  color: #cfd6e2;
 }
 
-.ship--selected .ship__glyph {
-  filter: drop-shadow(0 0 1px #e0a840);
+/* Gold marks the Controlled Ship (#34) — one color, one meaning; docked vs.
+   underway is conveyed by position/motion/ETA text, never by color. */
+.ship--controlled .ship__glyph {
+  color: #e0a840;
 }
