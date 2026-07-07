@@ -74,17 +74,17 @@ test.describe('main game UI after start', () => {
     const ringOpacity = await rings.first().evaluate((el) => getComputedStyle(el).opacity);
     expect(Number(ringOpacity)).toBeLessThan(0.6);
 
-    // Every planet disc has an icon and is tinted per its archetype token.
+    // Every port disc has an icon and is tinted per its archetype token.
     for (let i = 0; i < portCount; i++) {
       const port = ports.nth(i);
-      await expect(port.locator('.planet__disc')).toHaveCount(1);
-      await expect(port.locator('.planet__icon')).toHaveCount(1);
+      await expect(port.locator('.port__disc')).toHaveCount(1);
+      await expect(port.locator('.port__icon')).toHaveCount(1);
 
       const archetype = await port.getAttribute('data-archetype');
       expect(archetype).toBeTruthy();
 
       const [discFill, tokenValue] = await Promise.all([
-        port.locator('.planet__disc').evaluate((el) => getComputedStyle(el).fill),
+        port.locator('.port__disc').evaluate((el) => getComputedStyle(el).fill),
         page.evaluate(
           (a) => getComputedStyle(document.documentElement).getPropertyValue(`--archetype-${a}`).trim(),
           archetype,
@@ -102,13 +102,13 @@ test.describe('main game UI after start', () => {
     }
   });
 
-  test('selecting a port gives its planet disc a gold selection glow (#44)', async ({ page }) => {
+  test('selecting a port gives its port disc a gold selection glow (#44)', async ({ page }) => {
     const port = page.locator('g.port').first();
     await port.click({ force: true });
 
     await expect(port).toHaveClass(/port--selected/);
     const filter = await port
-      .locator('.planet__disc')
+      .locator('.port__disc')
       .evaluate((el) => getComputedStyle(el).filter);
     // Gold selection glow (#e0a840 → rgb(224, 168, 64)) must be present.
     expect(filter).toContain('224, 168, 64');

@@ -8,8 +8,8 @@ import { shipPosition } from "./shipPosition";
 const VIEW_SIZE = 100;
 const PADDING = 10;
 const SHIP_ICON_SIZE = 4;
-const PLANET_ICON_SIZE = 3.5;
-const PLANET_DISC_RADIUS = 3;
+const PORT_ICON_SIZE = 3.5;
+const PORT_DISC_RADIUS = 3;
 /** projectToViewBox is a uniform scale (both axes), so this factor also
  *  converts a unit-plane distance (orbit radius) into viewBox units. */
 const SCALE = VIEW_SIZE - 2 * PADDING;
@@ -116,13 +116,13 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
               style={{ "--port-color": `var(--archetype-${port.archetype})` } as CSSProperties}
               onClick={() => select({ kind: "port", id: port.id })}
             >
-              <circle className="planet__disc" cx={x} cy={y} r={PLANET_DISC_RADIUS} />
+              <circle className="port__disc" cx={x} cy={y} r={PORT_DISC_RADIUS} />
               <Icon
-                className="planet__icon"
-                x={x - PLANET_ICON_SIZE / 2}
-                y={y - PLANET_ICON_SIZE / 2}
-                width={PLANET_ICON_SIZE}
-                height={PLANET_ICON_SIZE}
+                className="port__icon"
+                x={x - PORT_ICON_SIZE / 2}
+                y={y - PORT_ICON_SIZE / 2}
+                width={PORT_ICON_SIZE}
+                height={PORT_ICON_SIZE}
               />
               <text className="port__label" x={x} y={y - 4} textAnchor="middle">
                 {port.name}
