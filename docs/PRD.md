@@ -29,7 +29,7 @@ Buy goods at a port → assign ship a route → time passes in ticks, the world 
 
 ## Milestones & epics
 
-Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md); epics beyond M1 are drafts and will be re-grilled before work starts.
+Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); its epics still need per-epic specs. Epics beyond M2 are drafts and will be re-grilled before work starts.
 
 ### M1 — Trade Loop (prove the core is fun)
 
@@ -41,16 +41,69 @@ Milestones group epics. Every epic starts with a grilling session and an approve
 - Save/load round-trips full world state.
 - Owner check: a 20+ minute session where price differences and route choice keep mattering.
 
-### M2 — Depth (draft)
+### M2 — Living Region (v2)
 
-- **E3 Contracts & guilds**: NPC organizations offering freight contracts.
-- **E4 Fleet**: multiple ships, route automation.
+Locked with the owner 2026-07-07 (grill inputs:
+[playtest-2026-07-07-market-legibility.md](design-notes/playtest-2026-07-07-market-legibility.md)).
 
-### M3 — Arcana (draft)
+**v2 statement:** a living, self-balancing region as the substrate the game runs on; the
+player grows from hands-on trading (the v1 loop, which stays) into orchestration — a small
+fleet on player-defined looping routes, observed through a region-wide economic view.
+Orchestration is progression, not a replacement for manual trade.
 
-- **E5 Arcane economy**: arcane goods with distinct market behavior, aether currents on lanes.
-- **E6 Events & hazards**: aether storms, market shocks, abstract piracy.
+- **E8 Living economy**: price-elastic production/consumption; trade osmosis along lanes
+  (goods flow from cheap ports to expensive ones, proportional to the price gap);
+  stochastic drift of equilibria from the seeded RNG; osmosis rendered as ambient ships on
+  lanes (visual layer derived from flows — no agent sim); region-wide economic panel with
+  full live prices (no information fog). Kills the "wait at the producer's price floor"
+  dominant strategy found in the M1 playtest.
+- **E9 Fleet & routes** (absorbs draft E4 — number retired): fleet-lite — buy additional
+  identical hulls (ship purchase is v2's money sink; no upkeep yet); per-ship looping
+  routes A→B→C with per-stop load/unload orders; no wait or price conditionals — routes
+  decay as the living market tightens spreads, and noticing and re-planning them *is* the
+  game. Depends on E8 and the #28 Controlled Ship model.
+- **E10 Orrery view**: the region presented as a planetary system — ports on static orbit
+  rings around a central star (set dressing, no mechanics); lanes subtle by default,
+  accented when a port is selected; tintable monochrome icon set (#34; game-icons.net is
+  the lead candidate); #25 geometry-aware lane topology lands here, on top of the orbital
+  placement.
 
-### M4 — Arc (draft)
+**M2 success criteria:**
+- Autonomy: 30 player-idle world days ⇒ no good at any port stays pinned at the price
+  floor/ceiling beyond a short window; prices keep oscillating (asserted by test).
+- Determinism extends to routes: same seed + same routes ⇒ identical world (asserted by test).
+- Save/load round-trips fleet and routes.
+- Owner check: set up 2–3 routes, then 15+ minutes of mostly watching plus occasional
+  re-planning stays interesting; the v1 wait-at-the-floor tactic is no longer clearly optimal.
+
+**Parked hooks (deliberately out of v2):** ship upkeep / running costs (a money sink
+beyond hull purchases — revisit when costs are legible to the player, e.g. with E3);
+wait-until-full route orders; real orbital motion (E5 candidate — aether currents over a
+moving system); information fog on remote prices (E6 candidate — events can cut the
+telegraph); region/port upgrades and upgrade-gated multi-region views.
+
+### M3 — Depth (draft)
+
+- **E3 Contracts & guilds**: NPC organizations offering freight contracts (moved from the
+  pre-v2 M2; natural home for the upkeep/money-sink hook).
+
+### M4 — Arcana (draft)
+
+- **E5 Arcane economy**: arcane goods with distinct market behavior, aether currents on lanes (candidate: real orbital motion from the M2 hook).
+- **E6 Events & hazards**: aether storms, market shocks, abstract piracy (candidate: information fog from the M2 hook).
+
+### M5 — Arc (draft)
 
 - **E7 Progression & goals**: company milestones, scenario objectives, polish.
+
+## Horizon (unscheduled ideas)
+
+Loose ideas with no milestone. Nothing here is a promise: an idea enters a version only
+through a grill (WORKFLOW.md). One line per idea with its origin; curated — dead ideas
+get deleted, the list stays short.
+
+- **Multi-region world** — travel between regions; regions as economic islands with gateways. (Owner, 2026-07-07 playtest.)
+- **Region/port upgrades** — player investments in infrastructure; e.g. the region-wide economic view of a *foreign* region gated behind an upgrade. (Owner, [playtest note §8](design-notes/playtest-2026-07-07-market-legibility.md).)
+- **Ship classes** — hull sizes, speeds, specializations; the rest of the original E4 draft beyond fleet-lite. (PRD draft, retired into E9 2026-07-07.)
+- **Company running costs** — umbrella for ship upkeep, crew wages, docking fees; needs costs to be legible first. (Parked hook from the v2 grill.)
+- **Real orbital motion** — planets orbit over world time; ETAs depend on departure timing. (E5 candidate, parked 2026-07-07.)
