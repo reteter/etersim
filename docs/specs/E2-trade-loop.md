@@ -108,14 +108,16 @@ v1 ships one default template (`heartland`). The template is data, not code — 
 - **A** (map as space): topology geometry-aware. `connectPorts` favors short connections (distance-biased, reduced crossings). Positions matter for readability.
 - Voyage ticks mapping: more proportional to distance (smaller floor, better triangle inequality).
 
-Implementation and tests to follow in dedicated issue.
+Implementation moved to **E10 Orrery view (PRD M2, locked 2026-07-07)**: the decision-A
+geometry becomes the static orbit-ring placement, and #25 lands on top of it — blocked
+until that placement exists, so the distance-bias work isn't done twice.
 
 ### Ship & travel
 
 One ship (hold 50) in E2; design supports designating a **Controlled Ship** (see CONTEXT.md) to receive Commands while docked: buy, sell, `sailTo`. `sailTo` runs
 Dijkstra over lane durations, assigns the resulting **route**, and the ship traverses it
 voyage by voyage, passing intermediate ports without docking. No route loops or automation
-(that's E4). While underway the ship shows destination and ETA in ticks.
+(that's E9, PRD M2; the E4 draft was retired into it). While underway the ship shows destination and ETA in ticks.
 
 **Shipped:** commands target `company.ships[0]`; panel `selection` toggles port vs ship view only.
 **Follow-up (#28):** Controlled Ship designation via map click (when eligible), Harbor list,

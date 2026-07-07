@@ -34,6 +34,11 @@ Introduced:
 See #28 for full context and the grill log. All E2 follow-up items locked high-level (incl. #25 A + #2/#3). Spec notes added for 3–5 + #25.
 
 ## 25. Worldgen: geometry-aware lane topology
+**Update (2026-07-07 v2 grill):** #25 now lands in **E10 Orrery view (PRD M2)** — the
+decision-A geometry is implemented on top of the static orbit-ring placement. Blocked
+until that placement exists (see [PRD](../PRD.md) M2 and
+[playtest note](playtest-2026-07-07-market-legibility.md) §5).
+
 **Locked (2026-07-07, #25):**
 - **A** (map as space): topology geometry-aware. `connectPorts` favors short connections (distance-biased, reduced crossings). Positions matter for readability.
 - #2: Voyage ticks mapping more proportional to distance (smaller floor, better triangle inequality).
@@ -102,7 +107,8 @@ with #17 at design level (options extend existing menu; save/load + settings tog
 ### Orchestrator notes (post-lock)
 All high-level decisions locked. Spec/docs synced (2026-07-07); implementation open.
 - **#28 + #32** first — Controlled Ship store field + header + Harbor unblock #33, #36.
-- **#25** sim-only — geometry-aware `connectPorts`; independent of UI follow-ups.
+- **#25** sim-only — geometry-aware `connectPorts`; since the v2 grill (2026-07-07) it
+  belongs to E10 and waits for the orbit-ring placement (no longer independent).
 - **#35, #36, #37** can proceed in parallel once #28 store model exists (#36 default-On can
   ship before #37 settings UI).
 - E2E (`e2e/ui.spec.ts`) covers baseline #15 UX; update when #28 ships. E2E not yet in CI.
