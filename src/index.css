@@ -182,6 +182,100 @@ body {
   color: #8891a3;
 }
 
+/* Controlled Ship header (#32): thin, one-line, non-dominant. Gold left
+   accent signals "controlled"; secondary info in subtitle colour. */
+.ctrl-ship {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  margin: -1rem -1rem 1rem;
+  padding: 0.4rem 1rem;
+  background: #12161d;
+  color: #e6e6e6;
+  border: none;
+  border-bottom: 1px solid #2a3040;
+  border-left: 3px solid #e0a840;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ctrl-ship:hover {
+  background: #171c25;
+}
+
+.ctrl-ship__glyph {
+  font-size: 1rem;
+}
+
+.ctrl-ship__id {
+  font-weight: 700;
+}
+
+.ctrl-ship__status {
+  color: #8891a3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ctrl-ship__hold {
+  margin-left: auto;
+  color: #a8b2c2;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Harbor: docked ships listed above the market (#28). */
+.harbor {
+  margin-bottom: 0.75rem;
+}
+
+.harbor__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.harbor__ship {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  width: 100%;
+  background: #1a1f29;
+  color: #e6e6e6;
+  border: 1px solid #2a3040;
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.harbor__ship:hover {
+  background: #222937;
+}
+
+.harbor__ship--controlled {
+  border-left: 3px solid #e0a840;
+}
+
+.harbor__glyph {
+  font-size: 1rem;
+}
+
+.harbor__id {
+  font-weight: 600;
+}
+
+.harbor__hold {
+  margin-left: auto;
+  color: #a8b2c2;
+  font-variant-numeric: tabular-nums;
+}
+
 .side-panel__title {
   margin: 0;
 }
@@ -338,6 +432,12 @@ body {
 
 .ship {
   cursor: pointer;
+}
+
+/* A docked ship overlaps its port node; let clicks fall through to the port
+   so port-click priority holds (#28). */
+.ship--docked {
+  pointer-events: none;
 }
 
 .ship__glyph {

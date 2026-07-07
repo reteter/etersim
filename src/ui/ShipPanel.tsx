@@ -1,5 +1,6 @@
 import { cargoUsed, etaTicks, GOOD_IDS, GOODS, type ShipId } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { portName } from "./portName";
 
 /**
  * Contextual panel for the selected ship (docs/specs/E2-trade-loop.md — UI
@@ -13,19 +14,19 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
   const ship = world.company.ships.find((s) => s.id === shipId);
   if (!ship) return null;
 
-  const portName = (id: string) => world.region.ports.find((p) => p.id === id)?.name ?? id;
+  const name = (id: string) => portName(world.region, id);
   const used = cargoUsed(ship);
   const loaded = GOOD_IDS.filter((good) => ship.cargo[good] > 0);
   const location = ship.location;
 
   return (
-    <aside className="side-panel">
+    <>
       <h2 className="side-panel__title">Ship</h2>
       {location.kind === "docked" ? (
-        <p className="side-panel__subtitle">Docked at {portName(location.portId)}</p>
+        <p className="side-panel__subtitle">Docked at {name(location.portId)}</p>
       ) : (
         <p className="side-panel__subtitle">
-          Underway to {portName(location.destination)} — ETA {etaTicks(ship, world.region)} ticks
+          Underway to {name(location.destination)} — ETA {etaTicks(ship, world.region)} ticks
         </p>
       )}
 
@@ -56,6 +57,6 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
           ))}
         </ul>
       )}
-    </aside>
+    </>
   );
 }
