@@ -5,10 +5,10 @@
  */
 export function CreditsOverlay({ onClose }: { onClose: () => void }) {
   return (
-    <div className="credits-overlay" role="dialog" aria-label="Credits" aria-modal="true">
-      <div className="credits-overlay__panel">
-        <h2 className="credits-overlay__title">Credits</h2>
-        <p className="credits-overlay__text">
+    <div className="overlay" role="dialog" aria-label="Credits" aria-modal="true">
+      <div className="overlay__panel">
+        <h2 className="overlay__title">Credits</h2>
+        <p className="overlay__text">
           Ship and port icons by{" "}
           <a href="https://game-icons.net/1x1/lorc/galleon.html" target="_blank" rel="noreferrer">
             Lorc

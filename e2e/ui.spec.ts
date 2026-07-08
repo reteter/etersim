@@ -16,6 +16,30 @@ async function openControlledShip(page: Page) {
   await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
 }
 
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Open the port panel for the Controlled Ship's own docked port (#33: the
+ * legacy "Open market" shortcut is gone, so tests reach it the way a player
+ * does — via port selection). Reads the docked port's name off the ShipPanel
+ * subtitle, then clicks the matching port node on the map.
+ */
+async function openDockedPortMarket(page: Page) {
+  await openControlledShip(page);
+  // .side-panel__subtitle is CSS text-transform: capitalize, so innerText
+  // renders "Docked At <Port>" — strip the prefix case-insensitively.
+  const subtitle = await page.locator('.side-panel__subtitle').innerText();
+  const portName = subtitle.replace(/^Docked at /i, '');
+  // Exact match on the port label (not a hasText substring match) — two
+  // procedurally generated port names could otherwise collide as substrings
+  // (e.g. "Haven" / "New Haven") and trip Playwright's strict mode.
+  const exact = new RegExp(`^${escapeRegExp(portName)}$`);
+  await page.locator('g.port').filter({ has: page.locator('.port__label', { hasText: exact }) }).click({ force: true });
+  await expect(page.locator('.market')).toBeVisible();
+}
+
 test.describe('etersim start screen', () => {
   test('shows start screen and can start new game', async ({ page }) => {
     await page.goto('/');
@@ -56,6 +80,27 @@ test.describe('main game UI after start', () => {
 
     await dialog.getByRole('button', { name: /close/i }).click();
     await expect(dialog).not.toBeVisible();
+  });
+
+  test('options entry toggles auto-pause-on-arrival (#37)', async ({ page }) => {
+    await page.getByRole('button', { name: /^Options$/ }).click();
+
+    const dialog = page.getByRole('dialog', { name: /options/i });
+    await expect(dialog).toBeVisible();
+    const toggle = dialog.getByRole('checkbox', { name: /auto-pause on arrival/i });
+    // Default is On (src/store/settings.ts DEFAULT_SETTINGS).
+    await expect(toggle).toBeChecked();
+
+    await toggle.uncheck();
+    await dialog.getByRole('button', { name: /close/i }).click();
+    await expect(dialog).not.toBeVisible();
+
+    // Reopening reads the same store state (not re-initialized local state),
+    // proving the toggle went through setAutoPauseOnArrival. The
+    // localStorage round-trip itself is covered at the unit level
+    // (src/store/settings.test.ts, gameStore.test.ts).
+    await page.getByRole('button', { name: /^Options$/ }).click();
+    await expect(page.getByRole('dialog', { name: /options/i }).getByRole('checkbox')).not.toBeChecked();
   });
 
   test('orrery: star, orbit rings and planet discs render (#44)', async ({ page }) => {
@@ -160,9 +205,8 @@ test.describe('main game UI after start', () => {
   });
 
   test('port view shows the Harbor with the docked ship', async ({ page }) => {
-    // Open the Controlled Ship, then its docked market (via Open market).
-    await openControlledShip(page);
-    await page.getByRole('button', { name: /open market/i }).click();
+    // Open the docked port's market (via port selection, #33).
+    await openDockedPortMarket(page);
 
     // Harbor lists the docked ship above the market.
     const harbor = page.locator('.harbor');
@@ -211,9 +255,7 @@ test.describe('main game UI after start', () => {
 test.describe('trading interactions (when docked)', () => {
   test.beforeEach(async ({ page }) => {
     await startNewGame(page);
-    // Open the current docked port's market via the Controlled Ship header.
-    await openControlledShip(page);
-    await page.getByRole('button', { name: /open market/i }).click();
+    await openDockedPortMarket(page);
   });
 
   test('can buy goods and updates are reflected', async ({ page }) => {
@@ -260,28 +302,30 @@ test.describe('trading interactions (when docked)', () => {
     // We don't assert exact number to avoid race, but presence of Grain after sell
   });
 
-  test('shows sail button on remote port', async ({ page }) => {
-    // Click a port group (may be current or not; try to pick different)
+  test('sail button (#33): disabled at the docked port, enabled elsewhere', async ({ page }) => {
+    // At the ship's own docked port, the button is always present but disabled.
+    await openDockedPortMarket(page);
+    const sailBtn = page.getByRole('button', { name: /^Sail .+ here$/ });
+    await expect(sailBtn).toBeVisible();
+    await expect(sailBtn).toBeDisabled();
+
+    // A remote port shows the same button, enabled with an ETA.
     const portGroups = page.locator('g.port');
     const count = await portGroups.count();
-    if (count > 1) {
-      await portGroups.nth(1).click({ force: true });
-    } else {
-      await portGroups.first().click({ force: true });
+    let sailedAway = false;
+    for (let i = 0; i < count; i++) {
+      await portGroups.nth(i).click({ force: true });
+      const remoteSailBtn = page.getByRole('button', { name: /^Sail .+ here \(~\d+ ticks\)$/ });
+      if (await remoteSailBtn.count()) {
+        await remoteSailBtn.click();
+        sailedAway = true;
+        break;
+      }
     }
+    expect(sailedAway).toBe(true);
 
-    // If not the current docked port, SailControl should appear
-    const sailBtn = page.getByRole('button', { name: /sail here/i });
-    // Either we are on remote (button) or on home (no button, trading controls)
-    // Accept either state
-    const hasSail = await sailBtn.count();
-    if (hasSail > 0) {
-      await expect(sailBtn).toBeVisible();
-      // Clicking sail should change ship state
-      await sailBtn.click();
-      await page.locator('.ctrl-ship').click();
-      await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
-    }
+    await page.locator('.ctrl-ship').click();
+    await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
   });
 
   test('underway Controlled Ship shows an accented, directional course with a tick label (#45)', async ({
@@ -293,7 +337,7 @@ test.describe('trading interactions (when docked)', () => {
     // always exists).
     const portGroups = page.locator('g.port');
     const count = await portGroups.count();
-    const sailBtn = page.getByRole('button', { name: /sail here/i });
+    const sailBtn = page.getByRole('button', { name: /^Sail .+ here \(~\d+ ticks\)$/ });
     for (let i = 0; i < count; i++) {
       await portGroups.nth(i).click({ force: true });
       if (await sailBtn.count()) break;

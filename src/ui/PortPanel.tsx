@@ -235,16 +235,42 @@ function MarketRow({
   );
 }
 
-/** Sail-here control shown when the player's ship is docked at another port. */
+/**
+ * Sail-here control (#33): always rendered directly under the Harbor, so it
+ * reads as the primary action for the Controlled Ship. Disabled — with a
+ * title hint — when the ship can't sail here right now (underway, or already
+ * docked at this port); otherwise a live ETA from previewRouteTicks.
+ */
 function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; region: Region }) {
   const dispatch = useGameStore((s) => s.dispatch);
+  const label = `Sail ${ship.id} here`;
 
   if (ship.location.kind !== "docked") {
-    return <p className="side-panel__hint">Ship is underway — dock to trade or sail.</p>;
+    return (
+      <button type="button" className="sail-btn" disabled title="Underway — dock to sail elsewhere.">
+        {label}
+      </button>
+    );
   }
 
+  if (ship.location.portId === portId) {
+    return (
+      <button type="button" className="sail-btn" disabled title="Already docked here.">
+        {label}
+      </button>
+    );
+  }
+
+  // No route exists (worldgen guarantees a connected region, so this is
+  // belt-and-suspenders) — disabled with a hint rather than a vanishing button.
   const eta = previewRouteTicks(region, ship.location.portId, portId);
-  if (eta === null) return null;
+  if (eta === null) {
+    return (
+      <button type="button" className="sail-btn" disabled title="No route to this port.">
+        {label}
+      </button>
+    );
+  }
 
   return (
     <button
@@ -252,7 +278,7 @@ function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; reg
       className="sail-btn"
       onClick={() => dispatch({ kind: "sailTo", shipId: ship.id, portId })}
     >
-      Sail here (~{eta} ticks)
+      {label} (~{eta} ticks)
     </button>
   );
 }
@@ -285,6 +311,8 @@ export function PortPanel({ portId }: { portId: PortId }) {
 
       <Harbor port={port} ships={world.company.ships} controlledShipId={controlledShipId} />
 
+      <SailControl ship={ship} portId={port.id} region={world.region} />
+
       <div className="market" role="table" aria-label={`${port.name} market`}>
         <div className="market__header" role="row">
           <span>Good</span>
@@ -303,8 +331,6 @@ export function PortPanel({ portId }: { portId: PortId }) {
           />
         ))}
       </div>
-
-      {!dockedHere && <SailControl ship={ship} portId={port.id} region={world.region} />}
     </>
   );
 }
