@@ -1,4 +1,4 @@
-import { useState, type ComponentType, type CSSProperties, type SVGProps } from "react";
+import { useState, type ComponentType, type CSSProperties, type ReactNode, type SVGProps } from "react";
 import { shortestRoute, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { AgrarianIcon, IndustrialIcon, MiningIcon, ShipIcon, UrbanIcon, VerdantIcon } from "./icons";
@@ -14,6 +14,24 @@ const PORT_DISC_RADIUS = 3;
  *  converts a unit-plane distance (orbit radius) into viewBox units. */
 const SCALE = VIEW_SIZE - 2 * PADDING;
 const CENTER = { x: 0.5, y: 0.5 };
+
+/** Ambient osmosis layer (docs/specs/E8-living-economy.md — Ambient ships):
+ *  lanes whose |osmosisPulse| stays at or below this display threshold read
+ *  as quiet — the "quieter lanes" calm of PR #55. Threshold is in the same
+ *  value-weighted units as `osmosisPulse` (thalers moved this tick);
+ *  tuning is not spec drift. */
+const PULSE_DISPLAY_THRESHOLD = 1;
+/** Pulse dot radius (viewBox units) — clearly smaller than SHIP_ICON_SIZE
+ *  (4): signal moving through the network, not a vessel. */
+const PULSE_RADIUS = 0.5;
+/** Density (dot count per lane) grows with magnitude, one extra dot per this
+ *  many units of flow, capped so a very hot lane doesn't turn into clutter. */
+const PULSE_DENSITY_SCALE = 4;
+const PULSE_MAX_COUNT = 4;
+/** Travel duration (seconds) for a barely-active lane; speed scales up
+ *  (duration shrinks) with magnitude down to this floor. */
+const PULSE_DURATION_BASE = 2.4;
+const PULSE_DURATION_MIN = 0.7;
 
 /** Archetype → vendored SVG icon (#34, docs/adr/0006-svg-icon-strategy.md). */
 const ARCHETYPE_ICONS: Record<PortArchetype, ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -56,12 +74,59 @@ function laneLabelPosition(a: { x: number; y: number }, b: { x: number; y: numbe
   };
 }
 
+/** Ambient pulse dots for one lane, travelling from the flow's source to its
+ *  destination (sign convention: positive `osmosisPulse` = lane's `a` sent
+ *  goods to `b`, src/sim/osmosis.ts). Density and speed both scale with
+ *  |magnitude|; count/duration formulas are tuning, not contract. Returns
+ *  null when the lane is at or below the display threshold — a quiet lane
+ *  renders nothing (PR #55 calm). */
+function osmosisDots(
+  magnitude: number,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+): ReactNode {
+  if (Math.abs(magnitude) <= PULSE_DISPLAY_THRESHOLD) return null;
+
+  const intensity = Math.abs(magnitude) / PULSE_DENSITY_SCALE;
+  const count = Math.min(PULSE_MAX_COUNT, Math.max(1, Math.floor(1 + intensity)));
+  const duration = Math.max(PULSE_DURATION_MIN, PULSE_DURATION_BASE / (1 + intensity));
+  // Positive pulse = a -> b already reflected by the caller's from/to.
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+
+  return Array.from({ length: count }, (_, i) => (
+    <circle
+      key={i}
+      className="osmosis-pulse"
+      cx={from.x}
+      cy={from.y}
+      r={PULSE_RADIUS}
+      style={
+        {
+          "--pulse-dx": `${dx}px`,
+          "--pulse-dy": `${dy}px`,
+          animationDuration: `${duration}s`,
+          animationDelay: `${(i * duration) / count}s`,
+        } as CSSProperties
+      }
+    />
+  ));
+}
+
 /**
  * SVG region map (docs/specs/E2-trade-loop.md — UI layout): ports as nodes,
  * lanes as edges, the ship positioned by shipPosition(). Clicking a port or
  * the ship updates the store's selection.
  */
-export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
+export function RegionMap({
+  region,
+  ship,
+  osmosisPulse,
+}: {
+  region: Region;
+  ship: Ship;
+  osmosisPulse: Record<LaneId, number>;
+}) {
   const selection = useGameStore((s) => s.selection);
   const select = useGameStore((s) => s.select);
   const openShip = useGameStore((s) => s.openShip);
@@ -189,6 +254,26 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
                   {lane.voyageTicks}t
                 </text>
               )}
+            </g>
+          );
+        })}
+      </g>
+      {/* Ambient osmosis layer (docs/specs/E8-living-economy.md — Ambient
+          ships): small pulses travelling along lanes with an active flow —
+          signal moving through a network, not vessels. Drawn above lanes but
+          below ports/the Controlled Ship so it stays clearly subordinate.
+          Purely derived from `osmosisPulse`; no sim entities. */}
+      <g className="region-map__osmosis" aria-hidden="true">
+        {region.lanes.map((lane) => {
+          const magnitude = osmosisPulse[lane.id] ?? 0;
+          // Sign convention (src/sim/osmosis.ts): positive = a -> b.
+          const from = project(portsById.get(magnitude >= 0 ? lane.a : lane.b)!);
+          const to = project(portsById.get(magnitude >= 0 ? lane.b : lane.a)!);
+          const dots = osmosisDots(magnitude, from, to);
+          if (!dots) return null;
+          return (
+            <g key={lane.id} className="osmosis-lane" data-lane-id={lane.id}>
+              {dots}
             </g>
           );
         })}

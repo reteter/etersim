@@ -583,6 +583,50 @@ body {
   pointer-events: none;
 }
 
+/* Ambient osmosis layer (docs/specs/E8-living-economy.md — Ambient ships):
+   small dots travelling along an active lane, clearly subordinate to the
+   Controlled Ship glyph — a cool aether-blue distinct from the gold ship/
+   course accents so the two signals never get confused. */
+.region-map__osmosis {
+  pointer-events: none;
+}
+
+.osmosis-pulse {
+  fill: #7fb4e0;
+  filter: drop-shadow(0 0 0.6px #7fb4e0);
+  transform-box: fill-box;
+  animation-name: osmosis-travel;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes osmosis-travel {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.8;
+  }
+  88% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--pulse-dx), var(--pulse-dy));
+    opacity: 0;
+  }
+}
+
+/* Reduced motion (E10 precedent, lines ~512/574): a travelling dot has no
+   legible static substitute without freezing several dots on top of each
+   other, so the whole ambient layer is hidden rather than faked-static —
+   a quiet map, not a cluttered one. */
+@media (prefers-reduced-motion: reduce) {
+  .region-map__osmosis {
+    display: none;
+  }
+}
+
 .port {
   cursor: pointer;
 }
