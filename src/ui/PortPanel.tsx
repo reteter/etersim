@@ -150,6 +150,10 @@ function MarketRow({
 
   const unitPrice = price(entry, base);
   const trend = priceTrend(unitPrice, snapshotPrice);
+  // Two-sided single-unit quotes (E8 bid-ask spread, #61): always shown,
+  // independent of docking, so the spread is visible while just browsing.
+  const askUnit = quoteBuy(entry, base, 1);
+  const bidUnit = quoteSell(entry, base, 1);
 
   const buyMax = trading ? computeBuyMax(entry, base, ship, thalers) : 0;
   const sellMax = trading ? computeSellMax(entry, base, ship, good) : 0;
@@ -175,9 +179,11 @@ function MarketRow({
     <div className="market-row">
       <div className="market-row__head">
         <span className="market-row__name">{GOODS[good].name}</span>
-        <span className={`market-row__price market-row__price--${trend}`}>
-          {TREND_GLYPH[trend]} ₸{Math.round(unitPrice)}
+        <span className={`market-row__trend market-row__trend--${trend}`}>
+          {TREND_GLYPH[trend]}
         </span>
+        <span className="market-row__bid">{quoteLabel(bidUnit)}</span>
+        <span className="market-row__ask">{quoteLabel(askUnit)}</span>
         <span className="market-row__stock">{Math.floor(entry.stock)}</span>
       </div>
       {trading && (
@@ -324,7 +330,9 @@ export function PortPanel({ portId }: { portId: PortId }) {
       <div className="market" role="table" aria-label={`${port.name} market`}>
         <div className="market__header" role="row">
           <span>Good</span>
-          <span>Price</span>
+          <span>Trend</span>
+          <span>Bid</span>
+          <span>Ask</span>
           <span>Stock</span>
         </div>
         {GOOD_IDS.map((good) => (

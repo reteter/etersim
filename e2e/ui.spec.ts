@@ -246,9 +246,34 @@ test.describe('main game UI after start', () => {
     // At least one good row
     await expect(page.locator('.market-row__name')).toHaveCount(5);
 
-    // Price and stock visible
-    await expect(page.locator('.market-row__price').first()).toContainText('₸');
+    // Bid/ask and stock visible
+    await expect(page.locator('.market-row__bid').first()).toContainText('₸');
+    await expect(page.locator('.market-row__ask').first()).toContainText('₸');
     await expect(page.locator('.market-row__stock').first()).toBeVisible();
+  });
+
+  test('port panel shows two-sided bid/ask per good, ask above bid by the spread (#61)', async ({
+    page,
+  }) => {
+    await page.locator('g.port').first().click({ force: true });
+
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    await expect(grainRow).toBeVisible();
+
+    const bidText = await grainRow.locator('.market-row__bid').innerText();
+    const askText = await grainRow.locator('.market-row__ask').innerText();
+    const bid = Number(bidText.replace(/[^\d.]/g, ''));
+    const ask = Number(askText.replace(/[^\d.]/g, ''));
+
+    // Spread is ~2.5% per side (SPREAD in src/sim/market.ts) around the mid,
+    // so ask/bid should differ by roughly 5% of the mid — well above rounding
+    // noise, safely below a factor of 1.5 either way.
+    expect(ask).toBeGreaterThan(bid);
+    expect(ask / bid).toBeGreaterThan(1.02);
+    expect(ask / bid).toBeLessThan(1.15);
+
+    // Trend glyph still renders, independent of bid/ask.
+    await expect(grainRow.locator('.market-row__trend')).toBeVisible();
   });
 });
 
