@@ -522,18 +522,35 @@ body {
    two accent triggers stay visually separable. */
 .lane {
   stroke: #3a4356;
+  stroke-width: 0.35;
+}
+
+/* Route preview (#8): a docked ship's prospective course to the hovered port.
+   Dashed like a committed course but static and muted, so a hypothesis never
+   reads as loudly as the real thing. Declared before the accents so those win
+   the cascade when a lane carries more than one role. */
+.lane--hover-preview {
+  stroke: #9a8552;
   stroke-width: 0.5;
+  stroke-dasharray: 1.6 1.4;
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 .lane--port-accent {
   stroke: #e0a840;
-  stroke-width: 0.7;
-  filter: drop-shadow(0 0 1px #e0a840);
+  stroke-width: 0.55;
+  filter: drop-shadow(0 0 0.5px #e0a840);
+  /* A committed accent wins fully over a co-occurring hover preview: reset the
+     preview's dash/opacity so the lane reads solid, not a muddied hybrid (a
+     selected port and a hovered route can share an incident lane). */
+  stroke-dasharray: none;
+  opacity: 1;
 }
 
 .lane--course-accent {
   stroke: #e0a840;
-  stroke-width: 0.8;
+  stroke-width: 0.6;
   stroke-dasharray: 2 1.2;
   animation: course-flow 1.2s linear infinite;
 }
@@ -608,6 +625,14 @@ body {
 
 .ship__glyph {
   color: #cfd6e2;
+}
+
+/* Docked, the glyph sits on the bright archetype-tinted disc and washes out
+   (#playtest). A dark halo separates it from any port color while keeping the
+   tint (gold Controlled / grey idle) legible. Only when docked — underway the
+   glyph is over dark space and needs no backing. */
+.ship--docked .ship__glyph {
+  filter: drop-shadow(0 0 0.5px #0b0f18) drop-shadow(0 0 0.5px #0b0f18);
 }
 
 /* Gold marks the Controlled Ship (#34) — one color, one meaning; docked vs.

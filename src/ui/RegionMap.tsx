@@ -1,5 +1,5 @@
-import type { ComponentType, CSSProperties, SVGProps } from "react";
-import type { LaneId, Port, PortArchetype, PortId, Region, Ship, Voyage } from "../sim";
+import { useState, type ComponentType, type CSSProperties, type SVGProps } from "react";
+import { shortestRoute, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { AgrarianIcon, IndustrialIcon, MiningIcon, ShipIcon, UrbanIcon, VerdantIcon } from "./icons";
 import { projectToViewBox } from "./mapProjection";
@@ -67,6 +67,8 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
   const openShip = useGameStore((s) => s.openShip);
   const controlledShipId = useGameStore((s) => s.controlledShipId);
 
+  const [hoveredPortId, setHoveredPortId] = useState<PortId | null>(null);
+
   const portsById = new Map(region.ports.map((p) => [p.id, p]));
   const shipPos = project(shipPosition(ship, region));
   const center = project(CENTER);
@@ -81,6 +83,18 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
       ? ship.location.route.slice(ship.location.voyageIndex)
       : [];
   const courseDestinationByLane = new Map<LaneId, PortId>(courseVoyages.map((v) => [v.laneId, v.to]));
+
+  // Route preview (#8): while the Controlled Ship is docked, hovering another
+  // port previews the shortest route from its berth as a muted dashed course —
+  // a hypothesis, visually weaker than a committed course. No preview while
+  // underway (a course already owns the map).
+  const dockedPortId =
+    ship.id === controlledShipId && ship.location.kind === "docked" ? ship.location.portId : null;
+  const previewLaneIds = new Set<LaneId>(
+    dockedPortId && hoveredPortId && hoveredPortId !== dockedPortId
+      ? (shortestRoute(region, dockedPortId, hoveredPortId) ?? []).map((v) => v.laneId)
+      : [],
+  );
 
   return (
     <svg
@@ -148,8 +162,11 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
           const from = project(portsById.get(fromId)!);
           const to = project(portsById.get(toId)!);
 
+          const isHoverPreview = previewLaneIds.has(lane.id);
+
           const className = [
             "lane",
+            isHoverPreview && "lane--hover-preview",
             isPortAccented && "lane--port-accent",
             isCourseAccented && "lane--course-accent",
           ]
@@ -188,6 +205,8 @@ export function RegionMap({ region, ship }: { region: Region; ship: Ship }) {
               data-archetype={port.archetype}
               style={{ "--port-color": `var(--archetype-${port.archetype})` } as CSSProperties}
               onClick={() => select({ kind: "port", id: port.id })}
+              onMouseEnter={() => setHoveredPortId(port.id)}
+              onMouseLeave={() => setHoveredPortId((prev) => (prev === port.id ? null : prev))}
             >
               <circle className="port__disc" cx={x} cy={y} r={PORT_DISC_RADIUS} />
               <Icon
