@@ -236,37 +236,41 @@ function MarketRow({
 }
 
 /**
+ * Why the Controlled Ship can't sail to a given port right now, or null when
+ * it can — in which case `eta` carries the previewed voyage ticks. The
+ * "no route" case is belt-and-suspenders: worldgen guarantees a connected
+ * region, but a disabled button with a hint beats a vanishing one.
+ */
+function sailability(
+  ship: Ship,
+  portId: PortId,
+  region: Region,
+): { disabledHint: string; eta: null } | { disabledHint: null; eta: number } {
+  if (ship.location.kind !== "docked") {
+    return { disabledHint: "Underway — dock to sail elsewhere.", eta: null };
+  }
+  if (ship.location.portId === portId) {
+    return { disabledHint: "Already docked here.", eta: null };
+  }
+  const eta = previewRouteTicks(region, ship.location.portId, portId);
+  if (eta === null) return { disabledHint: "No route to this port.", eta: null };
+  return { disabledHint: null, eta };
+}
+
+/**
  * Sail-here control (#33): always rendered directly under the Harbor, so it
  * reads as the primary action for the Controlled Ship. Disabled — with a
- * title hint — when the ship can't sail here right now (underway, or already
- * docked at this port); otherwise a live ETA from previewRouteTicks.
+ * title hint — when the ship can't sail here right now (underway, already
+ * docked at this port, or unreachable); otherwise a live ETA.
  */
 function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; region: Region }) {
   const dispatch = useGameStore((s) => s.dispatch);
+  const { disabledHint, eta } = sailability(ship, portId, region);
   const label = `Sail ${ship.id} here`;
 
-  if (ship.location.kind !== "docked") {
+  if (disabledHint !== null) {
     return (
-      <button type="button" className="sail-btn" disabled title="Underway — dock to sail elsewhere.">
-        {label}
-      </button>
-    );
-  }
-
-  if (ship.location.portId === portId) {
-    return (
-      <button type="button" className="sail-btn" disabled title="Already docked here.">
-        {label}
-      </button>
-    );
-  }
-
-  // No route exists (worldgen guarantees a connected region, so this is
-  // belt-and-suspenders) — disabled with a hint rather than a vanishing button.
-  const eta = previewRouteTicks(region, ship.location.portId, portId);
-  if (eta === null) {
-    return (
-      <button type="button" className="sail-btn" disabled title="No route to this port.">
+      <button type="button" className="sail-btn" disabled title={disabledHint}>
         {label}
       </button>
     );

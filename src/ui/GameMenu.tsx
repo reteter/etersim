@@ -43,7 +43,7 @@ export function GameMenu() {
   };
 
   return (
-    <div className="top-bar__menu" role="group" aria-label="Save menu">
+    <div className="top-bar__menu" role="group" aria-label="Game menu">
       <button type="button" className="menu-btn" onClick={onExport} disabled={!world}>
         Export
       </button>
