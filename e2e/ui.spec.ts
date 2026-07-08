@@ -501,4 +501,22 @@ test.describe('ambient osmosis pulses on the map (#63)', () => {
     expect(activeLaneCount).toBeGreaterThan(0);
     expect(activeLaneCount).toBeLessThan(totalLaneCount);
   });
+
+  test('prefers-reduced-motion: pulses stay visible but freeze in place (#69 review)', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await page.getByLabel(/seed/i).fill('66'); // see rationale in the test above
+    await page.getByRole('button', { name: /new game/i }).click();
+
+    const map = page.locator('svg.region-map');
+    await page.getByRole('button', { name: '100x' }).click();
+
+    const pulse = map.locator('.osmosis-pulse').first();
+    await expect(pulse).toBeVisible();
+    // No animation under reduced motion (src/index.css); the diagnostic
+    // (a busy lane) still shows through opacity, not motion.
+    await expect(pulse).toHaveCSS('animation-name', 'none');
+  });
 });

@@ -617,13 +617,19 @@ body {
   }
 }
 
-/* Reduced motion (E10 precedent, lines ~512/574): a travelling dot has no
-   legible static substitute without freezing several dots on top of each
-   other, so the whole ambient layer is hidden rather than faked-static —
-   a quiet map, not a cluttered one. */
+/* Reduced motion (owner call, 2026-07-08; E10 precedent, lines ~512/574):
+   dots freeze at their phase along the lane (--pulse-phase, set per dot)
+   instead of animating — still a diagnostic ("this lane is busy") but no
+   motion. Opacity substitutes for the animated fade, scaled by intensity
+   (--pulse-static-opacity) so a hotter lane still reads brighter. */
 @media (prefers-reduced-motion: reduce) {
-  .region-map__osmosis {
-    display: none;
+  .osmosis-pulse {
+    animation: none;
+    opacity: var(--pulse-static-opacity);
+    transform: translate(
+      calc(var(--pulse-dx) * var(--pulse-phase)),
+      calc(var(--pulse-dy) * var(--pulse-phase))
+    );
   }
 }
 

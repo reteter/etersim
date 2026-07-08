@@ -24,14 +24,20 @@ const PULSE_DISPLAY_THRESHOLD = 1;
 /** Pulse dot radius (viewBox units) — clearly smaller than SHIP_ICON_SIZE
  *  (4): signal moving through the network, not a vessel. */
 const PULSE_RADIUS = 0.5;
-/** Density (dot count per lane) grows with magnitude, one extra dot per this
- *  many units of flow, capped so a very hot lane doesn't turn into clutter. */
-const PULSE_DENSITY_SCALE = 4;
+/** Dot count and speed both grow with magnitude, one extra dot (and a
+ *  proportionally shorter travel duration) per this many units of flow,
+ *  capped so a very hot lane doesn't turn into clutter. */
+const PULSE_INTENSITY_SCALE = 4;
 const PULSE_MAX_COUNT = 4;
 /** Travel duration (seconds) for a barely-active lane; speed scales up
  *  (duration shrinks) with magnitude down to this floor. */
 const PULSE_DURATION_BASE = 2.4;
 const PULSE_DURATION_MIN = 0.7;
+/** prefers-reduced-motion (owner call, 2026-07-08): dots freeze in place
+ *  instead of animating, so opacity carries the intensity signal instead —
+ *  bounds below. */
+const PULSE_STATIC_OPACITY_MIN = 0.45;
+const PULSE_STATIC_OPACITY_MAX = 1;
 
 /** Archetype → vendored SVG icon (#34, docs/adr/0006-svg-icon-strategy.md). */
 const ARCHETYPE_ICONS: Record<PortArchetype, ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -57,6 +63,18 @@ function project(point: Pick<Port, "x" | "y">): { x: number; y: number } {
     x: projectToViewBox(point.x, VIEW_SIZE, PADDING),
     y: projectToViewBox(point.y, VIEW_SIZE, PADDING),
   };
+}
+
+/** Projects a lane's two endpoints given which port id is the source and
+ *  which is the destination — the lanes layer (course direction) and the
+ *  osmosis layer (flow sign) each pick `fromId`/`toId` differently but share
+ *  this lookup + projection step. */
+function laneEndpoints(
+  portsById: Map<PortId, Port>,
+  fromId: PortId,
+  toId: PortId,
+): { from: { x: number; y: number }; to: { x: number; y: number } } {
+  return { from: project(portsById.get(fromId)!), to: project(portsById.get(toId)!) };
 }
 
 const LANE_LABEL_OFFSET = 2.5;
@@ -87,9 +105,13 @@ function osmosisDots(
 ): ReactNode {
   if (Math.abs(magnitude) <= PULSE_DISPLAY_THRESHOLD) return null;
 
-  const intensity = Math.abs(magnitude) / PULSE_DENSITY_SCALE;
+  const intensity = Math.abs(magnitude) / PULSE_INTENSITY_SCALE;
   const count = Math.min(PULSE_MAX_COUNT, Math.max(1, Math.floor(1 + intensity)));
   const duration = Math.max(PULSE_DURATION_MIN, PULSE_DURATION_BASE / (1 + intensity));
+  const staticOpacity = Math.min(
+    PULSE_STATIC_OPACITY_MAX,
+    PULSE_STATIC_OPACITY_MIN + intensity * 0.2,
+  );
   // Positive pulse = a -> b already reflected by the caller's from/to.
   const dx = to.x - from.x;
   const dy = to.y - from.y;
@@ -105,8 +127,18 @@ function osmosisDots(
         {
           "--pulse-dx": `${dx}px`,
           "--pulse-dy": `${dy}px`,
+          // Reduced-motion fallback (owner call, 2026-07-08): each dot
+          // freezes at its phase along the lane instead of animating, so
+          // the lane still reads as busy without motion.
+          "--pulse-phase": String(i / count),
+          "--pulse-static-opacity": String(staticOpacity),
           animationDuration: `${duration}s`,
-          animationDelay: `${(i * duration) / count}s`,
+          // Negative delay: the animation starts already mid-cycle, so
+          // dots 2..n are immediately phased along the lane instead of
+          // sitting static (at full opacity) at the source for up to a
+          // full duration whenever the lane activates or the keyframe
+          // restarts (duration/direction can change as magnitude shifts).
+          animationDelay: `${(-i * duration) / count}s`,
         } as CSSProperties
       }
     />
@@ -224,8 +256,7 @@ export function RegionMap({
           // voyage's destination so the course arrowhead points the right way.
           const fromId = isCourseAccented && courseTo === lane.a ? lane.b : lane.a;
           const toId = isCourseAccented && courseTo === lane.a ? lane.a : lane.b;
-          const from = project(portsById.get(fromId)!);
-          const to = project(portsById.get(toId)!);
+          const { from, to } = laneEndpoints(portsById, fromId, toId);
 
           const isHoverPreview = previewLaneIds.has(lane.id);
 
@@ -267,8 +298,11 @@ export function RegionMap({
         {region.lanes.map((lane) => {
           const magnitude = osmosisPulse[lane.id] ?? 0;
           // Sign convention (src/sim/osmosis.ts): positive = a -> b.
-          const from = project(portsById.get(magnitude >= 0 ? lane.a : lane.b)!);
-          const to = project(portsById.get(magnitude >= 0 ? lane.b : lane.a)!);
+          const { from, to } = laneEndpoints(
+            portsById,
+            magnitude >= 0 ? lane.a : lane.b,
+            magnitude >= 0 ? lane.b : lane.a,
+          );
           const dots = osmosisDots(magnitude, from, to);
           if (!dots) return null;
           return (
