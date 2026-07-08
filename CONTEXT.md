@@ -97,14 +97,18 @@ A per-port multiplier on a Good's base price — authored per Port archetype (co
 a good above the global base, producers below) plus a small seeded per-port jitter. Scales
 the whole price curve including floor and ceiling; the source of the region's structural
 price gradients.
-_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
+_Implementation_: shipped in #57 ([spec](docs/specs/E8-living-economy.md)) — `Port.priceBias`,
+drawn once in worldgen (`ARCHETYPE_BIAS` × per-good jitter); `effectiveBase(port, good)` is the
+anchor the whole price curve scales around.
 _Avoid_: price modifier, base multiplier (as loose synonyms)
 
 **Spread** (PL: spread):
 The gap between a Market's two-sided quotes: buying pays the marginal-price walk plus the
 spread (ask), selling receives it minus the spread (bid). Baked into quotes, shown as two
 prices; a money sink — no one collects it. Trends track the mid price (spread-free).
-_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
+_Implementation_: shipped in #57 ([spec](docs/specs/E8-living-economy.md)) — `quoteBuy`/
+`quoteSell` in `src/sim/market.ts` (`SPREAD = 0.025`); the port panel's two-sided display is
+still pending in the UI (#61).
 _Avoid_: fee, tax, commission (for this mechanism)
 
 **Flow drift** (PL: dryf przepływów):
