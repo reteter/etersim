@@ -15,6 +15,7 @@ export function ControlledShipHeader() {
   const controlledShipId = useGameStore((s) => s.controlledShipId);
   const selection = useGameStore((s) => s.selection);
   const openShip = useGameStore((s) => s.openShip);
+  const select = useGameStore((s) => s.select);
 
   if (!world || !controlledShipId) return null;
   const ship = world.company.ships.find((s) => s.id === controlledShipId);
@@ -23,19 +24,33 @@ export function ControlledShipHeader() {
   const loc = ship.location;
   const name = (id: string) => portName(world.region, id);
 
+  const viewingThisShip = selection?.kind === "ship" && selection.id === ship.id;
+
   let status: string;
   if (loc.kind === "docked") {
-    const viewingThisPort = selection?.kind === "port" && selection.id === loc.portId;
-    status = viewingThisPort ? `Docked here — ${name(loc.portId)}` : `Docked at ${name(loc.portId)}`;
+    // "Docked here" whenever the header points at its own port context —
+    // either the port panel is open, or the ship panel is (and clicking
+    // toggles back to that port). Reads as the anchor of the toggle (#5).
+    const atThisPortContext =
+      (selection?.kind === "port" && selection.id === loc.portId) || viewingThisShip;
+    status = atThisPortContext ? `Docked here — ${name(loc.portId)}` : `Docked at ${name(loc.portId)}`;
   } else {
     status = `Underway to ${name(loc.destination)} • ~${etaTicks(ship, world.region)}`;
   }
+
+  // Toggle (#5): from the ShipPanel of a docked ship, return to its port
+  // panel; otherwise open the ShipPanel. Underway there is no port to
+  // toggle to, so it just (re)opens the ShipPanel.
+  const handleClick =
+    viewingThisShip && loc.kind === "docked"
+      ? () => select({ kind: "port", id: loc.portId })
+      : () => openShip(ship.id);
 
   return (
     <button
       type="button"
       className="ctrl-ship"
-      onClick={() => openShip(ship.id)}
+      onClick={handleClick}
       aria-label={`Controlled ship ${ship.id}`}
     >
       <ShipIcon className="ctrl-ship__glyph" />
