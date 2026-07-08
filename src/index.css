@@ -699,6 +699,14 @@ body {
   background: #1a202b;
 }
 
+/* Keyboard focus (rows are tabIndex={0} + Enter/Space-activatable, a11y
+   cleanup): make focus obvious since the row itself has no native focus
+   ring (it's a div with role="row", not a button). */
+.price-board__row:not(.price-board__row--header):focus-visible {
+  outline: 2px solid #e0a840;
+  outline-offset: -2px;
+}
+
 /* The Controlled Ship's own port — a gold tint mirrors the map/Harbor
    Controlled Ship convention (#34) rather than introducing a new color. */
 .price-board__row--docked {

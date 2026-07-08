@@ -351,6 +351,25 @@ test.describe('region price board (#62)', () => {
     await expect(page.locator('.market')).toBeVisible();
     await expect(page.locator('.side-panel__title')).toHaveText(portName);
   });
+
+  test('rows are keyboard-operable: focus + Enter opens that port\'s panel (a11y)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const firstRow = rows.first();
+    const portName = await firstRow.locator('.price-board__port-name').innerText();
+
+    await firstRow.focus();
+    await expect(firstRow).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(dialog).not.toBeVisible();
+    await expect(page.locator('.market')).toBeVisible();
+    await expect(page.locator('.side-panel__title')).toHaveText(portName);
+  });
 });
 
 test.describe('trading interactions (when docked)', () => {

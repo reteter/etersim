@@ -18,6 +18,7 @@ import {
 import { useGameStore } from "../store/gameStore";
 import { ShipIcon } from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
+import { quoteLabel } from "./quoteFormat";
 import { previewRouteTicks } from "./routePreview";
 
 /** Compact cargo summary for a Harbor hover tooltip, e.g. "Grain 5, Iron 2". */
@@ -83,11 +84,6 @@ function Harbor({
       )}
     </div>
   );
-}
-
-/** Marginal quote total, or "—" when the quantity is not tradable. */
-function quoteLabel(total: number | null): string {
-  return total === null ? "—" : `₸${total}`;
 }
 
 /** Inline "(₸n/u)" hint for the next single unit's marginal price, or "" when untradable. */

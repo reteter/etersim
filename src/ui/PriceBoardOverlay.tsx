@@ -12,17 +12,13 @@ import {
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { priceTrend, TREND_GLYPH, type Trend } from "./priceTrend";
+import { quoteLabel } from "./quoteFormat";
 
 /** One port×good cell's two-sided quote plus the mid-price trend (E8). */
 interface Cell {
   readonly bid: number | null;
   readonly ask: number | null;
   readonly trend: Trend;
-}
-
-/** Formats a quote, or "—" when the good isn't tradable at this port right now. */
-function cellLabel(value: number | null): string {
-  return value === null ? "—" : `₸${value}`;
 }
 
 /** All cells for one port, keyed by good. */
@@ -116,7 +112,18 @@ export function PriceBoardOverlay({ onClose }: { onClose: () => void }) {
                 data-archetype={port.archetype}
                 style={{ "--port-color": `var(--archetype-${port.archetype})` } as CSSProperties}
                 role="row"
+                tabIndex={0}
                 onClick={() => openPort(port.id)}
+                onKeyDown={(e) => {
+                  // Enter/Space activate the row, matching native button
+                  // behavior (Harbor.tsx uses real <button>s for its rows;
+                  // here role="row" must stay valid grid semantics, so
+                  // keyboard activation is wired explicitly instead).
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openPort(port.id);
+                  }
+                }}
               >
                 <span className="price-board__port-name">{port.name}</span>
                 {GOOD_IDS.map((good) => {
@@ -132,7 +139,7 @@ export function PriceBoardOverlay({ onClose }: { onClose: () => void }) {
                             : "price-board__bid"
                         }
                       >
-                        {cellLabel(cell.bid)}
+                        {quoteLabel(cell.bid)}
                       </span>
                       <span className={`price-board__trend price-board__trend--${cell.trend}`}>
                         {TREND_GLYPH[cell.trend]}
@@ -144,7 +151,7 @@ export function PriceBoardOverlay({ onClose }: { onClose: () => void }) {
                             : "price-board__ask"
                         }
                       >
-                        {cellLabel(cell.ask)}
+                        {quoteLabel(cell.ask)}
                       </span>
                     </span>
                   );
