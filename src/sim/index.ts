@@ -29,7 +29,6 @@ export {
 } from "./ship";
 export { GOOD_IDS, GOODS, type GoodDef, type GoodId } from "./goods";
 export {
-  ARCHETYPE_BIAS,
   ARCHETYPE_PROFILES,
   PORT_ARCHETYPES,
   TICKS_PER_DAY,
@@ -45,6 +44,8 @@ export {
 export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
 export { tick, type Command } from "./tick";
+// ARCHETYPE_BIAS and SPREAD stay internal until a UI consumer exists
+// (quotes already carry the spread; the bias is baked into priceBias).
 export {
   effectiveBase,
   marketTick,
@@ -52,7 +53,6 @@ export {
   price,
   quoteBuy,
   quoteSell,
-  SPREAD,
   STOCK_CAP_MULTIPLIER,
   type FlowModifiers,
 } from "./market";
