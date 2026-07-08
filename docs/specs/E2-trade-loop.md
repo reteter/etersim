@@ -3,17 +3,18 @@
 Feature spec for epic E2 (milestone M1, [PRD](../PRD.md)). Terms per [CONTEXT.md](../../CONTEXT.md).
 Grilled and decided with the owner on 2026-07-04 (issue #4). Status: **approved** (2026-07-04).
 
-**Implementation status (2026-07-07):**
+**Implementation status (2026-07-08 — E2 complete):**
 
 | Area | Issues | Status |
 | --- | --- | --- |
 | Sim core | #10–#13 | **Shipped** |
 | Store bridge + time fold | #14, #26 | **Shipped** (ADR-0005 immediate commands) |
 | Baseline map + panels | #15, #16 | **Shipped** (pre–#28 UX; see §UI layout — shipped) |
-| Save / load | #17 | **Shipped** (export/import; settings reconciliation in #37) |
+| Save / load | #17 | **Shipped** (export/import; settings reconciled into the menu in #37) |
 | Controlled Ship + Harbor | #28, #32 | **Shipped** — port-click priority, Harbor list, `controlledShipId` store model, always-visible header |
-| Remaining follow-ups | #33–#37 | **Spec'd, not shipped** — locked design in §UI layout — follow-ups and follow-up sections below |
-| Moved to E10 | #25, #34 | **Re-scoped** — land in [E10 — Orrery view](E10-orrery-view.md) (spec approved 2026-07-07) |
+| Trade UX + auto-pause | #35, #36 | **Shipped** (PR #41, #42) — Buy/Sell max + live clamp; auto-pause on final-destination arrival |
+| Sail placement + Options | #33, #37 | **Shipped** (PR #53) — Sail control under the Harbor with disabled hints, "Open market" removed; Options overlay (auto-pause toggle) reconciled into the menu |
+| Moved to E10 | #25, #34 | **Re-scoped** — landed in [E10 — Orrery view](E10-orrery-view.md) (spec approved 2026-07-07) |
 
 Scope in one line: one region, live per-port markets, one ship sailed manually, map + panels UI,
 time controls, save/load. No magic, no contracts, no fleet, no upgrades.
@@ -171,15 +172,18 @@ hour = tick mod 24 (decided during #15; nothing earlier defined it).
   #28:* a docked ship is click-through so the port beneath wins (port-click priority); the ship
   stays clickable while underway.
 - **Port view:** market table with buy/sell when the player's ship is docked at that port;
-  read-only market + `Sail here (~N ticks)` button below the table for remote ports
-  (`PortPanel`). Commands ~~target `company.ships[0]`~~ — *superseded by #28:* target the
-  Controlled Ship (`controlledShipId`).
-- **Ship view:** hold, docked/underway status, ETA; **Open market** button still present
-  (`ShipPanel`) — interim affordance until #28/#33.
-- **Save/load menu:** export/import JSON buttons in top bar (`GameMenu`); no settings surface
-  yet (#37).
+  read-only market for other ports. Commands ~~target `company.ships[0]`~~ — *superseded by
+  #28:* target the Controlled Ship (`controlledShipId`). *Sail control: superseded by #33 —*
+  the `Sail <ship> here (~N ticks)` button now sits directly under the Harbor and is always
+  present, disabled with a hint when the ship can't sail here (underway / already here / no
+  route).
+- **Ship view:** hold, docked/underway status, ETA (`ShipPanel`). *#33: the interim "Open
+  market" button is removed — market access is via port selection + the Harbor list.*
+- **Save/load menu:** export / import JSON buttons in the top bar, plus an **Options** overlay
+  (auto-pause toggle) and Credits (`GameMenu`). *#37: settings reconciled into this one menu,
+  no separate surface.*
 
-#### Follow-ups — Controlled Ship + Harbor shipped (#28, #32); sail placement pending (#33); glyph work moved to E10 (#34)
+#### Follow-ups — Controlled Ship + Harbor shipped (#28, #32); sail placement shipped (#33); glyph work moved to E10 (#34)
 
 Clicking a port always opens its view first: the **Harbor** section (list of docked Ships —
 player's ships in one subsection, others in another; hover shows Hold + Cargo summary) appears
@@ -198,22 +202,23 @@ When the Controlled Ship is docked at the currently viewed port, the header indi
 (e.g. "Docked here") and the ship is visually distinguished in the Harbor list.
 
 - If the Controlled Ship is docked here: market enables trading (buy/sell).
-- Remote ports: Harbor on top, followed by a prominent "Sail [Controlled Ship name] here (~N)"
-  action button directly under the Harbor section (more visually distinct than standard market
-  buttons), then the read-only market below (reuses `previewRouteTicks`).
+- Remote ports: Harbor on top, followed by a prominent Sail action button directly under the
+  Harbor section (more visually distinct than standard market buttons), then the read-only
+  market below (reuses `previewRouteTicks`). *Shipped in #33 as `Sail <ship id> here (~N ticks)`
+  — the "[Controlled Ship name]" wording awaits a `Ship.name` field, tracked in [#54](https://github.com/reteter/etersim/issues/54).*
 
 Docked player Ships are primarily accessed via the Harbor list (port click wins over docked ship
 icons). Clicking an eligible player Ship on the map (e.g. underway) or in the Harbor list
 designates it as the Controlled Ship and opens its ShipPanel.
 
-Market access happens via port selection (which always shows the Harbor above the market). The
-interim "Open market" button remains in ShipPanel as a convenience; its removal and the sail
-action's relabel/placement are tracked in **#33**.
+Market access happens via port selection (which always shows the Harbor above the market).
+*#33: the interim "Open market" button was removed from ShipPanel — port selection + the Harbor
+list are the only market path.*
 
-For remote ports the Sail button is available only when the Controlled Ship is docked at a
-different port. The button always targets the current Controlled Ship. Its label stays
-`Sail here (~N)` and it sits below the market for now; the `Sail [Controlled Ship name] here`
-relabel and move under the Harbor are tracked in **#33**.
+The Sail button always targets the current Controlled Ship and is enabled only when that ship is
+docked at a different reachable port; otherwise it renders disabled with a title hint (underway /
+already docked here / no route). *Shipped in #33 — label `Sail <ship id> here (~N ticks)`, placed
+directly under the Harbor.*
 
 **Note:** Exact glyph choice and any color/tinting treatment for the header are deferred to
 follow-up work (#34). Now spec'd in [E10 — Orrery view](E10-orrery-view.md) §Icons
@@ -325,8 +330,9 @@ runs worldgen and threads the RNG state into the world.
   E2E for start screen, top bar, port-click priority, Controlled Ship header, Harbor list, ship
   panel, port market table, buy/sell, sail to remote port (`e2e/ui.spec.ts`). E2E runs locally;
   not yet in CI.
-- UI — **[#33–#37]** E2E to extend when the rest ship: sail relabel/placement + Open market
-  removal, buy/sell max/clamp, auto-pause, Continue/autosave, export/import. Manual playtesting
+- UI — **[shipped #33–#37]** E2E extended for sail placement/disabled states + Open market
+  removal (PR #53) and the Options overlay toggle; buy/sell max/clamp landed with #35.
+  Continue/autosave + export/import remain covered by the #17 baseline. Manual playtesting
   recommended for exploration.
 
 ### Balance tuning levers (implementation-phase, no spec change needed)

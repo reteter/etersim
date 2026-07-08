@@ -3,8 +3,8 @@
 Parking lot for owner feedback gathered while playtesting E2 (PR #29, issue #16).
 High-level decisions locked (2026-07-07). Spec notes added to
 [E2-trade-loop.md](../specs/E2-trade-loop.md); GitHub issues filed (#25, #28, #32–#37).
-Implementation tracked per issue — none of the follow-ups below are shipped yet (see spec
-**Implementation status** table).
+**All shipped as of 2026-07-08** (#25/#34 via E10) — see the Orchestrator notes at the bottom
+and the spec **Implementation status** table.
 
 Terms per [CONTEXT.md](../../CONTEXT.md); process per [WORKFLOW.md](../WORKFLOW.md).
 
@@ -19,7 +19,7 @@ interaction: port-click priority").
 Introduced:
 - **Harbor** (see CONTEXT.md): when a Port is selected, a Harbor section (list of docked Ships) is always shown above the market. Player's ships are separated from others; hover shows summary (Hold + Cargo).
 - **Controlled Ship** (see CONTEXT.md): the designated Ship that receives player Commands (`sailTo` etc.). A small always-visible header will show it. Opening ShipPanel designates it.
-- Direct sail affordance lives in the remote port view (not as extra map gesture for now): "Sail [Controlled Ship name] here (~N)" button.
+- Direct sail affordance lives in the remote port view (not as extra map gesture for now): "Sail [Controlled Ship name] here (~N)" button. *Shipped in #33 (PR #53) as `Sail <ship id> here (~N ticks)`; the readable-name wording needs a `Ship.name` field — tracked in [#54](https://github.com/reteter/etersim/issues/54).*
 - Docked player Ships are reached via the Harbor list (map clicks on docked ships do not win over port).
 
 **Grill follow-up status (2026-07-07):**
@@ -83,6 +83,8 @@ Owner asks for:
 Spec note added to E2-trade-loop.md. GitHub issue: [#35](https://github.com/reteter/etersim/issues/35).
 
 ## 4. Auto-pause on arrival
+> **Resolved → shipped** (#36 PR #42, toggle wired in #37 PR #53). Original text kept for history.
+
 Owner: when the ship **docks at its destination**, auto-pause the game so time doesn't keep
 running (e.g. at 100×) while the player is away and prices run off. Default **On**,
 overridable in options (item 5).
@@ -96,6 +98,9 @@ overridable in options (item 5).
 Spec note added. GitHub issue: [#36](https://github.com/reteter/etersim/issues/36). Default-On behaviour can ship before full options UI.
 
 ## 5. Options / settings view
+> **Resolved → shipped** (#37 PR #53): Options overlay in `GameMenu`, auto-pause toggle, shared
+> `.overlay` CSS. Original text kept for history.
+
 A place for user settings — first tenant is the item 4 auto-pause toggle. **Overlaps
 [#17](https://github.com/reteter/etersim/issues/17)** (start screen + menu with export/import).
 
@@ -110,16 +115,21 @@ with #17 at design level (options extend existing menu; save/load + settings tog
 ---
 
 ### Orchestrator notes (post-lock)
-All high-level decisions locked. Spec/docs synced (2026-07-07); implementation open.
+**E2 complete (2026-07-08)** — all playtest follow-ups shipped; #25/#34 re-scoped into E10.
 - **#28 + #32** — **shipped** (`controlledShipId` store model + `openShip`, always-visible header,
-  Harbor list, port-click priority via click-through docked ship). Unblocks #33, #36.
-- **#25** sim-only — geometry-aware `connectPorts`; since the v2 grill (2026-07-07) it
-  belongs to E10 and waits for the orbit-ring placement (no longer independent).
+  Harbor list, port-click priority via click-through docked ship). Unblocked #33, #36.
+- **#25** sim-only — geometry-aware `connectPorts`; re-scoped into E10 at the v2 grill (2026-07-07)
+  and **shipped there** on top of the orbit-ring placement.
 - **#35** — **shipped** (PR #41): Buy max / Sell max buttons, live qty clamp, next-unit marginal
   price surfaced on the action buttons.
 - **#36** — **shipped** (PR #42): auto-pause on Controlled Ship final-destination arrival
-  (default On, `etersim.settings` localStorage key, `setAutoPauseOnArrival` action for #37 to wire).
-- **#37** can proceed next (settings UI; wires the #36 toggle into the #17 menu).
-- **#34** (tintable ship glyph) deferred to a dedicated Designer→Engineer session — it carries
-  open design questions (colour semantics, glyph strategy), not a straight coder package.
-- E2E (`e2e/ui.spec.ts`) covers baseline #15 UX; update when #28 ships. E2E not yet in CI.
+  (default On, `etersim.settings` localStorage key, `setAutoPauseOnArrival` action).
+- **#33** — **shipped** (PR #53): Sail control moved under the Harbor with disabled hints, legacy
+  "Open market" button removed. Label uses `ship.id` pending a `Ship.name` field ([#54](https://github.com/reteter/etersim/issues/54)).
+- **#37** — **shipped** (PR #53): Options overlay wiring the #36 toggle into the existing menu;
+  shared `.overlay` CSS.
+- **#34** (tintable ship glyph) re-scoped into E10 and **shipped there** (Controlled gold semantics).
+- E2E (`e2e/ui.spec.ts`) now covers the full E2 UI surface; still runs locally only (not in CI).
+
+**Follow-up opened:** [#54](https://github.com/reteter/etersim/issues/54) — give `Ship` a display
+name (domain-model change, needs a grill before implementation).
