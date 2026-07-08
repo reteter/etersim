@@ -1,7 +1,7 @@
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
 import { effectiveBase, price } from "./market";
-import type { PortId, Region } from "./region";
+import type { LaneId, PortId, Region } from "./region";
 import { nextInt, seedRng, type RngState } from "./rng";
 import { emptyCargo, type Ship } from "./ship";
 import { HEARTLAND, type RegionTemplate } from "./template";
@@ -30,6 +30,14 @@ export interface World {
   /** Prices at the last day boundary; the UI's trend arrows compare
    *  against these. Keyed by port, filled in ports/GOOD_IDS order. */
   readonly priceSnapshots: Record<PortId, Record<GoodId, number>>;
+  /** Per-port, per-good drift multiplier on production/consumption rates
+   *  (docs/specs/E8-living-economy.md — Stochastic flow drift). Starts at
+   *  1.0 everywhere; stepped once per world day (tick.ts). */
+  readonly flowDrift: Record<PortId, Record<GoodId, number>>;
+  /** Signed, value-weighted net osmosis flow per lane from the last tick
+   *  (docs/specs/E8-living-economy.md — Trade osmosis); transient display
+   *  state for the UI's ambient layer, harmless to serialize. */
+  readonly osmosisPulse: Record<LaneId, number>;
 }
 
 /** FNV-1a — maps a seed string onto the RNG's uint32 seed space. */
@@ -60,6 +68,8 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     region,
     company: { thalers: STARTING_THALERS, ships: [ship] },
     priceSnapshots: snapshotPrices(region),
+    flowDrift: initialFlowDrift(region),
+    osmosisPulse: initialOsmosisPulse(region),
   };
 }
 
@@ -72,4 +82,24 @@ export function snapshotPrices(region: Region): Record<PortId, Record<GoodId, nu
     snapshot[port.id] = prices;
   }
   return snapshot;
+}
+
+/** Every port × good starts undrifted (1.0) — flow drift (E8) only kicks in
+ *  once the first world day steps it. */
+function initialFlowDrift(region: Region): Record<PortId, Record<GoodId, number>> {
+  const drift: Record<PortId, Record<GoodId, number>> = {};
+  for (const port of region.ports) {
+    const goods = {} as Record<GoodId, number>;
+    for (const good of GOOD_IDS) goods[good] = 1;
+    drift[port.id] = goods;
+  }
+  return drift;
+}
+
+/** Every lane starts quiet — osmosis (E8) only pulses once a real
+ *  disequilibrium crosses the deadband. */
+function initialOsmosisPulse(region: Region): Record<LaneId, number> {
+  const pulse: Record<LaneId, number> = {};
+  for (const lane of region.lanes) pulse[lane.id] = 0;
+  return pulse;
 }
