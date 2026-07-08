@@ -5,6 +5,7 @@ import {
   FLOW_MULT_MAX,
   FLOW_MULT_MIN,
   marketTick,
+  NEUTRAL_DRIFT,
   price,
   quoteBuy,
   quoteSell,
@@ -221,6 +222,24 @@ describe("marketTick", () => {
     const market = fullMarket(300);
     expect(marketTick(market, ARCHETYPE_PROFILES.agrarian)).toEqual(
       marketTick(market, ARCHETYPE_PROFILES.agrarian, NEUTRAL),
+    );
+  });
+
+  it("scales both production and consumption by the per-good flow drift multiplier (E8)", () => {
+    const market = fullMarket(300);
+    const drift = { ...NEUTRAL_DRIFT, grain: 1.3, textiles: 0.7 };
+    const next = marketTick(market, ARCHETYPE_PROFILES.agrarian, NEUTRAL, drift);
+    // Production (grain, drift 1.3) and consumption (textiles, drift 0.7)
+    // both get the drift multiplier, on top of the neutral elasticity mult
+    // at equilibrium stock.
+    expect(next.grain.stock).toBeCloseTo(300 + (96 / 24) * 1.3, 10);
+    expect(next.textiles.stock).toBeCloseTo(300 - (6 / 24) * 0.7, 10);
+  });
+
+  it("defaults drift to neutral (1× everywhere)", () => {
+    const market = fullMarket(300);
+    expect(marketTick(market, ARCHETYPE_PROFILES.agrarian, NEUTRAL)).toEqual(
+      marketTick(market, ARCHETYPE_PROFILES.agrarian, NEUTRAL, NEUTRAL_DRIFT),
     );
   });
 

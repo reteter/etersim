@@ -44,6 +44,13 @@ export {
 export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
 export { tick, type Command } from "./tick";
+export {
+  OSMOSIS_CAP,
+  OSMOSIS_DEADBAND,
+  OSMOSIS_RATE,
+  osmosisTick,
+  type OsmosisResult,
+} from "./osmosis";
 // ARCHETYPE_BIAS and SPREAD stay internal until a UI consumer exists
 // (quotes already carry the spread; the bias is baked into priceBias).
 export {

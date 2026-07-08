@@ -111,14 +111,18 @@ _Avoid_: fee, tax, commission (for this mechanism)
 A per-port, per-good mean-reverting multiplier on production/consumption rates, stepped
 once per world day from the seeded RNG. Creates transient disequilibria that elasticity
 and Trade osmosis chase; drift breathes, Price bias stands.
-_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
+_Implementation_: shipped in #60 ([spec](docs/specs/E8-living-economy.md)) — `World.flowDrift`,
+stepped once per world day in `tick.ts` (bounds [0.7, 1.3]); invariant and dominance-guardrail
+suites land alongside it.
 _Avoid_: randomness, noise (in identifiers)
 
 **Trade osmosis** (PL: osmoza handlowa):
 Background goods flow along Lanes from cheaper ports to more expensive ones, proportional
 to the price gap beyond a deadband, attenuated by lane length and capped per tick; rendered
 as small ambient pulses on lanes, but it is a flow — no simulated NPC agents.
-_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
+_Implementation_: shipped in #59/#60 ([spec](docs/specs/E8-living-economy.md)) — `osmosisTick`
+wired into the tick each world hour, `World.osmosisPulse` carries the per-lane signal; the
+ambient-pulse rendering on the map is still pending (#63).
 _Avoid_: NPC trade, AI traders (as sim terms)
 
 **Price board** (PL: tablica cen):

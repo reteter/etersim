@@ -30,6 +30,13 @@ export interface FlowModifiers {
 
 export const NEUTRAL_MODIFIERS: FlowModifiers = { production: 1, consumption: 1 };
 
+/** Neutral flow drift (no daily variance) — every good's multiplier at 1×.
+ *  marketTick's default, so call sites predating E8 drift are unaffected. */
+export const NEUTRAL_DRIFT: Record<GoodId, number> = GOOD_IDS.reduce(
+  (drift, good) => ({ ...drift, [good]: 1 }),
+  {} as Record<GoodId, number>,
+);
+
 /** The port's effective base price for a good: the global base × the
  *  port's priceBias (E8) — the anchor the whole price curve scales around. */
 export function effectiveBase(port: Port, good: GoodId): number {
@@ -98,14 +105,19 @@ function priceRatio(entry: MarketGood): number {
  * to FLOW_MULT_MAX when price is high (scarcity) and slows to FLOW_MULT_MIN
  * when low (glut); consumption is the mirror, keyed to the inverse ratio.
  * Both are linear in the price ratio and equal 1× at equilibrium stock.
+ * `drift` (docs/specs/E8-living-economy.md — Stochastic flow drift) is a
+ * per-good multiplier on top of elasticity, stepped daily by the caller
+ * (tick.ts) — it multiplies both production and consumption alike.
  * Consumption stops at stock 0 (unmet demand is lost); production stops at
  * the cap (warehouses full) — stock already above the cap (e.g. after
- * player sales) is untouched. These hard limits are unchanged by elasticity.
+ * player sales) is untouched. These hard limits are unchanged by elasticity
+ * or drift.
  */
 export function marketTick(
   market: Record<GoodId, MarketGood>,
   profile: ArchetypeProfile,
   modifiers: FlowModifiers = NEUTRAL_MODIFIERS,
+  drift: Record<GoodId, number> = NEUTRAL_DRIFT,
 ): Record<GoodId, MarketGood> {
   const next = {} as Record<GoodId, MarketGood>;
   for (const good of GOOD_IDS) {
@@ -113,14 +125,17 @@ export function marketTick(
     const ratio = priceRatio(entry);
     const productionMult = Math.min(FLOW_MULT_MAX, Math.max(FLOW_MULT_MIN, ratio));
     const consumptionMult = Math.min(FLOW_MULT_MAX, Math.max(FLOW_MULT_MIN, 1 / ratio));
+    const driftMult = drift[good];
     const produced =
       ((profile.productionPerDay[good] ?? 0) / TICKS_PER_DAY) *
       modifiers.production *
-      productionMult;
+      productionMult *
+      driftMult;
     const consumed =
       ((profile.consumptionPerDay[good] ?? 0) / TICKS_PER_DAY) *
       modifiers.consumption *
-      consumptionMult;
+      consumptionMult *
+      driftMult;
     const cap = STOCK_CAP_MULTIPLIER * entry.equilibrium;
     const headroom = Math.max(0, cap - entry.stock);
     const stock = Math.max(0, entry.stock + Math.min(produced, headroom) - consumed);
