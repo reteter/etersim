@@ -76,6 +76,7 @@ _Avoid_: spell, artifact (as economy terms)
 
 **Market** (PL: rynek):
 The per-port exchange where goods are bought and sold; prices react to stock changes.
+Quotes are two-sided from E8 on: buying pays the ask, selling receives the bid (see Spread).
 _Avoid_: shop, exchange
 
 **Stock** (PL: zapas):
@@ -91,12 +92,41 @@ A market good's reference stock level; the price formula compares current Stock 
 and production/consumption push stock toward it. Worldgen sets it per port archetype.
 _Avoid_: baseline, target stock
 
+**Price bias** (PL: odchylenie cenowe):
+A per-port multiplier on a Good's base price — authored per Port archetype (consumers value
+a good above the global base, producers below) plus a small seeded per-port jitter. Scales
+the whole price curve including floor and ceiling; the source of the region's structural
+price gradients.
+_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
+_Avoid_: price modifier, base multiplier (as loose synonyms)
+
+**Spread** (PL: spread):
+The gap between a Market's two-sided quotes: buying pays the marginal-price walk plus the
+spread (ask), selling receives it minus the spread (bid). Baked into quotes, shown as two
+prices; a money sink — no one collects it. Trends track the mid price (spread-free).
+_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
+_Avoid_: fee, tax, commission (for this mechanism)
+
+**Flow drift** (PL: dryf przepływów):
+A per-port, per-good mean-reverting multiplier on production/consumption rates, stepped
+once per world day from the seeded RNG. Creates transient disequilibria that elasticity
+and Trade osmosis chase; drift breathes, Price bias stands.
+_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
+_Avoid_: randomness, noise (in identifiers)
+
 **Trade osmosis** (PL: osmoza handlowa):
 Background goods flow along Lanes from cheaper ports to more expensive ones, proportional
-to the price gap. The region's self-balancing mechanism; rendered as ambient ships on
-lanes, but it is a flow — no simulated NPC agents.
-_Implementation_: E8 (PRD M2) — not in build yet.
+to the price gap beyond a deadband, attenuated by lane length and capped per tick; rendered
+as small ambient pulses on lanes, but it is a flow — no simulated NPC agents.
+_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
 _Avoid_: NPC trade, AI traders (as sim terms)
+
+**Price board** (PL: tablica cen):
+The region-wide economic overlay: all Ports × all Goods in one table with bid/ask and
+trend per cell, highlighting the cheapest ask and highest bid per good. Full information
+in M2 (fog is a parked E6 candidate).
+_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
+_Avoid_: market overview, economy screen (as identifiers)
 
 ### Player & ships
 

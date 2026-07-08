@@ -63,6 +63,14 @@ arbitrage always exists and flows from geography, not scripts.
 
 ### Market model
 
+> **Superseded in part by the [E8 spec](E8-living-economy.md) (approved 2026-07-08):**
+> constant per-tick flows gain a price-elastic multiplier (0.25×–1.5×) and a daily
+> stochastic flow drift; the global `basePrice` becomes a per-port effective base
+> (archetype price bias × jitter) scaling the whole curve including the clamps; quotes
+> become two-sided (bid/ask spread ~2.5%/side), so an instant round trip now *loses*
+> ~5% instead of breaking even; markets are additionally coupled by trade osmosis.
+> The marginal-walk mechanism and everything below not touched by E8 still hold.
+
 Price is a pure function of stock (decided over hidden-pool and random-walk models):
 
 ```

@@ -34,6 +34,12 @@ fold into the route/course/preview reconciliation CONTEXT.md already defers to E
 
 ## Deferred to the E8 Living Economy grill
 
+> **Resolved (2026-07-08):** grilled into the approved
+> [E8 spec](../specs/E8-living-economy.md) — items 2 (elasticity + the whole mechanism
+> stack), 6 (per-archetype price bias + per-port jitter), 10 (bid-ask spread ~2.5%/side)
+> and 7 (price board overlay with bid/ask and best-buy/best-sell highlights) all land
+> there. Original text kept below for history.
+
 These sharpen — and in two places **extend** — the economy work already locked in the PRD
 (elasticity + lane osmosis + stochastic drift; see 2026-07-07 note item 4). The locked
 high-level directions mostly *converge* prices; the owner's `playtest-orb` feedback asks

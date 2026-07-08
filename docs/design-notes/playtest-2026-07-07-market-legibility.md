@@ -29,6 +29,11 @@ Direction candidates (to grill):
 
 ## 2. "Buy here, sell there" decision is all in the player's head
 
+> **Subsumed (2026-07-08):** the [E8 spec](../specs/E8-living-economy.md) price board
+> (per-good cheapest-ask / highest-bid highlights) covers this decision region-wide; the
+> per-good comparison badge in the remote port view is deliberately **not built** —
+> revisit only if a post-E8 playtest shows the port panel still needs it.
+
 When docked at port A and browsing port B, the panel shows raw prices only. The player
 must memorize A's prices and mentally compute spread × hold − voyage cost. The core
 decision loop of the game has zero UI support — hits the M1 success criterion ("price
@@ -42,6 +47,11 @@ Direction candidates (to grill):
 
 ## 3. Region-wide "economic panel" (owner idea)
 
+> **Resolved (2026-07-08):** grilled into the approved
+> [E8 spec](../specs/E8-living-economy.md) — an overlay (Options pattern) with ports ×
+> goods, bid/ask + trend per cell, best-buy/best-sell highlights; full information (fog
+> stays parked for E6).
+
 Owner suggestion: a dedicated economic view — a price board for the **whole region**
 (all ports × all goods in one table), instead of clicking through ports one at a time.
 Flagged by owner as a topic for a grill and wider discussion. Open questions for the
@@ -50,6 +60,12 @@ grill: full information vs. fog (does perfect region-wide price knowledge kill t
 (may subsume the cross-port comparison).
 
 ## 4. Dominant strategy: wait at the producer, sell to the starved neighbor
+
+> **Resolved (2026-07-08):** grilled into the approved
+> [E8 spec](../specs/E8-living-economy.md) — price-elastic flows (soft saturation,
+> 0.25×–1.5×), per-archetype price bias, bid-ask spread, trade osmosis with a deadband,
+> and daily flow drift; a dominance-guardrail test encodes that the camp-and-haul
+> autopilot is no longer optimal. (Upkeep stays parked, per §8.)
 
 Screenshot: `tmp/ss/gamestate20260707_2.png` (Brassmoor after a few world days: 3 of 5
 goods at stock **0** / ceiling price, Aether Salt at stock cap / floor price).

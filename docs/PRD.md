@@ -29,7 +29,7 @@ Buy goods at a port → assign ship a route → time passes in ticks, the world 
 
 ## Milestones & epics
 
-Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); E10 is spec'd ([specs/E10-orrery-view.md](specs/E10-orrery-view.md), approved 2026-07-07), E8/E9 still need per-epic specs. Epics beyond M2 are drafts and will be re-grilled before work starts.
+Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); E10 is spec'd ([specs/E10-orrery-view.md](specs/E10-orrery-view.md), approved 2026-07-07) and shipped, E8 is spec'd ([specs/E8-living-economy.md](specs/E8-living-economy.md), approved 2026-07-08), E9 still needs a per-epic spec. Epics beyond M2 are drafts and will be re-grilled before work starts.
 
 ### M1 — Trade Loop (prove the core is fun)
 
@@ -51,12 +51,17 @@ player grows from hands-on trading (the v1 loop, which stays) into orchestration
 fleet on player-defined looping routes, observed through a region-wide economic view.
 Orchestration is progression, not a replacement for manual trade.
 
-- **E8 Living economy**: price-elastic production/consumption; trade osmosis along lanes
-  (goods flow from cheap ports to expensive ones, proportional to the price gap);
-  stochastic drift of equilibria from the seeded RNG; osmosis rendered as ambient ships on
-  lanes (visual layer derived from flows — no agent sim); region-wide economic panel with
-  full live prices (no information fog). Kills the "wait at the producer's price floor"
-  dominant strategy found in the M1 playtest.
+- **E8 Living economy**: price-elastic production/consumption (soft saturation);
+  per-archetype price bias + per-port jitter (structural price gradients — playtest-orb
+  requirement); bid-ask spread on quotes (anti-scalp friction, first money sink —
+  playtest-orb requirement); trade osmosis along lanes (deadband, lane-length attenuation,
+  per-tick cap) rendered as small ambient pulses (visual layer derived from flows — no
+  agent sim); stochastic drift of *flows* (daily mean-reverting multiplier — the original
+  "drift of equilibria" draft was corrected in the grill: flow drift creates visible
+  disequilibria, equilibrium drift silently moves price anchors); region-wide price board
+  with full live prices (no information fog). Kills the "wait at the producer's price
+  floor" dominant strategy found in the M1 playtest. Spec:
+  [specs/E8-living-economy.md](specs/E8-living-economy.md) (approved 2026-07-08).
 - **E9 Fleet & routes** (absorbs draft E4 — number retired): fleet-lite — buy additional
   identical hulls (ship purchase is v2's money sink; no upkeep yet); per-ship looping
   routes A→B→C with per-stop load/unload orders; no wait or price conditionals — routes
