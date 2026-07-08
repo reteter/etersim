@@ -3,7 +3,7 @@ import type { Command } from "./commands";
 import { GOOD_IDS, type GoodId } from "./goods";
 import { effectiveBase, price, quoteBuy } from "./market";
 import { shortestRoute } from "./pathfinding";
-import { TICKS_PER_DAY, type PortId } from "./region";
+import { ARCHETYPE_PROFILES, TICKS_PER_DAY, type PortId, type Region } from "./region";
 import { cargoUsed } from "./ship";
 import { tick } from "./tick";
 import { createWorld, type World } from "./world";
@@ -18,22 +18,24 @@ import { createWorld, type World } from "./world";
 const SEEDS = [1, 7, 42, 99];
 const WORLD_DAYS = 60;
 
+/** Ports whose archetype produces `good` at all (net-producer ports for the
+ *  sole-producer exclusion below). */
+const producersOf = (region: Region, good: GoodId): PortId[] =>
+  region.ports
+    .filter((p) => (ARCHETYPE_PROFILES[p.archetype].productionPerDay[good] ?? 0) > 0)
+    .map((p) => p.id);
+
+/** Lane-hop count of the shortest route from `from` to `to`, via the same
+ *  routing helper the dominance bots use below (`shortestRoute`) — infinite
+ *  if unreachable (never happens; worldgen keeps the region connected). */
+const hopDistance = (region: Region, from: PortId, to: PortId): number => {
+  const route = shortestRoute(region, from, to);
+  return route === null ? Infinity : route.length;
+};
+
 describe("invariant suite (region alone, no player commands, several seeds)", () => {
   for (const seed of SEEDS) {
-    // KNOWN GAP (found while implementing #60, root cause predates it —
-    // reproduces identically with drift disabled): for 3 of these 4 seeds
-    // (7, 42, 99), the port two lane-hops away from a good's sole producer
-    // starves permanently — osmosis's per-lane rate/cap (#59) diffuses
-    // through one hop fine (ratio ~1-1.8×) but is negligible two hops out
-    // (ratio pinned at exactly 4.0× for the whole days-31-60 window, stock
-    // ~0.12-0.19). Confirmed the same with drift off, market+osmosis only —
-    // not something #60 introduced. Retuning OSMOSIS_RATE/CAP to fix this
-    // trades off against the dominance guardrail below (a stronger osmosis
-    // narrows the gap a player ship can outrun) — an owner/orchestrator
-    // call, not a unilateral sim-coder tuning decision. Left `it.skip` with
-    // this note rather than silently forced green or weakened; see the PR
-    // description / task report for the seeds and numbers.
-    it.skip(`seed ${seed}: no port × good stays pinned at floor/ceiling across the last 30 world days`, () => {
+    it(`seed ${seed}: no port × good stays pinned at floor/ceiling across the last 30 world days (except a remote sole-producer gradient)`, () => {
       const world = createWorld(seed);
       const daily: Record<PortId, Record<GoodId, number[]>> = {};
       for (const port of world.region.ports) {
@@ -55,8 +57,30 @@ describe("invariant suite (region alone, no player commands, several seeds)", ()
         }
       }
 
-      for (const port of current.region.ports) {
-        for (const good of GOOD_IDS) {
+      // Owner-agreed spec encoding (2026-07-08): a port strictly beyond
+      // 1 lane-hop from a good's *sole* net producer permanently pinning at
+      // floor/ceiling is an accepted durable gradient, not a failure —
+      // osmosis's per-lane rate/cap (#59) reaches one hop but not two, and
+      // retuning it would trade off against the dominance guardrail's
+      // "player always outruns osmosis" property. See
+      // docs/design-notes/e8-followups.md (peripheral sole-producer
+      // starvation; osmosis-reach retune deferred pending playtest). Goods
+      // with >=2 producers, and every port within 1 hop of a sole producer,
+      // are NOT excluded — pinning there is still a real failure.
+      for (const good of GOOD_IDS) {
+        const producers = producersOf(current.region, good);
+        const excluded = new Set<PortId>();
+        if (producers.length === 1) {
+          const [sole] = producers;
+          for (const port of current.region.ports) {
+            if (port.id !== sole && hopDistance(current.region, sole, port.id) > 1) {
+              excluded.add(port.id);
+            }
+          }
+        }
+
+        for (const port of current.region.ports) {
+          if (excluded.has(port.id)) continue;
           const samples = daily[port.id][good];
           const allAtFloor = samples.every((r) => Math.abs(r - 0.25) < 1e-9);
           const allAtCeiling = samples.every((r) => Math.abs(r - 4) < 1e-9);
