@@ -235,16 +235,46 @@ function MarketRow({
   );
 }
 
-/** Sail-here control shown when the player's ship is docked at another port. */
+/**
+ * Why the Controlled Ship can't sail to a given port right now, or null when
+ * it can — in which case `eta` carries the previewed voyage ticks. The
+ * "no route" case is belt-and-suspenders: worldgen guarantees a connected
+ * region, but a disabled button with a hint beats a vanishing one.
+ */
+function sailability(
+  ship: Ship,
+  portId: PortId,
+  region: Region,
+): { disabledHint: string; eta: null } | { disabledHint: null; eta: number } {
+  if (ship.location.kind !== "docked") {
+    return { disabledHint: "Underway — dock to sail elsewhere.", eta: null };
+  }
+  if (ship.location.portId === portId) {
+    return { disabledHint: "Already docked here.", eta: null };
+  }
+  const eta = previewRouteTicks(region, ship.location.portId, portId);
+  if (eta === null) return { disabledHint: "No route to this port.", eta: null };
+  return { disabledHint: null, eta };
+}
+
+/**
+ * Sail-here control (#33): always rendered directly under the Harbor, so it
+ * reads as the primary action for the Controlled Ship. Disabled — with a
+ * title hint — when the ship can't sail here right now (underway, already
+ * docked at this port, or unreachable); otherwise a live ETA.
+ */
 function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; region: Region }) {
   const dispatch = useGameStore((s) => s.dispatch);
+  const { disabledHint, eta } = sailability(ship, portId, region);
+  const label = `Sail ${ship.id} here`;
 
-  if (ship.location.kind !== "docked") {
-    return <p className="side-panel__hint">Ship is underway — dock to trade or sail.</p>;
+  if (disabledHint !== null) {
+    return (
+      <button type="button" className="sail-btn" disabled title={disabledHint}>
+        {label}
+      </button>
+    );
   }
-
-  const eta = previewRouteTicks(region, ship.location.portId, portId);
-  if (eta === null) return null;
 
   return (
     <button
@@ -252,7 +282,7 @@ function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; reg
       className="sail-btn"
       onClick={() => dispatch({ kind: "sailTo", shipId: ship.id, portId })}
     >
-      Sail here (~{eta} ticks)
+      {label} (~{eta} ticks)
     </button>
   );
 }
@@ -285,6 +315,8 @@ export function PortPanel({ portId }: { portId: PortId }) {
 
       <Harbor port={port} ships={world.company.ships} controlledShipId={controlledShipId} />
 
+      <SailControl ship={ship} portId={port.id} region={world.region} />
+
       <div className="market" role="table" aria-label={`${port.name} market`}>
         <div className="market__header" role="row">
           <span>Good</span>
@@ -303,8 +335,6 @@ export function PortPanel({ portId }: { portId: PortId }) {
           />
         ))}
       </div>
-
-      {!dockedHere && <SailControl ship={ship} portId={port.id} region={world.region} />}
     </>
   );
 }

@@ -73,8 +73,9 @@ body {
   display: none;
 }
 
-/* Credits overlay (#34): minimal CC BY attribution, opened from the menu. */
-.credits-overlay {
+/* Modal overlay (#34 Credits, #37 Options): shared shell for the menu's
+   dialogs, opened from GameMenu.tsx. */
+.overlay {
   position: fixed;
   inset: 0;
   display: flex;
@@ -84,7 +85,7 @@ body {
   z-index: 10;
 }
 
-.credits-overlay__panel {
+.overlay__panel {
   max-width: 26rem;
   padding: 1.25rem 1.5rem;
   background: #161b24;
@@ -93,17 +94,24 @@ body {
   color: #e6e6e6;
 }
 
-.credits-overlay__title {
+.overlay__title {
   margin: 0 0 0.75rem;
 }
 
-.credits-overlay__text {
+.overlay__text {
   margin: 0 0 1rem;
   line-height: 1.5;
 }
 
-.credits-overlay__text a {
+.overlay__text a {
   color: #7fb4e0;
+}
+
+.overlay__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
 }
 
 /* Start screen */
@@ -427,19 +435,20 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-.market-row__trade button:disabled {
+.market-row__trade button:disabled,
+.sail-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
 .market-row__trade button:not(:disabled):hover,
-.sail-btn:hover {
+.sail-btn:not(:disabled):hover {
   background: #263041;
 }
 
 .sail-btn {
   width: 100%;
-  margin-top: 1rem;
+  margin: 0.75rem 0;
   border-color: #4c7bab;
 }
 
