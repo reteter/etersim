@@ -246,9 +246,129 @@ test.describe('main game UI after start', () => {
     // At least one good row
     await expect(page.locator('.market-row__name')).toHaveCount(5);
 
-    // Price and stock visible
-    await expect(page.locator('.market-row__price').first()).toContainText('₸');
+    // Bid/ask and stock visible
+    await expect(page.locator('.market-row__bid').first()).toContainText('₸');
+    await expect(page.locator('.market-row__ask').first()).toContainText('₸');
     await expect(page.locator('.market-row__stock').first()).toBeVisible();
+  });
+
+  test('port panel shows two-sided bid/ask per good, ask never below bid, with a real spread somewhere (#61)', async ({
+    page,
+  }) => {
+    await page.locator('g.port').first().click({ force: true });
+
+    const rows = page.locator('.market-row');
+    const rowCount = await rows.count();
+    expect(rowCount).toBe(5);
+
+    // Iterate every good rather than pinning to one (e.g. Grain): the spread
+    // is ~2.5%/side (SPREAD in src/sim/market.ts), which on cheap goods near
+    // ₸10 can round away to the same displayed integer for a single unit.
+    // Ask must never be cheaper than bid; at least one good must show a
+    // strict gap to prove the spread actually renders.
+    let sawStrictSpread = false;
+    for (let i = 0; i < rowCount; i++) {
+      const row = rows.nth(i);
+      const bidText = await row.locator('.market-row__bid').innerText();
+      const askText = await row.locator('.market-row__ask').innerText();
+      const bid = Number(bidText.replace(/[^\d.]/g, ''));
+      const ask = Number(askText.replace(/[^\d.]/g, ''));
+      if (Number.isNaN(bid) || Number.isNaN(ask)) continue; // "—" = untradable
+
+      expect(ask).toBeGreaterThanOrEqual(bid);
+      if (ask > bid) sawStrictSpread = true;
+    }
+    expect(sawStrictSpread).toBe(true);
+
+    // Trend glyph still renders per row, independent of bid/ask.
+    await expect(page.locator('.market-row__trend').first()).toBeVisible();
+  });
+});
+
+test.describe('region price board (#62)', () => {
+  test.beforeEach(async ({ page }) => {
+    await startNewGame(page);
+  });
+
+  test('opens via the TopBar button, shows a full port × good grid, and closes', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await expect(dialog).toBeVisible();
+
+    // Port count varies by seed (portCountRange is [5, 6], src/sim/template.ts);
+    // row count must match whatever the map shows, not a hardcoded 6.
+    const portCount = await page.locator('g.port').count();
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    await expect(rows).toHaveCount(portCount);
+
+    // 5 goods per row, each with a bid and an ask cell.
+    const firstRow = rows.first();
+    await expect(firstRow.locator('.price-board__cell')).toHaveCount(5);
+    await expect(firstRow.locator('.price-board__bid').first()).toBeVisible();
+    await expect(firstRow.locator('.price-board__ask').first()).toBeVisible();
+
+    await dialog.getByRole('button', { name: /close/i }).click();
+    await expect(dialog).not.toBeVisible();
+  });
+
+  test('opens via the "b" hotkey, toggling closed on a second press', async ({ page }) => {
+    await page.keyboard.press('b');
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await expect(dialog).toBeVisible();
+
+    await page.keyboard.press('b');
+    await expect(dialog).not.toBeVisible();
+  });
+
+  test('highlights the cheapest ask and the highest bid per good column', async ({ page }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+
+    await expect(dialog.locator('.price-board__ask--best').first()).toBeVisible();
+    await expect(dialog.locator('.price-board__bid--best').first()).toBeVisible();
+  });
+
+  test("marks the Controlled Ship's docked port row", async ({ page }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+
+    // The Controlled Ship is docked at game start, so exactly one row is marked.
+    await expect(dialog.locator('.price-board__row--docked')).toHaveCount(1);
+  });
+
+  test('clicking a row opens that port\'s panel and closes the overlay', async ({ page }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const portName = await rows.first().locator('.price-board__port-name').innerText();
+    await rows.first().click();
+
+    await expect(dialog).not.toBeVisible();
+    await expect(page.locator('.market')).toBeVisible();
+    await expect(page.locator('.side-panel__title')).toHaveText(portName);
+  });
+
+  test('rows are keyboard-operable: focus + Enter opens that port\'s panel (a11y)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const firstRow = rows.first();
+    const portName = await firstRow.locator('.price-board__port-name').innerText();
+
+    await firstRow.focus();
+    await expect(firstRow).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(dialog).not.toBeVisible();
+    await expect(page.locator('.market')).toBeVisible();
+    await expect(page.locator('.side-panel__title')).toHaveText(portName);
   });
 });
 
