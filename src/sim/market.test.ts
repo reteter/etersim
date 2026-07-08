@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { GOOD_IDS, GOODS } from "./goods";
 import {
   effectiveBase,
+  FLOW_MULT_MAX,
+  FLOW_MULT_MIN,
   marketTick,
   price,
   quoteBuy,
@@ -11,7 +13,7 @@ import {
 } from "./market";
 import { ARCHETYPE_BIAS, ARCHETYPE_PROFILES } from "./region";
 import type { GoodId } from "./goods";
-import type { MarketGood, Port } from "./region";
+import type { ArchetypeProfile, MarketGood, Port } from "./region";
 
 const mg = (stock: number, equilibrium = 300): MarketGood => ({ stock, equilibrium });
 
@@ -39,6 +41,17 @@ const portWith = (priceBias: Partial<Record<GoodId, number>>): Port => ({
   market: fullMarket(300),
   priceBias: { ...neutralBias(), ...priceBias },
 });
+
+/** Elasticity ratio at a stock level, via the already-tested base
+ *  independence of `price(entry, base) / base` (any base works). */
+const ratioAt = (stock: number, equilibrium = 300): number =>
+  price(mg(stock, equilibrium), GRAIN) / GRAIN;
+
+const productionMultAt = (stock: number, equilibrium = 300): number =>
+  Math.min(FLOW_MULT_MAX, Math.max(FLOW_MULT_MIN, ratioAt(stock, equilibrium)));
+
+const consumptionMultAt = (stock: number, equilibrium = 300): number =>
+  Math.min(FLOW_MULT_MAX, Math.max(FLOW_MULT_MIN, 1 / ratioAt(stock, equilibrium)));
 
 describe("price", () => {
   it("equals the effective base at equilibrium stock", () => {
@@ -199,7 +212,9 @@ describe("marketTick", () => {
     const market = fullMarket(1500, 300); // cap = 1200
     const next = marketTick(market, ARCHETYPE_PROFILES.agrarian, NEUTRAL);
     expect(next.grain.stock).toBe(1500); // production blocked, stock kept
-    expect(next.textiles.stock).toBeCloseTo(1500 - 6 / 24, 10); // consumption still runs
+    // Consumption still runs, at the elastic rate for this glutted stock
+    // (well above equilibrium ⇒ low price ⇒ consumption sped up).
+    expect(next.textiles.stock).toBeCloseTo(1500 - (6 / 24) * consumptionMultAt(1500), 10);
   });
 
   it("defaults modifiers to neutral", () => {
@@ -230,5 +245,108 @@ describe("marketTick", () => {
         expect(Number.isFinite(market[good].stock)).toBe(true);
       }
     }
+  });
+});
+
+describe("price ratio is base-independent (E8 price-elastic flows)", () => {
+  it("price(entry, base) / base is the same regardless of which base is used", () => {
+    for (const stock of [1, 50, 150, 300, 900, 1_000_000]) {
+      const entry = mg(stock, 300);
+      const ratioAtGrain = price(entry, GRAIN) / GRAIN;
+      const ratioAtElectronics = price(entry, ELECTRONICS) / ELECTRONICS;
+      const ratioAtArbitrary = price(entry, 12345.678) / 12345.678;
+      expect(ratioAtElectronics).toBeCloseTo(ratioAtGrain, 10);
+      expect(ratioAtArbitrary).toBeCloseTo(ratioAtGrain, 10);
+    }
+  });
+});
+
+describe("elasticity multiplier curve (soft saturation, E8)", () => {
+  it("equals 1× at equilibrium stock, for both production and consumption", () => {
+    expect(productionMultAt(300)).toBeCloseTo(1, 10);
+    expect(consumptionMultAt(300)).toBeCloseTo(1, 10);
+  });
+
+  it("clamps production at FLOW_MULT_MAX for scarce stock and FLOW_MULT_MIN for glutted stock", () => {
+    expect(productionMultAt(1)).toBeCloseTo(FLOW_MULT_MAX, 10);
+    expect(productionMultAt(1_000_000)).toBeCloseTo(FLOW_MULT_MIN, 10);
+  });
+
+  it("clamps consumption at FLOW_MULT_MIN for scarce stock and FLOW_MULT_MAX for glutted stock", () => {
+    expect(consumptionMultAt(1)).toBeCloseTo(FLOW_MULT_MIN, 10);
+    expect(consumptionMultAt(1_000_000)).toBeCloseTo(FLOW_MULT_MAX, 10);
+  });
+
+  it("is monotone in the price ratio: production slows and consumption speeds up as stock rises", () => {
+    const stocks = [50, 150, 300, 600, 1200];
+    for (let i = 1; i < stocks.length; i++) {
+      expect(productionMultAt(stocks[i])).toBeLessThanOrEqual(productionMultAt(stocks[i - 1]));
+      expect(consumptionMultAt(stocks[i])).toBeGreaterThanOrEqual(
+        consumptionMultAt(stocks[i - 1]),
+      );
+    }
+  });
+});
+
+describe("marketTick — price-elastic flows (soft saturation, E8)", () => {
+  const NEUTRAL: FlowModifiers = { production: 1, consumption: 1 };
+  const PRODUCER_ONLY: ArchetypeProfile = {
+    productionPerDay: { grain: 24 }, // 1/tick baseline
+    consumptionPerDay: {},
+  };
+  const CONSUMER_ONLY: ArchetypeProfile = {
+    productionPerDay: {},
+    consumptionPerDay: { grain: 24 }, // 1/tick baseline
+  };
+
+  it("scales production by the elasticity multiplier", () => {
+    const stock = 120;
+    const market = fullMarket(stock, 300);
+    const next = marketTick(market, PRODUCER_ONLY, NEUTRAL);
+    expect(next.grain.stock - stock).toBeCloseTo(productionMultAt(stock), 10);
+  });
+
+  it("scales consumption by the elasticity multiplier", () => {
+    const stock = 120;
+    const market = fullMarket(stock, 300);
+    const next = marketTick(market, CONSUMER_ONLY, NEUTRAL);
+    expect(stock - next.grain.stock).toBeCloseTo(consumptionMultAt(stock), 10);
+  });
+
+  it("a producer near the stock floor (scarce, high price) speeds production up to 1.5×", () => {
+    const stock = 10; // equilibrium 300, headroom (1190) far exceeds any possible flow
+    const market = fullMarket(stock, 300);
+    const next = marketTick(market, PRODUCER_ONLY, NEUTRAL);
+    expect(next.grain.stock - stock).toBeCloseTo(FLOW_MULT_MAX, 10);
+  });
+
+  it("a producer near the stock cap (glutted, low price) clamps production down", () => {
+    const stock = 1100; // equilibrium 300, cap 1200 — headroom (100) exceeds any possible flow
+    const market = fullMarket(stock, 300);
+    const next = marketTick(market, PRODUCER_ONLY, NEUTRAL);
+    const delta = next.grain.stock - stock;
+    expect(delta).toBeCloseTo(productionMultAt(stock), 10);
+    expect(delta).toBeLessThan(1); // well below the 1× baseline
+  });
+
+  it("an isolated consumer approaches stock 0 strictly slower than the constant-flow model, and still reaches it", () => {
+    const initial = 50;
+    let elastic = fullMarket(initial, 300);
+    let baseline = initial; // old constant-flow model: −1/tick, floored at 0
+
+    for (let tick = 1; baseline > 0; tick++) {
+      elastic = marketTick(elastic, CONSUMER_ONLY, NEUTRAL);
+      baseline = Math.max(0, baseline - 1);
+      // Soft saturation: while the constant-flow model is still depleting,
+      // the elastic model — slowed by the rising price — must lag behind it.
+      expect(elastic.grain.stock, `tick=${tick}`).toBeGreaterThan(baseline);
+    }
+
+    // Elasticity never stops the flow outright (floor, not zero): it must
+    // still reach stock 0 eventually — soft saturation, not self-stabilization.
+    for (let tick = 0; tick < 1000 && elastic.grain.stock > 0; tick++) {
+      elastic = marketTick(elastic, CONSUMER_ONLY, NEUTRAL);
+    }
+    expect(elastic.grain.stock).toBe(0);
   });
 });

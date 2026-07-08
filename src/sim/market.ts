@@ -17,6 +17,10 @@ export const STOCK_CAP_MULTIPLIER = 4;
 /** Bid-ask spread per side: buys pay the marginal walk × (1 + SPREAD),
  *  sells receive × (1 − SPREAD). The game's first money sink. */
 export const SPREAD = 0.025;
+/** Price-elastic flow multiplier bounds (soft saturation): a flow never
+ *  drops below the floor (crisis, not standstill) nor exceeds the ceiling. */
+export const FLOW_MULT_MIN = 0.25;
+export const FLOW_MULT_MAX = 1.5;
 
 /** Event-driven flow multipliers; neutral (1, 1) everywhere in E2. */
 export interface FlowModifiers {
@@ -74,10 +78,29 @@ export function quoteSell(entry: MarketGood, base: number, qty: number): number 
 }
 
 /**
+ * Mid price ÷ effective base at the entry's stock level, independent of the
+ * base (docs/specs/E8-living-economy.md — Price-elastic flows): `price`'s
+ * raw term and its floor/ceiling clamp are both linear in `base`, so the
+ * ratio cancels it out — see the "is base-independent" test in
+ * market.test.ts for the equivalence to `price(entry, base) / base`. Lets
+ * marketTick derive the elasticity multiplier without threading a `Port`/
+ * `effectiveBase` through its signature.
+ */
+function priceRatio(entry: MarketGood): number {
+  const raw = (entry.equilibrium / Math.max(entry.stock, 1)) ** ELASTICITY;
+  return Math.min(PRICE_CEIL, Math.max(PRICE_FLOOR, raw));
+}
+
+/**
  * One tick of production and consumption for a port's whole market. Flows
- * are per-day values divided by TICKS_PER_DAY. Consumption stops at stock
- * 0 (unmet demand is lost); production stops at the cap (warehouses full)
- * — stock already above the cap (e.g. after player sales) is untouched.
+ * are per-day values divided by TICKS_PER_DAY, then scaled by the
+ * price-elastic multiplier (soft saturation, E8): production speeds up
+ * to FLOW_MULT_MAX when price is high (scarcity) and slows to FLOW_MULT_MIN
+ * when low (glut); consumption is the mirror, keyed to the inverse ratio.
+ * Both are linear in the price ratio and equal 1× at equilibrium stock.
+ * Consumption stops at stock 0 (unmet demand is lost); production stops at
+ * the cap (warehouses full) — stock already above the cap (e.g. after
+ * player sales) is untouched. These hard limits are unchanged by elasticity.
  */
 export function marketTick(
   market: Record<GoodId, MarketGood>,
@@ -87,10 +110,17 @@ export function marketTick(
   const next = {} as Record<GoodId, MarketGood>;
   for (const good of GOOD_IDS) {
     const entry = market[good];
+    const ratio = priceRatio(entry);
+    const productionMult = Math.min(FLOW_MULT_MAX, Math.max(FLOW_MULT_MIN, ratio));
+    const consumptionMult = Math.min(FLOW_MULT_MAX, Math.max(FLOW_MULT_MIN, 1 / ratio));
     const produced =
-      ((profile.productionPerDay[good] ?? 0) / TICKS_PER_DAY) * modifiers.production;
+      ((profile.productionPerDay[good] ?? 0) / TICKS_PER_DAY) *
+      modifiers.production *
+      productionMult;
     const consumed =
-      ((profile.consumptionPerDay[good] ?? 0) / TICKS_PER_DAY) * modifiers.consumption;
+      ((profile.consumptionPerDay[good] ?? 0) / TICKS_PER_DAY) *
+      modifiers.consumption *
+      consumptionMult;
     const cap = STOCK_CAP_MULTIPLIER * entry.equilibrium;
     const headroom = Math.max(0, cap - entry.stock);
     const stock = Math.max(0, entry.stock + Math.min(produced, headroom) - consumed);
