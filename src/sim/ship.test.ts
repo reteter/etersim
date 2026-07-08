@@ -3,7 +3,15 @@ import type { Port, Region } from "./region";
 import { emptyCargo, etaTicks, routeTicks, type Ship } from "./ship";
 
 function port(id: string): Port {
-  return { id, name: id, archetype: "agrarian", x: 0, y: 0, market: {} as Port["market"] };
+  return {
+    id,
+    name: id,
+    archetype: "agrarian",
+    x: 0,
+    y: 0,
+    market: {} as Port["market"],
+    priceBias: {} as Port["priceBias"],
+  };
 }
 
 const region: Region = {

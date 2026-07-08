@@ -1,11 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { GOOD_IDS, GOODS } from "./goods";
-import { marketTick, price, quoteBuy, quoteSell, type FlowModifiers } from "./market";
-import { ARCHETYPE_PROFILES } from "./region";
+import {
+  effectiveBase,
+  marketTick,
+  price,
+  quoteBuy,
+  quoteSell,
+  SPREAD,
+  type FlowModifiers,
+} from "./market";
+import { ARCHETYPE_BIAS, ARCHETYPE_PROFILES } from "./region";
 import type { GoodId } from "./goods";
-import type { MarketGood } from "./region";
+import type { MarketGood, Port } from "./region";
 
 const mg = (stock: number, equilibrium = 300): MarketGood => ({ stock, equilibrium });
+
+const GRAIN = GOODS.grain.basePrice;
+const ELECTRONICS = GOODS.electronics.basePrice;
 
 const fullMarket = (stock = 300, equilibrium = 300): Record<GoodId, MarketGood> => {
   const market = {} as Record<GoodId, MarketGood>;
@@ -13,64 +24,132 @@ const fullMarket = (stock = 300, equilibrium = 300): Record<GoodId, MarketGood> 
   return market;
 };
 
+const neutralBias = (): Record<GoodId, number> => {
+  const bias = {} as Record<GoodId, number>;
+  for (const good of GOOD_IDS) bias[good] = 1;
+  return bias;
+};
+
+const portWith = (priceBias: Partial<Record<GoodId, number>>): Port => ({
+  id: "pX",
+  name: "Testhaven",
+  archetype: "urban",
+  x: 0.5,
+  y: 0.5,
+  market: fullMarket(300),
+  priceBias: { ...neutralBias(), ...priceBias },
+});
+
 describe("price", () => {
-  it("equals base price at equilibrium stock", () => {
-    expect(price("grain", mg(300))).toBeCloseTo(GOODS.grain.basePrice, 10);
+  it("equals the effective base at equilibrium stock", () => {
+    expect(price(mg(300), GRAIN)).toBeCloseTo(GRAIN, 10);
   });
 
   it("rises as stock falls and falls as stock rises (monotonic)", () => {
-    expect(price("grain", mg(100))).toBeGreaterThan(price("grain", mg(300)));
-    expect(price("grain", mg(900))).toBeLessThan(price("grain", mg(300)));
+    expect(price(mg(100), GRAIN)).toBeGreaterThan(price(mg(300), GRAIN));
+    expect(price(mg(900), GRAIN)).toBeLessThan(price(mg(300), GRAIN));
   });
 
-  it("clamps to [0.25×, 4×] base price", () => {
-    expect(price("grain", mg(1))).toBe(GOODS.grain.basePrice * 4);
-    expect(price("grain", mg(1_000_000))).toBe(GOODS.grain.basePrice * 0.25);
+  it("scales the whole curve with the effective base (E8 price bias)", () => {
+    const biased = GRAIN * ARCHETYPE_BIAS.urban.grain;
+    expect(price(mg(300), biased)).toBeCloseTo(biased, 10);
+    // The bias multiplies the curve pointwise, at any stock level.
+    expect(price(mg(150), biased) / price(mg(150), GRAIN)).toBeCloseTo(
+      ARCHETYPE_BIAS.urban.grain,
+      10,
+    );
+  });
+
+  it("clamps to [0.25×, 4×] the effective base — biased ports get biased extremes", () => {
+    expect(price(mg(1), GRAIN)).toBe(GRAIN * 4);
+    expect(price(mg(1_000_000), GRAIN)).toBe(GRAIN * 0.25);
+    const biased = GRAIN * ARCHETYPE_BIAS.urban.grain;
+    expect(price(mg(1), biased)).toBeCloseTo(biased * 4, 10);
+    expect(price(mg(1_000_000), biased)).toBeCloseTo(biased * 0.25, 10);
+    // Playtest-orb #6 regression: zeroed-out markets no longer quote one
+    // global ceiling — the ceiling itself differs across archetypes.
+    expect(price(mg(0), GRAIN * ARCHETYPE_BIAS.urban.grain)).not.toBeCloseTo(
+      price(mg(0), GRAIN * ARCHETYPE_BIAS.agrarian.grain),
+      6,
+    );
   });
 
   it("survives stock 0 via max(stock, 1)", () => {
-    expect(price("grain", mg(0))).toBe(GOODS.grain.basePrice * 4);
+    expect(price(mg(0), GRAIN)).toBe(GRAIN * 4);
   });
 });
 
-describe("marginal quotes", () => {
-  it("quotes a single unit at the current marginal price, rounded to a thaler", () => {
-    expect(quoteBuy("grain", mg(300), 1)).toBe(Math.round(price("grain", mg(300))));
+describe("effectiveBase", () => {
+  it("multiplies the good's base price by the port's priceBias", () => {
+    const port = portWith({ grain: 1.2825 });
+    expect(effectiveBase(port, "grain")).toBeCloseTo(GRAIN * 1.2825, 10);
+    expect(effectiveBase(port, "timber")).toBeCloseTo(GOODS.timber.basePrice, 10);
+  });
+});
+
+describe("two-sided quotes (bid-ask spread)", () => {
+  it("asks the marginal price plus the spread for a single unit", () => {
+    expect(quoteBuy(mg(300), GRAIN, 1)).toBe(Math.round(price(mg(300), GRAIN) * (1 + SPREAD)));
+  });
+
+  it("bids the marginal price minus the spread for a single unit", () => {
+    // The sell walk starts one above current stock — the exact mirror level.
+    expect(quoteSell(mg(300), GRAIN, 1)).toBe(Math.round(price(mg(301), GRAIN) * (1 - SPREAD)));
   });
 
   it("charges more per unit as the buy walks the stock down", () => {
-    const small = quoteBuy("timber", mg(60, 60), 10)!;
-    const large = quoteBuy("timber", mg(60, 60), 20)!;
+    const timber = GOODS.timber.basePrice;
+    const small = quoteBuy(mg(60, 60), timber, 10)!;
+    const large = quoteBuy(mg(60, 60), timber, 20)!;
     expect(large).toBeGreaterThan(2 * small - 1); // second half costs more than the first
   });
 
-  it("buy then sell of the same lot at one market never profits", () => {
+  it("makes an instant buy-then-sell round trip lose ~2×SPREAD of value", () => {
     for (const qty of [1, 7, 50]) {
       const start = mg(120, 300);
-      const buy = quoteBuy("electronics", start, qty)!;
-      const afterBuy = mg(start.stock - qty, 300);
-      const sell = quoteSell("electronics", afterBuy, qty);
-      expect(sell).toBeLessThanOrEqual(buy);
+      const buy = quoteBuy(start, ELECTRONICS, qty)!;
+      const sell = quoteSell(mg(start.stock - qty, 300), ELECTRONICS, qty)!;
+      expect(sell).toBeLessThan(buy);
+      expect(sell / buy).toBeCloseTo((1 - SPREAD) / (1 + SPREAD), 2);
     }
   });
 
   it("returns null when buying more than the available stock", () => {
-    expect(quoteBuy("grain", mg(5), 6)).toBeNull();
-    expect(quoteBuy("grain", mg(5.9), 5)).not.toBeNull();
-    expect(quoteBuy("grain", mg(0), 1)).toBeNull();
+    expect(quoteBuy(mg(5), GRAIN, 6)).toBeNull();
+    expect(quoteBuy(mg(5.9), GRAIN, 5)).not.toBeNull();
+    expect(quoteBuy(mg(0), GRAIN, 1)).toBeNull();
   });
 
   it("rejects non-positive and non-integer quantities", () => {
-    expect(quoteBuy("grain", mg(300), 0)).toBeNull();
-    expect(quoteBuy("grain", mg(300), -3)).toBeNull();
-    expect(quoteBuy("grain", mg(300), 1.5)).toBeNull();
-    expect(quoteSell("grain", mg(300), 0)).toBeNull();
-    expect(quoteSell("grain", mg(300), 2.5)).toBeNull();
+    expect(quoteBuy(mg(300), GRAIN, 0)).toBeNull();
+    expect(quoteBuy(mg(300), GRAIN, -3)).toBeNull();
+    expect(quoteBuy(mg(300), GRAIN, 1.5)).toBeNull();
+    expect(quoteSell(mg(300), GRAIN, 0)).toBeNull();
+    expect(quoteSell(mg(300), GRAIN, 2.5)).toBeNull();
   });
 
   it("returns integer thalers", () => {
-    expect(Number.isInteger(quoteBuy("aetherSalt", mg(123, 300), 7))).toBe(true);
-    expect(Number.isInteger(quoteSell("aetherSalt", mg(123, 300), 7))).toBe(true);
+    const salt = GOODS.aetherSalt.basePrice;
+    expect(Number.isInteger(quoteBuy(mg(123, 300), salt, 7))).toBe(true);
+    expect(Number.isInteger(quoteSell(mg(123, 300), salt, 7))).toBe(true);
+  });
+});
+
+describe("single-port scalp regression (playtest-orb #10)", () => {
+  const NEUTRAL: FlowModifiers = { production: 1, consumption: 1 };
+
+  it("makes buy → wait k ticks → sell unprofitable for small k at nominal flows", () => {
+    // Urban consumes 30 grain/day (1.25/tick): holding a lot while the port
+    // eats through stock captures ~0.3%/tick of price drift — far below the
+    // ~5% round-trip spread cost, so short scalps must lose money.
+    const qty = 10;
+    const buy = quoteBuy(mg(300), GRAIN, qty)!;
+    let market = { ...fullMarket(300), grain: mg(300 - qty) };
+    for (let k = 1; k <= 8; k++) {
+      market = marketTick(market, ARCHETYPE_PROFILES.urban, NEUTRAL);
+      const sell = quoteSell(market.grain, GRAIN, qty)!;
+      expect(sell, `k=${k}`).toBeLessThanOrEqual(buy);
+    }
   });
 });
 
@@ -135,14 +214,8 @@ describe("marketTick", () => {
     expect(marketTick(market, ARCHETYPE_PROFILES.mining, NEUTRAL)).toEqual(
       marketTick(market, ARCHETYPE_PROFILES.mining, NEUTRAL),
     );
-    expect(quoteBuy("timber", mg(97, 300), 13)).toBe(quoteBuy("timber", mg(97, 300), 13));
-  });
-
-  it("makes a buy-then-sell round trip exactly break even (bit-identical walks)", () => {
-    const start = mg(120, 300);
-    const buy = quoteBuy("electronics", start, 7)!;
-    const sell = quoteSell("electronics", mg(start.stock - 7, 300), 7)!;
-    expect(sell).toBe(buy);
+    const timber = GOODS.timber.basePrice;
+    expect(quoteBuy(mg(97, 300), timber, 13)).toBe(quoteBuy(mg(97, 300), timber, 13));
   });
 
   it("keeps stock within [0, cap] over 10 000 ticks for every archetype", () => {

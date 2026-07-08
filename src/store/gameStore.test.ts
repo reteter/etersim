@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  effectiveBase,
   etaTicks,
   MAX_TICKS_PER_CALL,
   MS_PER_TICK_AT_1X,
@@ -72,7 +73,7 @@ describe("gameStore", () => {
     const port = world.region.ports.find(
       (p) => ship.location.kind === "docked" && p.id === ship.location.portId,
     )!;
-    const cost = quoteBuy("grain", port.market.grain, 5)!;
+    const cost = quoteBuy(port.market.grain, effectiveBase(port, "grain"), 5)!;
 
     store().dispatch({ kind: "buy", shipId: ship.id, good: "grain", qty: 5 });
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GOOD_IDS } from "./goods";
+import { ARCHETYPE_BIAS } from "./region";
 import type { PortId, Region } from "./region";
 import { seedRng } from "./rng";
 import { HEARTLAND } from "./template";
@@ -233,5 +234,29 @@ describe("worldgen", () => {
     const urban = region.ports.find((p) => p.archetype === "urban");
     expect(urban).toBeDefined();
     expect(urban!.market.grain.equilibrium).toBe(300);
+  });
+
+  it("draws priceBias = archetype bias × per-good jitter within [0.95, 1.05] (E8)", () => {
+    for (const seed of SEEDS.slice(0, 10)) {
+      const region = genAt(seed);
+      for (const port of region.ports) {
+        for (const good of GOOD_IDS) {
+          const jitter = port.priceBias[good] / ARCHETYPE_BIAS[port.archetype][good];
+          expect(jitter, `${port.id}/${good}`).toBeGreaterThanOrEqual(0.95);
+          expect(jitter, `${port.id}/${good}`).toBeLessThanOrEqual(1.05);
+        }
+      }
+    }
+  });
+
+  it("jitters priceBias per port — same-archetype ports never quote twin curves", () => {
+    const jitters = new Set<number>();
+    for (const seed of SEEDS.slice(0, 5)) {
+      const region = genAt(seed);
+      for (const port of region.ports) {
+        jitters.add(port.priceBias.grain / ARCHETYPE_BIAS[port.archetype].grain);
+      }
+    }
+    expect(jitters.size).toBeGreaterThan(1);
   });
 });

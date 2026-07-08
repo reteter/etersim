@@ -9,9 +9,11 @@ import type { World } from "../sim";
 /** Autosave slot key in localStorage (docs/specs/E2-trade-loop.md — Save/load). */
 export const AUTOSAVE_KEY = "etersim.autosave";
 
-/** Save envelope version. The field gates future migrations; for now only 1
- *  is accepted and anything else is treated as unreadable. */
-export const SAVE_VERSION = 1;
+/** Save envelope version. The field gates future migrations; only the
+ *  current version is accepted and anything else is treated as unreadable.
+ *  v2: E8 changed the Port shape (`priceBias`) with no migration (pre-1.0
+ *  owner call) — v1 saves are cleanly rejected instead of loading NaNs. */
+export const SAVE_VERSION = 2;
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
 export const AUTOSAVE_INTERVAL_TICKS = 24;

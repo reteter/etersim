@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GOOD_IDS, type GoodId } from "./goods";
-import { ARCHETYPE_PROFILES, PORT_ARCHETYPES } from "./region";
+import { ARCHETYPE_BIAS, ARCHETYPE_PROFILES, PORT_ARCHETYPES } from "./region";
 
 describe("port archetype profiles", () => {
   it("covers all five archetypes", () => {
@@ -42,6 +42,33 @@ describe("port archetype profiles", () => {
         ...Object.values(consumptionPerDay),
       ]) {
         expect(rate).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
+describe("archetype price bias (E8)", () => {
+  it("authors a complete 5×5 table of positive multipliers", () => {
+    for (const archetype of PORT_ARCHETYPES) {
+      for (const good of GOOD_IDS) {
+        expect(ARCHETYPE_BIAS[archetype][good], `${archetype}/${good}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("biases produced goods below base and consumed goods above (gradient invariant)", () => {
+    // The structural engine of trade: an archetype values what it consumes
+    // above the global base and what it produces below it — so a resting
+    // producer→consumer gradient exists for every good.
+    for (const archetype of PORT_ARCHETYPES) {
+      const { productionPerDay, consumptionPerDay } = ARCHETYPE_PROFILES[archetype];
+      for (const good of GOOD_IDS) {
+        if ((productionPerDay[good] ?? 0) > 0) {
+          expect(ARCHETYPE_BIAS[archetype][good], `${archetype}/${good}`).toBeLessThan(1);
+        }
+        if ((consumptionPerDay[good] ?? 0) > 0) {
+          expect(ARCHETYPE_BIAS[archetype][good], `${archetype}/${good}`).toBeGreaterThan(1);
+        }
       }
     }
   });

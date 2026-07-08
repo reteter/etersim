@@ -1,5 +1,5 @@
 import type { GoodId } from "./goods";
-import { quoteBuy, quoteSell } from "./market";
+import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { shortestRoute } from "./pathfinding";
 import type { Port, PortId } from "./region";
 import { cargoUsed, type Ship, type ShipId } from "./ship";
@@ -24,7 +24,11 @@ export function applyCommand(world: World, command: Command): World {
 
   switch (command.kind) {
     case "buy": {
-      const total = quoteBuy(command.good, port.market[command.good], command.qty);
+      const total = quoteBuy(
+        port.market[command.good],
+        effectiveBase(port, command.good),
+        command.qty,
+      );
       if (total === null) return world;
       if (total > world.company.thalers) return world;
       if (cargoUsed(ship) + command.qty > ship.hold) return world;
@@ -33,7 +37,11 @@ export function applyCommand(world: World, command: Command): World {
     case "sell": {
       if (!Number.isInteger(command.qty) || command.qty <= 0) return world;
       if (ship.cargo[command.good] < command.qty) return world;
-      const total = quoteSell(command.good, port.market[command.good], command.qty);
+      const total = quoteSell(
+        port.market[command.good],
+        effectiveBase(port, command.good),
+        command.qty,
+      );
       if (total === null) return world;
       return applyTrade(world, ship, port, command.good, command.qty, total);
     }
