@@ -37,6 +37,6 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - `npm run dev` — start the Vite dev server.
 - `npm run build` — typecheck (`tsc -b`) then production build (`vite build`).
 - `npm test` — run the Vitest suite once.
-- `npm run test:e2e` — run Playwright E2E tests (auto-starts the dev server).
+- `npm run test:e2e` — run Playwright E2E tests (auto-starts the dev server). Locally, set `PLAYWRIGHT_PORT` to a dedicated port (e.g. `PLAYWRIGHT_PORT=5901 npm run test:e2e`): `reuseExistingServer` will otherwise silently reuse a foreign dev server squatting on `5173` and feed your run its stale build — false failures that mask your changes. Never kill the foreign process to free the port.
 - `npm run typecheck` — typecheck the whole project (`tsc -b`).
 - `npm run lint` — lint with ESLint (flat config, `eslint.config.js`).

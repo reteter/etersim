@@ -14,6 +14,7 @@ is directly relevant to what you're doing.
 | # | Date | Lesson / watch for |
 | --- | --- | --- |
 | [0001](0001-worktree-cd-main-branch-switch.md) | 2026-07-08 | A coder subagent in a git worktree can `cd` into the main repo and act on `main` (branch switch / commit / reset). Prevention now in `CLAUDE.md` §Git & worktrees and the `coder` agent def; orchestrator verifies main is clean + on the expected SHA after each coder wave. |
+| [0002](0002-gold-highlight-color-collision.md) | 2026-07-08 | Gold (`#e0a840`) is reserved for the Controlled Ship (ADR-0006, one color = one meaning) — don't reuse it for highlights/selection in new UI. Near-miss: a price-board best-price highlight was gold, self-caught before merge. Detection = `/code-review` Standards axis vs ADR-0006. |
 
 ## When to file
 
