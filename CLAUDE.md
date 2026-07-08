@@ -28,6 +28,10 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - Clean up branches right after each merge, not later: `git worktree remove` before `git branch -D` (branch delete fails while a worktree holds it). After `gh pr merge --delete-branch`, verify the remote branch actually got deleted (`git branch -a` / `git fetch --prune`) — it silently fails when the branch is still checked out in a worktree, leaving stale remote/local branches to accumulate.
 - Subagents working in a worktree must never `cd` to an absolute repo path or act on the main checkout: address git as `git -C <their-worktree>`, and never `checkout`/`commit`/`reset` on `main`. After a coder wave, verify the main repo is clean and on the expected SHA (`docs/incidents/0001`).
 
+## Incidents
+
+- `docs/incidents/` is a blameless log of times work deviated from the rules/docs/intent, including near-misses. We work **report → fix → don't repeat**, never punishment. Read `docs/incidents/README.md` §Log — a one-line-per-incident digest of what's bitten us and what to watch for — so any model, whatever its persona, carries the lessons. File a report (template in that README) whenever a rule was broken/skipped, a command hit the wrong repo/branch/file, or something surprised you the next person should be warned about.
+
 ## Commands
 
 - `npm run dev` — start the Vite dev server.

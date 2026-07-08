@@ -5,6 +5,16 @@ including **near-misses** where nothing broke but easily could have. The point i
 learning, not blame: we work in **report → fix → don't repeat**, never in punishment.
 A near-miss reported is a free lesson; a near-miss hidden is a future outage.
 
+## Log
+
+One line per incident — the lesson and what to watch for, so you can absorb the
+history without reading every full report. Read the linked report only when an entry
+is directly relevant to what you're doing.
+
+| # | Date | Lesson / watch for |
+| --- | --- | --- |
+| [0001](0001-worktree-cd-main-branch-switch.md) | 2026-07-08 | A coder subagent in a git worktree can `cd` into the main repo and act on `main` (branch switch / commit / reset). Prevention now in `CLAUDE.md` §Git & worktrees and the `coder` agent def; orchestrator verifies main is clean + on the expected SHA after each coder wave. |
+
 ## When to file
 
 File a short report whenever:

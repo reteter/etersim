@@ -30,3 +30,5 @@ One numbered item per observation: what the owner saw (screenshot refs under `tm
 - **Parking lot** — real but out-of-scope ideas, recorded with the epic they most likely belong to.
 
 When later work resolves an item, it gets a "Resolved → spec/issue" blockquote in place, keeping the original text for history (WORKFLOW.md §Docs sync sweep).
+
+The Analyst **routes; it does not choose the realization mode.** Deciding *how* routed work gets handled — a Designer grill, an Engineer/ADR discussion, a coder subagent, or a conscious inline shortcut — is the Orchestrator's prerogative (ORCHESTRATOR.md §Delegate vs. work inline). Hand off explicitly ("zdejmuję czapkę Analyst, zakładam Orchestrator") and make that call *as* Orchestrator; don't pick an implementation path while still labelled Analyst.
