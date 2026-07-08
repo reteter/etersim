@@ -18,8 +18,8 @@ import { createWorld, type World } from "./world";
 const SEEDS = [1, 7, 42, 99];
 const WORLD_DAYS = 60;
 
-/** Ports whose archetype produces `good` at all (net-producer ports for the
- *  sole-producer exclusion below). */
+/** Ports whose archetype produces `good` at all (gross production > 0) — the
+ *  good's supply sources, used for the sole-producer exclusion below. */
 const producersOf = (region: Region, good: GoodId): PortId[] =>
   region.ports
     .filter((p) => (ARCHETYPE_PROFILES[p.archetype].productionPerDay[good] ?? 0) > 0)
