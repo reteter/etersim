@@ -82,13 +82,13 @@ export function quoteSell(entry: MarketGood, base: number, qty: number): number 
  * base (docs/specs/E8-living-economy.md — Price-elastic flows): `price`'s
  * raw term and its floor/ceiling clamp are both linear in `base`, so the
  * ratio cancels it out — see the "is base-independent" test in
- * market.test.ts for the equivalence to `price(entry, base) / base`. Lets
- * marketTick derive the elasticity multiplier without threading a `Port`/
- * `effectiveBase` through its signature.
+ * market.test.ts for the equivalence to `price(entry, base) / base`. Evaluated
+ * as `price(entry, 1)` so the elasticity curve (exponent and floor/ceiling
+ * clamp) has a single source, letting marketTick derive the multiplier without
+ * threading a `Port`/`effectiveBase` through its signature.
  */
 function priceRatio(entry: MarketGood): number {
-  const raw = (entry.equilibrium / Math.max(entry.stock, 1)) ** ELASTICITY;
-  return Math.min(PRICE_CEIL, Math.max(PRICE_FLOOR, raw));
+  return price(entry, 1);
 }
 
 /**
