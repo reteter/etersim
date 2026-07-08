@@ -3,7 +3,15 @@ import type { Port, Region } from "../sim";
 import { previewRouteTicks } from "./routePreview";
 
 function port(id: string, x: number, y: number): Port {
-  return { id, name: id, archetype: "agrarian", x, y, market: {} as Port["market"] };
+  return {
+    id,
+    name: id,
+    archetype: "agrarian",
+    x,
+    y,
+    market: {} as Port["market"],
+    priceBias: {} as Port["priceBias"],
+  };
 }
 
 // a ── b ── c, with a direct a─c lane that is longer than routing via b.

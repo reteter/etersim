@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { quoteBuy, quoteSell } from "./market";
+import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { tick } from "./tick";
 import { cargoUsed, etaTicks, type Ship } from "./ship";
 import { createWorld, STARTING_HOLD, STARTING_THALERS, type World } from "./world";
@@ -36,7 +36,7 @@ describe("buy command", () => {
   const shipId = ship(world0).id;
 
   it("moves thalers, stock and cargo by the marginal quote", () => {
-    const cost = quoteBuy("grain", port.market.grain, 10)!;
+    const cost = quoteBuy(port.market.grain, effectiveBase(port, "grain"), 10)!;
     const next = tick(world0, [{ kind: "buy", shipId, good: "grain", qty: 10 }]);
     expect(next.company.thalers).toBe(STARTING_THALERS - cost);
     expect(ship(next).cargo.grain).toBe(10);
@@ -78,7 +78,7 @@ describe("sell command", () => {
 
   it("pays the marginal quote and moves cargo back to stock", () => {
     const port = homePort(withCargo);
-    const revenue = quoteSell("grain", port.market.grain, 10)!;
+    const revenue = quoteSell(port.market.grain, effectiveBase(port, "grain"), 10)!;
     const next = tick(withCargo, [{ kind: "sell", shipId, good: "grain", qty: 10 }]);
     expect(next.company.thalers).toBe(withCargo.company.thalers + revenue);
     expect(ship(next).cargo.grain).toBe(0);

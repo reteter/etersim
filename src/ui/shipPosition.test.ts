@@ -3,7 +3,15 @@ import { emptyCargo, type Port, type Region, type Ship } from "../sim";
 import { shipPosition } from "./shipPosition";
 
 function port(id: string, x: number, y: number): Port {
-  return { id, name: id, archetype: "agrarian", x, y, market: {} as Port["market"] };
+  return {
+    id,
+    name: id,
+    archetype: "agrarian",
+    x,
+    y,
+    market: {} as Port["market"],
+    priceBias: {} as Port["priceBias"],
+  };
 }
 
 const portA = port("a", 0, 0);

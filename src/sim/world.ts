@@ -1,6 +1,6 @@
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
-import { price } from "./market";
+import { effectiveBase, price } from "./market";
 import type { PortId, Region } from "./region";
 import { nextInt, seedRng, type RngState } from "./rng";
 import { emptyCargo, type Ship } from "./ship";
@@ -68,7 +68,7 @@ export function snapshotPrices(region: Region): Record<PortId, Record<GoodId, nu
   const snapshot: Record<PortId, Record<GoodId, number>> = {};
   for (const port of region.ports) {
     const prices = {} as Record<GoodId, number>;
-    for (const good of GOOD_IDS) prices[good] = price(good, port.market[good]);
+    for (const good of GOOD_IDS) prices[good] = price(port.market[good], effectiveBase(port, good));
     snapshot[port.id] = prices;
   }
   return snapshot;

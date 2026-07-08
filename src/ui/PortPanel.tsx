@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   cargoUsed,
+  effectiveBase,
   GOOD_IDS,
   GOODS,
   price,
@@ -104,11 +105,11 @@ function unitHint(total: number | null): string {
  * hold size regardless of market stock (docs/specs/E2-trade-loop.md — Buy /
  * sell improvements).
  */
-function computeBuyMax(good: GoodId, entry: MarketGood, ship: Ship, thalers: number): number {
+function computeBuyMax(entry: MarketGood, base: number, ship: Ship, thalers: number): number {
   const cap = Math.min(Math.floor(entry.stock), ship.hold - cargoUsed(ship));
   let max = 0;
   for (let qty = 1; qty <= cap; qty++) {
-    const total = quoteBuy(good, entry, qty);
+    const total = quoteBuy(entry, base, qty);
     if (total === null || total > thalers) break;
     max = qty;
   }
@@ -116,9 +117,9 @@ function computeBuyMax(good: GoodId, entry: MarketGood, ship: Ship, thalers: num
 }
 
 /** Largest sellable quantity: held cargo, bounded by what `quoteSell` accepts. */
-function computeSellMax(good: GoodId, entry: MarketGood, ship: Ship): number {
+function computeSellMax(entry: MarketGood, base: number, ship: Ship, good: GoodId): number {
   const held = ship.cargo[good];
-  return held > 0 && quoteSell(good, entry, held) !== null ? held : 0;
+  return held > 0 && quoteSell(entry, base, held) !== null ? held : 0;
 }
 
 /**
@@ -129,6 +130,7 @@ function computeSellMax(good: GoodId, entry: MarketGood, ship: Ship): number {
 function MarketRow({
   good,
   entry,
+  base,
   snapshotPrice,
   ship,
   thalers,
@@ -136,6 +138,8 @@ function MarketRow({
 }: {
   good: GoodId;
   entry: MarketGood;
+  /** The port's effective base price for this good (E8 price bias). */
+  base: number;
   snapshotPrice: number;
   ship: Ship;
   thalers: number;
@@ -144,21 +148,21 @@ function MarketRow({
   const dispatch = useGameStore((s) => s.dispatch);
   const [qty, setQty] = useState(1);
 
-  const unitPrice = price(good, entry);
+  const unitPrice = price(entry, base);
   const trend = priceTrend(unitPrice, snapshotPrice);
 
-  const buyMax = trading ? computeBuyMax(good, entry, ship, thalers) : 0;
-  const sellMax = trading ? computeSellMax(good, entry, ship) : 0;
+  const buyMax = trading ? computeBuyMax(entry, base, ship, thalers) : 0;
+  const sellMax = trading ? computeSellMax(entry, base, ship, good) : 0;
   // Qty is shared by both actions, so it's clamped to whichever side allows
   // more — each button still disables independently via canBuy/canSell.
   const maxQty = Math.max(buyMax, sellMax);
   const clampQty = (n: number) => (maxQty <= 0 ? 0 : Math.min(Math.max(n, 1), maxQty));
   const clampedQty = clampQty(qty);
 
-  const buyTotal = trading ? quoteBuy(good, entry, clampedQty) : null;
-  const sellTotal = trading ? quoteSell(good, entry, clampedQty) : null;
-  const nextBuyUnit = trading ? quoteBuy(good, entry, 1) : null;
-  const nextSellUnit = trading ? quoteSell(good, entry, 1) : null;
+  const buyTotal = trading ? quoteBuy(entry, base, clampedQty) : null;
+  const sellTotal = trading ? quoteSell(entry, base, clampedQty) : null;
+  const nextBuyUnit = trading ? quoteBuy(entry, base, 1) : null;
+  const nextSellUnit = trading ? quoteSell(entry, base, 1) : null;
 
   const canBuy =
     clampedQty > 0 &&
@@ -328,6 +332,7 @@ export function PortPanel({ portId }: { portId: PortId }) {
             key={good}
             good={good}
             entry={port.market[good]}
+            base={effectiveBase(port, good)}
             snapshotPrice={snapshot[good]}
             ship={ship}
             thalers={world.company.thalers}

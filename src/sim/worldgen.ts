@@ -1,5 +1,6 @@
 import { GOOD_IDS, type GoodId } from "./goods";
 import {
+  ARCHETYPE_BIAS,
   ARCHETYPE_PROFILES,
   PORT_ARCHETYPES,
   type Lane,
@@ -30,6 +31,8 @@ export function generateRegion(rng: RngState, template: RegionTemplate): [Region
   for (let i = 0; i < portCount; i++) {
     let market: Record<GoodId, MarketGood>;
     [market, state] = seedMarket(state, archetypes[i]);
+    let priceBias: Record<GoodId, number>;
+    [priceBias, state] = drawPriceBias(state, archetypes[i]);
     ports.push({
       id: `p${i}`,
       name: names[i],
@@ -37,6 +40,7 @@ export function generateRegion(rng: RngState, template: RegionTemplate): [Region
       x: positions[i].x,
       y: positions[i].y,
       market,
+      priceBias,
     });
   }
 
@@ -162,6 +166,23 @@ function seedMarket(
     };
   }
   return [market, state];
+}
+
+/** priceBias = archetype bias × jitter in [0.95, 1.05] — structural price
+ *  gradients with per-port texture (docs/specs/E8-living-economy.md). One
+ *  draw per good in GOOD_IDS order (determinism). */
+function drawPriceBias(
+  rng: RngState,
+  archetype: PortArchetype,
+): [Record<GoodId, number>, RngState] {
+  let state = rng;
+  const bias = {} as Record<GoodId, number>;
+  for (const good of GOOD_IDS) {
+    let u: number;
+    [u, state] = nextFloat(state);
+    bias[good] = ARCHETYPE_BIAS[archetype][good] * (0.95 + 0.1 * u);
+  }
+  return [bias, state];
 }
 
 type Point = { x: number; y: number };

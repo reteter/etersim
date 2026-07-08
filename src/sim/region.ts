@@ -57,6 +57,21 @@ export const ARCHETYPE_PROFILES: Record<PortArchetype, ArchetypeProfile> = {
   },
 };
 
+/**
+ * How each archetype values each good relative to its global base price
+ * (docs/specs/E8-living-economy.md — Per-archetype price bias): consumers
+ * bias a good up, producers down, neutral goods sit at 1.0. Multiplied by a
+ * per-port jitter in worldgen into `Port.priceBias`. Values are tuning, not
+ * spec drift.
+ */
+export const ARCHETYPE_BIAS: Record<PortArchetype, Record<GoodId, number>> = {
+  agrarian: { grain: 0.8, textiles: 1.2, aetherSalt: 1.15, electronics: 1.15, timber: 1.0 },
+  industrial: { grain: 1.3, textiles: 1.0, aetherSalt: 1.25, electronics: 0.8, timber: 1.15 },
+  urban: { grain: 1.35, textiles: 0.8, aetherSalt: 1.15, electronics: 1.2, timber: 1.2 },
+  mining: { grain: 1.3, textiles: 1.15, aetherSalt: 0.8, electronics: 1.2, timber: 1.0 },
+  verdant: { grain: 1.2, textiles: 1.2, aetherSalt: 1.0, electronics: 1.0, timber: 0.8 },
+};
+
 /** Per-good market state at one port. */
 export interface MarketGood {
   readonly stock: number;
@@ -72,6 +87,9 @@ export interface Port {
   readonly x: number;
   readonly y: number;
   readonly market: Record<GoodId, MarketGood>;
+  /** Archetype bias × per-port jitter (E8); multiplies the good's global
+   *  base price into this port's effective base. Drawn once in worldgen. */
+  readonly priceBias: Record<GoodId, number>;
 }
 
 /** Undirected edge of the region graph. */
