@@ -17,10 +17,8 @@ import {
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { ShipIcon } from "./icons";
-import { priceTrend, type Trend } from "./priceTrend";
+import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { previewRouteTicks } from "./routePreview";
-
-const TREND_GLYPH: Record<Trend, string> = { up: "▲", down: "▼", flat: "=" };
 
 /** Compact cargo summary for a Harbor hover tooltip, e.g. "Grain 5, Iron 2". */
 function cargoSummary(ship: Ship): string {

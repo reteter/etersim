@@ -650,3 +650,100 @@ body {
 .ship--controlled .ship__glyph {
   color: #e0a840;
 }
+
+/* Region price board (#62): a wider overlay variant — the port×good grid
+   needs more room than the Options/Credits dialogs. */
+.overlay__panel--wide {
+  max-width: 44rem;
+  width: 100%;
+}
+
+.price-board {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.price-board__row {
+  display: grid;
+  grid-template-columns: 8rem repeat(5, 1fr);
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid #20263180;
+}
+
+.price-board__row--header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6b7488;
+  border-bottom: 1px solid #2a3040;
+}
+
+.price-board__good-header {
+  text-align: center;
+}
+
+/* Clickable rows (jump to that port's own panel) get the archetype accent
+   used on the map/port panel (--port-color, set inline from the
+   --archetype-* token) as a left border, plus a hover/cursor affordance. */
+.price-board__row:not(.price-board__row--header) {
+  cursor: pointer;
+  border-left: 3px solid var(--port-color);
+}
+
+.price-board__row:not(.price-board__row--header):hover {
+  background: #1a202b;
+}
+
+/* The Controlled Ship's own port — a gold tint mirrors the map/Harbor
+   Controlled Ship convention (#34) rather than introducing a new color. */
+.price-board__row--docked {
+  background: #24201480;
+}
+
+.price-board__row--docked .price-board__port-name {
+  color: #e0a840;
+}
+
+.price-board__cell {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.price-board__bid,
+.price-board__ask {
+  color: #a8b2c2;
+}
+
+/* Cheapest ask (buy here) / highest bid (sell here) per good column. A
+   neutral highlight chip — gold is reserved for the Controlled Ship (#34),
+   so a port that's both docked and best-priced doesn't get an ambiguous
+   double-gold read. */
+.price-board__bid--best,
+.price-board__ask--best {
+  background: rgba(230, 236, 245, 0.14);
+  border-radius: 3px;
+  padding: 0 0.3rem;
+  color: #e6e6e6;
+  font-weight: 700;
+}
+
+.price-board__trend--up {
+  color: #5fbf7f;
+}
+
+.price-board__trend--down {
+  color: #d9705f;
+}
+
+.price-board__trend--flat {
+  color: #8891a3;
+}

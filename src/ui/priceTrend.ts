@@ -12,3 +12,6 @@ export function priceTrend(current: number, snapshot: number): Trend {
   if (c < s) return "down";
   return "flat";
 }
+
+/** Shared trend glyphs (PortPanel.tsx, PriceBoardOverlay.tsx). */
+export const TREND_GLYPH: Record<Trend, string> = { up: "▲", down: "▼", flat: "=" };
