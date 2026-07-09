@@ -76,7 +76,7 @@ function initialControlledShip(world: World): ShipId | null {
  * True when `before` was underway to some destination and `after` is now
  * docked at that same destination — i.e. a *final* arrival, not an
  * intermediate lane hop. `advanceShip` (src/sim/ship.ts) only transitions a
- * ship from "underway" to "docked" once its route is exhausted; an
+ * ship from "underway" to "docked" once its course is exhausted; an
  * intermediate voyage completing instead rolls straight into the next
  * voyage, keeping the ship "underway" with the same `destination`. So this
  * underway→docked transition can only fire on the final destination.

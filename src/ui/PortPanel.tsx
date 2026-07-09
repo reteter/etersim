@@ -242,7 +242,7 @@ function MarketRow({
 /**
  * Why the Controlled Ship can't sail to a given port right now, or null when
  * it can — in which case `eta` carries the previewed voyage ticks. The
- * "no route" case is belt-and-suspenders: worldgen guarantees a connected
+ * "no course" case is belt-and-suspenders: worldgen guarantees a connected
  * region, but a disabled button with a hint beats a vanishing one.
  */
 function sailability(
@@ -257,7 +257,7 @@ function sailability(
     return { disabledHint: "Already docked here.", eta: null };
   }
   const eta = previewCourseTicks(region, ship.location.portId, portId);
-  if (eta === null) return { disabledHint: "No route to this port.", eta: null };
+  if (eta === null) return { disabledHint: "No course to this port.", eta: null };
   return { disabledHint: null, eta };
 }
 

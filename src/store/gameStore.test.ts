@@ -202,7 +202,7 @@ describe("gameStore auto-pause on arrival", () => {
   });
 
   it("does not pause on intermediate lane hops, only the final destination", () => {
-    // Seed 0's home port has a known 2-lane shortest route to some port —
+    // Seed 0's home port has a known 2-lane shortest course to some port —
     // exercises voyageIndex advancing (still underway) before the final dock.
     store().newGame(0);
     const home = homePortId();

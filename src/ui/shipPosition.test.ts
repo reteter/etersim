@@ -85,7 +85,7 @@ describe("shipPosition", () => {
     expect(shipPosition(nearB, region)).toEqual({ x: 0.8, y: 0.4 });
   });
 
-  it("uses the current voyage leg, not the final route destination", () => {
+  it("uses the current voyage leg, not the final course destination", () => {
     const midRegion: Region = {
       ports: [portA, portB, port("c", 0.5, 1)],
       lanes: [

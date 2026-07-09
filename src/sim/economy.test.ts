@@ -163,7 +163,7 @@ interface BotMemory {
 
 /**
  * One tick's worth of commands for a scripted bot working a fixed
- * producer→consumer route on a single good.
+ * producer→consumer run on a single good.
  *
  * "loop" (simple gradient loop): never waits — buys/sells the moment it is
  * docked, every cycle.
@@ -236,7 +236,7 @@ function runBot(seed: number, mode: "camp" | "loop", days: number): number {
   const { producer, consumer } = findProducerAndConsumer(world);
 
   // Start docked at the producer, empty-handed, regardless of createWorld's
-  // random home port — the bot's route is fixed by design.
+  // random home port — the bot's run is fixed by design.
   world = {
     ...world,
     company: {

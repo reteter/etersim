@@ -171,8 +171,8 @@ export function RegionMap({
   const center = project(CENTER);
 
   // Controlled Ship's active course (docs/specs/E10-orrery-view.md — Lane
-  // presentation): the remaining voyages of its route while underway. A
-  // docked ship has no route to show, so "or selected" adds nothing beyond
+  // presentation): the remaining voyages of its course while underway. A
+  // docked ship has no course to show, so "or selected" adds nothing beyond
   // "underway" in practice — selecting a docked Controlled Ship just yields
   // an empty course.
   const courseVoyages: readonly Voyage[] =
@@ -181,8 +181,8 @@ export function RegionMap({
       : [];
   const courseDestinationByLane = new Map<LaneId, PortId>(courseVoyages.map((v) => [v.laneId, v.to]));
 
-  // Route preview (#8): while the Controlled Ship is docked, hovering another
-  // port previews the shortest route from its berth as a muted dashed course —
+  // Course preview (#8): while the Controlled Ship is docked, hovering another
+  // port previews the shortest course from its berth as a muted dashed course —
   // a hypothesis, visually weaker than a committed course. No preview while
   // underway (a course already owns the map).
   const dockedPortId =
