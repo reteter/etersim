@@ -29,7 +29,7 @@ Buy goods at a port → assign ship a route → time passes in ticks, the world 
 
 ## Milestones & epics
 
-Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); E10 is spec'd ([specs/E10-orrery-view.md](specs/E10-orrery-view.md), approved 2026-07-07) and shipped, E8 is spec'd ([specs/E8-living-economy.md](specs/E8-living-economy.md), approved 2026-07-08) and shipped (epic closed 2026-07-09), E9 still needs a per-epic spec. Epics beyond M2 are drafts and will be re-grilled before work starts.
+Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); E10 ([specs/E10-orrery-view.md](specs/E10-orrery-view.md)) and E8 ([specs/E8-living-economy.md](specs/E8-living-economy.md)) are shipped, E9 is spec'd ([specs/E9-fleet-and-routes.md](specs/E9-fleet-and-routes.md), approved 2026-07-09) and awaits implementation. M3 goals are locked at milestone level (owner grill 2026-07-09) with all three epic specs drafted; work starts only after E9 ships. Epics beyond M3 are drafts and will be re-grilled before work starts.
 
 ### M1 — Trade Loop (prove the core is fun)
 
@@ -116,10 +116,63 @@ editing (E9 ships a list editor).
   [specs/E11-proving-grounds.md](specs/E11-proving-grounds.md) (**draft**, grilled
   2026-07-09 — re-reviewed and approved only after E9 ships, by owner decision).
 
-### M3 — Depth (draft)
+### M3 — Guilds & obligations
 
-- **E3 Contracts & guilds**: NPC organizations offering freight contracts (moved from the
-  pre-v2 M2; natural home for the upkeep/money-sink hook).
+Locked with the owner at the M3 grill (2026-07-09). Runs after E9 ships (M2 closes).
+
+**v3 statement:** the region gains faces — guilds, NPC institutions with addresses and
+demands, offer **continuous** freight contracts that put deliberate obligations on the
+Company; reputation becomes the long-term currency (loss-leader contracts are
+investments), and ship upkeep turns the game of margins into a game of cash flow.
+Guilds are institutions, not agents: they own no ships and read the same living economy
+the player reads.
+
+- **E12 Region v2**: HEARTLAND v2 — port count raised to 7–9 (`portCountRange` is
+  template data; no ADR freezes it), sixth archetype **Free port** (exactly one per
+  region: no dominant flows, price bias ~1.0, no guild seat — the region's neutral
+  ground), orrery ring-packing recalibration (`orbitRadiusRange`/`MIN_PORT_DISTANCE` —
+  the E10 spec's anticipated owner decision), E8/E9 calibration tests re-anchored to the
+  new template. Runs first — the E10 precedent: geometry lands under the playtests that
+  follow it. Spec: [specs/E12-region-v2.md](specs/E12-region-v2.md) (draft 2026-07-09).
+- **E3 Contracts & guilds**: five per-archetype guilds with guildhouses at their ports;
+  enrollment (one-time fee, requires a founded Headquarters, grants rank 1 of 4);
+  continuous contracts — *keep delivering* ≥ quota per settlement period for ≥ K
+  periods — generated deterministically from real shortages and sized from real
+  geometry (feasible by construction, basis shown on the offer); flat fee per met
+  period (the market pays for goods, the guild pays for reliability); breach after two
+  consecutive missed periods, resignation always possible at the same reputation-only
+  cost (no thaler penalties, no-debt precedent); contract board as a PriceBoardOverlay
+  tab; **ship upkeep** as the daily per-ship fixed cost — the parked hook lands now
+  because its stated precondition (legible costs) shipped with the E9 Ledger. Spec:
+  [specs/E3-contracts-and-guilds.md](specs/E3-contracts-and-guilds.md) (draft
+  2026-07-09).
+- **E13 Guild buildings**: rank-gated **building permits** (reputation buys mechanics,
+  not percentages); the E9 construction machinery generalized to building types; one
+  flagship — the **Granary** (agrarian Storehouse variant, stores grain) with
+  store/withdraw Route orders. Storage opens arbitrage over time, bounded by capacity,
+  spread and the marginal walk. Buildable at the guild's archetype ports and the Free
+  port only. Spec: [specs/E13-guild-buildings.md](specs/E13-guild-buildings.md) (draft
+  2026-07-09).
+
+**M3 success criteria:**
+- Determinism extends to guilds: same seed + same commands ⇒ identical world including
+  contract offers, ranks and Ledger (asserted by test).
+- Offer feasibility invariant: every generated offer is satisfiable by a single ship at
+  the basis stated on the offer, with slack (asserted by test).
+- Save/load round-trips enrollment, ranks, active contracts and storehouse stock.
+- No-dominance guardrails: buy-store-sell does not beat carry trade on the standard
+  seed; a scripted loss-leader strategy reaches rank 2 while staying solvent (asserted
+  by test).
+- Owner check: taking a slightly unprofitable contract for rank feels like a good
+  decision; "guild port vs Free port" is a real dilemma when siting the Headquarters or
+  a Storehouse; upkeep reads as a fair cost, not an unexplained penalty.
+
+**Parked hooks (deliberately out of M3):** route order conditionals ("hold the sale
+until…" — [design-notes/route-conditionals.md](design-notes/route-conditionals.md),
+touches the E9 route-rot law, needs its own grill); the remaining four Storehouse
+variants; recurring guild dues (rejected at the grill: they double-tax the loss-leader
+relationship); crew wages (the rest of "Company running costs"); ship upgrades
+(Horizon).
 
 ### M4 — Arcana (draft)
 
@@ -139,7 +192,8 @@ get deleted, the list stays short.
 - **Multi-region world** — travel between regions; regions as economic islands with gateways. Hooks from the E9 grill (2026-07-09): per-region **branch offices** unlock the buildings mechanic in a new region; a paid **region administrator** shifts gameplay from managing a region to managing *between* regions. (Owner, 2026-07-07 playtest.)
 - **Region/port upgrades** — player investments in infrastructure; e.g. the region-wide economic view of a *foreign* region gated behind an upgrade. (Owner, [playtest note §8](design-notes/playtest-2026-07-07-market-legibility.md).)
 - **Ship classes** — hull sizes, speeds, specializations; the rest of the original E4 draft beyond fleet-lite. (PRD draft, retired into E9 2026-07-07.)
-- **Company running costs** — umbrella for ship upkeep and crew wages; docking fees shipped as the first slice (E9). (Parked hook from the v2 grill, partially unparked 2026-07-09.)
+- **Ship upgrades** — retrofitting an existing hull (e.g. hold expansion); distinct from ship classes: same ship, better parts. (Owner, M3 grill 2026-07-09.)
+- **Company running costs** — umbrella for ship upkeep and crew wages; docking fees shipped as the first slice (E9), ship upkeep unparked into E3 (M3 grill 2026-07-09); crew wages remain here. (Parked hook from the v2 grill.)
 - **Opportunities board ("Okazje")** — surfaced high-margin route suggestions; the fleet switches onto a few hot loops at once (Route templates by reference are its foundation). (Owner, E9 grill 2026-07-09.)
 - **Supplier ships** — automation of build deliveries: deliver-only routes the game plans itself. (Owner fantasy, E9 grill 2026-07-09; the deliver order is the hook.)
 - **Real orbital motion** — planets orbit over world time; ETAs depend on departure timing. (E5 candidate, parked 2026-07-07.)

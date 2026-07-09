@@ -199,8 +199,10 @@ consume the same schema — one schema, two consumers.
   auto-draw alone ~10–15 days (deliveries/rush compress toward 2–3); second-ship
   payback 20–40 days. At 10× a world day is 2.4 s — a two-week build is ~34 s of
   watching, felt but not boring.
-- **#56 (speed hotkeys) joins the E9 milestone** unchanged in scope: orchestration is
-  constant speed-juggling; `1/2/3/space` stop being QoL and become part of the loop.
+- **#56 (speed hotkeys) joins the E9 milestone**: orchestration is constant
+  speed-juggling; `1/2/3/space` stop being QoL and become part of the loop. Scope locked
+  v1-lite (owner, 2026-07-09): fixed default bindings + read-only Keybinds tab;
+  remappable bindings deferred.
 
 ### UX skeleton
 
