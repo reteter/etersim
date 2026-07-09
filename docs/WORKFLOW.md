@@ -75,6 +75,7 @@ The Anchor is lightweight and hands off quickly once the session has direction (
    - Short recap: "Locked so far: X, Y. Current focus: Z."
    - Explicit hat/persona declaration: "Zakładam czapkę Designera" / "Assuming the Anchor then switching to Designer."
    - State the session goal and any known open questions.
+   - Before starting any task: run the pre-work checklist (`docs/SELFCHECK.md`) and post its report.
 
 2. **During Grilling**
    - Label every branch clearly: "**Branch 2.3 — Controlled Ship header**"

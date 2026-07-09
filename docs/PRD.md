@@ -100,7 +100,8 @@ Orchestration is progression, not a replacement for manual trade.
   re-planning stays interesting; the v1 wait-at-the-floor tactic is no longer clearly optimal.
 
 **Parked hooks (deliberately out of v2):** ship upkeep / crew wages (E9's docking fee
-ships the first running-cost slice; the rest waits for E3-era legibility);
+ships the first running-cost slice; ship upkeep is spec'd in E3 — approved 2026-07-09;
+crew wages stay parked);
 wait-until-full route orders; build queue, shipyard assembly time and Headquarters
 relocation (E9 grill); real orbital motion (E5 candidate — aether currents over a
 moving system); information fog on remote prices (E6 candidate — events can cut the
