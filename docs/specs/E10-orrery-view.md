@@ -2,7 +2,7 @@
 
 Feature spec for epic E10 (milestone M2 — Living Region, [PRD](../PRD.md)). Terms per
 [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-07.
-Status: **approved** (2026-07-07).
+Status: **approved** (2026-07-07); **shipped** (#43, #25, #34, #44, #45 — epic complete).
 
 Grill inputs: issue #25 (lane topology decision A, locked 2026-07-07), issue #34 (icon
 handoff), [playtest-2026-07-07-market-legibility.md §5](../design-notes/playtest-2026-07-07-market-legibility.md).

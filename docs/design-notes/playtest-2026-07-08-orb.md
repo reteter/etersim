@@ -2,7 +2,8 @@
 
 Owner playtest on seed `playtest-orb`. Ten observations; the five UI-polish items
 shipped in **[PR #55](https://github.com/reteter/etersim/pull/55)**. The economy items
-are inputs for the **E8 Living Economy** grill (PRD M2 — not yet spec'd/milestoned);
+are inputs for the **E8 Living Economy** grill (since grilled into the approved
+[E8 spec](../specs/E8-living-economy.md) — shipped, epic closed 2026-07-09);
 keybinds are **[#56](https://github.com/reteter/etersim/issues/56)**. Terms per
 [CONTEXT.md](../../CONTEXT.md); process per [WORKFLOW.md](../WORKFLOW.md). Builds on the
 [2026-07-07 market-legibility note](playtest-2026-07-07-market-legibility.md).

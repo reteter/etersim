@@ -1,6 +1,6 @@
 # etersim — Product Requirements Document
 
-Living document. Owner: Jakub. Terms per [CONTEXT.md](../CONTEXT.md). Last updated: 2026-07-07.
+Living document. Owner: Jakub. Terms per [CONTEXT.md](../CONTEXT.md). Last updated: 2026-07-09.
 
 ## Vision
 
@@ -29,7 +29,7 @@ Buy goods at a port → assign ship a route → time passes in ticks, the world 
 
 ## Milestones & epics
 
-Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); E10 is spec'd ([specs/E10-orrery-view.md](specs/E10-orrery-view.md), approved 2026-07-07) and shipped, E8 is spec'd ([specs/E8-living-economy.md](specs/E8-living-economy.md), approved 2026-07-08), E9 still needs a per-epic spec. Epics beyond M2 are drafts and will be re-grilled before work starts.
+Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); E10 is spec'd ([specs/E10-orrery-view.md](specs/E10-orrery-view.md), approved 2026-07-07) and shipped, E8 is spec'd ([specs/E8-living-economy.md](specs/E8-living-economy.md), approved 2026-07-08) and shipped (epic closed 2026-07-09), E9 still needs a per-epic spec. Epics beyond M2 are drafts and will be re-grilled before work starts.
 
 ### M1 — Trade Loop (prove the core is fun)
 
