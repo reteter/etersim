@@ -27,7 +27,7 @@ export const GOODS: Record<GoodId, GoodDef> = {
   textiles: { id: "textiles", name: "Textiles", basePrice: 40 },
   aetherSalt: { id: "aetherSalt", name: "Aether Salt", basePrice: 60 },
   electronics: { id: "electronics", name: "Electronics", basePrice: 150 },
-  // Living wood is one of the rarest materials in the aether — timber is
-  // a luxury freight here, not a building commodity (owner's setting call).
+  // Timber is the most expensive because every hull needs a living-wood keel
+  // (E9 Recipe); it is a prestigious building material in the aether-punk setting.
   timber: { id: "timber", name: "Timber", basePrice: 250 },
 };

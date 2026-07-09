@@ -3,7 +3,7 @@ import type { LaneId, PortId, Region } from "./region";
 
 export type ShipId = string;
 
-/** One voyage of a route: traverse `laneId`, arriving at port `to`
+/** One voyage of a course: traverse `laneId`, arriving at port `to`
  *  (CONTEXT.md: Voyage — one traversal of a lane by a ship). */
 export interface Voyage {
   readonly laneId: LaneId;
@@ -14,8 +14,8 @@ export type ShipLocation =
   | { readonly kind: "docked"; readonly portId: PortId }
   | {
       readonly kind: "underway";
-      /** Route: the ordered voyages left to the destination (CONTEXT.md). */
-      readonly route: readonly Voyage[];
+      /** Course: the ordered voyages left to the destination (CONTEXT.md). */
+      readonly course: readonly Voyage[];
       readonly voyageIndex: number;
       /** Ticks already sailed on the current voyage. */
       readonly voyageProgressTicks: number;
@@ -41,12 +41,12 @@ export function cargoUsed(ship: Ship): number {
   return GOOD_IDS.reduce((sum, good) => sum + ship.cargo[good], 0);
 }
 
-/** Total voyage duration of a route, in ticks — the sum of its lanes'
- *  durations. The single home for route→ticks arithmetic (etaTicks and the
+/** Total voyage duration of a course, in ticks — the sum of its lanes'
+ *  durations. The single home for course→ticks arithmetic (etaTicks and the
  *  UI's sailTo preview both build on it). */
-export function routeTicks(region: Region, route: readonly Voyage[]): number {
+export function courseTicks(region: Region, course: readonly Voyage[]): number {
   let ticks = 0;
-  for (const voyage of route) {
+  for (const voyage of course) {
     ticks += region.lanes.find((l) => l.id === voyage.laneId)!.voyageTicks;
   }
   return ticks;
@@ -55,8 +55,8 @@ export function routeTicks(region: Region, route: readonly Voyage[]): number {
 /** Ticks until the ship docks; 0 when already docked. */
 export function etaTicks(ship: Ship, region: Region): number {
   if (ship.location.kind !== "underway") return 0;
-  const { route, voyageIndex, voyageProgressTicks } = ship.location;
-  return routeTicks(region, route.slice(voyageIndex)) - voyageProgressTicks;
+  const { course, voyageIndex, voyageProgressTicks } = ship.location;
+  return courseTicks(region, course.slice(voyageIndex)) - voyageProgressTicks;
 }
 
 /**
@@ -65,18 +65,18 @@ export function etaTicks(ship: Ship, region: Region): number {
  */
 export function advanceShip(ship: Ship, region: Region): Ship {
   if (ship.location.kind !== "underway") return ship;
-  const { route, voyageIndex, destination } = ship.location;
-  const lane = region.lanes.find((l) => l.id === route[voyageIndex].laneId)!;
+  const { course, voyageIndex, destination } = ship.location;
+  const lane = region.lanes.find((l) => l.id === course[voyageIndex].laneId)!;
   const progress = ship.location.voyageProgressTicks + 1;
   if (progress < lane.voyageTicks) {
     return { ...ship, location: { ...ship.location, voyageProgressTicks: progress } };
   }
-  if (voyageIndex + 1 < route.length) {
+  if (voyageIndex + 1 < course.length) {
     return {
       ...ship,
       location: {
         kind: "underway",
-        route,
+        course,
         voyageIndex: voyageIndex + 1,
         voyageProgressTicks: 0,
         destination,

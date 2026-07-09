@@ -94,13 +94,13 @@ describe("sailTo command", () => {
   const shipId = ship(world0).id;
   const target = world0.region.ports.find((p) => p.id !== homePort(world0).id)!;
 
-  it("puts the ship underway on the shortest route", () => {
+  it("puts the ship underway on the shortest course", () => {
     const next = tick(world0, [{ kind: "sailTo", shipId, portId: target.id }]);
     const loc = ship(next).location;
     expect(loc.kind).toBe("underway");
     if (loc.kind === "underway") {
       expect(loc.destination).toBe(target.id);
-      expect(loc.route.length).toBeGreaterThan(0);
+      expect(loc.course.length).toBeGreaterThan(0);
     }
   });
 

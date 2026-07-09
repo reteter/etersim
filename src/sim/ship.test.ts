@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Port, Region } from "./region";
-import { emptyCargo, etaTicks, routeTicks, type Ship } from "./ship";
+import { emptyCargo, etaTicks, courseTicks, type Ship } from "./ship";
 
 function port(id: string): Port {
   return {
@@ -26,17 +26,17 @@ function ship(location: Ship["location"]): Ship {
   return { id: "s0", hold: 50, cargo: emptyCargo(), location };
 }
 
-describe("routeTicks", () => {
-  it("is zero for an empty route", () => {
-    expect(routeTicks(region, [])).toBe(0);
+describe("courseTicks", () => {
+  it("is zero for an empty course", () => {
+    expect(courseTicks(region, [])).toBe(0);
   });
 
-  it("sums the voyage ticks of every lane on the route", () => {
-    const route = [
+  it("sums the voyage ticks of every lane on the course", () => {
+    const course = [
       { laneId: "ab", to: "b" },
       { laneId: "bc", to: "c" },
     ];
-    expect(routeTicks(region, route)).toBe(14);
+    expect(courseTicks(region, course)).toBe(14);
   });
 });
 
@@ -48,7 +48,7 @@ describe("etaTicks", () => {
   it("counts remaining lanes minus progress on the current voyage", () => {
     const s = ship({
       kind: "underway",
-      route: [
+      course: [
         { laneId: "ab", to: "b" },
         { laneId: "bc", to: "c" },
       ],
@@ -62,7 +62,7 @@ describe("etaTicks", () => {
   it("ignores already-completed voyages via voyageIndex", () => {
     const s = ship({
       kind: "underway",
-      route: [
+      course: [
         { laneId: "ab", to: "b" },
         { laneId: "bc", to: "c" },
       ],

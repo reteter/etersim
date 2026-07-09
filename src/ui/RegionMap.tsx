@@ -1,5 +1,5 @@
 import { useState, type ComponentType, type CSSProperties, type ReactNode, type SVGProps } from "react";
-import { shortestRoute, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
+import { shortestCourse, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { AgrarianIcon, IndustrialIcon, MiningIcon, ShipIcon, UrbanIcon, VerdantIcon } from "./icons";
 import { projectToViewBox } from "./mapProjection";
@@ -171,25 +171,25 @@ export function RegionMap({
   const center = project(CENTER);
 
   // Controlled Ship's active course (docs/specs/E10-orrery-view.md — Lane
-  // presentation): the remaining voyages of its route while underway. A
-  // docked ship has no route to show, so "or selected" adds nothing beyond
+  // presentation): the remaining voyages of its course while underway. A
+  // docked ship has no course to show, so "or selected" adds nothing beyond
   // "underway" in practice — selecting a docked Controlled Ship just yields
   // an empty course.
   const courseVoyages: readonly Voyage[] =
     ship.id === controlledShipId && ship.location.kind === "underway"
-      ? ship.location.route.slice(ship.location.voyageIndex)
+      ? ship.location.course.slice(ship.location.voyageIndex)
       : [];
   const courseDestinationByLane = new Map<LaneId, PortId>(courseVoyages.map((v) => [v.laneId, v.to]));
 
-  // Route preview (#8): while the Controlled Ship is docked, hovering another
-  // port previews the shortest route from its berth as a muted dashed course —
+  // Course preview (#8): while the Controlled Ship is docked, hovering another
+  // port previews the shortest course from its berth as a muted dashed course —
   // a hypothesis, visually weaker than a committed course. No preview while
   // underway (a course already owns the map).
   const dockedPortId =
     ship.id === controlledShipId && ship.location.kind === "docked" ? ship.location.portId : null;
   const previewLaneIds = new Set<LaneId>(
     dockedPortId && hoveredPortId && hoveredPortId !== dockedPortId
-      ? (shortestRoute(region, dockedPortId, hoveredPortId) ?? []).map((v) => v.laneId)
+      ? (shortestCourse(region, dockedPortId, hoveredPortId) ?? []).map((v) => v.laneId)
       : [],
   );
 

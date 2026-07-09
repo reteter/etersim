@@ -6,9 +6,9 @@ import type { Voyage } from "./ship";
  * scanned in array order, and a shorter distance strictly wins — ties keep
  * the earlier port. O(V²), plenty for single-digit port counts.
  *
- * Returns the route as voyages, [] when from === to, null when unreachable.
+ * Returns the course (ordered voyages), [] when from === to, null when unreachable.
  */
-export function shortestRoute(region: Region, from: PortId, to: PortId): Voyage[] | null {
+export function shortestCourse(region: Region, from: PortId, to: PortId): Voyage[] | null {
   if (from === to) return [];
 
   const dist = new Map<PortId, number>();

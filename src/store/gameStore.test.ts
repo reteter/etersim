@@ -5,7 +5,7 @@ import {
   MAX_TICKS_PER_CALL,
   MS_PER_TICK_AT_1X,
   quoteBuy,
-  shortestRoute,
+  shortestCourse,
   type PortId,
 } from "../sim";
 import { useGameStore } from "./gameStore";
@@ -202,13 +202,13 @@ describe("gameStore auto-pause on arrival", () => {
   });
 
   it("does not pause on intermediate lane hops, only the final destination", () => {
-    // Seed 0's home port has a known 2-lane shortest route to some port —
+    // Seed 0's home port has a known 2-lane shortest course to some port —
     // exercises voyageIndex advancing (still underway) before the final dock.
     store().newGame(0);
     const home = homePortId();
     const region = store().world!.region;
     const target = store().world!.region.ports.find(
-      (p) => p.id !== home && (shortestRoute(region, home, p.id)?.length ?? 0) > 1,
+      (p) => p.id !== home && (shortestCourse(region, home, p.id)?.length ?? 0) > 1,
     )!;
     expect(target).toBeDefined();
     const eta = sailAndGetEta(target.id);

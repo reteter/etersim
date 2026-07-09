@@ -535,7 +535,7 @@ body {
   stroke-width: 0.35;
 }
 
-/* Route preview (#8): a docked ship's prospective course to the hovered port.
+/* Course preview (#8): a docked ship's prospective course to the hovered port.
    Dashed like a committed course but static and muted, so a hypothesis never
    reads as loudly as the real thing. Declared before the accents so those win
    the cascade when a lane carries more than one role. */
@@ -553,7 +553,7 @@ body {
   filter: drop-shadow(0 0 0.5px #e0a840);
   /* A committed accent wins fully over a co-occurring hover preview: reset the
      preview's dash/opacity so the lane reads solid, not a muddied hybrid (a
-     selected port and a hovered route can share an incident lane). */
+     selected port and a hovered course can share an incident lane). */
   stroke-dasharray: none;
   opacity: 1;
 }

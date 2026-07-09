@@ -19,7 +19,7 @@ import { useGameStore } from "../store/gameStore";
 import { ShipIcon } from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
-import { previewRouteTicks } from "./routePreview";
+import { previewCourseTicks } from "./coursePreview";
 
 /** Compact cargo summary for a Harbor hover tooltip, e.g. "Grain 5, Iron 2". */
 function cargoSummary(ship: Ship): string {
@@ -242,7 +242,7 @@ function MarketRow({
 /**
  * Why the Controlled Ship can't sail to a given port right now, or null when
  * it can — in which case `eta` carries the previewed voyage ticks. The
- * "no route" case is belt-and-suspenders: worldgen guarantees a connected
+ * "no course" case is belt-and-suspenders: worldgen guarantees a connected
  * region, but a disabled button with a hint beats a vanishing one.
  */
 function sailability(
@@ -256,8 +256,8 @@ function sailability(
   if (ship.location.portId === portId) {
     return { disabledHint: "Already docked here.", eta: null };
   }
-  const eta = previewRouteTicks(region, ship.location.portId, portId);
-  if (eta === null) return { disabledHint: "No route to this port.", eta: null };
+  const eta = previewCourseTicks(region, ship.location.portId, portId);
+  if (eta === null) return { disabledHint: "No course to this port.", eta: null };
   return { disabledHint: null, eta };
 }
 

@@ -1,6 +1,6 @@
 import type { GoodId } from "./goods";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
-import { shortestRoute } from "./pathfinding";
+import { shortestCourse } from "./pathfinding";
 import type { Port, PortId } from "./region";
 import { cargoUsed, type Ship, type ShipId } from "./ship";
 import type { World } from "./world";
@@ -47,13 +47,13 @@ export function applyCommand(world: World, command: Command): World {
     }
     case "sailTo": {
       if (command.portId === port.id) return world;
-      const route = shortestRoute(world.region, port.id, command.portId);
-      if (route === null || route.length === 0) return world;
+      const course = shortestCourse(world.region, port.id, command.portId);
+      if (course === null || course.length === 0) return world;
       const underway: Ship = {
         ...ship,
         location: {
           kind: "underway",
-          route,
+          course,
           voyageIndex: 0,
           voyageProgressTicks: 0,
           destination: command.portId,

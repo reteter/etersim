@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Command } from "./commands";
 import { GOOD_IDS, type GoodId } from "./goods";
 import { effectiveBase, price, quoteBuy } from "./market";
-import { shortestRoute } from "./pathfinding";
+import { shortestCourse } from "./pathfinding";
 import { ARCHETYPE_PROFILES, TICKS_PER_DAY, type PortId, type Region } from "./region";
 import { cargoUsed } from "./ship";
 import { tick } from "./tick";
@@ -25,12 +25,12 @@ const producersOf = (region: Region, good: GoodId): PortId[] =>
     .filter((p) => (ARCHETYPE_PROFILES[p.archetype].productionPerDay[good] ?? 0) > 0)
     .map((p) => p.id);
 
-/** Lane-hop count of the shortest route from `from` to `to`, via the same
- *  routing helper the dominance bots use below (`shortestRoute`) — infinite
+/** Lane-hop count of the shortest course from `from` to `to`, via the same
+ *  routing helper the dominance bots use below (`shortestCourse`) — infinite
  *  if unreachable (never happens; worldgen keeps the region connected). */
 const hopDistance = (region: Region, from: PortId, to: PortId): number => {
-  const route = shortestRoute(region, from, to);
-  return route === null ? Infinity : route.length;
+  const course = shortestCourse(region, from, to);
+  return course === null ? Infinity : course.length;
 };
 
 describe("invariant suite (region alone, no player commands, several seeds)", () => {
@@ -163,7 +163,7 @@ interface BotMemory {
 
 /**
  * One tick's worth of commands for a scripted bot working a fixed
- * producer→consumer route on a single good.
+ * producer→consumer run on a single good.
  *
  * "loop" (simple gradient loop): never waits — buys/sells the moment it is
  * docked, every cycle.
@@ -198,8 +198,8 @@ function botCommands(
     memory.lastBuyPrice = curPrice;
     const qty = maxBuyQty(world, producer);
     if (qty === 0) return [];
-    const route = shortestRoute(world.region, producer, consumer);
-    if (route === null) return [];
+    const course = shortestCourse(world.region, producer, consumer);
+    if (course === null) return [];
     return [
       { kind: "buy", shipId: ship.id, good: GOOD, qty },
       { kind: "sailTo", shipId: ship.id, portId: consumer },
@@ -236,7 +236,7 @@ function runBot(seed: number, mode: "camp" | "loop", days: number): number {
   const { producer, consumer } = findProducerAndConsumer(world);
 
   // Start docked at the producer, empty-handed, regardless of createWorld's
-  // random home port — the bot's route is fixed by design.
+  // random home port — the bot's run is fixed by design.
   world = {
     ...world,
     company: {
