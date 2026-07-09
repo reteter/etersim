@@ -92,7 +92,9 @@ Rules, all locked:
   notice, and the Ledger will show them plainly.
 - Orders execute on docking (sells, then buys, then delivers are irrelevant to order —
   each good appears in at most one order per Stop; execution is in the Stop's order
-  list order), then the ship departs immediately.
+  list order); the ship then dwells docked for one tick before departing on the next
+  Stop's Course (Tech — the dwell mirrors manual play and is the player's intervention
+  window; it is never idle waiting *for* a price or a condition).
 - Ships race for shared purse and stock in deterministic `ships[]` order (Tech).
 
 ### Headquarters: founding the company
@@ -300,8 +302,10 @@ comment is corrected in the same PR (setting verdict above).
   5 days).
 - New Commands: `foundHeadquarters(portId)` (rejected if one exists or purse < cost),
   `placeBuildOrder()` (rejected while one runs or purse < labor fee),
-  `rushBuild()` (buys every remaining good via `quoteBuy` against current local stock —
-  partial by stock, full quote shown UI-side from the same function),
+  `rushBuild()` (buys every remaining good via `quoteBuy`, bounded by current local
+  stock **and** the purse — `maxAffordableQty` per good, so it is partial by stock and,
+  consistent with the no-debt principle, never spends past the purse; full quote shown
+  UI-side from the same function),
   `deliver(shipId, good)` (docked at the Headquarters port; moves
   `min(cargo, remaining)`).
 - Auto-draw (tick phase): for each good in `GOOD_IDS` order with remaining need and

@@ -13,7 +13,7 @@ import { shortestCourse } from "./pathfinding";
 import type { Port, PortId } from "./region";
 import type { Route, RouteId } from "./route";
 import { cargoUsed, type Ship, type ShipId } from "./ship";
-import type { World } from "./world";
+import { replaceShip, type World } from "./world";
 
 /**
  * Command: a player order applied at a tick boundary (CONTEXT.md). Invalid
@@ -287,16 +287,6 @@ function applyTrade(
     region: {
       ...withShip.region,
       ports: withShip.region.ports.map((p) => (p.id === port.id ? tradedPort : p)),
-    },
-  };
-}
-
-function replaceShip(world: World, ship: Ship): World {
-  return {
-    ...world,
-    company: {
-      ...world.company,
-      ships: world.company.ships.map((s) => (s.id === ship.id ? ship : s)),
     },
   };
 }

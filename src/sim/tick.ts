@@ -8,7 +8,7 @@ import { ARCHETYPE_PROFILES, DOCKING_FEE, TICKS_PER_DAY, type PortId, type Regio
 import { nextFloat, type RngState } from "./rng";
 import type { Route } from "./route";
 import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
-import { snapshotPrices, type World } from "./world";
+import { replaceShip, snapshotPrices, type World } from "./world";
 
 export type { Command };
 
@@ -58,16 +58,6 @@ function chargeDockingFee(world: World, portId: PortId): World {
   const paid = Math.min(DOCKING_FEE[port.archetype] ?? 0, world.company.thalers);
   if (paid <= 0) return world;
   return { ...world, company: { ...world.company, thalers: world.company.thalers - paid } };
-}
-
-function replaceShip(world: World, ship: Ship): World {
-  return {
-    ...world,
-    company: {
-      ...world.company,
-      ships: world.company.ships.map((s) => (s.id === ship.id ? ship : s)),
-    },
-  };
 }
 
 /** Execute one Stop's orders best-effort, in list order, by dispatching the

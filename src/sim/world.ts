@@ -81,6 +81,18 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
   };
 }
 
+/** Replace a ship in the Company fleet by id, preserving array order. The one
+ *  home for this fold — commands and the tick route pass both build on it. */
+export function replaceShip(world: World, ship: Ship): World {
+  return {
+    ...world,
+    company: {
+      ...world.company,
+      ships: world.company.ships.map((s) => (s.id === ship.id ? ship : s)),
+    },
+  };
+}
+
 /** Current price of every good at every port, in deterministic order. */
 export function snapshotPrices(region: Region): Record<PortId, Record<GoodId, number>> {
   const snapshot: Record<PortId, Record<GoodId, number>> = {};
