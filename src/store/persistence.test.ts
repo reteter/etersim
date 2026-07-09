@@ -34,10 +34,57 @@ function midSessionWorld(): World {
   return world;
 }
 
+/** A world carrying every E9 addition — a Route, an assigned ship, a
+ *  Headquarters with a partially-filled Build Order — driven a while. */
+function e9World(): World {
+  const base = createWorld("e9-save");
+  const a = base.region.lanes[0].a;
+  const b = base.region.lanes[0].b;
+  const route = {
+    id: "r",
+    name: "loop",
+    stops: [
+      { portId: a, orders: [{ kind: "buy" as const, good: "grain" as const }] },
+      { portId: b, orders: [{ kind: "sell" as const, good: "grain" as const }] },
+    ],
+  };
+  const homeShip = base.company.ships[0];
+  let world: World = {
+    ...base,
+    company: {
+      ...base.company,
+      thalers: 20000,
+      routes: [route],
+      ships: [{ ...homeShip, location: { kind: "docked", portId: a } }],
+    },
+  };
+  world = tick(world, [
+    { kind: "foundHeadquarters", portId: a },
+    { kind: "assignRoute", shipId: "s0", routeId: "r" },
+  ]);
+  world = tick(world, [{ kind: "placeBuildOrder" }]);
+  for (let i = 0; i < 60; i++) world = tick(world, []); // auto-draw fills the site, ship loops
+  return world;
+}
+
 describe("persistence", () => {
   it("round-trips a mid-session world through JSON deep-equal (spec §Testing)", () => {
     const world = midSessionWorld();
     expect(parseWorldJson(exportWorldJson(world))).toEqual(world);
+  });
+
+  it("round-trips E9 state — routes, assignment, headquarters, build order (#80/#81)", () => {
+    const world = e9World();
+    // Preconditions: the save actually carries the new state we care about.
+    expect(world.company.routes).toHaveLength(1);
+    expect(world.company.headquarters?.buildOrder).toBeDefined();
+    expect(world.company.ships[0].assignment).toBeDefined();
+    const restored = parseWorldJson(exportWorldJson(world));
+    expect(restored).toEqual(world);
+    expect(restored.company.headquarters!.buildOrder!.siteStore).toEqual(
+      world.company.headquarters!.buildOrder!.siteStore,
+    );
+    expect(restored.company.ships[0].assignment).toEqual(world.company.ships[0].assignment);
   });
 
   it("round-trips a mid-session world through the autosave slot", () => {

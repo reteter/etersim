@@ -14,8 +14,11 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  v2: E8 changed the Port shape (`priceBias`) with no migration (pre-1.0
  *  owner call) — v1 saves are cleanly rejected instead of loading NaNs.
  *  v3: E8 added `World.flowDrift` and `World.osmosisPulse` — again no
- *  migration; v2 saves are cleanly rejected. */
-export const SAVE_VERSION = 3;
+ *  migration; v2 saves are cleanly rejected.
+ *  v4: E9 added `Company.routes`/`headquarters`, `Ship.name`/`assignment` (the
+ *  E9 spec lists save migration as a non-goal, pre-1.0) — v3 saves would load
+ *  missing `routes`/`headquarters` and crash the route pass, so reject them. */
+export const SAVE_VERSION = 4;
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
 export const AUTOSAVE_INTERVAL_TICKS = 24;
