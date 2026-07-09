@@ -95,6 +95,15 @@ wait-until-full route orders; real orbital motion (E5 candidate — aether curre
 moving system); information fog on remote prices (E6 candidate — events can cut the
 telegraph); region/port upgrades and upgrade-gated multi-region views.
 
+### Tooling track (parallel to milestones)
+
+- **E11 Proving grounds**: headless evaluation harness — an agent tests builds by
+  authoring deterministic policies, running seed batches, reading aggregated telemetry
+  (Ledger), and hunting bugs with adversarial strategies; direct-play sessions log into
+  replayable runs; experiment conclusions land in `docs/experiments/`. Spec:
+  [specs/E11-proving-grounds.md](specs/E11-proving-grounds.md) (**draft**, grilled
+  2026-07-09 — re-reviewed and approved only after E9 ships, by owner decision).
+
 ### M3 — Depth (draft)
 
 - **E3 Contracts & guilds**: NPC organizations offering freight contracts (moved from the
