@@ -63,11 +63,21 @@ Orchestration is progression, not a replacement for manual trade.
   floor" dominant strategy found in the M1 playtest. Spec:
   [specs/E8-living-economy.md](specs/E8-living-economy.md) (approved 2026-07-08). Shipped
   (#57, #58, #59, #60, #61, #62, #63).
-- **E9 Fleet & routes** (absorbs draft E4 — number retired): fleet-lite — buy additional
-  identical hulls (ship purchase is v2's money sink; no upkeep yet); per-ship looping
-  routes A→B→C with per-stop load/unload orders; no wait or price conditionals — routes
-  decay as the living market tightens spreads, and noticing and re-planning them *is* the
-  game. Depends on E8 and the #28 Controlled Ship model.
+- **E9 Fleet & routes** (absorbs draft E4 — number retired): fleet-lite reached through
+  **construction, not purchase** (the 2026-07-09 grill superseded the earlier "buy
+  additional identical hulls / ship purchase is v2's money sink" wording): founding a
+  Headquarters building unlocks the orchestration layer — Company-level Route templates
+  (looping Stops with buy/sell/deliver orders, assigned to ships by reference,
+  suspend/resume) and ship construction fed by the living market (auto-draw from the
+  local market, player deliveries, market-priced rush; the recipe topped by a living-wood
+  keel). Docking fees are the recurring money sink; the Ledger event stream plus an
+  in-game performance board share one schema with the E11 harness. No wait or price
+  conditionals — routes decay as the living market tightens spreads, and noticing and
+  re-planning them *is* the game. Design law locked at the grill: **buildings introduce
+  mechanics** — each new gameplay layer arrives with a building, not a tutorial (applies
+  forward to M3 upgrades and multi-region branch offices). Depends on E8 and the #28
+  Controlled Ship model. Spec:
+  [specs/E9-fleet-and-routes.md](specs/E9-fleet-and-routes.md) (approved 2026-07-09).
 - **E10 Orrery view**: the region presented as a planetary system — ports on static orbit
   rings around a central star (set dressing, no mechanics); lanes subtle by default,
   accented when a port is selected; tintable monochrome icon set (#34; game-icons.net is
@@ -89,11 +99,13 @@ Orchestration is progression, not a replacement for manual trade.
 - Owner check: set up 2–3 routes, then 15+ minutes of mostly watching plus occasional
   re-planning stays interesting; the v1 wait-at-the-floor tactic is no longer clearly optimal.
 
-**Parked hooks (deliberately out of v2):** ship upkeep / running costs (a money sink
-beyond hull purchases — revisit when costs are legible to the player, e.g. with E3);
-wait-until-full route orders; real orbital motion (E5 candidate — aether currents over a
+**Parked hooks (deliberately out of v2):** ship upkeep / crew wages (E9's docking fee
+ships the first running-cost slice; the rest waits for E3-era legibility);
+wait-until-full route orders; build queue, shipyard assembly time and Headquarters
+relocation (E9 grill); real orbital motion (E5 candidate — aether currents over a
 moving system); information fog on remote prices (E6 candidate — events can cut the
-telegraph); region/port upgrades and upgrade-gated multi-region views.
+telegraph); region/port upgrades and upgrade-gated multi-region views; map-drawn route
+editing (E9 ships a list editor).
 
 ### Tooling track (parallel to milestones)
 
@@ -124,8 +136,10 @@ Loose ideas with no milestone. Nothing here is a promise: an idea enters a versi
 through a grill (WORKFLOW.md). One line per idea with its origin; curated — dead ideas
 get deleted, the list stays short.
 
-- **Multi-region world** — travel between regions; regions as economic islands with gateways. (Owner, 2026-07-07 playtest.)
+- **Multi-region world** — travel between regions; regions as economic islands with gateways. Hooks from the E9 grill (2026-07-09): per-region **branch offices** unlock the buildings mechanic in a new region; a paid **region administrator** shifts gameplay from managing a region to managing *between* regions. (Owner, 2026-07-07 playtest.)
 - **Region/port upgrades** — player investments in infrastructure; e.g. the region-wide economic view of a *foreign* region gated behind an upgrade. (Owner, [playtest note §8](design-notes/playtest-2026-07-07-market-legibility.md).)
 - **Ship classes** — hull sizes, speeds, specializations; the rest of the original E4 draft beyond fleet-lite. (PRD draft, retired into E9 2026-07-07.)
-- **Company running costs** — umbrella for ship upkeep, crew wages, docking fees; needs costs to be legible first. (Parked hook from the v2 grill.)
+- **Company running costs** — umbrella for ship upkeep and crew wages; docking fees shipped as the first slice (E9). (Parked hook from the v2 grill, partially unparked 2026-07-09.)
+- **Opportunities board ("Okazje")** — surfaced high-margin route suggestions; the fleet switches onto a few hot loops at once (Route templates by reference are its foundation). (Owner, E9 grill 2026-07-09.)
+- **Supplier ships** — automation of build deliveries: deliver-only routes the game plans itself. (Owner fantasy, E9 grill 2026-07-09; the deliver order is the hook.)
 - **Real orbital motion** — planets orbit over world time; ETAs depend on departure timing. (E5 candidate, parked 2026-07-07.)
