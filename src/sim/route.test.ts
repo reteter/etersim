@@ -396,3 +396,96 @@ describe("[A,B,A] co-located drain (#80)", () => {
     expect(shipOf(w).location.kind).toBe("underway");
   });
 });
+
+describe("assign while underway (#80)", () => {
+  it("takes effect only once the ship docks, then redirects to Stop 0", () => {
+    const { a, b } = directPair(createWorld("underway"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [] },
+        { portId: b, orders: [] },
+      ],
+    };
+    // Ship starts at B, manually sailing to A; assign the A-first route mid-flight.
+    const world = seed("underway", b, 500, [route]);
+    const shipId = shipOf(world).id;
+    let w = tick(world, [{ kind: "sailTo", shipId, portId: a }]);
+    expect(shipOf(w).location.kind).toBe("underway");
+    w = tick(w, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    // Still underway to A; the assignment is set but dormant until it docks.
+    expect(shipOf(w).assignment).toEqual({ routeId: "r", nextStopIndex: 0, suspended: false });
+    let guard = 0;
+    while (!(shipOf(w).location.kind === "docked" && dockedAt(w) === a) && guard++ < 500) w = tick(w, []);
+    // Docked at A (= Stop 0): executes Stop 0 and dwells, advancing to Stop 1.
+    expect(shipOf(w).assignment!.nextStopIndex).toBe(1);
+  });
+});
+
+describe("shared-purse race in ships[] order (#80)", () => {
+  it("two ships assigned the same tick contend deterministically, first ship first", () => {
+    const { a, b } = directPair(createWorld("race"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain" }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const base = createWorld("race");
+    const s0: Ship = { ...base.company.ships[0], id: "s0", name: "s0", location: { kind: "docked", portId: a } };
+    const s1: Ship = { ...base.company.ships[0], id: "s1", name: "s1", location: { kind: "docked", portId: a } };
+    // Purse small enough that the two ships genuinely compete for it.
+    const world: World = { ...base, company: { ...base.company, thalers: 160, ships: [s0, s1], routes: [route] } };
+
+    const run = (w: World) =>
+      tick(w, [
+        { kind: "assignRoute", shipId: "s0", routeId: "r" },
+        { kind: "assignRoute", shipId: "s1", routeId: "r" },
+      ]);
+    const after = run(world);
+
+    const g0 = after.company.ships[0].cargo.grain;
+    const g1 = after.company.ships[1].cargo.grain;
+    expect(g0 + g1).toBeGreaterThan(0);
+    expect(g0).toBeGreaterThanOrEqual(g1); // s0 races first for the shared purse
+    expect(after.company.thalers).toBeGreaterThanOrEqual(0);
+    expect(run(world)).toEqual(after); // deterministic
+  });
+});
+
+describe("combined determinism — routes + HQ + build (#80/#81)", () => {
+  it("same seed + same scripted commands ⇒ deep-equal world after several days", () => {
+    const TICKS = 120;
+    const script = (): World => {
+      const base = createWorld("combined");
+      const { a, b } = directPair(base);
+      const shipId = base.company.ships[0].id;
+      const route: Route = {
+        id: "r",
+        name: "r",
+        stops: [
+          { portId: a, orders: [{ kind: "buy", good: "grain" }] },
+          { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+        ],
+      };
+      // Fund the company so founding + a build are reachable.
+      let w: World = { ...base, company: { ...base.company, thalers: 20000, routes: [route] } };
+      const homeId = dockedAt(w);
+      w = tick(w, [
+        { kind: "foundHeadquarters", portId: homeId },
+        { kind: "assignRoute", shipId, routeId: "r" },
+      ]);
+      w = tick(w, [{ kind: "placeBuildOrder" }]);
+      for (let t = 0; t < TICKS; t++) {
+        w = tick(w, t === 40 ? [{ kind: "rushBuild" }] : []);
+      }
+      return w;
+    };
+    const a = script();
+    expect(a).toEqual(script());
+    expect(JSON.parse(JSON.stringify(a))).toEqual(a); // save round-trip clean (ADR-0004)
+  });
+});
