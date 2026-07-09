@@ -186,6 +186,58 @@ _Avoid_: waypoint, leg
 One traversal of a lane by a ship, taking a number of ticks.
 _Avoid_: trip, journey
 
+### Harness & evaluation
+
+Terms for the agent-facing evaluation tooling (epic E11 — spec drafted 2026-07-09,
+approval deferred until after E9). None of these exist in the build yet.
+
+**Harness** (PL: poligon):
+The headless consumer of the simulation for running games without the UI. Imports
+`src/sim` like any other consumer — never the other way around; policies and runner live
+outside the sim module.
+_Implementation_: E11 ([spec draft](docs/specs/E11-proving-grounds.md)) — not in build yet.
+_Avoid_: test rig, sandbox
+
+**Policy** (PL: polityka):
+A deterministic, parameterized playing strategy: a pure function
+`(world, memory) → { commands, memory }` polled every Tick. May read the full `World`
+but is honor-bound to player-visible information; policies that read sim internals
+(e.g. flow drift) must be marked diagnostic.
+_Avoid_: bot (colloquial in tests is fine), AI, strategy (in identifiers)
+
+**Run** (PL: przebieg):
+One full game: Policy + seed + day horizon → outcome metrics + Ledger. Fully
+reproducible by construction.
+_Avoid_: game, session (in identifiers)
+
+**Batch** (PL: seria):
+N Runs over a seed/parameter grid, aggregated into one report (medians, spreads,
+head-to-head policy comparisons, anomaly list with replayable seeds).
+_Avoid_: sweep, suite (in identifiers)
+
+**Ledger** (PL: księga):
+The canonical event stream of a Company's activity: every transaction (tick, port, good,
+quantity, unit price, side, thalers after), dockings/departures, and daily net-worth
+snapshots (thalers + cargo at mid price). One schema, two consumers: the Harness and the
+future in-game performance board.
+_Avoid_: log, history (as identifiers)
+
+**Direct play** (PL: gra bezpośrednia):
+Harness mode where an agent issues Commands step by step (state JSON out, command JSON
+in). Every session is logged as a command script, so it becomes a deterministic,
+replayable Run.
+_Avoid_: interactive mode
+
+**Replay** (PL: powtórka):
+Re-execution of a Run or a Direct play session from its recorded script, tick-for-tick
+identical (ADR-0003).
+_Avoid_: —
+
+**Experiment** (PL: eksperyment):
+A research question + its Batches + the agent's written conclusions, filed as a dated
+document in `docs/experiments/`. Closes the loop: experiment → findings → grill inputs.
+_Avoid_: study
+
 ### Simulation
 
 **Tick** (PL: tick):
