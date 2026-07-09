@@ -2,6 +2,7 @@ import { applyCommand, type Command } from "./commands";
 import { GOOD_IDS, type GoodId } from "./goods";
 import { marketTick, NEUTRAL_MODIFIERS } from "./market";
 import { osmosisTick } from "./osmosis";
+import { runBuildSiteAutoDraw } from "./building";
 import { ARCHETYPE_PROFILES, TICKS_PER_DAY, type PortId, type Region } from "./region";
 import { nextFloat, type RngState } from "./rng";
 import { advanceShip } from "./ship";
@@ -58,8 +59,15 @@ export function tick(world: World, commands: readonly Command[]): World {
   let w = world;
   for (const command of commands) w = applyCommand(w, command);
 
-  const ships = w.company.ships.map((ship) => advanceShip(ship, w.region));
-  const ports = w.region.ports.map((port) => ({
+  const shipsAfterAdvance = w.company.ships.map((ship) => advanceShip(ship, w.region));
+
+  // DOCKING PHASE (owned by parallel #80 coder)
+  let postDock: World = { ...w, company: { ...w.company, ships: shipsAfterAdvance } };
+  // BUILD-SITE AUTO-DRAW phase — after docking, before the market tick
+  postDock = runBuildSiteAutoDraw(postDock);
+
+  // Market tick runs on (possibly draw-mutated) stocks from postDock
+  const ports = postDock.region.ports.map((port) => ({
     ...port,
     market: marketTick(
       port.market,
@@ -69,7 +77,7 @@ export function tick(world: World, commands: readonly Command[]): World {
     ),
   }));
 
-  const { region, pulse } = osmosisTick({ ...w.region, ports });
+  const { region, pulse } = osmosisTick({ ...postDock.region, ports });
 
   const nextTick = w.tick + 1;
   const isDayBoundary = nextTick % TICKS_PER_DAY === 0;
@@ -82,7 +90,7 @@ export function tick(world: World, commands: readonly Command[]): World {
     tick: nextTick,
     rng,
     region,
-    company: { ...w.company, ships },
+    company: postDock.company, // may include launched ship + cleared/updated buildOrder
     priceSnapshots: isDayBoundary ? snapshotPrices(region) : w.priceSnapshots,
     flowDrift,
     osmosisPulse: pulse,

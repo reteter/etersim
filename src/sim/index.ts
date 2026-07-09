@@ -70,6 +70,15 @@ export {
   SPEEDS,
   type Speed,
 } from "./speed";
+export {
+  AUTO_DRAW_PER_DAY,
+  generateShipName,
+  HEADQUARTERS_COST,
+  LABOR_FEE,
+  SHIP_RECIPE,
+  type BuildOrder,
+  type Headquarters,
+} from "./building";
 // RNG draw functions stay internal: the UI must never consume sim
 // randomness outside tick() (ADR-0003). Only the state type leaks out,
 // because World embeds it.

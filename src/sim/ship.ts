@@ -29,6 +29,8 @@ export interface Ship {
   /** Cargo aboard, zero-filled for every good (deterministic iteration). */
   readonly cargo: Record<GoodId, number>;
   readonly location: ShipLocation;
+  /** Display name, assigned at launch from fixed list (cosmetic, #54). */
+  readonly name?: string;
 }
 
 export function emptyCargo(): Record<GoodId, number> {

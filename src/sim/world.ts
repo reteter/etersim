@@ -1,5 +1,6 @@
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
+import type { Headquarters } from "./building";
 import { effectiveBase, price } from "./market";
 import type { LaneId, PortId, Region } from "./region";
 import { nextInt, seedRng, type RngState } from "./rng";
@@ -14,6 +15,9 @@ export const STARTING_HOLD = 50;
 export interface Company {
   readonly thalers: number;
   readonly ships: readonly Ship[];
+  /** Headquarters (E9): one per Company, unlocks routes and construction.
+   *  buildOrder present iff an active build is in progress. */
+  readonly headquarters?: Headquarters;
 }
 
 /**

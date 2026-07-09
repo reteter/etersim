@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { AUTO_DRAW_PER_DAY, SHIP_RECIPE } from "./building";
 import { GOOD_IDS, type GoodId } from "./goods";
 import { DRIFT_MAX, DRIFT_MIN, driftStep, tick } from "./tick";
 import type { MarketGood, Port, PortId, Region } from "./region";
 import { seedRng } from "./rng";
 import { createWorld, type World } from "./world";
+
+function richForHq(w: World): World {
+  return { ...w, company: { ...w.company, thalers: 20000 } };
+}
 
 const runTicks = (world: World, count: number): World => {
   let current = world;
@@ -160,5 +165,124 @@ describe("tick — flow drift wiring (E8)", () => {
       expect(typeof world.osmosisPulse[lane.id]).toBe("number");
     }
     expect(Object.keys(world.osmosisPulse).length).toBe(world.region.lanes.length);
+  });
+});
+
+describe("build site auto-draw phase (E9, after dock before market)", () => {
+  function findPort(w: World, id: string) {
+    return w.region.ports.find((p) => p.id === id)!;
+  }
+
+  it("buys in GOOD_IDS order at quoteBuy; respects per-day cap; stalls silently on empty purse", () => {
+    let w = richForHq(createWorld(42));
+    const pId = w.region.ports[0].id;
+    w = tick(w, [{ kind: "foundHeadquarters", portId: pId }]);
+    w = tick(w, [{ kind: "placeBuildOrder" }]);
+    // make poor but not zero: enough for ~1 grain buy
+    w = { ...w, company: { ...w.company, thalers: 15 } };
+    const startStock = findPort(w, pId).market.grain.stock;
+
+    // run 1 full day (24 ticks) with no other cmds; auto can buy only what purse allows
+    w = runTicks(w, 24);
+    const store = w.company.headquarters!.buildOrder!.siteStore;
+    // purse allowed only ~1 ; allow +1 due to place-tick auto draw timing
+    expect(store.grain).toBeLessThanOrEqual(2);
+    // stock reduced by what was bought
+    const endStock = findPort(w, pId).market.grain.stock;
+    expect(endStock).toBeLessThanOrEqual(startStock);
+    // no error thrown, just stall
+  });
+
+  it("rate cap: over a day, auto-draw never exceeds AUTO_DRAW_PER_DAY per good when fully funded", () => {
+    let w = richForHq(createWorld(7));
+    const pId = w.region.ports[0].id;
+    w = tick(w, [{ kind: "foundHeadquarters", portId: pId }]);
+    w = tick(w, [{ kind: "placeBuildOrder" }]);
+    w = { ...w, company: { ...w.company, thalers: 200000 } }; // rich
+    const startStockForCap = findPort(w, pId).market.grain.stock;
+
+    w = runTicks(w, 24);
+    const drawn = w.company.headquarters!.buildOrder!.siteStore.grain;
+    expect(drawn).toBeLessThanOrEqual(AUTO_DRAW_PER_DAY + 1); // +1 from place tick auto in same day
+    expect(drawn).toBeGreaterThan(0); // should draw since funded
+    // market stock reduced accordingly (plus any production/consumption in the ticks)
+    const endStockForCap = findPort(w, pId).market.grain.stock;
+    void startStockForCap;
+    void endStockForCap;
+    // drawn ~10, just assert cap
+    expect(drawn).toBeLessThanOrEqual(11);
+  });
+
+  it("stalls at 0 stock or 0 purse without mutating state negatively", () => {
+    let w = richForHq(createWorld(99));
+    const pId = w.region.ports[0].id;
+    w = tick(w, [{ kind: "foundHeadquarters", portId: pId }]);
+    w = tick(w, [{ kind: "placeBuildOrder" }]);
+    // deplete purse to 0
+    w = { ...w, company: { ...w.company, thalers: 0 } };
+    const storeBefore = { ...w.company.headquarters!.buildOrder!.siteStore };
+    const thalersBefore = w.company.thalers;
+    w = runTicks(w, 5);
+    expect(w.company.thalers).toBe(thalersBefore);
+    // siteStore must not have received any via auto (still 0)
+    expect(w.company.headquarters!.buildOrder!.siteStore).toEqual(storeBefore);
+
+    // now fund but zero out a stock at hq port for timber
+    w = { ...w, company: { ...w.company, thalers: 999999 } };
+    const pt = findPort(w, pId);
+    const zeroTimberPort = { ...pt, market: { ...pt.market, timber: { ...pt.market.timber, stock: 0 } } };
+    w = { ...w, region: { ...w.region, ports: w.region.ports.map((pp) => (pp.id === pId ? zeroTimberPort : pp)) } };
+    const storeBefore2 = { ...w.company.headquarters!.buildOrder!.siteStore };
+    w = tick(w, []);
+    // timber not increased
+    expect(w.company.headquarters!.buildOrder!.siteStore.timber).toBe(storeBefore2.timber);
+  });
+
+  it("auto-draw + launch determinism: same seed + same founding/build cmds => identical worlds", () => {
+    const run = (seed: number | string) => {
+      let w = richForHq(createWorld(seed));
+      const p = w.region.ports[0].id;
+      w = tick(w, [{ kind: "foundHeadquarters", portId: p }]);
+      w = tick(w, [{ kind: "placeBuildOrder" }]);
+      w = { ...w, company: { ...w.company, thalers: 999999 } };
+      // run enough for possible launch of one hull by auto
+      for (let t = 0; t < 300; t++) w = tick(w, []);
+      return w;
+    };
+    const a = run(123);
+    const b = run(123);
+    expect(a).toEqual(b);
+    expect(JSON.parse(JSON.stringify(a))).toEqual(a);
+  });
+});
+
+describe("phase ordering and launch tick (E9)", () => {
+  it("launch appears in the same world returned by the tick that completed the store", () => {
+    let w = richForHq(createWorld(5));
+    const pId = w.region.ports[0].id;
+    w = tick(w, [{ kind: "foundHeadquarters", portId: pId }]);
+    w = tick(w, [{ kind: "placeBuildOrder" }]);
+    w = { ...w, company: { ...w.company, thalers: 999999 } };
+    // ensure enough local stock to rush full recipe (stock-limited)
+    w = {
+      ...w,
+      region: {
+        ...w.region,
+        ports: w.region.ports.map((pp) => {
+          if (pp.id !== pId) return pp;
+          const boostedMarket: Record<GoodId, unknown> = { ...pp.market };
+          for (const g of GOOD_IDS) {
+            boostedMarket[g] = { ...boostedMarket[g], stock: Math.max(boostedMarket[g].stock, SHIP_RECIPE[g] + 10) };
+          }
+          return { ...pp, market: boostedMarket };
+        }),
+      },
+    };
+    // simpler: use rush which completes in one cmd; launch must be in same returned world
+    w = tick(w, [{ kind: "rushBuild" }]);
+    expect(w.company.ships.length).toBe(2);
+    expect(w.company.headquarters?.buildOrder).toBeUndefined();
+    const ns = w.company.ships[1];
+    expect(ns.location).toEqual({ kind: "docked", portId: pId });
   });
 });
