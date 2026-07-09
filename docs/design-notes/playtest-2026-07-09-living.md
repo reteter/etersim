@@ -70,6 +70,14 @@ Thalers 500 → 86,210 by Day 248.
 
 ## New owner inputs (2026-07-09 follow-up) — grill inputs
 
+> **Resolved → spec** ([E9-fleet-and-routes.md](../specs/E9-fleet-and-routes.md),
+> approved 2026-07-09): input 1 landed as the per-docking fee (differentiated per
+> archetype; trade tax rejected — the spread already is one); input 2 landed as the
+> Ledger event stream + performance board (transactions, value chart, last-loop result
+> per Route). The progression-pull and 10× pacing observations above fed the same grill
+> (construction-based fleet growth; speeds/distances unchanged, balance targets in
+> world days).
+
 1. **Regulated money sink — "good moment to introduce":** per-port transit/docking fee,
    or differentiated per-port trade taxes — small, but felt. Partially unparks the PRD
    "Company running costs" hook (owner had parked it until costs are legible; the price

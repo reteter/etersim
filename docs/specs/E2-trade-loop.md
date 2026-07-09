@@ -298,6 +298,12 @@ All iteration in deterministic array order (generation order); no object-key ite
 Invalid commands (buy over stock/thalers/hold, sail while underway) are rejected without
 state change — the command is dropped, never partially applied.
 
+> **Superseded in part by E9** ([E9-fleet-and-routes.md](E9-fleet-and-routes.md),
+> approved 2026-07-09): the Command union grows (route CRUD/assign, founding,
+> construction, deliver), the internal `route`/`shortestRoute` naming becomes
+> **Course**/`shortestCourse`, and the tick phase order gains docking/auto-draw phases.
+> This table stays as the E2 record.
+
 New-game seeding: seed string → uint32 hash (FNV-1a, in sim) → `createWorld(seed, template)`
 runs worldgen and threads the RNG state into the world.
 

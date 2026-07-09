@@ -162,29 +162,88 @@ The goods currently aboard a ship.
 _Avoid_: freight, load
 
 **Route** (PL: trasa):
-A looping, ordered list of port Stops assigned to a Ship; the ship sails them in order and
-starts over after the last. Routes carry no price or wait conditions — a route is a frozen
-bet that its spreads keep paying.
-_Implementation_: E9 (PRD M2) — not in build yet. ⚠ Naming collision to resolve in the E9
-spec: current sim code uses `route` (`shortestRoute`, `Ship.location.route`, `routeTicks`)
-for a pathfinding result — a lane sequence for one `sailTo`. That internal concept needs a
-new name (candidate: **Course**, PL: kurs) so `Route` can mean the player-facing loop.
-⚠ E10 (#45) already used "course" as a UI-only identifier prefix (`RegionMap.tsx`:
-`courseVoyages`, `isCourseAccented`, CSS `.lane--course-accent`) for "the Controlled Ship's
-active course" (spec wording) — a presentational read of the same `Ship.location.route`
-data. Not a domain-term lock, but the E9 grill should account for it when resolving the
-collision (rename together, or confirm the UI usage stays compatible with the final name).
-_Avoid_: itinerary, plan
+A Company-level template: a looping, ordered list of port Stops, created and edited in the
+Headquarters' Route panel. Assigned to Ships **by reference** — one Route can sail on many
+Ships at once, and editing the template applies to every assigned Ship from its next Stop
+(an index left out of range wraps to Stop 0; deleting an assigned Route lets ships finish
+their current Course, then leaves them routeless). Routes carry no price or wait
+conditions — a route is a frozen bet that its spreads keep paying. A manual order to a
+routed Ship suspends the Route (it stays assigned); resuming sails to the next Stop in
+order. Ship-side state: `(routeId, next Stop index, suspended?)`.
+_Implementation_: E9 (PRD M2) — not in build yet. Naming collision with the old internal
+`route` resolved at the E9 grill (2026-07-09): the pathfinding concept is now **Course**;
+`Route` is reserved for this player-facing loop.
+_Avoid_: itinerary, plan; template (as identifier — every Route is one)
+
+**Course** (PL: kurs):
+A pathfinding result — the ordered lane Voyages a Ship sails to execute one `sailTo`
+(or to reach the next Stop of a Route). Transient and per-leg, in contrast to the
+standing, looping Route.
+_Implementation_: locked at the E9 grill (2026-07-09). Currently named `route` in sim code
+(`shortestRoute`, `Ship.location.route`, `routeTicks`, UI `routePreview.ts`) — the rename
+to `course` (`shortestCourse`, `Ship.location.course`, `courseTicks`, `coursePreview`)
+lands in E9. E10's UI identifiers (`courseVoyages`, `isCourseAccented`,
+`.lane--course-accent`) already match and stay as they are.
+_Avoid_: path, leg sequence; route (reserved for the player-facing loop)
 
 **Stop** (PL: przystanek):
-One entry of a Route: a Port plus its load/unload orders (unload good → all; load good →
-fill available Hold). Executed on docking, then the ship sails on immediately.
-_Implementation_: E9 (PRD M2) — not in build yet.
-_Avoid_: waypoint, leg
+One entry of a Route: a Port plus its orders, each naming its economic effect — **buy**
+(good → fill available Hold at ask), **sell** (good → sell all at bid), **deliver** (good →
+transfer cargo to the local build site, up to the recipe's remaining need). Orders execute
+best-effort on docking ("do what you can and sail on" — no waiting, no conditions), then
+the ship departs immediately. A deliver order at a port with no active build is a no-op.
+_Implementation_: E9 (PRD M2) — not in build yet. Order vocabulary locked at the E9 grill
+(2026-07-09), replacing the earlier load/unload wording ("unload" became ambiguous once
+deliver existed).
+_Avoid_: waypoint, leg; load/unload (pre-E9 wording)
 
 **Voyage** (PL: rejs):
 One traversal of a lane by a ship, taking a number of ticks.
 _Avoid_: trip, journey
+
+### Buildings & construction
+
+Terms locked at the E9 grill (2026-07-09). Design principle: **buildings introduce
+mechanics** — a new gameplay layer arrives with a Building, not with a tutorial. None of
+these exist in the build yet (E9).
+
+**Building** (PL: budynek):
+A Company-owned structure at a Port. E9 has exactly one type — the Headquarters; further
+types are parked (M3), as are per-region *branch offices* (multi-region hook, PRD).
+_Avoid_: structure, facility
+
+**Headquarters** (PL: siedziba):
+The Company's founding Building — one per Company, placed at a port of the player's
+choice for a flat thaler price, active immediately. Unlocks the orchestration layer: the
+Route panel and ship construction. New ships launch docked at the Headquarters port.
+Progression beat: manual trader → founder → orchestrator.
+_Avoid_: HQ (in identifiers), base, office
+
+**Recipe** (PL: przepis):
+The bill of materials for one hull: per-good quantities across all five goods — much
+grain (provisions), medium textiles (rigging) and aether salt (hull infusion), a little
+electronics (instruments) and a little timber (the living-wood keel, the recipe's
+prestigious top) — plus a flat **labor fee** (PL: robocizna) in thalers, charged when the
+Build Order is placed.
+_Avoid_: blueprint, cost table
+
+**Build Order** (PL: zlecenie budowy):
+The active ship construction at the Headquarters — one at a time in E9. Holds the build
+site's own material store and fills it from three sources: **auto-draw** (each tick the
+site buys missing materials from the Headquarters port's market at the normal ask,
+rate-capped per day, paid from the Company purse — it stalls visibly when purse or local
+stock run dry), **deliveries** (deliver orders and commands), and **rush** (one-click
+instant buy of the remainder at the normal market quote, limited by local stock — money
+does not teleport timber). The ship launches the moment the Recipe completes, empty and
+routeless.
+_Avoid_: construction job, project, queue (E9 has none)
+
+**Docking fee** (PL: opłata dokowa):
+A flat per-docking charge, differentiated per Port (by archetype/size); paid on every
+docking, manual or routed. Sailing through an intermediate port without docking is free.
+No debt in E9: an empty purse pays what it has. Its own Ledger event kind — the fixed
+cost that makes route rot legible.
+_Avoid_: port tax, harbor dues, toll
 
 ### Harness & evaluation
 
@@ -216,10 +275,15 @@ head-to-head policy comparisons, anomaly list with replayable seeds).
 _Avoid_: sweep, suite (in identifiers)
 
 **Ledger** (PL: księga):
-The canonical event stream of a Company's activity: every transaction (tick, port, good,
-quantity, unit price, side, thalers after), dockings/departures, and daily net-worth
-snapshots (thalers + cargo at mid price). One schema, two consumers: the Harness and the
-future in-game performance board.
+The canonical event stream of a Company's activity: every thaler or goods movement —
+trades (manual and routed), docking fees, build-site auto-draw and rush purchases,
+deliveries, labor fees, the Headquarters founding, ship launches — tagged with tick,
+ship, port and originating Route where applicable, plus daily net-worth snapshots
+(thalers + fleet cargo + build-site store, all at mid price; ships and buildings carry
+no book value, so the chart tells the honest investment story: a build is a visible dip,
+then steeper growth). Full retention. One schema, two consumers: the in-game performance
+board (E9) and the Harness (E11).
+_Implementation_: lands in E9 (event stream + performance board); E11 consumes it.
 _Avoid_: log, history (as identifiers)
 
 **Direct play** (PL: gra bezpośrednia):
