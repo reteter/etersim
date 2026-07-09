@@ -107,8 +107,8 @@ The gap between a Market's two-sided quotes: buying pays the marginal-price walk
 spread (ask), selling receives it minus the spread (bid). Baked into quotes, shown as two
 prices; a money sink — no one collects it. Trends track the mid price (spread-free).
 _Implementation_: shipped in #57 ([spec](docs/specs/E8-living-economy.md)) — `quoteBuy`/
-`quoteSell` in `src/sim/market.ts` (`SPREAD = 0.025`); the port panel's two-sided display is
-still pending in the UI (#61).
+`quoteSell` in `src/sim/market.ts` (`SPREAD = 0.025`); the port panel shows both quotes
+per good (#61).
 _Avoid_: fee, tax, commission (for this mechanism)
 
 **Flow drift** (PL: dryf przepływów):
@@ -125,15 +125,17 @@ Background goods flow along Lanes from cheaper ports to more expensive ones, pro
 to the price gap beyond a deadband, attenuated by lane length and capped per tick; rendered
 as small ambient pulses on lanes, but it is a flow — no simulated NPC agents.
 _Implementation_: shipped in #59/#60 ([spec](docs/specs/E8-living-economy.md)) — `osmosisTick`
-wired into the tick each world hour, `World.osmosisPulse` carries the per-lane signal; the
-ambient-pulse rendering on the map is still pending (#63).
+wired into the tick each world hour, `World.osmosisPulse` carries the per-lane signal; #63
+renders it as ambient pulses on the map (static, opacity-scaled under `prefers-reduced-motion`).
 _Avoid_: NPC trade, AI traders (as sim terms)
 
 **Price board** (PL: tablica cen):
 The region-wide economic overlay: all Ports × all Goods in one table with bid/ask and
 trend per cell, highlighting the cheapest ask and highest bid per good. Full information
 in M2 (fog is a parked E6 candidate).
-_Implementation_: E8 ([spec](docs/specs/E8-living-economy.md)) — not in build yet.
+_Implementation_: shipped in #62 ([spec](docs/specs/E8-living-economy.md)) —
+`PriceBoardOverlay.tsx`, opened from the TopBar button or the `B` hotkey; rows are ports,
+columns goods, cheapest-ask / highest-bid highlighted per good, docked row marked.
 _Avoid_: market overview, economy screen (as identifiers)
 
 ### Player & ships

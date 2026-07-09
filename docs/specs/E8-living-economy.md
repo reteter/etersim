@@ -2,7 +2,7 @@
 
 Feature spec for epic E8 (milestone M2 — Living Region, [PRD](../PRD.md)). Terms per
 [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-08.
-Status: **approved** (2026-07-08).
+Status: **approved** (2026-07-08); **shipped** (#57–#63, epic closed 2026-07-09).
 
 Grill inputs: [playtest-2026-07-07-market-legibility.md §3–4](../design-notes/playtest-2026-07-07-market-legibility.md)
 (saturation root cause, price board idea, v2 grill decisions),
