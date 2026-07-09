@@ -61,7 +61,8 @@ Orchestration is progression, not a replacement for manual trade.
   disequilibria, equilibrium drift silently moves price anchors); region-wide price board
   with full live prices (no information fog). Kills the "wait at the producer's price
   floor" dominant strategy found in the M1 playtest. Spec:
-  [specs/E8-living-economy.md](specs/E8-living-economy.md) (approved 2026-07-08).
+  [specs/E8-living-economy.md](specs/E8-living-economy.md) (approved 2026-07-08). Shipped
+  (#57, #58, #59, #60, #61, #62, #63).
 - **E9 Fleet & routes** (absorbs draft E4 — number retired): fleet-lite — buy additional
   identical hulls (ship purchase is v2's money sink; no upkeep yet); per-ship looping
   routes A→B→C with per-stop load/unload orders; no wait or price conditionals — routes
@@ -78,6 +79,11 @@ Orchestration is progression, not a replacement for manual trade.
 **M2 success criteria:**
 - Autonomy: 30 player-idle world days ⇒ no good at any port stays pinned at the price
   floor/ceiling beyond a short window; prices keep oscillating (asserted by test).
+  Owner-decided exception (2026-07-08,
+  [design-notes/e8-followups.md §1](design-notes/e8-followups.md)): for a good with a
+  single net-producer, ports more than one lane-hop from that producer may pin at the
+  ceiling — a durable gradient by design, not a failure; revisit only if a playtest shows
+  the pinned rim feels dead.
 - Determinism extends to routes: same seed + same routes ⇒ identical world (asserted by test).
 - Save/load round-trips fleet and routes.
 - Owner check: set up 2–3 routes, then 15+ minutes of mostly watching plus occasional
