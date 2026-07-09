@@ -2,7 +2,7 @@
 
 Feature spec for epic E13 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)). Terms
 per [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-09.
-Status: **draft (2026-07-09) — awaiting owner approval of the written spec**.
+Status: **approved (2026-07-09)**.
 
 Grill inputs: M3 grill (owner: docking-fee discounts too small to feel — rank perks
 should unlock *buildings* instead; develop, ship one, hook the rest), E9 design law

@@ -2,7 +2,7 @@
 
 Feature spec for epic E3 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)). Terms
 per [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-09.
-Status: **draft (2026-07-09) — awaiting owner approval of the written spec**.
+Status: **approved (2026-07-09)**.
 
 Grill inputs: M3 grill (owner's core reframe: contracts are *continuous* — "keep doing X
 for at least Y", not "do X by Y" — and loss-leaders played for reputation are the

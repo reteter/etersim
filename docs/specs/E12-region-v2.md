@@ -2,7 +2,7 @@
 
 Feature spec for epic E12 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)). Terms
 per [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-09.
-Status: **draft (2026-07-09) — awaiting owner approval of the written spec**.
+Status: **approved (2026-07-09)**.
 
 Grill inputs: M3 grill (contract geometry wants more ports and shortage diversity; owner
 raised the port-count question and the neutral-port idea), E10 spec §orbit rings

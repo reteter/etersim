@@ -29,7 +29,7 @@ Buy goods at a port → assign ship a route → time passes in ticks, the world 
 
 ## Milestones & epics
 
-Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); E10 ([specs/E10-orrery-view.md](specs/E10-orrery-view.md)) and E8 ([specs/E8-living-economy.md](specs/E8-living-economy.md)) are shipped, E9 is spec'd ([specs/E9-fleet-and-routes.md](specs/E9-fleet-and-routes.md), approved 2026-07-09) and awaits implementation. M3 goals are locked at milestone level (owner grill 2026-07-09) with all three epic specs drafted; work starts only after E9 ships. Epics beyond M3 are drafts and will be re-grilled before work starts.
+Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M2 goals are locked at milestone level (owner grill 2026-07-07); E10 ([specs/E10-orrery-view.md](specs/E10-orrery-view.md)) and E8 ([specs/E8-living-economy.md](specs/E8-living-economy.md)) are shipped, E9 is spec'd ([specs/E9-fleet-and-routes.md](specs/E9-fleet-and-routes.md), approved 2026-07-09) and awaits implementation. M3 goals are locked at milestone level (owner grill 2026-07-09) with all three epic specs approved; work starts only after E9 ships. Epics beyond M3 are drafts and will be re-grilled before work starts.
 
 ### M1 — Trade Loop (prove the core is fun)
 
@@ -133,7 +133,7 @@ the player reads.
   ground), orrery ring-packing recalibration (`orbitRadiusRange`/`MIN_PORT_DISTANCE` —
   the E10 spec's anticipated owner decision), E8/E9 calibration tests re-anchored to the
   new template. Runs first — the E10 precedent: geometry lands under the playtests that
-  follow it. Spec: [specs/E12-region-v2.md](specs/E12-region-v2.md) (draft 2026-07-09).
+  follow it. Spec: [specs/E12-region-v2.md](specs/E12-region-v2.md) (approved 2026-07-09).
 - **E3 Contracts & guilds**: five per-archetype guilds with guildhouses at their ports;
   enrollment (one-time fee, requires a founded Headquarters, grants rank 1 of 4);
   continuous contracts — *keep delivering* ≥ quota per settlement period for ≥ K
@@ -144,15 +144,13 @@ the player reads.
   cost (no thaler penalties, no-debt precedent); contract board as a PriceBoardOverlay
   tab; **ship upkeep** as the daily per-ship fixed cost — the parked hook lands now
   because its stated precondition (legible costs) shipped with the E9 Ledger. Spec:
-  [specs/E3-contracts-and-guilds.md](specs/E3-contracts-and-guilds.md) (draft
-  2026-07-09).
+  [specs/E3-contracts-and-guilds.md](specs/E3-contracts-and-guilds.md) (approved 2026-07-09).
 - **E13 Guild buildings**: rank-gated **building permits** (reputation buys mechanics,
   not percentages); the E9 construction machinery generalized to building types; one
   flagship — the **Granary** (agrarian Storehouse variant, stores grain) with
   store/withdraw Route orders. Storage opens arbitrage over time, bounded by capacity,
   spread and the marginal walk. Buildable at the guild's archetype ports and the Free
-  port only. Spec: [specs/E13-guild-buildings.md](specs/E13-guild-buildings.md) (draft
-  2026-07-09).
+  port only. Spec: [specs/E13-guild-buildings.md](specs/E13-guild-buildings.md) (approved 2026-07-09).
 
 **M3 success criteria:**
 - Determinism extends to guilds: same seed + same commands ⇒ identical world including
