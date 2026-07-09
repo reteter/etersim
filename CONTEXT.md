@@ -187,11 +187,10 @@ _Avoid_: itinerary, plan; template (as identifier — every Route is one)
 A pathfinding result — the ordered lane Voyages a Ship sails to execute one `sailTo`
 (or to reach the next Stop of a Route). Transient and per-leg, in contrast to the
 standing, looping Route.
-_Implementation_: locked at the E9 grill (2026-07-09). Currently named `route` in sim code
-(`shortestRoute`, `Ship.location.route`, `routeTicks`, UI `routePreview.ts`) — the rename
-to `course` (`shortestCourse`, `Ship.location.course`, `courseTicks`, `coursePreview`)
-lands in E9. E10's UI identifiers (`courseVoyages`, `isCourseAccented`,
-`.lane--course-accent`) already match and stay as they are.
+_Implementation_: rename landed in #79 (E9 keystone PR). Now `shortestCourse`,
+`Ship.location.course`, `courseTicks`, `coursePreview.ts`. E10's UI identifiers
+(`courseVoyages`, `isCourseAccented`, `.lane--course-accent`) match and were untouched.
+(Old names were in sim code before #79.)
 _Avoid_: path, leg sequence; route (reserved for the player-facing loop)
 
 **Stop** (PL: przystanek):

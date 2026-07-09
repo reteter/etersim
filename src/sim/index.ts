@@ -15,13 +15,13 @@ export {
   type World,
 } from "./world";
 export { applyCommand } from "./commands";
-export { shortestRoute } from "./pathfinding";
+export { shortestCourse } from "./pathfinding";
 export {
   advanceShip,
   cargoUsed,
   emptyCargo,
   etaTicks,
-  routeTicks,
+  courseTicks,
   type Ship,
   type ShipId,
   type ShipLocation,

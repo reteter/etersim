@@ -19,7 +19,7 @@ import { useGameStore } from "../store/gameStore";
 import { ShipIcon } from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
-import { previewRouteTicks } from "./routePreview";
+import { previewCourseTicks } from "./coursePreview";
 
 /** Compact cargo summary for a Harbor hover tooltip, e.g. "Grain 5, Iron 2". */
 function cargoSummary(ship: Ship): string {
@@ -256,7 +256,7 @@ function sailability(
   if (ship.location.portId === portId) {
     return { disabledHint: "Already docked here.", eta: null };
   }
-  const eta = previewRouteTicks(region, ship.location.portId, portId);
+  const eta = previewCourseTicks(region, ship.location.portId, portId);
   if (eta === null) return { disabledHint: "No route to this port.", eta: null };
   return { disabledHint: null, eta };
 }

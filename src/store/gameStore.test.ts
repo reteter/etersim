@@ -5,7 +5,7 @@ import {
   MAX_TICKS_PER_CALL,
   MS_PER_TICK_AT_1X,
   quoteBuy,
-  shortestRoute,
+  shortestCourse,
   type PortId,
 } from "../sim";
 import { useGameStore } from "./gameStore";
@@ -208,7 +208,7 @@ describe("gameStore auto-pause on arrival", () => {
     const home = homePortId();
     const region = store().world!.region;
     const target = store().world!.region.ports.find(
-      (p) => p.id !== home && (shortestRoute(region, home, p.id)?.length ?? 0) > 1,
+      (p) => p.id !== home && (shortestCourse(region, home, p.id)?.length ?? 0) > 1,
     )!;
     expect(target).toBeDefined();
     const eta = sailAndGetEta(target.id);

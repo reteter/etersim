@@ -35,7 +35,7 @@ describe("shipPosition", () => {
   it("starts at the origin port when voyage progress is 0", () => {
     const s = ship({
       kind: "underway",
-      route: [{ laneId: "lane-ab", to: "b" }],
+      course: [{ laneId: "lane-ab", to: "b" }],
       voyageIndex: 0,
       voyageProgressTicks: 0,
       destination: "b",
@@ -46,7 +46,7 @@ describe("shipPosition", () => {
   it("reaches the destination port when voyage progress equals lane duration", () => {
     const s = ship({
       kind: "underway",
-      route: [{ laneId: "lane-ab", to: "b" }],
+      course: [{ laneId: "lane-ab", to: "b" }],
       voyageIndex: 0,
       voyageProgressTicks: 10,
       destination: "b",
@@ -57,7 +57,7 @@ describe("shipPosition", () => {
   it("interpolates proportionally to voyage progress", () => {
     const s = ship({
       kind: "underway",
-      route: [{ laneId: "lane-ab", to: "b" }],
+      course: [{ laneId: "lane-ab", to: "b" }],
       voyageIndex: 0,
       voyageProgressTicks: 5,
       destination: "b",
@@ -68,7 +68,7 @@ describe("shipPosition", () => {
   it("flips direction when the destination is the lane's other endpoint", () => {
     const s = ship({
       kind: "underway",
-      route: [{ laneId: "lane-ab", to: "a" }],
+      course: [{ laneId: "lane-ab", to: "a" }],
       voyageIndex: 0,
       voyageProgressTicks: 5,
       destination: "a",
@@ -77,7 +77,7 @@ describe("shipPosition", () => {
     // Symmetric midpoint here, so also check a point off-center.
     const nearB = ship({
       kind: "underway",
-      route: [{ laneId: "lane-ab", to: "a" }],
+      course: [{ laneId: "lane-ab", to: "a" }],
       voyageIndex: 0,
       voyageProgressTicks: 2,
       destination: "a",
@@ -95,7 +95,7 @@ describe("shipPosition", () => {
     };
     const s = ship({
       kind: "underway",
-      route: [
+      course: [
         { laneId: "lane-ab", to: "b" },
         { laneId: "lane-bc", to: "c" },
       ],

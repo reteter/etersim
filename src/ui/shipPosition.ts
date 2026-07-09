@@ -19,8 +19,8 @@ export function shipPosition(ship: Ship, region: Region): Point {
     return { x: port.x, y: port.y };
   }
 
-  const { route, voyageIndex, voyageProgressTicks } = location;
-  const voyage = route[voyageIndex];
+  const { course, voyageIndex, voyageProgressTicks } = location;
+  const voyage = course[voyageIndex];
   const lane = region.lanes.find((l) => l.id === voyage.laneId);
   if (!lane) throw new Error(`shipPosition: unknown lane "${voyage.laneId}"`);
 

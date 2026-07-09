@@ -1,5 +1,5 @@
 import { useState, type ComponentType, type CSSProperties, type ReactNode, type SVGProps } from "react";
-import { shortestRoute, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
+import { shortestCourse, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { AgrarianIcon, IndustrialIcon, MiningIcon, ShipIcon, UrbanIcon, VerdantIcon } from "./icons";
 import { projectToViewBox } from "./mapProjection";
@@ -177,7 +177,7 @@ export function RegionMap({
   // an empty course.
   const courseVoyages: readonly Voyage[] =
     ship.id === controlledShipId && ship.location.kind === "underway"
-      ? ship.location.route.slice(ship.location.voyageIndex)
+      ? ship.location.course.slice(ship.location.voyageIndex)
       : [];
   const courseDestinationByLane = new Map<LaneId, PortId>(courseVoyages.map((v) => [v.laneId, v.to]));
 
@@ -189,7 +189,7 @@ export function RegionMap({
     ship.id === controlledShipId && ship.location.kind === "docked" ? ship.location.portId : null;
   const previewLaneIds = new Set<LaneId>(
     dockedPortId && hoveredPortId && hoveredPortId !== dockedPortId
-      ? (shortestRoute(region, dockedPortId, hoveredPortId) ?? []).map((v) => v.laneId)
+      ? (shortestCourse(region, dockedPortId, hoveredPortId) ?? []).map((v) => v.laneId)
       : [],
   );
 

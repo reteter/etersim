@@ -100,7 +100,7 @@ describe("sailTo command", () => {
     expect(loc.kind).toBe("underway");
     if (loc.kind === "underway") {
       expect(loc.destination).toBe(target.id);
-      expect(loc.route.length).toBeGreaterThan(0);
+      expect(loc.course.length).toBeGreaterThan(0);
     }
   });
 
