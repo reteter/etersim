@@ -1,13 +1,13 @@
 import {
   applyDeliveryToSite,
+  emptySiteStore,
   HEADQUARTERS_COST,
   LABOR_FEE,
   launchIfComplete,
   remainingNeed,
-  SHIP_RECIPE,
   type Headquarters,
 } from "./building";
-import type { GoodId } from "./goods";
+import { GOOD_IDS, type GoodId } from "./goods";
 import { effectiveBase, maxAffordableQty, quoteBuy, quoteSell } from "./market";
 import { shortestCourse } from "./pathfinding";
 import type { Port, PortId } from "./region";
@@ -137,9 +137,7 @@ export function applyCommand(world: World, command: Command): World {
       const hq = world.company.headquarters;
       if (!hq || hq.buildOrder) return world;
       if (world.company.thalers < LABOR_FEE) return world;
-      const siteStore = {} as Record<GoodId, number>;
-      for (const good of Object.keys(SHIP_RECIPE) as GoodId[]) siteStore[good] = 0;
-      const nextHq: Headquarters = { portId: hq.portId, buildOrder: { siteStore } };
+      const nextHq: Headquarters = { portId: hq.portId, buildOrder: { siteStore: emptySiteStore() } };
       return {
         ...world,
         company: {
@@ -160,7 +158,7 @@ export function applyCommand(world: World, command: Command): World {
       const ports = [...world.region.ports];
       let port = ports[portIdx];
 
-      for (const good of Object.keys(SHIP_RECIPE) as GoodId[]) {
+      for (const good of GOOD_IDS) {
         const need = remainingNeed(siteStore, good);
         if (need <= 0) continue;
         const entry = port.market[good];
