@@ -71,8 +71,9 @@ of the E2 worldgen (combinatorial topology + geometric durations).
   floor never broke the triangle inequality — an affine cost with a positive intercept
   penalizes every extra hop. Its real harm was **compressing differences** (near-ties
   like 206 vs 207; half the length ≠ half the time), which contradicts "map is space".
-- A future explicit docking/departure cost is a mechanics decision (E3-era, when costs
-  become legible) — not something to hide in geometry.
+- A future explicit docking/departure cost is a mechanics decision — not something to
+  hide in geometry. (Landed: the per-archetype docking fee,
+  [E9 spec](E9-fleet-and-routes.md) — approved 2026-07-09.)
 
 ### Lane presentation
 

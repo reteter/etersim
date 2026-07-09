@@ -154,6 +154,10 @@ Roadmap implications (for the grill / PRD update):
 - Note the shift in player fantasy: from hands-on per-leg trading toward
   **observe-and-orchestrate** — worth an explicit pillar check during the grill.
 
+> Resolved → PRD: M2 locked as "living economy + route automation" (v2 grill,
+> 2026-07-07); E3 slid to M3 — Guilds & obligations, locked at the M3 grill
+> (2026-07-09; specs E12/E3/E13 approved).
+
 ---
 
 ## 8. Parked during the v2 grill (future hooks)

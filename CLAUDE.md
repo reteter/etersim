@@ -20,7 +20,7 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - Feature branches + PR (`Closes #n`), conventional commits. Before merge: tests, typecheck, lint, `/code-review`.
 - Spec drift: updating the spec is part of the task.
 - Determinism is sacred: all sim randomness flows from the seeded RNG; no `Math.random`, no `Date.now` inside `src/sim`.
-- Session start: check open work with `gh issue list`.
+- Session start: check open work with `gh issue list`. Before starting any task, run the pre-work checklist in `docs/SELFCHECK.md` and post its report.
 
 ## Git & worktrees
 

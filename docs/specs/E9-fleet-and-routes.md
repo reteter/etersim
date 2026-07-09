@@ -17,12 +17,13 @@ paid for through docking fees and a full Ledger with an in-game performance boar
 Explicit non-goals: **flat cash ship purchase** (never built — construction replaced it
 at the grill, superseding the PRD wording "ship purchase is v2's money sink"); route
 wait/price conditionals (PRD: route rot *is* the gameplay); additional building types,
-build queue, assembly time, Headquarters relocation/demolition, hull classes (all M3);
+build queue, assembly time, Headquarters relocation/demolition, hull classes (M3 as
+locked 2026-07-09 ships guild building types via E13; the rest stays parked);
 branch offices per region + region administrator (multi-region hooks, PRD Beyond);
 "supplier" ship automation (parked hook — the deliver order is its foundation);
 map-drawn route editing (list editor ships; map only highlights); trade taxes (the
-spread already is one); ship upkeep (parked, "Company running costs"); save migration
-(pre-1.0, E8/E10 precedent).
+spread already is one); ship upkeep (parked at this grill; later spec'd in E3 —
+approved 2026-07-09); save migration (pre-1.0, E8/E10 precedent).
 
 ## Design
 
