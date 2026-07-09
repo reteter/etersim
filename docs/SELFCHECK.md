@@ -4,8 +4,9 @@ Run this before starting work when the owner says so (typical prompt: *"Zanim
 zaczniesz pracę wykonaj selfcheck zgodnie z docs/SELFCHECK.md"*). It is written for
 **any** model working in this repo — Claude or not, with or without custom skills.
 Assumption: you have already read the repo's `CLAUDE.md`; this checklist operationalizes
-it. Work through the phases in order and finish by posting the report in §5. If any
-check fails, stop at §6 — do not improvise around a failed check.
+it. Work through the phases in order: §1–§5 **before** touching anything, §6 **before
+declaring the work done**. If any check fails, stop at §7 — do not improvise around a
+failed check.
 
 ## 1. Identify the task, pick the gate
 
@@ -73,8 +74,11 @@ npm test && npm run typecheck && npm run lint   # BASELINE green before you chan
 
 ## 5. Report before you start
 
-Post this (fill it in) as your first message after the selfcheck — it proves the
-checklist ran and catches misunderstandings while they are still free:
+Post this (fill it in) as your first message after the selfcheck, **before creating a
+branch or editing any file**, and wait for the owner's go-ahead unless the task prompt
+explicitly said to proceed without one. Posted after the work it is a receipt, not a
+checkpoint — the point is to catch misunderstandings while they are still free
+(incident 0003):
 
 ```
 Selfcheck complete.
@@ -85,7 +89,31 @@ Selfcheck complete.
 - Watch-outs: <incident/log items or spec non-goals that touch this task>
 ```
 
-## 6. When something is off
+## 6. Post-work — before you declare done
+
+Green tests and a commit are **not** "done" (incident 0004). Before telling the owner
+the work is finished, walk the PR-template checklist
+(`.github/pull_request_template.md`) and close or explicitly flag every gate:
+
+1. **Docs sync sweep** — read the current spec's "Docs sync" section; grep the old
+   names/behavior across `*.md`; flip pending `_Implementation_` notes in CONTEXT.md
+   from future to past tense (WORKFLOW.md §Docs sync sweep).
+2. **Code review** — two-axis `/code-review` for any `src/sim`/UI change; inline
+   review only for a trivial one-file infra/docs diff (WORKFLOW.md §6).
+3. **E2E** — if UI code changed, run Playwright on a dedicated port
+   (`PLAYWRIGHT_PORT=59xx`) and update tests.
+4. **Spec sync** — if behavior drifted from the spec, the spec update ships in the
+   same task.
+
+If a gate cannot be closed — a skill is unavailable in your harness, a tool errors
+out, you lack access (`/code-review`, Playwright, `gh`, …) — **report it, don't route
+around it**: name the gate, say what you tried, and leave it explicitly OPEN for the
+owner. A silently skipped gate is worse than an open one.
+
+End your final report with the gate list — each gate either **closed** (with
+evidence) or **OPEN** (with reason).
+
+## 7. When something is off
 
 - **Failed check / red baseline / dirty main** → stop, report what you found, wait.
 - **Docs contradict each other** (spec vs CONTEXT.md vs issue) → newest

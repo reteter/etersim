@@ -15,6 +15,8 @@ is directly relevant to what you're doing.
 | --- | --- | --- |
 | [0001](0001-worktree-cd-main-branch-switch.md) | 2026-07-08 | A coder subagent in a git worktree can `cd` into the main repo and act on `main` (branch switch / commit / reset). Prevention now in `CLAUDE.md` §Git & worktrees and the `coder` agent def; orchestrator verifies main is clean + on the expected SHA after each coder wave. |
 | [0002](0002-gold-highlight-color-collision.md) | 2026-07-08 | Gold (`#e0a840`) is reserved for the Controlled Ship (ADR-0006, one color = one meaning) — don't reuse it for highlights/selection in new UI. Near-miss: a price-board best-price highlight was gold, self-caught before merge. Detection = `/code-review` Standards axis vs ADR-0006. |
+| [0003](0003-selfcheck-report-posted-after-work.md) | 2026-07-09 | The §5 selfcheck report must precede the first edit — posted after the work it's a receipt, not a checkpoint. Single-turn agent harnesses bypass it unless told to stop; SELFCHECK §5 now demands post-then-wait before any branch/edit. |
+| [0004](0004-postwork-gates-never-fired.md) | 2026-07-09 | "Tests green + commit" is not done: docs sync sweep, two-axis review, and E2E all lived only in the PR template, so a session ending at commit never saw them. SELFCHECK §6 (post-work gates) now requires ending the final report with each gate closed-with-evidence or explicitly OPEN — including when a skill/tool is unavailable in the harness. |
 
 ## When to file
 
