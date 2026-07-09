@@ -32,8 +32,16 @@ A directional flow along a lane that shortens or lengthens voyage time.
 _Avoid_: wind, stream
 
 **Port archetype** (PL: archetyp portu):
-A port's economic role assigned at worldgen (agrarian, industrial, urban, mining, verdant); defines its production/consumption profile.
+A port's economic role assigned at worldgen (agrarian, industrial, urban, mining, verdant); defines its production/consumption profile. E12 (M3) adds a sixth: the Free port.
 _Avoid_: port type, class, specialization
+
+**Free port** (PL: wolny port):
+The sixth Port archetype (E12): no dominant production or consumption, price bias ~1.0 —
+an economic crossroads, not a factory. Exactly one per region. No Guild has a seat there
+and no Contracts originate there — the region's neutral ground; the one place any guild
+Building may be built regardless of archetype.
+_Implementation_: E12 (PRD M3) — not in build yet.
+_Avoid_: neutral port (as identifier), hub, freeport (one word, in prose)
 
 **Archetype palette** (PL: paleta archetypów):
 The five design-token colors, one per Port archetype, used consistently across the map
@@ -194,7 +202,8 @@ best-effort on docking ("do what you can and sail on" — no waiting, no conditi
 the ship departs immediately. A deliver order at a port with no active build is a no-op.
 _Implementation_: E9 (PRD M2) — not in build yet. Order vocabulary locked at the E9 grill
 (2026-07-09), replacing the earlier load/unload wording ("unload" became ambiguous once
-deliver existed).
+deliver existed). E13 (M3) adds two order kinds: **store** and **withdraw** (transfer
+between Cargo and a Storehouse, market-free — the goods are already yours).
 _Avoid_: waypoint, leg; load/unload (pre-E9 wording)
 
 **Voyage** (PL: rejs):
@@ -208,8 +217,10 @@ mechanics** — a new gameplay layer arrives with a Building, not with a tutoria
 these exist in the build yet (E9).
 
 **Building** (PL: budynek):
-A Company-owned structure at a Port. E9 has exactly one type — the Headquarters; further
-types are parked (M3), as are per-region *branch offices* (multi-region hook, PRD).
+A Company-owned structure at a Port. E9 has exactly one type — the Headquarters; E13
+(M3) adds rank-gated guild Buildings (see Storehouse, Building permit). Per-region
+*branch offices* stay parked (multi-region hook, PRD). NPC-owned Guildhouses are
+world-side and are not Company Buildings.
 _Avoid_: structure, facility
 
 **Headquarters** (PL: siedziba):
@@ -244,6 +255,93 @@ docking, manual or routed. Sailing through an intermediate port without docking 
 No debt in E9: an empty purse pays what it has. Its own Ledger event kind — the fixed
 cost that makes route rot legible.
 _Avoid_: port tax, harbor dues, toll
+
+### Guilds & contracts
+
+Terms locked at the M3 grill (2026-07-09). Axis: the region gains faces — institutions
+with addresses and demands; reputation is the long-term currency. None of these exist in
+the build yet (M3: E12/E3/E13).
+
+**Guild** (PL: gildia):
+An NPC institution, one per non-freeport Port archetype — five in a region (working
+names: Granary Guild / agrarian, Weavers' Assembly / urban, Saltworkers' Brotherhood /
+mining, Foundry League / industrial, Livingwood Consortium / verdant; names are flavor,
+tunable). A Guild expresses needs as Contracts and tracks the Company's Rank. Not an
+agent: guilds own no ships and make no trades — they read the same living economy the
+player reads.
+_Avoid_: faction, NPC company
+
+**Guildhouse** (PL: dom gildii):
+A Guild's seat, present at every port of its archetype. World-side (NPC-owned) — not a
+Company Building. Enrollment happens here; its PortPanel section shows rank and
+cooperation history.
+_Avoid_: guild hall, office
+
+**Enrollment** (PL: wstąpienie):
+The one-time act (plus thaler fee) of joining a Guild — requires a founded Headquarters
+(companies deal with guilds, lone shippers don't) and grants Rank 1. Like founding, it
+is paperwork: no ship presence required. Which guilds to join first is a strategic
+choice, not a checklist.
+_Avoid_: membership (as identifier), subscription
+
+**Rank** (PL: ranga):
+The Company's discrete standing with one Guild: four steps, a facade over hidden
+progress points (settled period +, missed period −, breach −−; ranks can fall). Rank
+gates which Contract tiers the guild offers and which Building permits it grants.
+_Avoid_: level, reputation score (as identifiers)
+
+**Reputation** (PL: reputacja):
+The substance under Ranks and the *only* currency of contract consequences — no thaler
+penalties, ever (no-debt precedent). Earned slower than it is lost; a deliberately
+unprofitable contract held for reputation is an investment (the loss-leader play).
+_Avoid_: karma, favor
+
+**Contract** (PL: kontrakt):
+A continuous service obligation offered by a Guild: *keep delivering* ≥ quota units of a
+Good to a Port per Settlement period, for at least K periods. Not a one-shot errand.
+Offers are generated deterministically from real shortages (stock far below Equilibrium)
+and sized from real geometry (`shortestCourse`, hold capacity) so they are feasible by
+construction; the offer shows its own basis ("expected ~2 trips/period, nearest source:
+…"). The market pays bid for the goods as in any sale; the Guild pays a flat fee per met
+period — the market pays for goods, the guild pays for reliability. Contracts add no
+waiting mechanics: fulfilment is read from the Ledger after the fact.
+_Avoid_: quest, mission, order (collides with Stop orders)
+
+**Settlement period** (PL: okres rozliczeniowy):
+A Contract's repeating window of L world days, settled at its final day boundary: quota
+met → fee paid + rank progress; missed → no fee + rank step down. Two consecutive missed
+periods → the Guild terminates the contract (breach, large rank hit). The player may
+resign any time at the same breach cost, shown before confirming.
+_Avoid_: deadline, billing cycle
+
+**Contract board** (PL: tablica kontraktów):
+The **Kontrakty** tab of the PriceBoardOverlay (same overlay, same `B` hotkey): open
+offers of enrolled Guilds plus active contracts with period progress ("period 3/6:
+42/50, settles in 2 d"). Each guild keeps ~2–3 open offers, refreshed at day boundaries;
+an offer dies causally when its shortage heals. The board is a barometer of the region,
+not a quest log.
+_Avoid_: quest log, job board
+
+**Building permit** (PL: pozwolenie budowlane):
+A Rank-gated right to construct a Guild's Building variant — at ports of that guild's
+archetype or at the Free port, nowhere else. The M3 slice of "buildings introduce
+mechanics": reputation buys access to new mechanics, not percentages.
+_Avoid_: license, unlock (as identifiers)
+
+**Storehouse** (PL: skład):
+The guild Building type (E13): port-side storage for the guild's domain goods, finite
+capacity, built via the E9 Build Order machinery. One implementation, five guild
+variants (variant = accepted-goods filter + skin); E13 ships one — the **Granary**
+(PL: spichlerz, Granary Guild, stores grain). Enables arbitrage over time: buy low,
+store, sell after the drift — bounded by capacity, spread and the marginal walk.
+_Avoid_: warehouse (as identifier), depot
+
+**Upkeep** (PL: utrzymanie):
+The daily per-ship fixed cost (E3), its own Ledger event kind. A ship costs thalers even
+when idle — fleets should sail or shrink. Calibration principle: a lone starter ship
+stays comfortably viable (upkeep must never feel like an unexplained penalty — it ships
+only now because the Ledger makes it legible).
+_Avoid_: maintenance, wages (crew wages remain a parked, separate idea)
 
 ### Harness & evaluation
 
@@ -283,7 +381,9 @@ ship, port and originating Route where applicable, plus daily net-worth snapshot
 no book value, so the chart tells the honest investment story: a build is a visible dip,
 then steeper growth). Full retention. One schema, two consumers: the in-game performance
 board (E9) and the Harness (E11).
-_Implementation_: lands in E9 (event stream + performance board); E11 consumes it.
+_Implementation_: lands in E9 (event stream + performance board); E11 consumes it. M3
+extends the kind union (contract fees, enrollment fees, upkeep, store/withdraw) and adds
+a third consumer: contract settlement reads fulfilment from the same stream.
 _Avoid_: log, history (as identifiers)
 
 **Direct play** (PL: gra bezpośrednia):
