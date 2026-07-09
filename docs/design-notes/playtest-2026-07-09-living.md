@@ -53,10 +53,33 @@ Thalers 500 → 86,210 by Day 248.
 
 ## Open questions (owner)
 
+> **Resolved (2026-07-09, owner):**
+> (1) Pinned rim = **standing premium route**, not deadness — one per region makes a good
+> early-game ramp and a natural guide. Parked alternatives in
+> [e8-followups.md §1](e8-followups.md) stay parked (verdict recorded there). Nuance the
+> verdict rests on: *"one per region"* is a topology property worldgen does **not**
+> guarantee yet — revisit at a worldgen grill if generated regions oversupply starved rims.
+> (2) Drift reads healthy: opportunities always exist, only the spreads shift; the natural
+> arc is grain (cheapest) → timber as fast as possible → expensive goods late. No
+> amplitude change needed.
+
 1. **Phase B verdict**: pinned rim — dead pixel or standing opportunity? Decides whether
    the parked alternatives in [e8-followups.md §1](e8-followups.md) stay parked.
 2. **Drift feel**: did the price board visibly change on re-opens (goods swinging,
    opportunities appearing/expiring), or did it feel static outside player action?
+
+## New owner inputs (2026-07-09 follow-up) — grill inputs
+
+1. **Regulated money sink — "good moment to introduce":** per-port transit/docking fee,
+   or differentiated per-port trade taxes — small, but felt. Partially unparks the PRD
+   "Company running costs" hook (owner had parked it until costs are legible; the price
+   board + two-sided quotes arguably make them legible now). → **E9 grill input** (fleet
+   economics needs its sinks designed together with route profits).
+2. **Company performance board:** transaction list, running result, possibly a chart of
+   total company value over time. Serves the observe-and-orchestrate fantasy (E9) — and
+   doubles as structured company metrics for the planned "Analyst-playable mode" harness
+   (same data, two consumers). → **E9 grill input**, cross-linked to the Analyst-mode
+   grill.
 
 ---
 
