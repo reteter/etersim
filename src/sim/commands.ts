@@ -10,7 +10,7 @@ import {
 import type { GoodId } from "./goods";
 import { effectiveBase, maxAffordableQty, quoteBuy, quoteSell } from "./market";
 import { shortestCourse } from "./pathfinding";
-import type { Port, PortId, Region } from "./region";
+import type { Port, PortId } from "./region";
 import type { Route, RouteId } from "./route";
 import { cargoUsed, type Ship, type ShipId } from "./ship";
 import type { World } from "./world";
@@ -57,27 +57,6 @@ function isValidRoute(route: Route): boolean {
   return ports.size >= 2;
 }
 
-/** Put a docked ship underway toward `targetPortId` on the shortest Course.
- *  A no-op when the ship is underway, already at the target, or the target is
- *  unreachable. Shared by assign/resume commands and the tick route pass, so a
- *  route-dispatched and a resume-dispatched ship follow identical Courses. */
-export function dispatchToStop(region: Region, ship: Ship, targetPortId: PortId): Ship {
-  if (ship.location.kind !== "docked") return ship;
-  if (ship.location.portId === targetPortId) return ship;
-  const course = shortestCourse(region, ship.location.portId, targetPortId);
-  if (course === null || course.length === 0) return ship;
-  return {
-    ...ship,
-    location: {
-      kind: "underway",
-      course,
-      voyageIndex: 0,
-      voyageProgressTicks: 0,
-      destination: targetPortId,
-    },
-  };
-}
-
 /** Applies one command, returning the input world unchanged on rejection. */
 export function applyCommand(world: World, command: Command): World {
   switch (command.kind) {
@@ -108,18 +87,16 @@ export function applyCommand(world: World, command: Command): World {
       };
     }
     case "assignRoute": {
+      // Pure state-setter: the tick route pass (ships[] order) does all dispatch
+      // and Stop execution, so routes never introduce a second ordering regime.
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship) return world;
       const route = world.company.routes.find((r) => r.id === command.routeId);
       if (!route || route.stops.length < 2) return world;
-      const assigned: Ship = {
+      return replaceShip(world, {
         ...ship,
         assignment: { routeId: command.routeId, nextStopIndex: 0, suspended: false },
-      };
-      // Dispatch toward Stop 0. If already there (or underway), the tick route
-      // pass picks it up; execution never happens here (ships[] race stays the
-      // one ordering regime).
-      return replaceShip(world, dispatchToStop(world.region, assigned, route.stops[0].portId));
+      });
     }
     case "unassignRoute": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
@@ -127,21 +104,21 @@ export function applyCommand(world: World, command: Command): World {
       return replaceShip(world, { ...ship, assignment: undefined });
     }
     case "resumeRoute": {
+      // Clear the suspend flag and wrap a stale index left out of range by a
+      // shortening edit; the route pass re-dispatches to the next Stop in order
+      // (predictable, never "nearest").
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship || !ship.assignment) return world;
       const route = world.company.routes.find((r) => r.id === ship.assignment!.routeId);
       if (!route || route.stops.length < 2) return world;
-      // Wrap a stale index left out of range by a shortening edit, then re-dispatch
-      // to the next Stop in order — resume is predictable, never "nearest".
       const idx =
         ship.assignment.nextStopIndex >= 0 && ship.assignment.nextStopIndex < route.stops.length
           ? ship.assignment.nextStopIndex
           : 0;
-      const resumed: Ship = {
+      return replaceShip(world, {
         ...ship,
         assignment: { ...ship.assignment, nextStopIndex: idx, suspended: false },
-      };
-      return replaceShip(world, dispatchToStop(world.region, resumed, route.stops[idx].portId));
+      });
     }
     case "foundHeadquarters": {
       if (world.company.headquarters) return world;

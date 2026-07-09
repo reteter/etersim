@@ -1,10 +1,13 @@
+import { runBuildSiteAutoDraw } from "./building";
 import { applyCommand, type Command } from "./commands";
 import { GOOD_IDS, type GoodId } from "./goods";
-import { marketTick, NEUTRAL_MODIFIERS } from "./market";
+import { effectiveBase, marketTick, maxAffordableQty, NEUTRAL_MODIFIERS } from "./market";
 import { osmosisTick } from "./osmosis";
-import { ARCHETYPE_PROFILES, TICKS_PER_DAY, type PortId, type Region } from "./region";
+import { shortestCourse } from "./pathfinding";
+import { ARCHETYPE_PROFILES, DOCKING_FEE, TICKS_PER_DAY, type PortId, type Region } from "./region";
 import { nextFloat, type RngState } from "./rng";
-import { advanceShip } from "./ship";
+import type { Route } from "./route";
+import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
 import { snapshotPrices, type World } from "./world";
 
 export type { Command };
@@ -48,17 +51,151 @@ export function driftStep(
   return [next, state];
 }
 
+/** Deduct the docking fee for `portId` from the shared purse (min(fee, thalers),
+ *  no debt). Charged once per docking transition, manual or routed. */
+function chargeDockingFee(world: World, portId: PortId): World {
+  const port = world.region.ports.find((p) => p.id === portId)!;
+  const paid = Math.min(DOCKING_FEE[port.archetype] ?? 0, world.company.thalers);
+  if (paid <= 0) return world;
+  return { ...world, company: { ...world.company, thalers: world.company.thalers - paid } };
+}
+
+function replaceShip(world: World, ship: Ship): World {
+  return {
+    ...world,
+    company: {
+      ...world.company,
+      ships: world.company.ships.map((s) => (s.id === ship.id ? ship : s)),
+    },
+  };
+}
+
+/** Execute one Stop's orders best-effort, in list order, by dispatching the
+ *  *same* Commands a player would — routes get no special math, so a Route can
+ *  never out- or under-perform the identical manual trades (E9 equivalence
+ *  guarantee). buy fills the affordable share of the Hold; sell empties the
+ *  good; deliver moves min(cargo, need) into the build site (no-op off-HQ). */
+function executeStop(world: World, shipId: ShipId, orders: Route["stops"][number]["orders"]): World {
+  let w = world;
+  for (const order of orders) {
+    const ship = w.company.ships.find((s) => s.id === shipId)!;
+    if (ship.location.kind !== "docked") break;
+    const dockedAt = ship.location.portId;
+    if (order.kind === "buy") {
+      const port = w.region.ports.find((p) => p.id === dockedAt)!;
+      const holdSpace = ship.hold - cargoUsed(ship);
+      const qty = maxAffordableQty(
+        port.market[order.good],
+        effectiveBase(port, order.good),
+        holdSpace,
+        w.company.thalers,
+      );
+      if (qty > 0) w = applyCommand(w, { kind: "buy", shipId, good: order.good, qty });
+    } else if (order.kind === "sell") {
+      const have = ship.cargo[order.good];
+      if (have > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty: have });
+    } else {
+      w = applyCommand(w, { kind: "deliver", shipId, good: order.good });
+    }
+  }
+  return w;
+}
+
+/** Put a docked ship underway toward `targetPortId` on the shortest Course. A
+ *  no-op when the ship is already there or the target is unreachable. */
+function dispatchToStop(region: Region, ship: Ship, targetPortId: PortId): Ship {
+  if (ship.location.kind !== "docked" || ship.location.portId === targetPortId) return ship;
+  const course = shortestCourse(region, ship.location.portId, targetPortId);
+  if (course === null || course.length === 0) return ship;
+  return {
+    ...ship,
+    location: {
+      kind: "underway",
+      course,
+      voyageIndex: 0,
+      voyageProgressTicks: 0,
+      destination: targetPortId,
+    },
+  };
+}
+
 /**
- * Advances the World by exactly one tick (ADR-0003). Pure: never mutates
- * its input. Phase order per docs/specs/E8-living-economy.md — World &
- * tick: apply commands → advance ships → market tick (elasticity × drift)
- * → osmosis → tick+1 → on day boundary: drift step + price snapshots.
+ * Route logic for one docked ship, keyed on state (not on "did it just
+ * transition") so an assign/resume that leaves the ship already at its next
+ * Stop's port is handled by the same seam as a fresh arrival:
+ * - not docked / unassigned / suspended → untouched.
+ * - route gone → assignment cleared (finished its Course, now routeless).
+ * - at its next Stop's port → execute the Stop, advance the index, and dwell
+ *   docked for this tick. The dwell mirrors manual play's quantization (a ship
+ *   can never depart the tick it arrives) and gives the player a tick-boundary
+ *   window to intervene (a manual sailTo auto-suspends the Route).
+ * - elsewhere → redirect toward the next Stop's port, no execution. This is
+ *   both the normal post-dwell departure and the recovery when a template edit
+ *   moved the Stop out from under an in-flight ship (no wrong-port trade).
+ */
+function runRouteForShip(world: World, shipId: ShipId): World {
+  const ship = world.company.ships.find((s) => s.id === shipId)!;
+  if (ship.location.kind !== "docked") return world;
+  const asn = ship.assignment;
+  if (!asn || asn.suspended) return world;
+
+  const route = world.company.routes.find((r) => r.id === asn.routeId);
+  if (!route || route.stops.length < 2) {
+    return replaceShip(world, { ...ship, assignment: undefined });
+  }
+
+  const arrivalPortId = ship.location.portId;
+  const idx =
+    asn.nextStopIndex >= 0 && asn.nextStopIndex < route.stops.length ? asn.nextStopIndex : 0;
+
+  if (route.stops[idx].portId !== arrivalPortId) {
+    const redirected = dispatchToStop(world.region, ship, route.stops[idx].portId);
+    return replaceShip(world, { ...redirected, assignment: { ...asn, nextStopIndex: idx } });
+  }
+
+  // At our next Stop's port: execute best-effort, advance the index, dwell.
+  const executed = executeStop(world, shipId, route.stops[idx].orders);
+  const advanced = executed.company.ships.find((s) => s.id === shipId)!;
+  const nextIdx = (idx + 1) % route.stops.length;
+  return replaceShip(executed, { ...advanced, assignment: { ...asn, nextStopIndex: nextIdx } });
+}
+
+/** Docking phase (#80): in ships[] array order — the deterministic race for the
+ *  shared purse and stock. Interleaved per ship: each ship pays its docking fee
+ *  (only if it transitioned underway→docked this tick) and then runs its Route,
+ *  before the next ship is touched — so a fee paid now limits what a later ship
+ *  can afford, exactly as "each ship docks, pays, does its business". The fee
+ *  gates on the transition, execution on ship state, so a resume/assign at the
+ *  Stop port trades without a second fee. */
+function runDockingPhase(world: World, before: readonly Ship[], advanced: readonly Ship[]): World {
+  let w: World = { ...world, company: { ...world.company, ships: advanced } };
+  for (let i = 0; i < advanced.length; i++) {
+    const transitioned =
+      before[i].location.kind === "underway" && advanced[i].location.kind === "docked";
+    if (transitioned) {
+      const loc = advanced[i].location;
+      if (loc.kind === "docked") w = chargeDockingFee(w, loc.portId);
+    }
+    w = runRouteForShip(w, advanced[i].id);
+  }
+  return w;
+}
+
+/**
+ * Advances the World by exactly one tick (ADR-0003). Pure: never mutates its
+ * input. Phase order per docs/specs/E9-fleet-and-routes.md (extends E8):
+ * apply commands → advance ships → docking phase (#80) → build-site auto-draw
+ * (#81) → market tick → osmosis → tick+1 → day boundary (drift + snapshots).
  */
 export function tick(world: World, commands: readonly Command[]): World {
   let w = world;
   for (const command of commands) w = applyCommand(w, command);
 
-  const ships = w.company.ships.map((ship) => advanceShip(ship, w.region));
+  const before = w.company.ships;
+  const advanced = before.map((ship) => advanceShip(ship, w.region));
+  w = runDockingPhase(w, before, advanced);
+  w = runBuildSiteAutoDraw(w);
+
   const ports = w.region.ports.map((port) => ({
     ...port,
     market: marketTick(
@@ -82,7 +219,6 @@ export function tick(world: World, commands: readonly Command[]): World {
     tick: nextTick,
     rng,
     region,
-    company: { ...w.company, ships },
     priceSnapshots: isDayBoundary ? snapshotPrices(region) : w.priceSnapshots,
     flowDrift,
     osmosisPulse: pulse,
