@@ -472,3 +472,51 @@ test.describe('trading interactions (when docked)', () => {
     await expect(map.locator('.lane__label')).not.toHaveCount(0);
   });
 });
+
+test.describe('ambient osmosis pulses on the map (#63)', () => {
+  test('active flow renders pulses; quiet lanes render none (seeded)', async ({ page }) => {
+    await page.goto('/');
+    // Seed "66" (createWorld hashes the string, src/sim/world.ts): worldgen's
+    // stock jitter (± 25% of equilibrium, src/sim/worldgen.ts) leaves one
+    // lane's price gap wide enough that osmosis crosses the display
+    // threshold within the first few ticks, while the rest of the lanes stay
+    // under it for hundreds of ticks — a stable active + quiet mix (verified
+    // by running the sim standalone for this PR; not asserted elsewhere).
+    await page.getByLabel(/seed/i).fill('66');
+    await page.getByRole('button', { name: /new game/i }).click();
+
+    const map = page.locator('svg.region-map');
+    await expect(map).toBeVisible();
+
+    // Fresh world: osmosisPulse starts at 0 on every lane (World.osmosisPulse,
+    // src/sim/world.ts) — no pulses before the sim has ticked.
+    await expect(map.locator('.osmosis-pulse')).toHaveCount(0);
+
+    await page.getByRole('button', { name: '100x' }).click();
+    await expect(map.locator('.osmosis-pulse').first()).toBeVisible();
+    await page.getByRole('button', { name: '⏸' }).click();
+
+    const activeLaneCount = await map.locator('.osmosis-lane').count();
+    const totalLaneCount = await map.locator('.lane').count();
+    expect(activeLaneCount).toBeGreaterThan(0);
+    expect(activeLaneCount).toBeLessThan(totalLaneCount);
+  });
+
+  test('prefers-reduced-motion: pulses stay visible but freeze in place (#69 review)', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await page.getByLabel(/seed/i).fill('66'); // see rationale in the test above
+    await page.getByRole('button', { name: /new game/i }).click();
+
+    const map = page.locator('svg.region-map');
+    await page.getByRole('button', { name: '100x' }).click();
+
+    const pulse = map.locator('.osmosis-pulse').first();
+    await expect(pulse).toBeVisible();
+    // No animation under reduced motion (src/index.css); the diagnostic
+    // (a busy lane) still shows through opacity, not motion.
+    await expect(pulse).toHaveCSS('animation-name', 'none');
+  });
+});
