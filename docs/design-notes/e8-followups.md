@@ -30,6 +30,13 @@ the floor/ceiling-pin check; the dispersion and finite-stock checks stay region-
 multi-producer goods / ≤1-hop ports stay fully checked. This is an owner-agreed
 spec-encoding, transparently recorded here — **not** a silently weakened test.
 
+**Playtest verdict (2026-07-09, [playtest-2026-07-09-living.md](playtest-2026-07-09-living.md)):
+accepted — the pinned rim reads as a standing premium route** (₸3 → ₸50 grain, ~16×), and
+one such route per region doubles as an early-game ramp and natural guide (owner). The
+alternatives below **stay parked**. New watch item: worldgen guarantees neither "at most
+one" sole-producer rim per region nor its existence — revisit at a worldgen grill if
+generated regions oversupply premium routes, or if a future playtest flips the feel.
+
 **Parked alternatives (revisit only if a playtest shows the pinned rim *feels* dead, i.e.
 reintroduces the "algorithm, not a decision" deadness E8 exists to kill):**
 
