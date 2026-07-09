@@ -73,6 +73,31 @@ export function quoteBuy(entry: MarketGood, base: number, qty: number): number |
 }
 
 /**
+ * Largest quantity in `[0, maxQty]` whose `quoteBuy` fits within `purse`, also
+ * capped by available stock. `quoteBuy` is monotone increasing in qty, so this
+ * walks the affordability frontier and stops at the first unaffordable unit.
+ * Returns 0 when even one unit is unaffordable or out of stock. The single
+ * source of "how much can I afford" — routed buy Stops and rush share it, so a
+ * Route can never out- or under-buy the equivalent manual command (E9
+ * equivalence guarantee).
+ */
+export function maxAffordableQty(
+  entry: MarketGood,
+  base: number,
+  maxQty: number,
+  purse: number,
+): number {
+  const cap = Math.min(maxQty, Math.floor(entry.stock));
+  let q = 0;
+  while (q < cap) {
+    const cost = quoteBuy(entry, base, q + 1);
+    if (cost === null || cost > purse) break;
+    q++;
+  }
+  return q;
+}
+
+/**
  * Total earned selling `qty` units: the marginal walk down as stock rises
  * (unit i paid at the stock level after its addition — the exact mirror of
  * quoteBuy), ×(1 − SPREAD). The spread guarantee: an instant buy-then-sell

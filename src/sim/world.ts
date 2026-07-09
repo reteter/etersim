@@ -1,8 +1,10 @@
+import type { Headquarters } from "./building";
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
 import { effectiveBase, price } from "./market";
 import type { LaneId, PortId, Region } from "./region";
 import { nextInt, seedRng, type RngState } from "./rng";
+import type { Route } from "./route";
 import { emptyCargo, type Ship } from "./ship";
 import { HEARTLAND, type RegionTemplate } from "./template";
 import { generateRegion } from "./worldgen";
@@ -14,6 +16,11 @@ export const STARTING_HOLD = 50;
 export interface Company {
   readonly thalers: number;
   readonly ships: readonly Ship[];
+  /** Route templates owned by the Company (E9). */
+  readonly routes: readonly Route[];
+  /** Headquarters (E9): one per Company, unlocks routes and construction.
+   *  `buildOrder` present iff an active build is in progress. */
+  readonly headquarters?: Headquarters;
 }
 
 /**
@@ -57,6 +64,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
 
   const ship: Ship = {
     id: "s0",
+    name: "s0",
     hold: STARTING_HOLD,
     cargo: emptyCargo(),
     location: { kind: "docked", portId: region.ports[homeIndex].id },
@@ -66,10 +74,22 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     tick: 0,
     rng: rng2,
     region,
-    company: { thalers: STARTING_THALERS, ships: [ship] },
+    company: { thalers: STARTING_THALERS, ships: [ship], routes: [] },
     priceSnapshots: snapshotPrices(region),
     flowDrift: initialFlowDrift(region),
     osmosisPulse: initialOsmosisPulse(region),
+  };
+}
+
+/** Replace a ship in the Company fleet by id, preserving array order. The one
+ *  home for this fold — commands and the tick route pass both build on it. */
+export function replaceShip(world: World, ship: Ship): World {
+  return {
+    ...world,
+    company: {
+      ...world.company,
+      ships: world.company.ships.map((s) => (s.id === ship.id ? ship : s)),
+    },
   };
 }
 

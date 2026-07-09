@@ -178,9 +178,11 @@ their current Course, then leaves them routeless). Routes carry no price or wait
 conditions — a route is a frozen bet that its spreads keep paying. A manual order to a
 routed Ship suspends the Route (it stays assigned); resuming sails to the next Stop in
 order. Ship-side state: `(routeId, next Stop index, suspended?)`.
-_Implementation_: E9 (PRD M2) — not in build yet. Naming collision with the old internal
-`route` resolved at the E9 grill (2026-07-09): the pathfinding concept is now **Course**;
-`Route` is reserved for this player-facing loop.
+_Implementation_: sim model + semantics shipped in #80 (`route.ts`, route Commands, the
+docking-phase route pass in `tick.ts`); assignable Routes need ≥ 2 Stops over ≥ 2 distinct
+ports. Route-editor UI is #85 (pending). Naming collision with the old internal `route`
+resolved at the E9 grill (2026-07-09): the pathfinding concept is now **Course**; `Route`
+is reserved for this player-facing loop.
 _Avoid_: itinerary, plan; template (as identifier — every Route is one)
 
 **Course** (PL: kurs):
@@ -199,10 +201,13 @@ One entry of a Route: a Port plus its orders, each naming its economic effect �
 transfer cargo to the local build site, up to the recipe's remaining need). Orders execute
 best-effort on docking ("do what you can and sail on" — no waiting, no conditions), then
 the ship departs immediately. A deliver order at a port with no active build is a no-op.
-_Implementation_: E9 (PRD M2) — not in build yet. Order vocabulary locked at the E9 grill
-(2026-07-09), replacing the earlier load/unload wording ("unload" became ambiguous once
-deliver existed). E13 (M3) adds two order kinds: **store** and **withdraw** (transfer
-between Cargo and a Storehouse, market-free — the goods are already yours).
+_Implementation_: shipped in #80 — a routed Stop executes by dispatching the same
+buy/sell/deliver Commands a player issues (equivalence by construction). A ship dwells one
+tick at each Stop before departing (the manual-play quantization + the intervention
+window). Order vocabulary locked at the E9 grill (2026-07-09), replacing the earlier
+load/unload wording ("unload" became ambiguous once deliver existed). E13 (M3) adds two
+order kinds: **store** and **withdraw** (transfer between Cargo and a Storehouse,
+market-free — the goods are already yours).
 _Avoid_: waypoint, leg; load/unload (pre-E9 wording)
 
 **Voyage** (PL: rejs):
@@ -212,8 +217,9 @@ _Avoid_: trip, journey
 ### Buildings & construction
 
 Terms locked at the E9 grill (2026-07-09). Design principle: **buildings introduce
-mechanics** — a new gameplay layer arrives with a Building, not with a tutorial. None of
-these exist in the build yet (E9).
+mechanics** — a new gameplay layer arrives with a Building, not with a tutorial. The sim
+model (Headquarters, Build Order, auto-draw/deliver/rush, launch) shipped in #81; the
+Headquarters-panel UI (#84/#85) is pending.
 
 **Building** (PL: budynek):
 A Company-owned structure at a Port. E9 has exactly one type — the Headquarters; E13
@@ -253,6 +259,9 @@ A flat per-docking charge, differentiated per Port (by archetype/size); paid on 
 docking, manual or routed. Sailing through an intermediate port without docking is free.
 No debt in E9: an empty purse pays what it has. Its own Ledger event kind — the fixed
 cost that makes route rot legible.
+_Implementation_: charged in the docking phase (`DOCKING_FEE` in `region.ts`) shipped in
+#80 — active for all docking from tick 0, including pre-Headquarters manual play. Its
+Ledger event kind lands with #82.
 _Avoid_: port tax, harbor dues, toll
 
 ### Guilds & contracts

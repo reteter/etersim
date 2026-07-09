@@ -57,6 +57,16 @@ export const ARCHETYPE_PROFILES: Record<PortArchetype, ArchetypeProfile> = {
   },
 };
 
+/** Flat docking fee by archetype (E9). No debt: the caller clamps to available
+ *  thalers. Charged on every docking; tuning, not spec drift. */
+export const DOCKING_FEE: Record<PortArchetype, number> = {
+  urban: 20,
+  industrial: 15,
+  mining: 12,
+  agrarian: 8,
+  verdant: 5,
+};
+
 /**
  * How each archetype values each good relative to its global base price
  * (docs/specs/E8-living-economy.md — Per-archetype price bias): consumers

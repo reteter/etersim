@@ -92,7 +92,9 @@ Rules, all locked:
   notice, and the Ledger will show them plainly.
 - Orders execute on docking (sells, then buys, then delivers are irrelevant to order —
   each good appears in at most one order per Stop; execution is in the Stop's order
-  list order), then the ship departs immediately.
+  list order); the ship then dwells docked for one tick before departing on the next
+  Stop's Course (Tech — the dwell mirrors manual play and is the player's intervention
+  window; it is never idle waiting *for* a price or a condition).
 - Ships race for shared purse and stock in deterministic `ships[]` order (Tech).
 
 ### Headquarters: founding the company
@@ -241,27 +243,48 @@ comment is corrected in the same PR (setting verdict above).
 
 - Types: `RouteId`; `StopOrder = { kind: "buy" | "sell" | "deliver"; good: GoodId }`;
   `Stop = { portId: PortId; orders: readonly StopOrder[] }`;
-  `Route = { id: RouteId; name: string; stops: readonly Stop[] }` (≥ 2 Stops to be
-  assignable; a good appears in at most one order per Stop — enforced on the command).
+  `Route = { id: RouteId; name: string; stops: readonly Stop[] }`. Assignable iff
+  **≥ 2 Stops spanning ≥ 2 distinct ports**, with each good in at most one order per
+  Stop — enforced on `createRoute`/`updateRoute`. The distinct-port rule (added in
+  implementation) closes a degenerate all-one-port loop that would execute — and never
+  pay a docking fee — forever.
 - `Company` gains `routes: readonly Route[]`. `Ship` gains
   `assignment?: { routeId: RouteId; nextStopIndex: number; suspended: boolean }` and
-  `name: string` (#54).
+  `name: string` (#54, mandatory — every ship is named from launch).
 - New Commands (all player mutations stay Commands — determinism + E11 replay):
   `createRoute`, `updateRoute`, `deleteRoute`, `assignRoute(shipId, routeId)`,
-  `unassignRoute(shipId)`, `resumeRoute(shipId)`. `applyCommand`'s `sailTo` on an
-  assigned, unsuspended ship sets `suspended: true` (auto-suspend). Invalid commands
-  drop unchanged, as today.
+  `unassignRoute(shipId)`, `resumeRoute(shipId)`. `assignRoute`/`resumeRoute` are
+  **pure state-setters** — they set `(routeId, nextStopIndex, suspended)` only; the
+  tick route pass does all Course dispatch and Stop execution, so routes never
+  introduce a second ordering regime alongside the `ships[]` race. `applyCommand`'s
+  `sailTo` on an assigned, unsuspended ship sets `suspended: true` (auto-suspend).
+  Invalid commands drop unchanged, as today.
 - **Tick phase order** (extends E8's): apply commands → advance ships → **docking
   phase** → **build-site auto-draw** → market tick → osmosis → tick+1 → day boundary:
   drift step + price snapshots + **net-worth snapshot**.
 - Docking phase, in `ships[]` array order (the deterministic race for shared
-  purse/stock): for each ship that transitioned underway → docked this tick — charge
-  the docking fee (`min(fee, thalers)`, no debt); if it has an active unsuspended
-  assignment: execute the Stop's orders best-effort in list order, advance
-  `nextStopIndex` (mod stop count), dispatch on the Course to the next Stop
-  (`shortestCourse`). A routed ship docking at its next Stop's port via manual resume
-  behaves identically. Index out of range after a template edit → wrap to 0. Deleted
-  route → assignment cleared after the current Course completes.
+  purse/stock), **interleaved per ship** (each ship pays then trades before the next is
+  touched, so a fee limits what a later ship can afford): charge the docking fee
+  (`min(fee, thalers)`, no debt) for every ship that transitioned underway → docked
+  this tick. Then a **state-keyed route pass** runs for each docked, assigned,
+  unsuspended ship:
+  - **at its next Stop's port** → execute the Stop's orders best-effort in list order
+    (by dispatching the *same* buy/sell/deliver Commands a player would — routes get no
+    special math, so a Route's trades equal the identical manual sequence by
+    construction), advance `nextStopIndex` (mod stop count), and **dwell docked for one
+    tick**. The dwell mirrors manual play's quantization (a ship can never depart the
+    tick it arrives) and gives the player a tick-boundary window to intervene — a manual
+    `sailTo` lands there and auto-suspends the Route. Co-located consecutive Stops drain
+    one per dwell tick.
+  - **elsewhere** → redirect on the Course to the next Stop's port (`shortestCourse`),
+    no execution. This is both the normal post-dwell departure and the recovery when a
+    template edit moved the Stop out from under an in-flight ship (no wrong-port trade,
+    no deadlock).
+  Fee gates on the transition, execution on ship state — so a resume/assign at the Stop
+  port trades without a second fee. An assign/resume on an **underway** ship is dormant
+  until it next docks, then the pass picks it up. Index out of range after a shortening
+  edit → wrap to 0. Deleted route → assignment cleared once the ship's current Course
+  completes (never stranded mid-voyage).
 - Docking-fee constants: `DOCKING_FEE: Record<PortArchetype, number>` =
   `{ urban: 20, industrial: 15, mining: 12, agrarian: 8, verdant: 5 }` (region.ts, next
   to `ARCHETYPE_PROFILES`).
@@ -279,8 +302,10 @@ comment is corrected in the same PR (setting verdict above).
   5 days).
 - New Commands: `foundHeadquarters(portId)` (rejected if one exists or purse < cost),
   `placeBuildOrder()` (rejected while one runs or purse < labor fee),
-  `rushBuild()` (buys every remaining good via `quoteBuy` against current local stock —
-  partial by stock, full quote shown UI-side from the same function),
+  `rushBuild()` (buys every remaining good via `quoteBuy`, bounded by current local
+  stock **and** the purse — `maxAffordableQty` per good, so it is partial by stock and,
+  consistent with the no-debt principle, never spends past the purse; full quote shown
+  UI-side from the same function),
   `deliver(shipId, good)` (docked at the Headquarters port; moves
   `min(cargo, remaining)`).
 - Auto-draw (tick phase): for each good in `GOOD_IDS` order with remaining need and
