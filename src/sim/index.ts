@@ -23,6 +23,7 @@ export {
   etaTicks,
   courseTicks,
   type Ship,
+  type ShipAssignment,
   type ShipId,
   type ShipLocation,
   type Voyage,
@@ -30,6 +31,7 @@ export {
 export { GOOD_IDS, GOODS, type GoodDef, type GoodId } from "./goods";
 export {
   ARCHETYPE_PROFILES,
+  DOCKING_FEE,
   PORT_ARCHETYPES,
   TICKS_PER_DAY,
   type ArchetypeProfile,
@@ -51,6 +53,7 @@ export {
   osmosisTick,
   type OsmosisResult,
 } from "./osmosis";
+export { type Route, type RouteId, type Stop, type StopOrder } from "./route";
 // ARCHETYPE_BIAS and SPREAD stay internal until a UI consumer exists
 // (quotes already carry the spread; the bias is baked into priceBias).
 export {

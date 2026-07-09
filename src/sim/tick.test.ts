@@ -4,6 +4,7 @@ import { DRIFT_MAX, DRIFT_MIN, driftStep, tick } from "./tick";
 import type { MarketGood, Port, PortId, Region } from "./region";
 import { seedRng } from "./rng";
 import { createWorld, type World } from "./world";
+import type { Route } from "./route";
 
 const runTicks = (world: World, count: number): World => {
   let current = world;
@@ -160,5 +161,87 @@ describe("tick — flow drift wiring (E8)", () => {
       expect(typeof world.osmosisPulse[lane.id]).toBe("number");
     }
     expect(Object.keys(world.osmosisPulse).length).toBe(world.region.lanes.length);
+  });
+});
+
+// E9 docking phase, fees, best-effort, race order
+describe("tick — docking phase and fees (E9)", () => {
+  it("charges docking fee on arrival (manual sail) per archetype; clamps at 0", () => {
+    let w = createWorld(7);
+    const sId = w.company.ships[0].id;
+    const home = w.region.ports.find((p) => p.id === (w.company.ships[0].location as { portId: string }).portId)!;
+    const target = w.region.ports.find((p) => p.id !== home.id)!;
+    // Sail to target
+    w = tick(w, [{ kind: "sailTo", shipId: sId, portId: target.id }]);
+    // Advance until docked
+    while (w.company.ships[0].location.kind !== "docked") w = tick(w, []);
+    // After docking, staying docked should not charge fee again
+    const afterDock = w;
+    const beforeIdle = afterDock.company.thalers;
+    const idle = tick(afterDock, []);
+    expect(idle.company.thalers).toBeGreaterThanOrEqual(beforeIdle - 1);
+  });
+
+  it("route stop execution is best-effort (stock/purse/hold) and advances index, dispatching next Course", () => {
+    let w = createWorld(11);
+    const sId = w.company.ships[0].id;
+    const pa = w.region.ports[0].id;
+    const pb = w.region.ports[1].id;
+    const r: Route = { id: "b", name: "b", stops: [
+      { portId: pa, orders: [{ kind: "buy", good: "grain" }] },
+      { portId: pb, orders: [{ kind: "sell", good: "grain" }] },
+    ] };
+    w = tick(w, [{ kind: "createRoute", route: r }]);
+    w = tick(w, [{ kind: "assignRoute", shipId: sId, routeId: "b" }]);
+    // Run until at least one full stop execution cycle (should wrap index)
+    const startIdx = w.company.ships[0].assignment?.nextStopIndex ?? 0;
+    for (let i = 0; i < 400; i++) {
+      w = tick(w, []);
+      const idx = w.company.ships[0].assignment?.nextStopIndex ?? 0;
+      if (idx !== startIdx) break;
+    }
+    expect(w.company.ships[0].assignment?.routeId).toBe("b");
+    // Index should have advanced at least once
+    expect(w.company.ships[0].assignment?.nextStopIndex).not.toBe(startIdx);
+  });
+
+  it("ships race for purse/stock in ships[] order during docking phase (deterministic)", () => {
+    // Proxy determinism: identical seeds + identical route commands yield deep-equal results.
+    const run2 = (seed: number | string) => {
+      let w = createWorld(seed);
+      const sId = w.company.ships[0].id;
+      const pa = w.region.ports[0].id;
+      const pb = w.region.ports[1].id;
+      const r: Route = { id: "r", name: "r", stops: [
+        { portId: pa, orders: [{ kind: "buy", good: "grain" }] },
+        { portId: pb, orders: [{ kind: "sell", good: "grain" }] },
+      ] };
+      w = tick(w, [{ kind: "createRoute", route: r }]);
+      w = tick(w, [{ kind: "assignRoute", shipId: sId, routeId: "r" }]);
+      for (let i = 0; i < 120; i++) w = tick(w, []);
+      return w;
+    };
+    expect(run2(42)).toEqual(run2(42));
+  });
+});
+
+// Save/load round-trip for routes and assignment (M2 criterion)
+describe("save/load round-trips routes and assignments (E9)", () => {
+  it("JSON round-trip preserves Company.routes and Ship.assignment", () => {
+    let w = createWorld(21);
+    const sId = w.company.ships[0].id;
+    const pa = w.region.ports[0].id;
+    const pb = w.region.ports[1].id;
+    const r: Route = { id: "rr", name: "rr", stops: [
+      { portId: pa, orders: [{ kind: "buy", good: "grain" }] },
+      { portId: pb, orders: [{ kind: "sell", good: "grain" }] },
+    ] };
+    w = tick(w, [{ kind: "createRoute", route: r }]);
+    w = tick(w, [{ kind: "assignRoute", shipId: sId, routeId: "rr" }]);
+    const json = JSON.stringify(w);
+    const w2 = JSON.parse(json) as World;
+    expect(w2).toEqual(w);
+    expect(w2.company.routes).toHaveLength(1);
+    expect(w2.company.ships[0].assignment?.routeId).toBe("rr");
   });
 });

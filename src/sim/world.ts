@@ -3,6 +3,7 @@ import { GOOD_IDS } from "./goods";
 import { effectiveBase, price } from "./market";
 import type { LaneId, PortId, Region } from "./region";
 import { nextInt, seedRng, type RngState } from "./rng";
+import type { Route } from "./route";
 import { emptyCargo, type Ship } from "./ship";
 import { HEARTLAND, type RegionTemplate } from "./template";
 import { generateRegion } from "./worldgen";
@@ -14,6 +15,8 @@ export const STARTING_HOLD = 50;
 export interface Company {
   readonly thalers: number;
   readonly ships: readonly Ship[];
+  /** Route templates owned by the Company (E9). */
+  readonly routes: readonly Route[];
 }
 
 /**
@@ -57,6 +60,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
 
   const ship: Ship = {
     id: "s0",
+    name: "s0",
     hold: STARTING_HOLD,
     cargo: emptyCargo(),
     location: { kind: "docked", portId: region.ports[homeIndex].id },
@@ -66,7 +70,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     tick: 0,
     rng: rng2,
     region,
-    company: { thalers: STARTING_THALERS, ships: [ship] },
+    company: { thalers: STARTING_THALERS, ships: [ship], routes: [] },
     priceSnapshots: snapshotPrices(region),
     flowDrift: initialFlowDrift(region),
     osmosisPulse: initialOsmosisPulse(region),

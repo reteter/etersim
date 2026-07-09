@@ -1,4 +1,5 @@
 import { GOOD_IDS, type GoodId } from "./goods";
+import type { RouteId } from "./route";
 import type { LaneId, PortId, Region } from "./region";
 
 export type ShipId = string;
@@ -22,13 +23,24 @@ export type ShipLocation =
       readonly destination: PortId;
     };
 
+/** Assignment of a Route to a Ship (E9). */
+export interface ShipAssignment {
+  readonly routeId: RouteId;
+  readonly nextStopIndex: number;
+  readonly suspended: boolean;
+}
+
 export interface Ship {
   readonly id: ShipId;
+  /** Display name (E9 #54); may be minimal (e.g., id) until UI layer. */
+  readonly name?: string;
   /** Hold: total cargo capacity in units (CONTEXT.md). */
   readonly hold: number;
   /** Cargo aboard, zero-filled for every good (deterministic iteration). */
   readonly cargo: Record<GoodId, number>;
   readonly location: ShipLocation;
+  /** Route assignment, if any (E9). */
+  readonly assignment?: ShipAssignment;
 }
 
 export function emptyCargo(): Record<GoodId, number> {
