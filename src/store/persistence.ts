@@ -17,8 +17,11 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  migration; v2 saves are cleanly rejected.
  *  v4: E9 added `Company.routes`/`headquarters`, `Ship.name`/`assignment` (the
  *  E9 spec lists save migration as a non-goal, pre-1.0) — v3 saves would load
- *  missing `routes`/`headquarters` and crash the route pass, so reject them. */
-export const SAVE_VERSION = 4;
+ *  missing `routes`/`headquarters` and crash the route pass, so reject them.
+ *  v5: E9 added `World.ledger` (docs/specs/E9-fleet-and-routes.md — Ledger);
+ *  again no migration — a v4 save would load with `ledger` undefined and
+ *  every event-appending mutation would throw on the missing array. */
+export const SAVE_VERSION = 5;
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
 export const AUTOSAVE_INTERVAL_TICKS = 24;

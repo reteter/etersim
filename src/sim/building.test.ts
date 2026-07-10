@@ -36,7 +36,20 @@ describe("foundHeadquarters (#81)", () => {
     expect(next.company.headquarters).toEqual({ portId });
   });
 
-  it("rejects a second HQ, an unaffordable one, and an unknown port", () => {
+  it("appends exactly one founding event", () => {
+    const w = rich("found-ledger", HEADQUARTERS_COST + 100);
+    const portId = w.region.ports[2].id;
+    const next = applyCommand(w, { kind: "foundHeadquarters", portId });
+    expect(next.ledger.length).toBe(w.ledger.length + 1);
+    expect(next.ledger[next.ledger.length - 1]).toEqual({
+      kind: "founding",
+      tick: w.tick,
+      portId,
+      thalers: HEADQUARTERS_COST,
+    });
+  });
+
+  it("rejects a second HQ, an unaffordable one, and an unknown port — no ledger event either", () => {
     const poor = rich("found2", HEADQUARTERS_COST - 1);
     expect(applyCommand(poor, { kind: "foundHeadquarters", portId: poor.region.ports[0].id })).toBe(poor);
 
@@ -45,6 +58,7 @@ describe("foundHeadquarters (#81)", () => {
     const twice = applyCommand(founded, { kind: "foundHeadquarters", portId: w.region.ports[1].id });
     expect(twice).toBe(founded); // one per Company
     expect(applyCommand(w, { kind: "foundHeadquarters", portId: "no-such-port" })).toBe(w);
+    expect(founded.ledger.length).toBe(w.ledger.length + 1); // only the successful founding
   });
 });
 
@@ -59,6 +73,17 @@ describe("placeBuildOrder (#81)", () => {
     const next = applyCommand(w, { kind: "placeBuildOrder" });
     expect(next.company.thalers).toBe(w.company.thalers - LABOR_FEE);
     expect(next.company.headquarters!.buildOrder!.siteStore).toEqual(emptySiteStore());
+  });
+
+  it("appends exactly one laborFee event", () => {
+    const w = founded();
+    const next = applyCommand(w, { kind: "placeBuildOrder" });
+    expect(next.ledger.length).toBe(w.ledger.length + 1);
+    expect(next.ledger[next.ledger.length - 1]).toEqual({
+      kind: "laborFee",
+      tick: w.tick,
+      thalers: LABOR_FEE,
+    });
   });
 
   it("rejects a second concurrent build and an unaffordable labor fee", () => {
@@ -97,6 +122,16 @@ describe("auto-draw (#81)", () => {
       }
     }
     expect(w.company.thalers).toBeGreaterThanOrEqual(0);
+
+    // Every unit that landed in the site store is accounted for by exactly
+    // one autoDraw event of the same qty (docs/specs/E9 — Ledger).
+    const autoDrawEvents = w.ledger.filter((e) => e.kind === "autoDraw");
+    for (const good of GOOD_IDS) {
+      const drawnQty = autoDrawEvents
+        .filter((e) => e.kind === "autoDraw" && e.good === good)
+        .reduce((sum, e) => sum + (e.kind === "autoDraw" ? e.qty : 0), 0);
+      expect(drawnQty).toBe(store?.[good] ?? 0);
+    }
   });
 
   it("stalls silently when the purse cannot afford it — no error, no debt, no store growth", () => {
@@ -108,6 +143,7 @@ describe("auto-draw (#81)", () => {
     for (let t = 0; t < TICKS_PER_DAY; t++) w = tick(w, []);
     expect(w.company.thalers).toBe(0);
     for (const good of GOOD_IDS) expect(w.company.headquarters!.buildOrder!.siteStore[good]).toBe(0);
+    expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(false); // no movement, no event
   });
 });
 
@@ -129,6 +165,15 @@ describe("deliver (#81)", () => {
     const after = applyCommand(w, { kind: "deliver", shipId: laden.id, good: "electronics" });
     expect(after.company.headquarters!.buildOrder!.siteStore.electronics).toBe(SHIP_RECIPE.electronics);
     expect(after.company.ships[0].cargo.electronics).toBe(50 - SHIP_RECIPE.electronics);
+    expect(after.ledger.length).toBe(w.ledger.length + 1);
+    expect(after.ledger[after.ledger.length - 1]).toEqual({
+      kind: "delivery",
+      tick: w.tick,
+      shipId: laden.id,
+      portId,
+      good: "electronics",
+      qty: SHIP_RECIPE.electronics,
+    });
   });
 
   it("is a no-op away from the HQ port and with no active build", () => {
@@ -146,6 +191,26 @@ describe("deliver (#81)", () => {
     // Ship is docked at its home port, not the HQ port → deliver rejected.
     expect(applyCommand(w, { kind: "deliver", shipId: shipOf(w).id, good: "timber" })).toBe(w);
   });
+
+  it("a delivery that moves nothing (no remaining need) appends no event", () => {
+    const w0 = rich("deliver3", HEADQUARTERS_COST + 10);
+    const portId = hqPortId(w0);
+    let w = applyCommand(w0, { kind: "foundHeadquarters", portId });
+    const full = { ...emptySiteStore(), ...SHIP_RECIPE }; // recipe already complete for electronics
+    const laden: Ship = { ...shipOf(w), cargo: { ...shipOf(w).cargo, electronics: 5 } };
+    w = {
+      ...w,
+      company: {
+        ...w.company,
+        ships: [laden],
+        headquarters: { portId, buildOrder: { siteStore: full } },
+      },
+    };
+    // Recipe is already complete: this deliver launches instead of moving goods.
+    const after = applyCommand(w, { kind: "deliver", shipId: laden.id, good: "electronics" });
+    expect(after.ledger.some((e) => e.kind === "delivery")).toBe(false); // moved 0, no delivery event
+    expect(after.ledger.some((e) => e.kind === "launch")).toBe(true); // but it did launch
+  });
 });
 
 describe("rush (#81)", () => {
@@ -159,12 +224,16 @@ describe("rush (#81)", () => {
 
     // Expected: each good bought min(need, floor(stock)) at its quoteBuy.
     let expectedCost = 0;
+    let expectedEventCount = 0;
     const expectedStore = emptySiteStore();
     for (const good of GOOD_IDS) {
       const entry = port.market[good];
       const q = Math.min(SHIP_RECIPE[good], Math.floor(entry.stock));
       expectedStore[good] = q;
-      if (q > 0) expectedCost += quoteBuy(entry, effectiveBase(port, good), q)!;
+      if (q > 0) {
+        expectedCost += quoteBuy(entry, effectiveBase(port, good), q)!;
+        expectedEventCount++;
+      }
     }
 
     const after = applyCommand(before, { kind: "rushBuild" });
@@ -175,6 +244,12 @@ describe("rush (#81)", () => {
       }
     }
     expect(after.company.thalers).toBe(before.company.thalers - expectedCost);
+
+    // One rush event per good actually bought; their thalers sum to the total spend.
+    const rushEvents = after.ledger.filter((e) => e.kind === "rush");
+    expect(rushEvents.length).toBe(expectedEventCount);
+    const rushSpend = rushEvents.reduce((sum, e) => sum + (e.kind === "rush" ? e.thalers : 0), 0);
+    expect(rushSpend).toBe(expectedCost);
   });
 
   it("is rejected with no active build order", () => {
@@ -210,6 +285,13 @@ describe("launch (#81)", () => {
     expect(cargoUsed(launched)).toBe(0);
     expect(launched.name).toBe(generateShipName(countBefore));
     expect(launched.assignment).toBeUndefined();
+
+    // The deliver that completed the recipe appends both a delivery event
+    // (the last unit of electronics) and a launch event, in that order.
+    const kinds = after.ledger.slice(w.ledger.length).map((e) => e.kind);
+    expect(kinds).toEqual(["delivery", "launch"]);
+    const launchEvent = after.ledger[after.ledger.length - 1];
+    expect(launchEvent).toEqual({ kind: "launch", tick: w.tick, shipId: launched.id, portId });
   });
 });
 

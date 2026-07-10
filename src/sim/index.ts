@@ -57,6 +57,12 @@ export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
 export { tick, type Command } from "./tick";
 export {
+  computeNetWorth,
+  regionAverageMid,
+  type LedgerEvent,
+  type NetWorthBreakdown,
+} from "./ledger";
+export {
   OSMOSIS_CAP,
   OSMOSIS_DEADBAND,
   OSMOSIS_RATE,
