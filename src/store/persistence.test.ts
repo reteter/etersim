@@ -94,6 +94,16 @@ describe("persistence", () => {
     expect(loadAutosave(storage)).toEqual(world);
   });
 
+  it("round-trips the Ledger byte-for-byte through the autosave store bridge (docs/specs/E9 — Ledger: 'serialized with the save')", () => {
+    const storage = fakeStorage();
+    const world = midSessionWorld(); // a buy + 250 ticks: trade + several day-boundary netWorth events
+    expect(world.ledger.length).toBeGreaterThan(0); // precondition: the fixture actually produced events
+    saveAutosave(world, storage);
+    const restored = loadAutosave(storage);
+    expect(restored).not.toBeNull();
+    expect(JSON.stringify(restored?.ledger)).toBe(JSON.stringify(world.ledger));
+  });
+
   it("hasAutosave reflects whether a readable slot exists", () => {
     const storage = fakeStorage();
     expect(hasAutosave(storage)).toBe(false);

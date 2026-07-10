@@ -66,9 +66,18 @@ describe("docking fee (#80)", () => {
     void a;
 
     // Exactly one dockingFee event, tagged with the arriving ship and port.
+    // Full object (not toMatchObject): the fee itself is exactly the field a
+    // pricing bug would corrupt, so every field is pinned, including tick —
+    // the docking transition landed on the tick just before `next`.
     const feeEvents = next.ledger.filter((e) => e.kind === "dockingFee");
     expect(feeEvents.length).toBe(1);
-    expect(feeEvents[0]).toMatchObject({ kind: "dockingFee", shipId, portId: b, thalers: fee });
+    expect(feeEvents[0]).toEqual({
+      kind: "dockingFee",
+      tick: next.tick - 1,
+      shipId,
+      portId: b,
+      thalers: fee,
+    });
   });
 
   it("never drives the purse negative — an empty purse pays what it has", () => {

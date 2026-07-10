@@ -47,17 +47,23 @@ describe("buy command", () => {
 
   it("appends exactly one trade event for the buy, with no routeId (manual trade)", () => {
     const before = tick(world0, []);
+    const cost = quoteBuy(port.market.grain, effectiveBase(port, "grain"), 10)!;
     const next = tick(world0, [{ kind: "buy", shipId, good: "grain", qty: 10 }]);
     expect(next.ledger.length).toBe(before.ledger.length + 1);
     const event = next.ledger[next.ledger.length - 1];
-    expect(event).toMatchObject({
+    // Full object, not toMatchObject: thalers is exactly the field a pricing
+    // bug would corrupt, so it must be asserted, not omitted.
+    expect(event).toEqual({
       kind: "trade",
+      tick: world0.tick,
       shipId,
+      portId: port.id,
       good: "grain",
       side: "buy",
       qty: 10,
+      thalers: cost,
+      routeId: undefined,
     });
-    if (event.kind === "trade") expect(event.routeId).toBeUndefined();
   });
 
   it("rejects a buy the company cannot afford, leaving the world (and ledger) unchanged", () => {
@@ -102,14 +108,20 @@ describe("sell command", () => {
 
   it("appends exactly one trade event for the sell", () => {
     const before = tick(withCargo, []);
+    const port = homePort(withCargo);
+    const revenue = quoteSell(port.market.grain, effectiveBase(port, "grain"), 10)!;
     const next = tick(withCargo, [{ kind: "sell", shipId, good: "grain", qty: 10 }]);
     expect(next.ledger.length).toBe(before.ledger.length + 1);
-    expect(next.ledger[next.ledger.length - 1]).toMatchObject({
+    expect(next.ledger[next.ledger.length - 1]).toEqual({
       kind: "trade",
+      tick: withCargo.tick,
       shipId,
+      portId: port.id,
       good: "grain",
       side: "sell",
       qty: 10,
+      thalers: revenue,
+      routeId: undefined,
     });
   });
 

@@ -252,12 +252,7 @@ export function applyCommand(world: World, command: Command): World {
       if (total === null) return world;
       if (total > world.company.thalers) return world;
       if (cargoUsed(ship) + command.qty > ship.hold) return world;
-      return applyTrade(world, ship, port, command.good, -command.qty, -total, {
-        side: "buy",
-        qty: command.qty,
-        thalers: total,
-        routeId: command.routeId,
-      });
+      return applyTrade(world, ship, port, command.good, -command.qty, -total, command.routeId);
     }
     case "sell": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
@@ -268,12 +263,7 @@ export function applyCommand(world: World, command: Command): World {
       if (ship.cargo[command.good] < command.qty) return world;
       const total = quoteSell(port.market[command.good], effectiveBase(port, command.good), command.qty);
       if (total === null) return world;
-      return applyTrade(world, ship, port, command.good, command.qty, total, {
-        side: "sell",
-        qty: command.qty,
-        thalers: total,
-        routeId: command.routeId,
-      });
+      return applyTrade(world, ship, port, command.good, command.qty, total, command.routeId);
     }
     case "sailTo": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
@@ -305,10 +295,12 @@ export function applyCommand(world: World, command: Command): World {
 }
 
 /** stockDelta moves the port stock; thalerDelta moves the company purse.
- *  Cargo moves opposite to stock. Positive stockDelta = ship selling.
- *  `trade` carries the Ledger-facing shape of the move (side/qty/thalers as
- *  positive magnitudes, plus the originating routeId when dispatched from a
- *  Route Stop — docs/specs/E9 — Ledger). */
+ *  Cargo moves opposite to stock. Positive stockDelta = ship selling. The
+ *  trade event's side/qty/thalers are derived from these same two deltas
+ *  (their sign and magnitude), not passed separately — a single source of
+ *  truth, so a caller can never hand the Ledger a value inconsistent with
+ *  the state change it actually applied. `routeId` tags a route-driven trade
+ *  (docs/specs/E9 — Ledger). */
 function applyTrade(
   world: World,
   ship: Ship,
@@ -316,7 +308,7 @@ function applyTrade(
   good: GoodId,
   stockDelta: number,
   thalerDelta: number,
-  trade: { readonly side: "buy" | "sell"; readonly qty: number; readonly thalers: number; readonly routeId?: RouteId },
+  routeId?: RouteId,
 ): World {
   const tradedShip: Ship = {
     ...ship,
@@ -344,9 +336,9 @@ function applyTrade(
     shipId: ship.id,
     portId: port.id,
     good,
-    side: trade.side,
-    qty: trade.qty,
-    thalers: trade.thalers,
-    routeId: trade.routeId,
+    side: stockDelta > 0 ? "sell" : "buy",
+    qty: Math.abs(stockDelta),
+    thalers: Math.abs(thalerDelta),
+    routeId,
   });
 }
