@@ -162,6 +162,15 @@ ShipPanel (`renameShip` command). `FleetList.tsx` and every other UI surface sho
 name, never `ship.id`.
 _Avoid_: vessel, boat
 
+**Fleet** (PL: flota):
+The Company's full set of Ships, listed and status-tracked together — every Ship's
+name, status (docked / underway / on route / suspended) and assigned Route, always
+visible at the top of the side panel. A roster view, not a mechanic of its own; the
+Fleet list is where the player designates the Controlled Ship.
+_Implementation_: shipped in #83 — `FleetList.tsx`, replacing the single-ship
+`ControlledShipHeader` (#32) once the fleet grew past one ship (E9).
+_Avoid_: fleet-lite (PRD placeholder term, retired), armada, squadron
+
 **Controlled Ship** (PL: kontrolowany statek):
 The Ship that the player has designated to receive Commands (e.g. `sailTo`, `buy`, `sell`). The UI maintains exactly one Controlled Ship at a time. Designating happens by clicking a player Ship on the map (when appropriate), in the Harbor list, or in the Fleet list.
 _Implementation_: shipped in #28, #32 — the store holds `controlledShipId` (distinct from panel `selection`); designated via map click, Harbor list, or the Fleet list. Commands target it. `FleetList.tsx` (#83) replaced the earlier single-ship `ControlledShipHeader` once the fleet grew past one ship (E9).

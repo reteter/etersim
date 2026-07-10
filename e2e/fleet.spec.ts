@@ -23,6 +23,15 @@ async function startNewGame(page: Page) {
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
+// Deliberately a hand-written subset shape, not `import type { World } from
+// '../src/sim'`: `e2e/**` isn't in either tsconfig project (tsconfig.app.json
+// only includes `src`, tsconfig.node.json only `vite.config.ts`), so `tsc -b`
+// never type-checks this file either way — a real-type import would buy no
+// compile-time drift protection today, while `Company`/`Ship` declare their
+// fields `readonly`, so building the mutated save below (reassigning
+// `ships`/`routes`, not just editing in place) would need an `as`-cast or a
+// full object rebuild for every field touched. If `e2e/` ever joins a
+// tsconfig project, switching to real sim types here is worth revisiting.
 interface SaveFile {
   readonly version: number;
   readonly world: {
@@ -103,10 +112,10 @@ test.describe('fleet list (#83/#54)', () => {
     const items = page.locator('.fleet-list__item');
     await expect(items).toHaveCount(1);
     await expect(items.first().locator('.fleet-list__status')).toContainText('Docked');
-    // The starting ship's name is generator-suggested, never a raw id like "s0".
-    const name = await items.first().locator('.fleet-list__name').innerText();
-    expect(name).not.toBe('s0');
-    await expect(page.locator('.fleet-list__name')).not.toHaveText('s0');
+    // The starting ship's name is generator-suggested — `generateShipName(0)`
+    // draws no RNG (src/sim/building.ts), so it's always the pool's first
+    // entry regardless of seed: pin the exact value, not just "isn't s0".
+    await expect(items.first().locator('.fleet-list__name')).toHaveText('Aether Wing');
   });
 
   test('shows two ships, one "on route" with its assigned Route name, after loading a save', async ({
@@ -146,7 +155,7 @@ test.describe('fleet list (#83/#54)', () => {
 
   test('a manual sailTo on a routed ship shows "suspended" in the fleet list', async ({ page }) => {
     await startNewGame(page);
-    const { secondShipName, otherPortName } = await loadTwoShipFleet(page);
+    const { secondShipName, otherPortName, routeName } = await loadTwoShipFleet(page);
 
     // Designate the routed ship Controlled.
     await page.locator('.fleet-list__item').filter({ hasText: secondShipName }).click();
@@ -164,8 +173,77 @@ test.describe('fleet list (#83/#54)', () => {
     await sailBtn.click();
 
     const routedRow = page.locator('.fleet-list__item').filter({ hasText: secondShipName });
-    await expect(routedRow.locator('.fleet-list__status')).toContainText('Suspended');
+    // Re-read the badge's own text (not just visibility) — pins the actual
+    // status word the AC asks for, not merely "some element exists".
+    await expect(routedRow.locator('.fleet-list__status')).toHaveText(/^Suspended —/);
     // Still assigned — a manual sailTo suspends the Route, never destroys it.
-    await expect(routedRow.locator('.fleet-list__route')).toBeVisible();
+    await expect(routedRow.locator('.fleet-list__route')).toHaveText(routeName);
+  });
+});
+
+/**
+ * Ship name — editable in ShipPanel (#54 AC). Each case checks the input
+ * *and* the Fleet list row, so a "commit never dispatches" regression (local
+ * React state changes, no `renameShip` Command actually sent) can't pass:
+ * the Fleet list only reflects a rename once it round-trips through the
+ * store/world, never from the input's own local state.
+ */
+test.describe('ship name — editable in ShipPanel (#54)', () => {
+  // The starting ship's name is generator-suggested and RNG-free
+  // (`generateShipName(0)`, src/sim/building.ts) — always the pool's first
+  // entry, regardless of seed.
+  const STARTING_NAME = 'Aether Wing';
+
+  test.beforeEach(async ({ page }) => {
+    await startNewGame(page);
+    await page.locator('.fleet-list__item--controlled').click();
+    await expect(page.getByLabel('Ship name')).toHaveValue(STARTING_NAME);
+  });
+
+  test('editing the name and blurring commits — the new name shows in the fleet list too', async ({
+    page,
+  }) => {
+    const nameInput = page.getByLabel('Ship name');
+    await nameInput.fill('Windrunner');
+    await nameInput.press('Tab'); // moves focus away — fires blur, which commits
+
+    await expect(nameInput).toHaveValue('Windrunner');
+    await expect(page.locator('.fleet-list__item--controlled .fleet-list__name')).toHaveText(
+      'Windrunner',
+    );
+  });
+
+  test('pressing Enter commits the same as blur', async ({ page }) => {
+    const nameInput = page.getByLabel('Ship name');
+    await nameInput.fill('Skybreaker');
+    await nameInput.press('Enter');
+
+    await expect(nameInput).toHaveValue('Skybreaker');
+    await expect(page.locator('.fleet-list__item--controlled .fleet-list__name')).toHaveText(
+      'Skybreaker',
+    );
+  });
+
+  test('Escape reverts an in-progress edit without committing', async ({ page }) => {
+    const nameInput = page.getByLabel('Ship name');
+    await nameInput.fill('Discarded Name');
+    await nameInput.press('Escape');
+    await nameInput.press('Tab'); // blur after Escape must not commit
+
+    await expect(nameInput).toHaveValue(STARTING_NAME);
+    await expect(page.locator('.fleet-list__item--controlled .fleet-list__name')).toHaveText(
+      STARTING_NAME,
+    );
+  });
+
+  test('a blank (or whitespace-only) name reverts instead of committing', async ({ page }) => {
+    const nameInput = page.getByLabel('Ship name');
+    await nameInput.fill('   ');
+    await nameInput.press('Tab');
+
+    await expect(nameInput).toHaveValue(STARTING_NAME);
+    await expect(page.locator('.fleet-list__item--controlled .fleet-list__name')).toHaveText(
+      STARTING_NAME,
+    );
   });
 });

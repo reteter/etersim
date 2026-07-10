@@ -27,10 +27,13 @@ function statusLabel(ship: Ship, region: Region): string {
 }
 
 /** The assigned Route's display name, or null if unassigned or (edge case)
- *  the route was deleted out from under a still-assigned ship. */
+ *  the route was deleted out from under a still-assigned ship. Binds
+ *  `ship.assignment` to a local so TS narrows it inside the closure below —
+ *  a repeated property read wouldn't narrow, forcing a `!` otherwise. */
 function routeName(ship: Ship, routes: readonly Route[]): string | null {
-  if (!ship.assignment) return null;
-  return routes.find((r) => r.id === ship.assignment!.routeId)?.name ?? null;
+  const assignment = ship.assignment;
+  if (!assignment) return null;
+  return routes.find((r) => r.id === assignment.routeId)?.name ?? null;
 }
 
 export function FleetList() {
