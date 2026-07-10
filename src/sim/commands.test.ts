@@ -177,6 +177,31 @@ describe("sailTo command", () => {
   });
 });
 
+describe("renameShip command (#83/#54)", () => {
+  const shipId = ship(world0).id;
+
+  it("sets the ship's display name, trimmed", () => {
+    const next = tick(world0, [{ kind: "renameShip", shipId, name: "  Aether Queen  " }]);
+    expect(ship(next).name).toBe("Aether Queen");
+  });
+
+  it("rejects an empty or whitespace-only name, leaving the world unchanged", () => {
+    expect(tick(world0, [{ kind: "renameShip", shipId, name: "   " }])).toEqual(tick(world0, []));
+    expect(tick(world0, [{ kind: "renameShip", shipId, name: "" }])).toEqual(tick(world0, []));
+  });
+
+  it("rejects an unknown ship id, leaving the world unchanged", () => {
+    expect(tick(world0, [{ kind: "renameShip", shipId: "nope", name: "Ghost" }])).toEqual(
+      tick(world0, []),
+    );
+  });
+
+  it("does not touch any other field on the ship", () => {
+    const next = tick(world0, [{ kind: "renameShip", shipId, name: "Renamed" }]);
+    expect(ship(next)).toEqual({ ...ship(world0), name: "Renamed" });
+  });
+});
+
 describe("long-run determinism (M1 success criterion)", () => {
   it("same seed + same commands over 5000 ticks => deep-equal world", () => {
     const run = (): World => {

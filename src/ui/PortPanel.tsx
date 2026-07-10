@@ -72,7 +72,7 @@ function Harbor({
                       controlled ? "harbor__glyph harbor__glyph--controlled" : "harbor__glyph"
                     }
                   />
-                  <span className="harbor__id">{ship.id}</span>
+                  <span className="harbor__id">{ship.name}</span>
                   <span className="harbor__hold">
                     {cargoUsed(ship)}/{ship.hold}
                   </span>
@@ -270,7 +270,7 @@ function sailability(
 function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; region: Region }) {
   const dispatch = useGameStore((s) => s.dispatch);
   const { disabledHint, eta } = sailability(ship, portId, region);
-  const label = `Sail ${ship.id} here`;
+  const label = `Sail ${ship.name} here`;
 
   if (disabledHint !== null) {
     return (

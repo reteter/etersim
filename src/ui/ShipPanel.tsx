@@ -1,12 +1,54 @@
-import { cargoUsed, etaTicks, GOOD_IDS, GOODS, type ShipId } from "../sim";
+import { useState } from "react";
+import { cargoUsed, etaTicks, GOOD_IDS, GOODS, MAX_SHIP_NAME_LENGTH, type Ship, type ShipId } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { portName } from "./portName";
+
+/**
+ * Editable display-name field (#54): local input state so keystrokes don't
+ * dispatch a Command each time, committed on blur/Enter via `renameShip`. An
+ * empty/whitespace commit is silently reverted — a ship's name is always
+ * present (sim rejects it too; this just avoids a jarring round-trip). The
+ * caller keys this on `ship.id` so React remounts (and resyncs `value`) when
+ * the panel switches to a different ship, instead of an effect-driven
+ * setState (react-hooks/set-state-in-effect).
+ */
+function ShipNameField({ ship }: { ship: Ship }) {
+  const dispatch = useGameStore((s) => s.dispatch);
+  const [value, setValue] = useState(ship.name);
+
+  const commit = () => {
+    const trimmed = value.trim();
+    if (trimmed && trimmed !== ship.name) {
+      dispatch({ kind: "renameShip", shipId: ship.id, name: trimmed });
+    } else {
+      setValue(ship.name);
+    }
+  };
+
+  return (
+    <input
+      className="ship-panel__name-input"
+      type="text"
+      value={value}
+      maxLength={MAX_SHIP_NAME_LENGTH}
+      aria-label="Ship name"
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") setValue(ship.name);
+      }}
+    />
+  );
+}
 
 /**
  * Contextual panel for the selected ship (docs/specs/E2-trade-loop.md — UI
  * layout): hold contents, and destination with ETA in ticks while underway.
  * Market access lives in the port view (Harbor + Sail control, #33) — this
- * panel no longer hosts an "Open market" shortcut.
+ * panel no longer hosts an "Open market" shortcut. The heading stays the
+ * generic "Ship" label; the ship's own (editable) name lives in the field
+ * right below it (#54/#83 — no raw id anywhere in the UI).
  */
 export function ShipPanel({ shipId }: { shipId: ShipId }) {
   const world = useGameStore((s) => s.world);
@@ -23,6 +65,7 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
   return (
     <>
       <h2 className="side-panel__title">Ship</h2>
+      <ShipNameField key={ship.id} ship={ship} />
       {location.kind === "docked" ? (
         <p className="side-panel__subtitle">Docked at {name(location.portId)}</p>
       ) : (

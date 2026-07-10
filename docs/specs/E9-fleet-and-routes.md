@@ -250,7 +250,11 @@ comment is corrected in the same PR (setting verdict above).
   pay a docking fee — forever.
 - `Company` gains `routes: readonly Route[]`. `Ship` gains
   `assignment?: { routeId: RouteId; nextStopIndex: number; suspended: boolean }` and
-  `name: string` (#54, mandatory — every ship is named from launch).
+  `name: string` (#54, mandatory — every ship is named from launch, including the
+  starting ship on new game — `generateShipName(0)`, no RNG draw).
+- New Command `renameShip(shipId, name)` (#54/#83): trims the input, rejects a
+  blank result (a ship's name is always present), truncates to
+  `MAX_SHIP_NAME_LENGTH`; no other field changes. The ShipPanel's rename affordance.
 - New Commands (all player mutations stay Commands — determinism + E11 replay):
   `createRoute`, `updateRoute`, `deleteRoute`, `assignRoute(shipId, routeId)`,
   `unassignRoute(shipId)`, `resumeRoute(shipId)`. `assignRoute`/`resumeRoute` are

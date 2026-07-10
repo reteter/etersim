@@ -1,6 +1,6 @@
 import { useGameStore } from "./store/gameStore";
 import { useGameLoop } from "./store/useGameLoop";
-import { ControlledShipHeader } from "./ui/ControlledShipHeader";
+import { FleetList } from "./ui/FleetList";
 import { PortPanel } from "./ui/PortPanel";
 import { RegionMap } from "./ui/RegionMap";
 import { ShipPanel } from "./ui/ShipPanel";
@@ -8,16 +8,17 @@ import { StartScreen } from "./ui/StartScreen";
 import { TopBar } from "./ui/TopBar";
 
 /**
- * Contextual side panel (docs/specs/E2-trade-loop.md — UI layout): the
- * always-visible Controlled Ship header on top (#32), then the market panel
- * for a selected port or the hold/ETA panel for a selected ship.
+ * Contextual side panel (docs/specs/E9-fleet-and-routes.md — UX skeleton): the
+ * always-visible Fleet list on top (#83, replaces the single-ship #32
+ * header), then the market panel for a selected port or the hold/ETA panel
+ * for a selected ship.
  */
 function SidePanel() {
   const selection = useGameStore((s) => s.selection);
 
   return (
     <aside className="side-panel">
-      <ControlledShipHeader />
+      <FleetList />
       {!selection ? (
         <p className="side-panel__hint">Select a port or the ship to see details.</p>
       ) : selection.kind === "port" ? (

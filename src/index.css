@@ -233,53 +233,96 @@ body {
   color: #8891a3;
 }
 
-/* Controlled Ship header (#32): thin, one-line, non-dominant. Gold left
-   accent signals "controlled"; secondary info in subtitle colour. */
-.ctrl-ship {
+/* Fleet list (#83, replaces the single-ship Controlled Ship header, #32):
+   always-visible, full-bleed at the top of the side panel. Every Company
+   ship gets a row; gold left accent + glyph tint mark the Controlled Ship
+   (ADR-0006 — gold means exactly that, nowhere else in this list). */
+.fleet-list {
+  margin: -1rem -1rem 1rem;
+  padding: 0.4rem 1rem 0.6rem;
+  background: #12161d;
+  border-bottom: 1px solid #2a3040;
+}
+
+.fleet-list__heading {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  color: #8891a3;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fleet-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fleet-list__item {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
   width: 100%;
-  margin: -1rem -1rem 1rem;
-  padding: 0.4rem 1rem;
-  background: #12161d;
+  background: #1a1f29;
   color: #e6e6e6;
-  border: none;
-  border-bottom: 1px solid #2a3040;
-  border-left: 3px solid #e0a840;
+  border: 1px solid #2a3040;
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
   font-size: 0.85rem;
   text-align: left;
   cursor: pointer;
 }
 
-.ctrl-ship:hover {
-  background: #171c25;
+.fleet-list__item:hover {
+  background: #222937;
 }
 
-.ctrl-ship__glyph {
+.fleet-list__item--controlled {
+  border-left-color: #e0a840;
+}
+
+.fleet-list__glyph {
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  /* Always the Controlled Ship here — gold is a permanent marker, not a
-     hover/selection state (#34). */
+  color: #a8b2c2;
+}
+
+.fleet-list__glyph--controlled {
+  /* Gold marks the Controlled Ship (#34), same tint as everywhere else. */
   color: #e0a840;
 }
 
-.ctrl-ship__id {
+.fleet-list__name {
   font-weight: 700;
+  flex-shrink: 0;
 }
 
-.ctrl-ship__status {
+.fleet-list__status {
   color: #8891a3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.ctrl-ship__hold {
+.fleet-list__route {
+  flex-shrink: 0;
+  color: #a8b2c2;
+  background: #222937;
+  border-radius: 3px;
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+}
+
+.fleet-list__hold {
   margin-left: auto;
   color: #a8b2c2;
   font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
 }
 
 /* Harbor: docked ships listed above the market (#28). */
@@ -353,6 +396,31 @@ body {
 .side-panel__heading {
   margin: 1rem 0 0.5rem;
   font-size: 0.95rem;
+}
+
+/* ShipPanel's editable name field (#54/#83) — sits right under the generic
+   "Ship" title, styled to read as text until focused. */
+.ship-panel__name-input {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.75rem;
+  padding: 0.2rem 0.3rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #e6e6e6;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.ship-panel__name-input:hover {
+  border-color: #2a3040;
+}
+
+.ship-panel__name-input:focus {
+  outline: none;
+  background: #1a1f29;
+  border-color: #4c7bab;
 }
 
 /* Market table: two-sided bid/ask (#61, E8 bid-ask spread) — Good, Trend,

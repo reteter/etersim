@@ -1,4 +1,4 @@
-import type { Headquarters } from "./building";
+import { generateShipName, type Headquarters } from "./building";
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
 import type { LedgerEvent } from "./ledger";
@@ -68,9 +68,13 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
   const [region, rng1] = generateRegion(rng0, template);
   const [homeIndex, rng2] = nextInt(rng1, 0, region.ports.length - 1);
 
+  // Generated, not "s0" (#54): the starting ship is named like any other —
+  // shipCountBeforeLaunch 0, same cosmetic pool `launchIfComplete` draws
+  // from. No RNG draw here — determinism (the region/home-port RNG stream
+  // must stay untouched).
   const ship: Ship = {
     id: "s0",
-    name: "s0",
+    name: generateShipName(0),
     hold: STARTING_HOLD,
     cargo: emptyCargo(),
     location: { kind: "docked", portId: region.ports[homeIndex].id },
