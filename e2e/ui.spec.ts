@@ -276,6 +276,12 @@ test.describe('main game UI after start', () => {
       expect(rightEdge(rowAskX!)).toBeCloseTo(askX, 0);
       expect(rightEdge(rowStockX!)).toBeCloseTo(stockX, 0);
     }
+
+    // Matching right edges alone would also pass for centered/left-aligned
+    // text glued to the right of its cell — guard the actual "right-align
+    // amounts" requirement (#75) by asserting the computed style too.
+    await expect(page.locator('.market-row__bid').first()).toHaveCSS('text-align', 'right');
+    await expect(page.locator('.market-row__ask').first()).toHaveCSS('text-align', 'right');
   });
 
   test('port panel shows two-sided bid/ask per good, ask never below bid, with a real spread somewhere (#61)', async ({

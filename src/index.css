@@ -365,10 +365,18 @@ body {
    not bare `1fr`: a bare `1fr` track still has an implicit `auto` (i.e.
    min-content) minimum, so a long good name (e.g. "Aether Salt") can blow
    that row's grid wider than the header's and shift every column after it
-   out of alignment — the classic CSS grid blowout. */
+   out of alignment — the classic CSS grid blowout.
+   The column list itself lives in one custom property, `--market-columns`
+   on `.market` (inherited by both grids below), so the header and every
+   row are structurally guaranteed to share the same tracks — the #75
+   desync (two copies of the column list drifting apart) can't recur. */
+.market {
+  --market-columns: minmax(0, 1fr) 2.75rem 4rem 4rem 3.5rem;
+}
+
 .market__header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 2.75rem 4rem 4rem 3.5rem;
+  grid-template-columns: var(--market-columns);
   gap: 0.5rem;
   padding: 0 0 0.25rem;
   font-size: 0.75rem;
@@ -393,7 +401,7 @@ body {
 
 .market-row__head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 2.75rem 4rem 4rem 3.5rem;
+  grid-template-columns: var(--market-columns);
   gap: 0.5rem;
   align-items: baseline;
 }
