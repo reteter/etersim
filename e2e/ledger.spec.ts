@@ -19,7 +19,7 @@ async function buyGrain(page: Page, qty: number) {
 /** Opens the docked port's market for the Controlled Ship (mirrors the
  *  helper in e2e/ui.spec.ts). */
 async function openDockedPortMarket(page: Page) {
-  await page.locator('.ctrl-ship').click();
+  await page.locator('.fleet-list__item--controlled').click();
   await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
   const subtitle = await page.locator('.side-panel__subtitle').innerText();
   const portName = subtitle.replace(/^Docked at /i, '');
