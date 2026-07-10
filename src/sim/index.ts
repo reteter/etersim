@@ -14,7 +14,7 @@ export {
   type Company,
   type World,
 } from "./world";
-export { applyCommand } from "./commands";
+export { applyCommand, MAX_SHIP_NAME_LENGTH } from "./commands";
 export { shortestCourse } from "./pathfinding";
 export {
   advanceShip,

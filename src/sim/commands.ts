@@ -50,7 +50,14 @@ export type Command =
   | { readonly kind: "foundHeadquarters"; readonly portId: PortId }
   | { readonly kind: "placeBuildOrder" }
   | { readonly kind: "rushBuild" }
-  | { readonly kind: "deliver"; readonly shipId: ShipId; readonly good: GoodId };
+  | { readonly kind: "deliver"; readonly shipId: ShipId; readonly good: GoodId }
+  // #54 (folded into E9/#83): player-editable ship display name. Launch names
+  // are generator-suggested (building.ts); this is the ShipPanel rename affordance.
+  | { readonly kind: "renameShip"; readonly shipId: ShipId; readonly name: string };
+
+/** Longest display name a rename accepts; longer input is trimmed then
+ *  truncated (never rejected outright — the field just keeps what fits). */
+export const MAX_SHIP_NAME_LENGTH = 40;
 
 /** A Route is assignable iff it has ≥2 Stops spanning ≥2 distinct ports, and no
  *  good appears in more than one order per Stop. The distinct-port rule stops an
@@ -290,6 +297,16 @@ export function applyCommand(world: World, command: Command): World {
         },
       };
       return replaceShip(world, underway);
+    }
+    case "renameShip": {
+      // Cosmetic, player-editable (#54); no RNG, no other field touched.
+      // Empty/whitespace-only input is rejected outright — a ship's name is
+      // always present, so a blank rename would leave the fleet unreadable.
+      const ship = world.company.ships.find((s) => s.id === command.shipId);
+      if (!ship) return world;
+      const trimmed = command.name.trim().slice(0, MAX_SHIP_NAME_LENGTH);
+      if (!trimmed) return world;
+      return replaceShip(world, { ...ship, name: trimmed });
     }
   }
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { generateShipName } from "./building";
 import { GOOD_IDS } from "./goods";
 import { createWorld } from "./world";
 
@@ -30,5 +31,11 @@ describe("world", () => {
     for (const lane of world.region.lanes) {
       expect(world.osmosisPulse[lane.id]).toBe(0);
     }
+  });
+
+  it("gives the starting ship a generated display name, not a raw id (#54)", () => {
+    const world = createWorld(13);
+    expect(world.company.ships[0].name).toBe(generateShipName(0));
+    expect(world.company.ships[0].name).not.toBe(world.company.ships[0].id);
   });
 });

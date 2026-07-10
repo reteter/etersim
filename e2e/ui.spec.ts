@@ -7,12 +7,13 @@ async function startNewGame(page: Page) {
 }
 
 /**
- * Open the Controlled Ship's panel via the always-visible header (#32).
- * A docked ship on the map is click-through (port-click priority, #28), so the
- * header/Harbor is the way to reach it.
+ * Open the Controlled Ship's panel via its row in the always-visible Fleet
+ * list (#83, replaces the single-ship header, #32). A docked ship on the map
+ * is click-through (port-click priority, #28), so the Fleet list/Harbor is
+ * the way to reach it.
  */
 async function openControlledShip(page: Page) {
-  await page.locator('.ctrl-ship').click();
+  await page.locator('.fleet-list__item--controlled').click();
   await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
 }
 
@@ -163,7 +164,7 @@ test.describe('main game UI after start', () => {
     const map = page.locator('svg.region-map');
     await expect(map).toBeVisible();
 
-    // Ship panel is reached via the Controlled Ship header (#32).
+    // Ship panel is reached via the Fleet list (#83).
     await openControlledShip(page);
 
     // Click a port group (handler is on g.port). Use first non-overlapping if possible.
@@ -176,18 +177,18 @@ test.describe('main game UI after start', () => {
     await expect(sideTitle).not.toHaveText('Ship');
   });
 
-  test('controlled ship header is always visible and shows docked status', async ({ page }) => {
+  test('fleet list is always visible and shows the Controlled Ship\'s docked status', async ({ page }) => {
     // Visible before any selection.
-    await expect(page.locator('.ctrl-ship')).toBeVisible();
-    await expect(page.locator('.ctrl-ship__status')).toContainText('Docked');
-    await expect(page.locator('.ctrl-ship__hold')).toContainText('/');
+    await expect(page.locator('.fleet-list__item--controlled')).toBeVisible();
+    await expect(page.locator('.fleet-list__item--controlled .fleet-list__status')).toContainText('Docked');
+    await expect(page.locator('.fleet-list__item--controlled .fleet-list__hold')).toContainText('/');
   });
 
-  test('header and map show the ship icon tinted gold for the Controlled Ship (#34)', async ({
+  test('fleet list and map show the ship icon tinted gold for the Controlled Ship (#34)', async ({
     page,
   }) => {
-    // Header: always the Controlled Ship, so its icon is always gold.
-    const headerIcon = page.locator('.ctrl-ship__glyph');
+    // Fleet list: the controlled row's icon is always gold.
+    const headerIcon = page.locator('.fleet-list__item--controlled .fleet-list__glyph');
     await expect(headerIcon).toBeVisible();
     await expect(headerIcon).toHaveCSS('color', 'rgb(224, 168, 64)');
 
@@ -429,7 +430,7 @@ test.describe('trading interactions (when docked)', () => {
     await expect(page.locator('.top-bar__thalers')).not.toHaveText(initialThalersText);
 
     // Switch to ship panel and verify cargo
-    await page.locator('.ctrl-ship').click();
+    await page.locator('.fleet-list__item--controlled').click();
     await expect(page.locator('.hold')).toContainText('Grain');
     await expect(page.locator('.hold')).toContainText('5');
   });
@@ -449,7 +450,7 @@ test.describe('trading interactions (when docked)', () => {
     await sellButton.click();
 
     // Hold should reflect partial sell
-    await page.locator('.ctrl-ship').click();
+    await page.locator('.fleet-list__item--controlled').click();
     await expect(page.locator('.hold')).toContainText('Grain');
     // We don't assert exact number to avoid race, but presence of Grain after sell
   });
@@ -476,7 +477,7 @@ test.describe('trading interactions (when docked)', () => {
     }
     expect(sailedAway).toBe(true);
 
-    await page.locator('.ctrl-ship').click();
+    await page.locator('.fleet-list__item--controlled').click();
     await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
   });
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MAX_SHIP_NAME_LENGTH } from "./commands";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { tick } from "./tick";
 import { cargoUsed, etaTicks, type Ship } from "./ship";
@@ -174,6 +175,44 @@ describe("sailTo command", () => {
     expect(tick(underway, [{ kind: "buy", shipId, good: "grain", qty: 1 }])).toEqual(
       tick(underway, []),
     );
+  });
+});
+
+describe("renameShip command (#83/#54)", () => {
+  const shipId = ship(world0).id;
+
+  it("sets the ship's display name, trimmed", () => {
+    const next = tick(world0, [{ kind: "renameShip", shipId, name: "  Aether Queen  " }]);
+    expect(ship(next).name).toBe("Aether Queen");
+  });
+
+  it("rejects an empty or whitespace-only name, leaving the world unchanged", () => {
+    expect(tick(world0, [{ kind: "renameShip", shipId, name: "   " }])).toEqual(tick(world0, []));
+    expect(tick(world0, [{ kind: "renameShip", shipId, name: "" }])).toEqual(tick(world0, []));
+  });
+
+  it("rejects an unknown ship id, leaving the world unchanged", () => {
+    expect(tick(world0, [{ kind: "renameShip", shipId: "nope", name: "Ghost" }])).toEqual(
+      tick(world0, []),
+    );
+  });
+
+  it("does not touch any other field on the ship", () => {
+    const next = tick(world0, [{ kind: "renameShip", shipId, name: "Renamed" }]);
+    expect(ship(next)).toEqual({ ...ship(world0), name: "Renamed" });
+  });
+
+  it("truncates a trimmed name longer than MAX_SHIP_NAME_LENGTH", () => {
+    const overlong = "A".repeat(MAX_SHIP_NAME_LENGTH + 10);
+    const next = tick(world0, [{ kind: "renameShip", shipId, name: overlong }]);
+    expect(ship(next).name).toBe("A".repeat(MAX_SHIP_NAME_LENGTH));
+    expect(ship(next).name.length).toBe(MAX_SHIP_NAME_LENGTH);
+  });
+
+  it("truncates after trimming — surrounding whitespace doesn't count toward the limit", () => {
+    const padded = `  ${"B".repeat(MAX_SHIP_NAME_LENGTH + 5)}  `;
+    const next = tick(world0, [{ kind: "renameShip", shipId, name: padded }]);
+    expect(ship(next).name).toBe("B".repeat(MAX_SHIP_NAME_LENGTH));
   });
 });
 

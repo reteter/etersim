@@ -225,6 +225,12 @@ consume the same schema — one schema, two consumers.
   Controlled Ship (mechanic unchanged). **#54 (ship display names) joins E9**: names
   are given at launch (editable, generator-suggested) — with three hulls, "s0/s1/s2"
   stops being funny.
+  Implementation note (#83): the old header's click-toggle (clicking while already
+  viewing a docked ship's own panel returned to its port panel, #5) was **consciously
+  dropped**, not reimplemented — a list of rows designating-and-opening uniformly
+  (matching Harbor's existing click behavior) reads more predictably than one row that
+  behaves differently on a second click. Flagged for the owner to reconsider if players
+  miss the shortcut.
 - **Performance board as an overlay** (PriceBoardOverlay pattern): tabs **Transakcje**
   (filterable list) and **Wartość firmy** (chart). Per-route results live with the
   routes (Headquarters view), not here — one fact, one home.
@@ -250,7 +256,11 @@ comment is corrected in the same PR (setting verdict above).
   pay a docking fee — forever.
 - `Company` gains `routes: readonly Route[]`. `Ship` gains
   `assignment?: { routeId: RouteId; nextStopIndex: number; suspended: boolean }` and
-  `name: string` (#54, mandatory — every ship is named from launch).
+  `name: string` (#54, mandatory — every ship is named from launch, including the
+  starting ship on new game — `generateShipName(0)`, no RNG draw).
+- New Command `renameShip(shipId, name)` (#54/#83): trims the input, rejects a
+  blank result (a ship's name is always present), truncates to
+  `MAX_SHIP_NAME_LENGTH`; no other field changes. The ShipPanel's rename affordance.
 - New Commands (all player mutations stay Commands — determinism + E11 replay):
   `createRoute`, `updateRoute`, `deleteRoute`, `assignRoute(shipId, routeId)`,
   `unassignRoute(shipId)`, `resumeRoute(shipId)`. `assignRoute`/`resumeRoute` are
