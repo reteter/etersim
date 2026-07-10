@@ -7,12 +7,18 @@ async function startNewGame(page: Page) {
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
-/**
- * Open the docked port's market for the Controlled Ship (mirrors the helper
- * in e2e/ui.spec.ts) and buy a small amount of grain — cheap, always
- * tradable, and the fastest way to put a `trade` Ledger event on the books.
- */
-async function buySomeGrain(page: Page) {
+/** Buys `qty` grain at the Controlled Ship's docked port market — cheap,
+ *  always tradable, and the fastest way to put a `trade` Ledger event on
+ *  the books. Assumes the market panel for that port is already open. */
+async function buyGrain(page: Page, qty: number) {
+  const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+  await grainRow.getByRole('spinbutton', { name: /grain quantity/i }).fill(String(qty));
+  await grainRow.getByRole('button', { name: 'Buy Grain', exact: true }).click();
+}
+
+/** Opens the docked port's market for the Controlled Ship (mirrors the
+ *  helper in e2e/ui.spec.ts). */
+async function openDockedPortMarket(page: Page) {
   await page.locator('.ctrl-ship').click();
   await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
   const subtitle = await page.locator('.side-panel__subtitle').innerText();
@@ -23,22 +29,26 @@ async function buySomeGrain(page: Page) {
     .filter({ has: page.locator('.port__label', { hasText: exact }) })
     .click({ force: true });
   await expect(page.locator('.market')).toBeVisible();
-
-  const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
-  await grainRow.getByRole('spinbutton', { name: /grain quantity/i }).fill('5');
-  await grainRow.getByRole('button', { name: 'Buy Grain', exact: true }).click();
 }
 
 /**
  * Imports the scripted save fixture (seed 1, `src/sim` commands only — see
- * the fixture's own history in git for the generating script): ship `s0`
- * buys grain (one `trade` event tagged with `s0`), then a Headquarters is
- * founded and a hull built via `rushBuild` (company-wide `founding`,
- * `laborFee`, five `rush` events — no `shipId`), launching ship `s1` (one
- * `launch` event tagged with `s1`). Nine transaction events total, split
- * 1 / 1 / 7 across s0 / s1 / company-wide — enough to make the ship filter's
- * *count* assertion meaningful (it would fail if the filter matched on the
- * wrong field or was a no-op).
+ * the generating script in this PR's history for reproduction). Timeline:
+ *   1. ship `s0` buys 5 grain (`trade`, shipId s0)
+ *   2. 3 quiet baseline days (3 `netWorth` snapshots, ~₸20,000 flat)
+ *   3. `s0` sails to a second port and docks there (`dockingFee`, shipId s0)
+ *   4. Headquarters founded at that port (`founding`, company-wide)
+ *   5. build order placed (`laborFee`, company-wide)
+ *   6. `s0`'s 5 grain hand-delivered to the build site (`delivery`, shipId s0)
+ *   7. `rushBuild` completes the recipe (5× `rush`, company-wide) and launches
+ *      ship `s1` "Lumen Trader" (`launch`, shipId s1)
+ *   8. 5 more quiet days
+ * 11 transaction events (3 tagged s0, 1 tagged s1, 7 company-wide with no
+ * shipId) and 11 netWorth snapshots, dipping from ₸20,013 (tick 120, last
+ * pre-founding snapshot) to ₸6,359 (tick 144, first post-build snapshot)
+ * then flat — covers every shipId-carrying kind (trade, dockingFee,
+ * delivery, launch) and gives the ship filter and the chart's dip real,
+ * non-trivial data to assert on.
  */
 async function importLedgerScenario(page: Page) {
   await startNewGame(page);
@@ -64,22 +74,25 @@ test.describe('Ledger overlay (#86)', () => {
     await expect(dialog).not.toBeVisible();
   });
 
-  test('transactions tab lists events newest-first', async ({ page }) => {
+  test('transactions tab lists multiple events newest-first', async ({ page }) => {
     await startNewGame(page);
-    await buySomeGrain(page);
+    await openDockedPortMarket(page);
+    await buyGrain(page, 5);
+    await buyGrain(page, 3);
 
     await page.getByRole('button', { name: /^Ledger$/ }).click();
     const dialog = page.getByRole('dialog', { name: /ledger/i });
-    await expect(dialog).toBeVisible();
-
-    // Transakcje is the default tab. The manual buy is the only transaction
-    // so far — it must be the (newest) first row.
     const rows = dialog.locator('.ledger-list__row');
-    await expect(rows.first()).toBeVisible();
-    await expect(rows.first().locator('.ledger-list__desc')).toContainText(/Bought \d+ Grain/);
+
+    // Two distinct trades — the more recent (qty 3) must render above the
+    // older one (qty 5), proving actual chronological ordering rather than
+    // trivially passing with a single row.
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0).locator('.ledger-list__desc')).toContainText('Bought 3 Grain');
+    await expect(rows.nth(1).locator('.ledger-list__desc')).toContainText('Bought 5 Grain');
   });
 
-  test('ship filter drops company-wide events and keeps only the selected ship\'s', async ({
+  test('ship filter keeps only the selected ship\'s events, across every shipId-carrying kind', async ({
     page,
   }) => {
     await importLedgerScenario(page);
@@ -88,10 +101,10 @@ test.describe('Ledger overlay (#86)', () => {
     const dialog = page.getByRole('dialog', { name: /ledger/i });
     const rows = dialog.locator('.ledger-list__row');
 
-    // All ships: every event from the fixture (1 trade + founding + labor
-    // fee + 5 rush buys + 1 launch = 9), newest first — the launch is last
-    // in tick order, so it's the top row.
-    await expect(rows).toHaveCount(9);
+    // All ships: every event from the fixture (see importLedgerScenario),
+    // newest first — the launch is last in insertion order, so it's the top
+    // row.
+    await expect(rows).toHaveCount(11);
     await expect(rows.first().locator('.ledger-list__desc')).toContainText('Launched');
 
     const filter = dialog.locator('#ledger-ship-filter');
@@ -101,19 +114,63 @@ test.describe('Ledger overlay (#86)', () => {
     await expect(rows).toHaveCount(1);
     await expect(rows.first().locator('.ledger-list__desc')).toContainText('Launched');
 
-    // s0 (the original ship) only appears in the manual grain trade —
-    // founding/laborFee/rush are company-wide and must not leak in under
-    // either ship filter.
+    // s0 (the original ship) appears in its trade, its dockingFee (sailing
+    // to found the Headquarters elsewhere) and its delivery — three
+    // shipId-carrying kinds, newest first. founding/laborFee/rush are
+    // company-wide and must not leak in under either ship filter.
     await filter.selectOption({ label: 's0' });
-    await expect(rows).toHaveCount(1);
-    await expect(rows.first().locator('.ledger-list__desc')).toContainText('Bought 5 Grain');
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0).locator('.ledger-list__desc')).toContainText('Delivered');
+    await expect(rows.nth(1).locator('.ledger-list__desc')).toContainText('Docking fee');
+    await expect(rows.nth(2).locator('.ledger-list__desc')).toContainText('Bought 5 Grain');
 
     await filter.selectOption({ value: 'all' });
-    await expect(rows).toHaveCount(9);
+    await expect(rows).toHaveCount(11);
   });
 
-  test('company value chart renders points after several world days', async ({ page }) => {
+  test('company value chart plots the deterministic snapshot series, with a founding/build dip', async ({
+    page,
+  }) => {
+    await importLedgerScenario(page);
+
+    await page.getByRole('button', { name: /^Ledger$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /ledger/i });
+    await dialog.getByRole('tab', { name: 'Wartość firmy' }).click();
+
+    const chart = dialog.locator('svg.ledger-chart');
+    await expect(chart).toBeVisible();
+
+    // Pins the plotted series itself, not just "some points exist" — the
+    // fixture has exactly 11 daily netWorth snapshots.
+    const points = chart.locator('.ledger-chart__point');
+    await expect(points).toHaveCount(11);
+
+    // AC: "builds/foundings read as dips on the curve" — pinned by e2e
+    // instead of a screenshot. Point index 4 (tick 120) is the last
+    // pre-founding snapshot (₸20,013); index 5 (tick 144) is the first
+    // snapshot after founding + placeBuildOrder + rushBuild + launch
+    // (₸6,359) — a real, asserted drop, not an inferred one.
+    const titles = await points.locator('title').allTextContents();
+    expect(titles[4]).toContain('₸20013');
+    expect(titles[5]).toContain('₸6359');
+    const preFounding = Number(/₸(\d+)/.exec(titles[4])![1]);
+    const postBuild = Number(/₸(\d+)/.exec(titles[5])![1]);
+    expect(postBuild).toBeLessThan(preFounding);
+
+    await expect(dialog.locator('.overlay__text')).toContainText('₸6359');
+  });
+
+  test('company value chart starts empty and gains points as world days pass (live)', async ({
+    page,
+  }) => {
     await startNewGame(page);
+
+    await page.getByRole('button', { name: /^Ledger$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /ledger/i });
+    await dialog.getByRole('tab', { name: 'Wartość firmy' }).click();
+    // Day 1, before any day boundary — no netWorth snapshot exists yet.
+    await expect(dialog.locator('.ledger-chart__point')).toHaveCount(0);
+    await dialog.getByRole('button', { name: /close/i }).click();
 
     await page.getByRole('button', { name: '100x' }).click();
     await expect
@@ -122,14 +179,7 @@ test.describe('Ledger overlay (#86)', () => {
     await page.getByRole('button', { name: '⏸' }).click();
 
     await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /ledger/i });
     await dialog.getByRole('tab', { name: 'Wartość firmy' }).click();
-
-    const chart = dialog.locator('svg.ledger-chart');
-    await expect(chart).toBeVisible();
-    const points = chart.locator('.ledger-chart__point');
-    await expect(points.first()).toBeVisible();
-    const count = await points.count();
-    expect(count).toBeGreaterThan(0);
+    await expect(dialog.locator('.ledger-chart__point').first()).toBeVisible();
   });
 });

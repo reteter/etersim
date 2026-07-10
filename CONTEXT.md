@@ -394,10 +394,11 @@ _Implementation_: event stream + daily net-worth snapshots shipped in #82 (`ledg
 mutation, full retention, serialized with the save. `routeId` is carried on `trade`
 events only (route-driven trades) — the Tech union's exact contract. The in-game
 performance board (`LedgerOverlay.tsx`) shipped in #86 — Transakcje (transaction list,
-per-ship filter) and Wartość firmy (SVG company-value chart, no library). The E11 Harness
-consumer is still pending. M3 extends the kind union (contract fees, enrollment fees,
-upkeep, store/withdraw) and adds a third consumer: contract settlement reads fulfilment
-from the same stream.
+per-ship filter) and Wartość firmy (SVG company-value chart, no library). A **transaction**
+(UI-only term, not a distinct sim type) is any Ledger event except a netWorth snapshot —
+the Transakcje tab's row unit. The E11 Harness consumer is still pending. M3 extends the
+kind union (contract fees, enrollment fees, upkeep, store/withdraw) and adds a third
+consumer: contract settlement reads fulfilment from the same stream.
 _Avoid_: log, history (as identifiers)
 
 **Direct play** (PL: gra bezpośrednia):

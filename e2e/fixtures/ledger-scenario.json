@@ -1,8 +1,8 @@
 {
   "version": 5,
   "world": {
-    "tick": 216,
-    "rng": 144337818,
+    "tick": 273,
+    "rng": 1528315252,
     "region": {
       "ports": [
         {
@@ -14,23 +14,23 @@
           "market": {
             "grain": {
               "equilibrium": 180,
-              "stock": 83.37647526810922
+              "stock": 100.37535467362876
             },
             "textiles": {
               "equilibrium": 100,
-              "stock": 61.33134481404359
+              "stock": 76.40898004440571
             },
             "aetherSalt": {
               "equilibrium": 200,
-              "stock": 331.80954210385363
+              "stock": 355.0600812936178
             },
             "electronics": {
               "equilibrium": 100,
-              "stock": 75.01898918605013
+              "stock": 73.79771316642447
             },
             "timber": {
               "equilibrium": 100,
-              "stock": 78.43721215088671
+              "stock": 89.98762188261054
             }
           },
           "priceBias": {
@@ -50,23 +50,23 @@
           "market": {
             "grain": {
               "equilibrium": 300,
-              "stock": 164.5685927417698
+              "stock": 154.81877573369493
             },
             "textiles": {
               "equilibrium": 240,
-              "stock": 399.6129145540165
+              "stock": 407.8955549033936
             },
             "aetherSalt": {
               "equilibrium": 100,
-              "stock": 73.1081383081143
+              "stock": 60.443489083541934
             },
             "electronics": {
               "equilibrium": 100,
-              "stock": 84.24664202267608
+              "stock": 72.35794796682474
             },
             "timber": {
               "equilibrium": 100,
-              "stock": 89.41800336622875
+              "stock": 75.8463772152207
             }
           },
           "priceBias": {
@@ -86,23 +86,23 @@
           "market": {
             "grain": {
               "equilibrium": 120,
-              "stock": 38.77269256083447
+              "stock": 35.049762634422684
             },
             "textiles": {
               "equilibrium": 100,
-              "stock": 78.07535821511215
+              "stock": 69.38838754197486
             },
             "aetherSalt": {
               "equilibrium": 100,
-              "stock": 94.55657573906396
+              "stock": 97.62899016972062
             },
             "electronics": {
               "equilibrium": 100,
-              "stock": 91.42534216357812
+              "stock": 93.33750317785243
             },
             "timber": {
               "equilibrium": 100,
-              "stock": 149.2638380251222
+              "stock": 158.33315858374408
             }
           },
           "priceBias": {
@@ -122,23 +122,23 @@
           "market": {
             "grain": {
               "equilibrium": 240,
-              "stock": 129.40439907331466
+              "stock": 122.1140705789644
             },
             "textiles": {
               "equilibrium": 100,
-              "stock": 102.71650863811713
+              "stock": 101.31590760711985
             },
             "aetherSalt": {
               "equilibrium": 100,
-              "stock": 43.59130109232314
+              "stock": 36.89716227555278
             },
             "electronics": {
               "equilibrium": 120,
-              "stock": 194.1533731298639
+              "stock": 210.23277637487823
             },
             "timber": {
               "equilibrium": 100,
-              "stock": 97.2812251759494
+              "stock": 94.58483527414253
             }
           },
           "priceBias": {
@@ -158,23 +158,23 @@
           "market": {
             "grain": {
               "equilibrium": 960,
-              "stock": 1404.9861784726195
+              "stock": 1448.6460709381615
             },
             "textiles": {
               "equilibrium": 100,
-              "stock": 78.85858105131598
+              "stock": 75.76168103244942
             },
             "aetherSalt": {
               "equilibrium": 100,
-              "stock": 78.54667892546901
+              "stock": 74.07451565968151
             },
             "electronics": {
               "equilibrium": 100,
-              "stock": 86.68117854236013
+              "stock": 85.6985821782272
             },
             "timber": {
               "equilibrium": 100,
-              "stock": 99.49604951306458
+              "stock": 98.0465875638914
             }
           },
           "priceBias": {
@@ -226,14 +226,14 @@
       ]
     },
     "company": {
-      "thalers": 7158,
+      "thalers": 6359,
       "ships": [
         {
           "id": "s0",
           "name": "s0",
           "hold": 50,
           "cargo": {
-            "grain": 5,
+            "grain": 0,
             "textiles": 0,
             "aetherSalt": 0,
             "electronics": 0,
@@ -241,7 +241,7 @@
           },
           "location": {
             "kind": "docked",
-            "portId": "p0"
+            "portId": "p1"
           }
         },
         {
@@ -257,96 +257,96 @@
           },
           "location": {
             "kind": "docked",
-            "portId": "p0"
+            "portId": "p1"
           }
         }
       ],
       "routes": [],
       "headquarters": {
-        "portId": "p0"
+        "portId": "p1"
       }
     },
     "priceSnapshots": {
       "p0": {
-        "grain": 22.432041426840854,
-        "textiles": 65.80524544579195,
-        "aetherSalt": 31.791216093487286,
-        "electronics": 218.7178196413059,
-        "timber": 298.2216466214653
+        "grain": 19.31806941950847,
+        "textiles": 55.57697273313515,
+        "aetherSalt": 30.344345952470384,
+        "electronics": 219.53614574881183,
+        "timber": 269.76746704058286
       },
       "p1": {
-        "grain": 20.345548344285042,
-        "textiles": 21.23090684295367,
-        "aetherSalt": 91.56651073407274,
-        "electronics": 210.8281370469028,
-        "timber": 336.6011383634801
+        "grain": 21.641143489936393,
+        "textiles": 21.056349084025644,
+        "aetherSalt": 105.66583952025901,
+        "electronics": 233.69369668873293,
+        "timber": 379.10621159393423
       },
       "p2": {
-        "grain": 28.88934046801045,
-        "textiles": 56.68444601441427,
-        "aetherSalt": 65.6967319446018,
-        "electronics": 164.3985781921238,
-        "timber": 147.42707063559914
+        "grain": 30.451083893314774,
+        "textiles": 61.00398475128863,
+        "aetherSalt": 64.29082414359772,
+        "electronics": 162.1797652331702,
+        "timber": 141.9299944442316
       },
       "p3": {
-        "grain": 20.599214184768048,
-        "textiles": 39.9029565096636,
-        "aetherSalt": 143.23872608502018,
-        "electronics": 83.6736387803994,
-        "timber": 279.8562329901459
+        "grain": 21.424635023282537,
+        "textiles": 40.241695052924534,
+        "aetherSalt": 159.50914165210256,
+        "electronics": 79.47447247571499,
+        "timber": 284.7240844816051
       },
       "p4": {
-        "grain": 5.736023428571785,
-        "textiles": 57.27546228236493,
-        "aetherSalt": 80.17323905761045,
-        "electronics": 193.54440853673213,
-        "timber": 242.33750806922154
+        "grain": 5.622343985361096,
+        "textiles": 58.750826941903924,
+        "aetherSalt": 83.14718175518051,
+        "electronics": 195.00350060440633,
+        "timber": 244.6210037154217
       }
     },
     "flowDrift": {
       "p0": {
-        "grain": 0.9893520141271874,
-        "textiles": 0.9483782338616064,
-        "aetherSalt": 0.8772942239863977,
-        "electronics": 0.935213715208536,
-        "timber": 0.9834978313021896
+        "grain": 1.023941763625741,
+        "textiles": 0.9983139052501081,
+        "aetherSalt": 0.9262843946680467,
+        "electronics": 1.0711057381514564,
+        "timber": 0.8033920092049733
       },
       "p1": {
-        "grain": 1.0251346713730343,
-        "textiles": 1.0746200385167408,
-        "aetherSalt": 0.9402359842823548,
-        "electronics": 0.9345620251232168,
-        "timber": 0.9150085279548822
+        "grain": 0.8058763604116277,
+        "textiles": 1.009088516206393,
+        "aetherSalt": 1.0974227322893344,
+        "electronics": 0.9368661131319025,
+        "timber": 0.8186188407012926
       },
       "p2": {
-        "grain": 0.8289317608259945,
-        "textiles": 1.128398286814063,
-        "aetherSalt": 1.3,
-        "electronics": 0.8695765410541662,
-        "timber": 1.1421693296730517
+        "grain": 0.9023132111161336,
+        "textiles": 1.0715000378774595,
+        "aetherSalt": 1.2629833154454828,
+        "electronics": 0.7051991323767521,
+        "timber": 1.2733294116662812
       },
       "p3": {
-        "grain": 1.1795399825181812,
-        "textiles": 0.9300208146314939,
-        "aetherSalt": 1.2363788888349312,
-        "electronics": 1.2121288088580755,
-        "timber": 0.9228748204845517
+        "grain": 1.163544908532314,
+        "textiles": 1.0527282401878826,
+        "aetherSalt": 1.1440670783694236,
+        "electronics": 1.0646720234338,
+        "timber": 1.1148064416882426
       },
       "p4": {
-        "grain": 0.9634928468737379,
-        "textiles": 0.9542776672527189,
-        "aetherSalt": 0.7,
-        "electronics": 0.8928558822783882,
-        "timber": 0.850135939532119
+        "grain": 0.893270100676848,
+        "textiles": 1.111756163816504,
+        "aetherSalt": 0.8627087642578408,
+        "electronics": 0.9169497810940301,
+        "timber": 0.9634698090806132
       }
     },
     "osmosisPulse": {
-      "l0": 0.5526352273164443,
-      "l1": -9.574049663684459,
-      "l2": -3.782871029857387,
-      "l3": -9.398778569123708,
-      "l4": 5.30210565655406,
-      "l5": -3.0250308105659487
+      "l0": 7.962625358261543,
+      "l1": -6.753642965336297,
+      "l2": -0.8466772212381724,
+      "l3": -15.046165507651784,
+      "l4": 7.63225994487157,
+      "l5": -4.269172956868422
     },
     "ledger": [
       {
@@ -384,109 +384,140 @@
         "total": 20006.414042755205
       },
       {
-        "kind": "founding",
-        "tick": 72,
-        "portId": "p0",
-        "thalers": 2500
-      },
-      {
-        "kind": "laborFee",
-        "tick": 72,
-        "thalers": 800
-      },
-      {
-        "kind": "rush",
-        "tick": 72,
-        "portId": "p0",
-        "good": "grain",
-        "qty": 100,
-        "thalers": 2336
-      },
-      {
-        "kind": "rush",
-        "tick": 72,
-        "portId": "p0",
-        "good": "textiles",
-        "qty": 30,
-        "thalers": 1701
-      },
-      {
-        "kind": "rush",
-        "tick": 72,
-        "portId": "p0",
-        "good": "aetherSalt",
-        "qty": 20,
-        "thalers": 745
-      },
-      {
-        "kind": "rush",
-        "tick": 72,
-        "portId": "p0",
-        "good": "electronics",
-        "qty": 5,
-        "thalers": 973
-      },
-      {
-        "kind": "rush",
-        "tick": 72,
-        "portId": "p0",
-        "good": "timber",
-        "qty": 12,
-        "thalers": 3722
-      },
-      {
-        "kind": "launch",
-        "tick": 72,
-        "shipId": "s1",
-        "portId": "p0"
-      },
-      {
         "kind": "netWorth",
         "tick": 96,
-        "thalers": 7158,
-        "cargoValue": 90.5235737663623,
+        "thalers": 19935,
+        "cargoValue": 75.0183143099773,
         "siteStoreValue": 0,
-        "total": 7248.5235737663625
+        "total": 20010.01831430998
       },
       {
         "kind": "netWorth",
         "tick": 120,
-        "thalers": 7158,
-        "cargoValue": 90.0552411135458,
+        "thalers": 19935,
+        "cargoValue": 78.24562257803846,
         "siteStoreValue": 0,
-        "total": 7248.055241113546
+        "total": 20013.245622578037
+      },
+      {
+        "kind": "dockingFee",
+        "tick": 128,
+        "shipId": "s0",
+        "portId": "p1",
+        "thalers": 20
+      },
+      {
+        "kind": "founding",
+        "tick": 129,
+        "portId": "p1",
+        "thalers": 2500
+      },
+      {
+        "kind": "laborFee",
+        "tick": 129,
+        "thalers": 800
+      },
+      {
+        "kind": "delivery",
+        "tick": 129,
+        "shipId": "s0",
+        "portId": "p1",
+        "good": "grain",
+        "qty": 5
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "grain",
+        "qty": 95,
+        "thalers": 2511
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "textiles",
+        "qty": 30,
+        "thalers": 729
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "aetherSalt",
+        "qty": 20,
+        "thalers": 1984
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "electronics",
+        "qty": 5,
+        "thalers": 982
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "timber",
+        "qty": 12,
+        "thalers": 4050
+      },
+      {
+        "kind": "launch",
+        "tick": 129,
+        "shipId": "s1",
+        "portId": "p1"
       },
       {
         "kind": "netWorth",
         "tick": 144,
-        "thalers": 7158,
-        "cargoValue": 91.37016642819384,
+        "thalers": 6359,
+        "cargoValue": 0,
         "siteStoreValue": 0,
-        "total": 7249.370166428193
+        "total": 6359
       },
       {
         "kind": "netWorth",
         "tick": 168,
-        "thalers": 7158,
-        "cargoValue": 93.17437801254293,
+        "thalers": 6359,
+        "cargoValue": 0,
         "siteStoreValue": 0,
-        "total": 7251.174378012543
+        "total": 6359
       },
       {
         "kind": "netWorth",
         "tick": 192,
-        "thalers": 7158,
-        "cargoValue": 95.48913502360483,
+        "thalers": 6359,
+        "cargoValue": 0,
         "siteStoreValue": 0,
-        "total": 7253.489135023605
+        "total": 6359
       },
       {
         "kind": "netWorth",
         "tick": 216,
-        "thalers": 7158,
-        "cargoValue": 98.00216785247616,
+        "thalers": 6359,
+        "cargoValue": 0,
         "siteStoreValue": 0,
-        "total": 7256.002167852476
+        "total": 6359
+      },
+      {
+        "kind": "netWorth",
+        "tick": 240,
+        "thalers": 6359,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 6359
+      },
+      {
+        "kind": "netWorth",
+        "tick": 264,
+        "thalers": 6359,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 6359
       }
     ]
   }

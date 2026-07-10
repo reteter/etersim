@@ -96,7 +96,6 @@ function TransactionsTab({ world }: { world: World }) {
   const events = world.ledger
     .filter(isTransaction)
     .filter((e) => filter === ALL_SHIPS || transactionShipId(e) === filter)
-    .slice()
     .reverse();
 
   return (
@@ -124,9 +123,14 @@ function TransactionsTab({ world }: { world: World }) {
             const delta = transactionDelta(event);
             return (
               <div key={`${event.kind}-${event.tick}-${i}`} className="ledger-list__row" role="row">
-                <span className="ledger-list__date">{formatWorldDate(event.tick)}</span>
-                <span className="ledger-list__desc">{describeTransaction(event, world)}</span>
+                <span className="ledger-list__date" role="cell">
+                  {formatWorldDate(event.tick)}
+                </span>
+                <span className="ledger-list__desc" role="cell">
+                  {describeTransaction(event, world)}
+                </span>
                 <span
+                  role="cell"
                   className={
                     delta === null
                       ? "ledger-list__delta"
