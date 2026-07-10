@@ -357,10 +357,18 @@ body {
 
 /* Market table: two-sided bid/ask (#61, E8 bid-ask spread) — Good, Trend,
    Bid, Ask, Stock. The trend glyph stays keyed to the mid price (vs. the
-   last day snapshot); bid/ask are the single-unit marginal quotes. */
+   last day snapshot); bid/ask are the single-unit marginal quotes.
+   Trend/Bid/Ask/Stock use fixed-width columns (not `auto`) so the header
+   and every row line up regardless of value width — with `auto`, each row
+   is its own grid and sizes columns to its own content, so values drift
+   out from under the headers (#75). The Good column is `minmax(0, 1fr)`,
+   not bare `1fr`: a bare `1fr` track still has an implicit `auto` (i.e.
+   min-content) minimum, so a long good name (e.g. "Aether Salt") can blow
+   that row's grid wider than the header's and shift every column after it
+   out of alignment — the classic CSS grid blowout. */
 .market__header {
   display: grid;
-  grid-template-columns: 1fr auto auto auto 3.5rem;
+  grid-template-columns: minmax(0, 1fr) 2.75rem 4rem 4rem 3.5rem;
   gap: 0.5rem;
   padding: 0 0 0.25rem;
   font-size: 0.75rem;
@@ -385,7 +393,7 @@ body {
 
 .market-row__head {
   display: grid;
-  grid-template-columns: 1fr auto auto auto 3.5rem;
+  grid-template-columns: minmax(0, 1fr) 2.75rem 4rem 4rem 3.5rem;
   gap: 0.5rem;
   align-items: baseline;
 }

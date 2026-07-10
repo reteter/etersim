@@ -250,6 +250,32 @@ test.describe('main game UI after start', () => {
     await expect(page.locator('.market-row__bid').first()).toContainText('₸');
     await expect(page.locator('.market-row__ask').first()).toContainText('₸');
     await expect(page.locator('.market-row__stock').first()).toBeVisible();
+
+    // Trend/Bid/Ask/Stock columns line up under their headers (#75): each is
+    // right-aligned within a shared, fixed-width grid track, so it's the
+    // right edge (not the left, which shifts with content width) that must
+    // match the header's right edge across every row.
+    const header = page.locator('.market__header');
+    const rightEdge = (box: { x: number; width: number }) => box.x + box.width;
+    const [trendX, bidX, askX, stockX] = await Promise.all(
+      ['span:nth-child(2)', 'span:nth-child(3)', 'span:nth-child(4)', 'span:nth-child(5)'].map(
+        async (sel) => rightEdge((await header.locator(sel).boundingBox())!),
+      ),
+    );
+    const rowCount = await page.locator('.market-row').count();
+    for (let i = 0; i < rowCount; i++) {
+      const row = page.locator('.market-row').nth(i);
+      const [rowTrendX, rowBidX, rowAskX, rowStockX] = await Promise.all([
+        row.locator('.market-row__trend').boundingBox(),
+        row.locator('.market-row__bid').boundingBox(),
+        row.locator('.market-row__ask').boundingBox(),
+        row.locator('.market-row__stock').boundingBox(),
+      ]);
+      expect(rightEdge(rowTrendX!)).toBeCloseTo(trendX, 0);
+      expect(rightEdge(rowBidX!)).toBeCloseTo(bidX, 0);
+      expect(rightEdge(rowAskX!)).toBeCloseTo(askX, 0);
+      expect(rightEdge(rowStockX!)).toBeCloseTo(stockX, 0);
+    }
   });
 
   test('port panel shows two-sided bid/ask per good, ask never below bid, with a real spread somewhere (#61)', async ({
