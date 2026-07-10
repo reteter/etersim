@@ -1000,3 +1000,236 @@ body {
 .ledger-chart__point {
   fill: #4c7bab;
 }
+
+/* E9 Headquarters & Routes ----------------------------------------------- */
+
+/* Selected Route's Stop ports (docs/specs/E9 — "on the map, the selected
+   Route only highlights its Stop ports"): a genuinely new meaning gets a
+   genuinely new color — cyan, distinct from gold (Controlled Ship / port
+   selection, ADR-0006) and from every archetype tint. Placed before the
+   selection rule below so gold still wins when a port is both. */
+.port.port--route-stop .port__disc {
+  stroke: #5fc9e0;
+  filter: drop-shadow(0 0 2.5px #5fc9e0) drop-shadow(0 0 1px #5fc9e0);
+}
+
+.hq-found-btn {
+  display: block;
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.9rem;
+  background: rgba(224, 168, 64, 0.12);
+  border: 1px solid #e0a840;
+  border-radius: 4px;
+  color: #e6e6e6;
+  cursor: pointer;
+}
+
+.hq-found-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hq-section {
+  margin: 0.75rem 0;
+}
+
+.hq-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.5rem 0;
+}
+
+.hq-progress__row {
+  display: grid;
+  grid-template-columns: 6rem 1fr 4.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.hq-progress__bar {
+  position: relative;
+  height: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.hq-progress__fill {
+  height: 100%;
+  background: #5fbf7f;
+}
+
+.hq-progress__count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #a8b2c2;
+}
+
+.hq-stall {
+  color: #d9705f;
+  font-weight: 600;
+}
+
+.hq-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hq-tab {
+  padding: 0.4rem 0.9rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #a8b2c2;
+  cursor: pointer;
+}
+
+.hq-tab--active {
+  color: #e6e6e6;
+  border-bottom-color: #5fc9e0;
+}
+
+.route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.route-row {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 0.6rem 0.8rem;
+}
+
+.route-row--selected {
+  border-color: #5fc9e0;
+}
+
+.route-row__name {
+  background: none;
+  border: none;
+  color: #e6e6e6;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.route-row__metrics {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0.4rem 0;
+  font-size: 0.85rem;
+  color: #a8b2c2;
+}
+
+.route-row__result {
+  font-weight: 700;
+  color: #e6e6e6;
+}
+
+.route-row__ships {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.4rem 0;
+}
+
+.route-row__ship {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.route-row__suspended {
+  color: #d9705f;
+  font-weight: 600;
+}
+
+.route-row__assign {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.route-row__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
+.route-editor {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 0.6rem 0.8rem;
+}
+
+.route-editor__name {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.6rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.route-editor__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.stop-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.stop-row__index {
+  color: #a8b2c2;
+  font-size: 0.8rem;
+}
+
+.stop-row__goods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.stop-row__good {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.stop-row__good-name {
+  color: #a8b2c2;
+  margin-right: 0.15rem;
+}
+
+.chip {
+  padding: 0.15rem 0.45rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  color: #a8b2c2;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.chip--active {
+  background: rgba(95, 201, 224, 0.2);
+  border-color: #5fc9e0;
+  color: #e6e6e6;
+}
