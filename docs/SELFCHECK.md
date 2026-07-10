@@ -39,6 +39,7 @@ If the task doesn't fit any row, ask the owner before proceeding.
 ```
 git status              # clean? not mid-merge/rebase?
 git branch --show-current   # know where you are; work happens on feature branches
+git fetch origin --quiet && git status -sb   # main ahead/behind origin? diverged main blocks work — reconcile first (incident 0006)
 git log --oneline -3        # matches origin/main's recent history?
 git worktree list       # am I in a real worktree or a plain subdirectory? (see CLAUDE.md §Git & worktrees)
 gh issue list --limit 20    # open work; find your issue and its milestone
