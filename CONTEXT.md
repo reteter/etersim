@@ -195,7 +195,9 @@ routed Ship suspends the Route (it stays assigned); resuming sails to the next S
 order. Ship-side state: `(routeId, next Stop index, suspended?)`.
 _Implementation_: sim model + semantics shipped in #80 (`route.ts`, route Commands, the
 docking-phase route pass in `tick.ts`); assignable Routes need ≥ 2 Stops over ≥ 2 distinct
-ports. Route-editor UI is #85 (pending). Naming collision with the old internal `route`
+ports. Route-editor UI shipped in #85 (`HeadquartersPanel.tsx` Trasy tab — list-based Stop
+editor, assign/unassign, suspend/resume, loop metrics; `RegionMap.tsx` highlights the
+selected Route's Stop ports). Naming collision with the old internal `route`
 resolved at the E9 grill (2026-07-09): the pathfinding concept is now **Course**; `Route`
 is reserved for this player-facing loop.
 _Avoid_: itinerary, plan; template (as identifier — every Route is one)
@@ -234,7 +236,9 @@ _Avoid_: trip, journey
 Terms locked at the E9 grill (2026-07-09). Design principle: **buildings introduce
 mechanics** — a new gameplay layer arrives with a Building, not with a tutorial. The sim
 model (Headquarters, Build Order, auto-draw/deliver/rush, launch) shipped in #81; the
-Headquarters-panel UI (#84/#85) is pending.
+Headquarters-panel UI shipped in #84 (`HeadquartersPanel.tsx` Budowa tab — per-good build
+progress, auto-draw rate, stall reason, rush quote/execute; `PortPanel.tsx` gains the
+founding button and the HQ port's progress section) and #85 (Trasy tab, see Route above).
 
 **Building** (PL: budynek):
 A Company-owned structure at a Port. E9 has exactly one type — the Headquarters; E13

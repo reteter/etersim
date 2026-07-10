@@ -5,7 +5,6 @@ import {
   GOOD_IDS,
   GOODS,
   LABOR_FEE,
-  SHIP_RECIPE,
   type GoodId,
   type Port,
   type PortId,
@@ -18,6 +17,7 @@ import {
 import { useGameStore } from "../store/gameStore";
 import { deriveStallReason } from "../store/hqStall";
 import { computeLoopMetrics } from "../store/routeMetrics";
+import { BuildProgress } from "./BuildProgress";
 
 type Tab = "budowa" | "trasy";
 
@@ -25,40 +25,6 @@ const STALL_LABEL: Record<"funds" | "goods", string> = {
   funds: "wstrzymane: brak środków",
   goods: "wstrzymane: brak towaru",
 };
-
-/**
- * Per-good progress bar for the active Build Order (docs/specs/E9 — Budowa
- * tab: "active Build Order per-good progress").
- */
-function BuildProgress({ siteStore }: { siteStore: Record<GoodId, number> }) {
-  return (
-    <div className="hq-progress">
-      {GOOD_IDS.map((good) => {
-        const have = siteStore[good] ?? 0;
-        const need = SHIP_RECIPE[good];
-        const pct = need > 0 ? Math.min(100, (have / need) * 100) : 100;
-        return (
-          <div key={good} className="hq-progress__row">
-            <span className="hq-progress__label">{GOODS[good].name}</span>
-            <div
-              className="hq-progress__bar"
-              role="progressbar"
-              aria-label={`${GOODS[good].name} build progress`}
-              aria-valuenow={have}
-              aria-valuemin={0}
-              aria-valuemax={need}
-            >
-              <div className="hq-progress__fill" style={{ width: `${pct}%` }} />
-            </div>
-            <span className="hq-progress__count">
-              {have}/{need}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 /** Budowa tab (docs/specs/E9 — UX skeleton): place a Build Order, watch its
  *  per-good progress, auto-draw rate and stall reason, and rush the

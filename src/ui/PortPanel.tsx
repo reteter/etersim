@@ -8,7 +8,6 @@ import {
   price,
   quoteBuy,
   quoteSell,
-  SHIP_RECIPE,
   type GoodId,
   type MarketGood,
   type Port,
@@ -19,6 +18,7 @@ import {
   type World,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { BuildProgress } from "./BuildProgress";
 import { ShipIcon } from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
@@ -326,31 +326,7 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
     <div className="hq-section">
       <h3 className="side-panel__heading">Headquarters</h3>
       {hq.buildOrder ? (
-        <div className="hq-progress" aria-label="Build progress">
-          {GOOD_IDS.map((good) => {
-            const have = hq.buildOrder!.siteStore[good] ?? 0;
-            const need = SHIP_RECIPE[good];
-            const pct = need > 0 ? Math.min(100, (have / need) * 100) : 100;
-            return (
-              <div key={good} className="hq-progress__row">
-                <span className="hq-progress__label">{GOODS[good].name}</span>
-                <div
-                  className="hq-progress__bar"
-                  role="progressbar"
-                  aria-label={`${GOODS[good].name} build progress`}
-                  aria-valuenow={have}
-                  aria-valuemin={0}
-                  aria-valuemax={need}
-                >
-                  <div className="hq-progress__fill" style={{ width: `${pct}%` }} />
-                </div>
-                <span className="hq-progress__count">
-                  {have}/{need}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <BuildProgress siteStore={hq.buildOrder.siteStore} />
       ) : (
         <p className="side-panel__hint">
           No active build order — open Headquarters from the TopBar to start one.
