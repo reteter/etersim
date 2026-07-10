@@ -1,0 +1,524 @@
+{
+  "version": 5,
+  "world": {
+    "tick": 273,
+    "rng": 1528315252,
+    "region": {
+      "ports": [
+        {
+          "id": "p0",
+          "name": "Velharrow",
+          "archetype": "mining",
+          "x": 0.26413115882639915,
+          "y": 0.1894104158806631,
+          "market": {
+            "grain": {
+              "equilibrium": 180,
+              "stock": 100.37535467362876
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 76.40898004440571
+            },
+            "aetherSalt": {
+              "equilibrium": 200,
+              "stock": 355.0600812936178
+            },
+            "electronics": {
+              "equilibrium": 100,
+              "stock": 73.79771316642447
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 89.98762188261054
+            }
+          },
+          "priceBias": {
+            "grain": 1.2594967989716679,
+            "textiles": 1.1401510398753452,
+            "aetherSalt": 0.774551050607115,
+            "electronics": 1.1753611047752202,
+            "timber": 0.9942389368778094
+          }
+        },
+        {
+          "id": "p1",
+          "name": "Kruxhaven",
+          "archetype": "urban",
+          "x": 0.6846195717840153,
+          "y": 0.07867398167892975,
+          "market": {
+            "grain": {
+              "equilibrium": 300,
+              "stock": 154.81877573369493
+            },
+            "textiles": {
+              "equilibrium": 240,
+              "stock": 407.8955549033936
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 60.443489083541934
+            },
+            "electronics": {
+              "equilibrium": 100,
+              "stock": 72.35794796682474
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 75.8463772152207
+            }
+          },
+          "priceBias": {
+            "grain": 1.2968468001368456,
+            "textiles": 0.7780002893134952,
+            "aetherSalt": 1.2065899629949126,
+            "electronics": 1.2359524469822645,
+            "timber": 1.238067427603528
+          }
+        },
+        {
+          "id": "p2",
+          "name": "Palegate",
+          "archetype": "verdant",
+          "x": 0.25587015224705684,
+          "y": 0.4461426194832613,
+          "market": {
+            "grain": {
+              "equilibrium": 120,
+              "stock": 35.049762634422684
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 69.38838754197486
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 97.62899016972062
+            },
+            "electronics": {
+              "equilibrium": 100,
+              "stock": 93.33750317785243
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 158.33315858374408
+            }
+          },
+          "priceBias": {
+            "grain": 1.2380727469548582,
+            "textiles": 1.1770350738521664,
+            "aetherSalt": 1.0499323523603379,
+            "electronics": 1.024723613099195,
+            "timber": 0.7963485266454517
+          }
+        },
+        {
+          "id": "p3",
+          "name": "Gildersey",
+          "archetype": "industrial",
+          "x": 0.5730062044224288,
+          "y": 0.6645299186039747,
+          "market": {
+            "grain": {
+              "equilibrium": 240,
+              "stock": 122.1140705789644
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 101.31590760711985
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 36.89716227555278
+            },
+            "electronics": {
+              "equilibrium": 120,
+              "stock": 210.23277637487823
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 94.58483527414253
+            }
+          },
+          "priceBias": {
+            "grain": 1.2961462337663396,
+            "textiles": 1.017830054089427,
+            "aetherSalt": 1.2807343962485902,
+            "electronics": 0.8002398371882736,
+            "timber": 1.096520483709173
+          }
+        },
+        {
+          "id": "p4",
+          "name": "Saltmere",
+          "archetype": "agrarian",
+          "x": 0.7733557052830904,
+          "y": 0.33363696808129456,
+          "market": {
+            "grain": {
+              "equilibrium": 960,
+              "stock": 1448.6460709381615
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 75.76168103244942
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 74.07451565968151
+            },
+            "electronics": {
+              "equilibrium": 100,
+              "stock": 85.6985821782272
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 98.0465875638914
+            }
+          },
+          "priceBias": {
+            "grain": 0.7632407166808843,
+            "textiles": 1.1982441863324493,
+            "aetherSalt": 1.1148695392755323,
+            "electronics": 1.1591322140477132,
+            "timber": 0.9656839363044127
+          }
+        }
+      ],
+      "lanes": [
+        {
+          "id": "l0",
+          "a": "p0",
+          "b": "p1",
+          "voyageTicks": 57
+        },
+        {
+          "id": "l1",
+          "a": "p0",
+          "b": "p2",
+          "voyageTicks": 33
+        },
+        {
+          "id": "l2",
+          "a": "p0",
+          "b": "p4",
+          "voyageTicks": 69
+        },
+        {
+          "id": "l3",
+          "a": "p1",
+          "b": "p4",
+          "voyageTicks": 35
+        },
+        {
+          "id": "l4",
+          "a": "p2",
+          "b": "p3",
+          "voyageTicks": 50
+        },
+        {
+          "id": "l5",
+          "a": "p3",
+          "b": "p4",
+          "voyageTicks": 50
+        }
+      ]
+    },
+    "company": {
+      "thalers": 6359,
+      "ships": [
+        {
+          "id": "s0",
+          "name": "s0",
+          "hold": 50,
+          "cargo": {
+            "grain": 0,
+            "textiles": 0,
+            "aetherSalt": 0,
+            "electronics": 0,
+            "timber": 0
+          },
+          "location": {
+            "kind": "docked",
+            "portId": "p1"
+          }
+        },
+        {
+          "id": "s1",
+          "name": "Lumen Trader",
+          "hold": 50,
+          "cargo": {
+            "grain": 0,
+            "textiles": 0,
+            "aetherSalt": 0,
+            "electronics": 0,
+            "timber": 0
+          },
+          "location": {
+            "kind": "docked",
+            "portId": "p1"
+          }
+        }
+      ],
+      "routes": [],
+      "headquarters": {
+        "portId": "p1"
+      }
+    },
+    "priceSnapshots": {
+      "p0": {
+        "grain": 19.31806941950847,
+        "textiles": 55.57697273313515,
+        "aetherSalt": 30.344345952470384,
+        "electronics": 219.53614574881183,
+        "timber": 269.76746704058286
+      },
+      "p1": {
+        "grain": 21.641143489936393,
+        "textiles": 21.056349084025644,
+        "aetherSalt": 105.66583952025901,
+        "electronics": 233.69369668873293,
+        "timber": 379.10621159393423
+      },
+      "p2": {
+        "grain": 30.451083893314774,
+        "textiles": 61.00398475128863,
+        "aetherSalt": 64.29082414359772,
+        "electronics": 162.1797652331702,
+        "timber": 141.9299944442316
+      },
+      "p3": {
+        "grain": 21.424635023282537,
+        "textiles": 40.241695052924534,
+        "aetherSalt": 159.50914165210256,
+        "electronics": 79.47447247571499,
+        "timber": 284.7240844816051
+      },
+      "p4": {
+        "grain": 5.622343985361096,
+        "textiles": 58.750826941903924,
+        "aetherSalt": 83.14718175518051,
+        "electronics": 195.00350060440633,
+        "timber": 244.6210037154217
+      }
+    },
+    "flowDrift": {
+      "p0": {
+        "grain": 1.023941763625741,
+        "textiles": 0.9983139052501081,
+        "aetherSalt": 0.9262843946680467,
+        "electronics": 1.0711057381514564,
+        "timber": 0.8033920092049733
+      },
+      "p1": {
+        "grain": 0.8058763604116277,
+        "textiles": 1.009088516206393,
+        "aetherSalt": 1.0974227322893344,
+        "electronics": 0.9368661131319025,
+        "timber": 0.8186188407012926
+      },
+      "p2": {
+        "grain": 0.9023132111161336,
+        "textiles": 1.0715000378774595,
+        "aetherSalt": 1.2629833154454828,
+        "electronics": 0.7051991323767521,
+        "timber": 1.2733294116662812
+      },
+      "p3": {
+        "grain": 1.163544908532314,
+        "textiles": 1.0527282401878826,
+        "aetherSalt": 1.1440670783694236,
+        "electronics": 1.0646720234338,
+        "timber": 1.1148064416882426
+      },
+      "p4": {
+        "grain": 0.893270100676848,
+        "textiles": 1.111756163816504,
+        "aetherSalt": 0.8627087642578408,
+        "electronics": 0.9169497810940301,
+        "timber": 0.9634698090806132
+      }
+    },
+    "osmosisPulse": {
+      "l0": 7.962625358261543,
+      "l1": -6.753642965336297,
+      "l2": -0.8466772212381724,
+      "l3": -15.046165507651784,
+      "l4": 7.63225994487157,
+      "l5": -4.269172956868422
+    },
+    "ledger": [
+      {
+        "kind": "trade",
+        "tick": 0,
+        "shipId": "s0",
+        "portId": "p0",
+        "good": "grain",
+        "side": "buy",
+        "qty": 5,
+        "thalers": 65
+      },
+      {
+        "kind": "netWorth",
+        "tick": 24,
+        "thalers": 19935,
+        "cargoValue": 64.10473422733726,
+        "siteStoreValue": 0,
+        "total": 19999.104734227338
+      },
+      {
+        "kind": "netWorth",
+        "tick": 48,
+        "thalers": 19935,
+        "cargoValue": 67.63367600199749,
+        "siteStoreValue": 0,
+        "total": 20002.633676002
+      },
+      {
+        "kind": "netWorth",
+        "tick": 72,
+        "thalers": 19935,
+        "cargoValue": 71.41404275520327,
+        "siteStoreValue": 0,
+        "total": 20006.414042755205
+      },
+      {
+        "kind": "netWorth",
+        "tick": 96,
+        "thalers": 19935,
+        "cargoValue": 75.0183143099773,
+        "siteStoreValue": 0,
+        "total": 20010.01831430998
+      },
+      {
+        "kind": "netWorth",
+        "tick": 120,
+        "thalers": 19935,
+        "cargoValue": 78.24562257803846,
+        "siteStoreValue": 0,
+        "total": 20013.245622578037
+      },
+      {
+        "kind": "dockingFee",
+        "tick": 128,
+        "shipId": "s0",
+        "portId": "p1",
+        "thalers": 20
+      },
+      {
+        "kind": "founding",
+        "tick": 129,
+        "portId": "p1",
+        "thalers": 2500
+      },
+      {
+        "kind": "laborFee",
+        "tick": 129,
+        "thalers": 800
+      },
+      {
+        "kind": "delivery",
+        "tick": 129,
+        "shipId": "s0",
+        "portId": "p1",
+        "good": "grain",
+        "qty": 5
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "grain",
+        "qty": 95,
+        "thalers": 2511
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "textiles",
+        "qty": 30,
+        "thalers": 729
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "aetherSalt",
+        "qty": 20,
+        "thalers": 1984
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "electronics",
+        "qty": 5,
+        "thalers": 982
+      },
+      {
+        "kind": "rush",
+        "tick": 129,
+        "portId": "p1",
+        "good": "timber",
+        "qty": 12,
+        "thalers": 4050
+      },
+      {
+        "kind": "launch",
+        "tick": 129,
+        "shipId": "s1",
+        "portId": "p1"
+      },
+      {
+        "kind": "netWorth",
+        "tick": 144,
+        "thalers": 6359,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 6359
+      },
+      {
+        "kind": "netWorth",
+        "tick": 168,
+        "thalers": 6359,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 6359
+      },
+      {
+        "kind": "netWorth",
+        "tick": 192,
+        "thalers": 6359,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 6359
+      },
+      {
+        "kind": "netWorth",
+        "tick": 216,
+        "thalers": 6359,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 6359
+      },
+      {
+        "kind": "netWorth",
+        "tick": 240,
+        "thalers": 6359,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 6359
+      },
+      {
+        "kind": "netWorth",
+        "tick": 264,
+        "thalers": 6359,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 6359
+      }
+    ]
+  }
+}

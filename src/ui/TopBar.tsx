@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { SPEEDS, type Speed } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { GameMenu } from "./GameMenu";
+import { LedgerOverlay } from "./LedgerOverlay";
 import { PriceBoardOverlay } from "./PriceBoardOverlay";
 import { formatWorldDate } from "./worldDate";
 
@@ -26,6 +27,7 @@ export function TopBar() {
   const speed = useGameStore((s) => s.speed);
   const setSpeed = useGameStore((s) => s.setSpeed);
   const [priceBoardOpen, setPriceBoardOpen] = useState(false);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -59,8 +61,12 @@ export function TopBar() {
       <button type="button" className="menu-btn" onClick={() => setPriceBoardOpen(true)}>
         Price Board
       </button>
+      <button type="button" className="menu-btn" onClick={() => setLedgerOpen(true)}>
+        Ledger
+      </button>
       <GameMenu />
       {priceBoardOpen && <PriceBoardOverlay onClose={() => setPriceBoardOpen(false)} />}
+      {ledgerOpen && <LedgerOverlay onClose={() => setLedgerOpen(false)} />}
     </header>
   );
 }
