@@ -46,12 +46,17 @@ export {
 export { type Route, type RouteId, type Stop, type StopOrder } from "./route";
 export {
   AUTO_DRAW_PER_DAY,
+  computeRushQuote,
   generateShipName,
   HEADQUARTERS_COST,
+  isRecipeComplete,
   LABOR_FEE,
+  remainingNeed,
   SHIP_RECIPE,
   type BuildOrder,
   type Headquarters,
+  type RushQuote,
+  type RushQuoteLine,
 } from "./building";
 export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
@@ -74,6 +79,7 @@ export {
 export {
   effectiveBase,
   marketTick,
+  maxAffordableQty,
   NEUTRAL_MODIFIERS,
   price,
   quoteBuy,

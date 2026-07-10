@@ -163,8 +163,16 @@ export function RegionMap({
   const select = useGameStore((s) => s.select);
   const openShip = useGameStore((s) => s.openShip);
   const controlledShipId = useGameStore((s) => s.controlledShipId);
+  const selectedRouteId = useGameStore((s) => s.selectedRouteId);
+  const routes = useGameStore((s) => s.world?.company.routes ?? []);
 
   const [hoveredPortId, setHoveredPortId] = useState<PortId | null>(null);
+
+  // Selected Route's Stop ports (docs/specs/E9 — "on the map, the selected
+  // Route only highlights its Stop ports"; map-drawn route paths are parked).
+  const routeStopPortIds = new Set<PortId>(
+    routes.find((r) => r.id === selectedRouteId)?.stops.map((s) => s.portId) ?? [],
+  );
 
   const portsById = new Map(region.ports.map((p) => [p.id, p]));
   const shipPos = project(shipPosition(ship, region));
@@ -316,11 +324,19 @@ export function RegionMap({
         {region.ports.map((port) => {
           const { x, y } = project(port);
           const isSelected = selection?.kind === "port" && selection.id === port.id;
+          const isRouteStop = routeStopPortIds.has(port.id);
           const Icon = ARCHETYPE_ICONS[port.archetype];
+          const className = [
+            "port",
+            isSelected && "port--selected",
+            isRouteStop && "port--route-stop",
+          ]
+            .filter(Boolean)
+            .join(" ");
           return (
             <g
               key={port.id}
-              className={isSelected ? "port port--selected" : "port"}
+              className={className}
               data-archetype={port.archetype}
               style={{ "--port-color": `var(--archetype-${port.archetype})` } as CSSProperties}
               onClick={() => select({ kind: "port", id: port.id })}

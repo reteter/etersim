@@ -1,6 +1,6 @@
 import { GOOD_IDS, type GoodId } from "./goods";
 import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
-import { effectiveBase, quoteBuy } from "./market";
+import { effectiveBase, maxAffordableQty, quoteBuy } from "./market";
 import type { PortId } from "./region";
 import { TICKS_PER_DAY } from "./region";
 import { emptyCargo, type Ship } from "./ship";
@@ -90,6 +90,52 @@ export function applyDeliveryToSite(
   if (moved <= 0) return { siteStore, moved: 0 };
   const next: Record<GoodId, number> = { ...siteStore, [good]: (siteStore[good] ?? 0) + moved };
   return { siteStore: next, moved };
+}
+
+/** One good's line in a rush preview: how many units, at what total cost. */
+export interface RushQuoteLine {
+  readonly good: GoodId;
+  readonly qty: number;
+  readonly thalers: number;
+}
+
+/** A rush preview: the per-good lines `rushBuild` would buy right now, and
+ *  their total. */
+export interface RushQuote {
+  readonly lines: readonly RushQuoteLine[];
+  readonly total: number;
+}
+
+/** Pure preview of what `rushBuild` (commands.ts) would buy right now, in
+ *  `GOOD_IDS` order: `maxAffordableQty` of each good's remaining need against
+ *  a running purse (each earlier good's cost narrows what later goods can
+ *  afford) — the exact walk `rushBuild` executes, factored out so the UI's
+ *  displayed quote can never drift from what actually gets charged
+ *  (docs/specs/E9-fleet-and-routes.md — UX skeleton: "rush button with live
+ *  quote, same sim function"). Empty when there is no active build or the HQ
+ *  port can't be found (defensive; shouldn't happen with a valid World). */
+export function computeRushQuote(world: World): RushQuote {
+  const hq = world.company.headquarters;
+  if (!hq || !hq.buildOrder) return { lines: [], total: 0 };
+  const port = world.region.ports.find((p) => p.id === hq.portId);
+  if (!port) return { lines: [], total: 0 };
+
+  let thalers = world.company.thalers;
+  const siteStore = hq.buildOrder.siteStore;
+  const lines: RushQuoteLine[] = [];
+  for (const good of GOOD_IDS) {
+    const need = remainingNeed(siteStore, good);
+    if (need <= 0) continue;
+    const entry = port.market[good];
+    const base = effectiveBase(port, good);
+    const qty = maxAffordableQty(entry, base, need, thalers);
+    if (qty <= 0) continue;
+    const lineThalers = quoteBuy(entry, base, qty)!;
+    thalers -= lineThalers;
+    lines.push({ good, qty, thalers: lineThalers });
+  }
+  const total = lines.reduce((sum, line) => sum + line.thalers, 0);
+  return { lines, total };
 }
 
 /** Launch a new ship when the current siteStore completes the recipe: append a

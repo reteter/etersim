@@ -4,9 +4,11 @@ import {
   effectiveBase,
   GOOD_IDS,
   GOODS,
+  HEADQUARTERS_COST,
   price,
   quoteBuy,
   quoteSell,
+  SHIP_RECIPE,
   type GoodId,
   type MarketGood,
   type Port,
@@ -14,6 +16,7 @@ import {
   type Region,
   type Ship,
   type ShipId,
+  type World,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { ShipIcon } from "./icons";
@@ -292,6 +295,72 @@ function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; reg
 }
 
 /**
+ * Headquarters section (docs/specs/E9 — UX skeleton: "PortPanel gains the
+ * Headquarters section"): before founding, every port's panel offers the
+ * founding button; after founding, only the HQ port's own panel shows the
+ * per-good build progress bar — "readable from the port level" (owner
+ * requirement). Renders nothing at any other port.
+ */
+function HeadquartersSection({ world, portId }: { world: World; portId: PortId }) {
+  const dispatch = useGameStore((s) => s.dispatch);
+  const hq = world.company.headquarters;
+
+  if (!hq) {
+    const canAfford = world.company.thalers >= HEADQUARTERS_COST;
+    return (
+      <button
+        type="button"
+        className="hq-found-btn"
+        disabled={!canAfford}
+        title={canAfford ? undefined : "Not enough thalers."}
+        onClick={() => dispatch({ kind: "foundHeadquarters", portId })}
+      >
+        Załóż siedzibę — ₸{HEADQUARTERS_COST}
+      </button>
+    );
+  }
+
+  if (hq.portId !== portId) return null;
+
+  return (
+    <div className="hq-section">
+      <h3 className="side-panel__heading">Headquarters</h3>
+      {hq.buildOrder ? (
+        <div className="hq-progress" aria-label="Build progress">
+          {GOOD_IDS.map((good) => {
+            const have = hq.buildOrder!.siteStore[good] ?? 0;
+            const need = SHIP_RECIPE[good];
+            const pct = need > 0 ? Math.min(100, (have / need) * 100) : 100;
+            return (
+              <div key={good} className="hq-progress__row">
+                <span className="hq-progress__label">{GOODS[good].name}</span>
+                <div
+                  className="hq-progress__bar"
+                  role="progressbar"
+                  aria-label={`${GOODS[good].name} build progress`}
+                  aria-valuenow={have}
+                  aria-valuemin={0}
+                  aria-valuemax={need}
+                >
+                  <div className="hq-progress__fill" style={{ width: `${pct}%` }} />
+                </div>
+                <span className="hq-progress__count">
+                  {have}/{need}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="side-panel__hint">
+          No active build order — open Headquarters from the TopBar to start one.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
  * Contextual panel for a selected port (docs/specs/E2-trade-loop.md — UI
  * layout): the live market table, trading when the ship is docked here,
  * read-only with a sail control otherwise.
@@ -320,6 +389,8 @@ export function PortPanel({ portId }: { portId: PortId }) {
       <Harbor port={port} ships={world.company.ships} controlledShipId={controlledShipId} />
 
       <SailControl ship={ship} portId={port.id} region={world.region} />
+
+      <HeadquartersSection world={world} portId={port.id} />
 
       <div className="market" role="table" aria-label={`${port.name} market`}>
         <div className="market__header" role="row">

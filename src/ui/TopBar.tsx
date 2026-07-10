@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { SPEEDS, type Speed } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { GameMenu } from "./GameMenu";
+import { HeadquartersPanel } from "./HeadquartersPanel";
 import { LedgerOverlay } from "./LedgerOverlay";
 import { PriceBoardOverlay } from "./PriceBoardOverlay";
 import { formatWorldDate } from "./worldDate";
@@ -26,8 +27,10 @@ export function TopBar() {
   const tick = useGameStore((s) => s.world?.tick ?? 0);
   const speed = useGameStore((s) => s.speed);
   const setSpeed = useGameStore((s) => s.setSpeed);
+  const hasHeadquarters = useGameStore((s) => !!s.world?.company.headquarters);
   const [priceBoardOpen, setPriceBoardOpen] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(false);
+  const [hqOpen, setHqOpen] = useState(false);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -64,9 +67,17 @@ export function TopBar() {
       <button type="button" className="menu-btn" onClick={() => setLedgerOpen(true)}>
         Ledger
       </button>
+      {/* Persistent shortcut once the Headquarters is founded (docs/specs/E9
+          — UX skeleton: "a persistent TopBar shortcut once founded"). */}
+      {hasHeadquarters && (
+        <button type="button" className="menu-btn" onClick={() => setHqOpen(true)}>
+          Headquarters
+        </button>
+      )}
       <GameMenu />
       {priceBoardOpen && <PriceBoardOverlay onClose={() => setPriceBoardOpen(false)} />}
       {ledgerOpen && <LedgerOverlay onClose={() => setLedgerOpen(false)} />}
+      {hqOpen && <HeadquartersPanel onClose={() => setHqOpen(false)} />}
     </header>
   );
 }
