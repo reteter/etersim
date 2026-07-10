@@ -1,6 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
-import { createWorld, GOODS, type Ship, type World } from '../src/sim';
+import { createWorld, generateShipName, GOODS, type Ship, type World } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
+
+/** The first ship's display name (src/sim/world.ts createWorld: `id: "s0"`,
+ *  `name: generateShipName(0)`) — ship ids and display names diverged once
+ *  #54/#118 shipped named ships, so UI-facing assertions (dropdown labels,
+ *  panel text) must match the *name*, not the id. */
+const S0_NAME = generateShipName(0);
 
 /**
  * Headquarters panel E2E (#84, #85). The default starting purse (₸500,
@@ -162,9 +168,9 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await expect(routeRow.locator('.route-row__result')).toContainText('no loop yet');
 
     // Assign s0.
-    await routeRow.locator('.route-row__assign select').selectOption({ label: 's0' });
+    await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
     await routeRow.getByRole('button', { name: /^Assign$/ }).click();
-    await expect(routeRow.locator('.route-row__ship')).toContainText('s0');
+    await expect(routeRow.locator('.route-row__ship')).toContainText(S0_NAME);
 
     // Map: saving a new route selects it (Trasy tab), highlighting its Stop
     // ports — clicking the name again would *toggle it off* (RouteRow's
@@ -223,7 +229,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await dialog.getByRole('button', { name: /^Save route$/ }).click();
 
     const routeRow = dialog.locator('.route-row').first();
-    await routeRow.locator('.route-row__assign select').selectOption({ label: 's0' });
+    await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
     await routeRow.getByRole('button', { name: /^Assign$/ }).click();
 
     // Un-pause: the ship executes Stop 0 at A (still paused when we assigned,
@@ -232,7 +238,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     // toward B on its already-computed Course.
     await dialog.getByRole('button', { name: /^Close$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
-    await page.locator('.ctrl-ship').click();
+    await page.locator('.fleet-list__item--controlled').click();
     await expect(page.locator('.side-panel__subtitle')).toContainText('Underway', { timeout: 30_000 });
 
     // Pause and edit the Route while the ship is genuinely in flight toward
@@ -258,7 +264,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     // (serviced, then the ship wraps back to Stop 0) — asserting the
     // redirect (not a lasting dock) is the robust, non-flaky signal.
     await page.getByRole('button', { name: '100x' }).click();
-    await page.locator('.ctrl-ship').click();
+    await page.locator('.fleet-list__item--controlled').click();
     await expect(page.locator('.side-panel__subtitle')).toContainText(`Underway to ${cName}`, {
       timeout: 30_000,
     });
