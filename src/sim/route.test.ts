@@ -64,6 +64,20 @@ describe("docking fee (#80)", () => {
     expect(dockedAt(next)).toBe(b);
     expect(next.company.thalers).toBe(500 - fee);
     void a;
+
+    // Exactly one dockingFee event, tagged with the arriving ship and port.
+    // Full object (not toMatchObject): the fee itself is exactly the field a
+    // pricing bug would corrupt, so every field is pinned, including tick —
+    // the docking transition landed on the tick just before `next`.
+    const feeEvents = next.ledger.filter((e) => e.kind === "dockingFee");
+    expect(feeEvents.length).toBe(1);
+    expect(feeEvents[0]).toEqual({
+      kind: "dockingFee",
+      tick: next.tick - 1,
+      shipId,
+      portId: b,
+      thalers: fee,
+    });
   });
 
   it("never drives the purse negative — an empty purse pays what it has", () => {
@@ -124,6 +138,12 @@ describe("routed buy — no free goods, equivalence by construction (#80)", () =
     expect(after.company.ships[0].cargo.grain).toBe(q);
     expect(after.company.thalers).toBe(120 - cost);
     expect(after.company.thalers).toBeGreaterThanOrEqual(0);
+
+    // The route-driven buy is tagged with the originating Route (the
+    // keystone: per-route economics fall out of a filter on this field).
+    const tradeEvents = after.ledger.filter((e) => e.kind === "trade");
+    expect(tradeEvents.length).toBe(1);
+    expect(tradeEvents[0]).toMatchObject({ side: "buy", good: "grain", qty: q, routeId: "r" });
   });
 
   it("produces the same purse/stock/cargo as the identical manual buy command", () => {
@@ -146,6 +166,12 @@ describe("routed buy — no free goods, equivalence by construction (#80)", () =
 
     expect(routed.company.thalers).toBe(manual.company.thalers);
     expect(routed.company.ships[0].cargo.grain).toBe(manual.company.ships[0].cargo.grain);
+    // The only Ledger difference between the two: the routed trade carries
+    // routeId, the manual one does not (equivalence by construction, tagged).
+    const routedTrade = routed.ledger.find((e) => e.kind === "trade");
+    const manualTrade = manual.ledger.find((e) => e.kind === "trade");
+    expect(routedTrade).toMatchObject({ routeId: "r" });
+    expect(manualTrade && "routeId" in manualTrade ? manualTrade.routeId : undefined).toBeUndefined();
     // Port A market identical: both bought q at A before the market tick.
     expect(portOf(routed, a).market.grain.stock).toBe(portOf(manual, a).market.grain.stock);
   });
@@ -485,7 +511,15 @@ describe("combined determinism — routes + HQ + build (#80/#81)", () => {
       return w;
     };
     const a = script();
-    expect(a).toEqual(script());
+    const b = script();
+    expect(a).toEqual(b);
     expect(JSON.parse(JSON.stringify(a))).toEqual(a); // save round-trip clean (ADR-0004)
+    // Byte-equal Ledger across the whole mixed scenario (routes, HQ, rush).
+    expect(JSON.stringify(a.ledger)).toBe(JSON.stringify(b.ledger));
+    // Sanity: every event kind this scenario exercises actually fired.
+    const kinds = new Set(a.ledger.map((e) => e.kind));
+    for (const kind of ["trade", "dockingFee", "founding", "rush"] as const) {
+      expect(kinds.has(kind)).toBe(true);
+    }
   });
 });

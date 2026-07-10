@@ -261,7 +261,7 @@ No debt in E9: an empty purse pays what it has. Its own Ledger event kind — th
 cost that makes route rot legible.
 _Implementation_: charged in the docking phase (`DOCKING_FEE` in `region.ts`) shipped in
 #80 — active for all docking from tick 0, including pre-Headquarters manual play. Its
-Ledger event kind lands with #82.
+Ledger event kind (`dockingFee`) shipped in #82.
 _Avoid_: port tax, harbor dues, toll
 
 ### Guilds & contracts
@@ -389,9 +389,13 @@ ship, port and originating Route where applicable, plus daily net-worth snapshot
 no book value, so the chart tells the honest investment story: a build is a visible dip,
 then steeper growth). Full retention. One schema, two consumers: the in-game performance
 board (E9) and the Harness (E11).
-_Implementation_: lands in E9 (event stream + performance board); E11 consumes it. M3
-extends the kind union (contract fees, enrollment fees, upkeep, store/withdraw) and adds
-a third consumer: contract settlement reads fulfilment from the same stream.
+_Implementation_: event stream + daily net-worth snapshots shipped in #82 (`ledger.ts`,
+`World.ledger`); events are appended by `applyCommand`/tick phases at the point of
+mutation, full retention, serialized with the save. `routeId` is carried on `trade`
+events only (route-driven trades) — the Tech union's exact contract. The in-game
+performance board (#86) and the E11 Harness consumer are still pending. M3 extends the
+kind union (contract fees, enrollment fees, upkeep, store/withdraw) and adds a third
+consumer: contract settlement reads fulfilment from the same stream.
 _Avoid_: log, history (as identifiers)
 
 **Direct play** (PL: gra bezpośrednia):

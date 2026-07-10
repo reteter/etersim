@@ -45,9 +45,31 @@ describe("buy command", () => {
     expect(portAfter.market.grain.stock).toBeLessThanOrEqual(port.market.grain.stock - 10 + 4);
   });
 
-  it("rejects a buy the company cannot afford, leaving the world unchanged", () => {
+  it("appends exactly one trade event for the buy, with no routeId (manual trade)", () => {
+    const before = tick(world0, []);
+    const cost = quoteBuy(port.market.grain, effectiveBase(port, "grain"), 10)!;
+    const next = tick(world0, [{ kind: "buy", shipId, good: "grain", qty: 10 }]);
+    expect(next.ledger.length).toBe(before.ledger.length + 1);
+    const event = next.ledger[next.ledger.length - 1];
+    // Full object, not toMatchObject: thalers is exactly the field a pricing
+    // bug would corrupt, so it must be asserted, not omitted.
+    expect(event).toEqual({
+      kind: "trade",
+      tick: world0.tick,
+      shipId,
+      portId: port.id,
+      good: "grain",
+      side: "buy",
+      qty: 10,
+      thalers: cost,
+      routeId: undefined,
+    });
+  });
+
+  it("rejects a buy the company cannot afford, leaving the world (and ledger) unchanged", () => {
     const next = tick(world0, [{ kind: "buy", shipId, good: "timber", qty: 50 }]);
     expect(next).toEqual(tick(world0, []));
+    expect(next.ledger).toEqual(tick(world0, []).ledger);
   });
 
   it("rejects a buy that would overflow the hold", () => {
@@ -82,6 +104,25 @@ describe("sell command", () => {
     const next = tick(withCargo, [{ kind: "sell", shipId, good: "grain", qty: 10 }]);
     expect(next.company.thalers).toBe(withCargo.company.thalers + revenue);
     expect(ship(next).cargo.grain).toBe(0);
+  });
+
+  it("appends exactly one trade event for the sell", () => {
+    const before = tick(withCargo, []);
+    const port = homePort(withCargo);
+    const revenue = quoteSell(port.market.grain, effectiveBase(port, "grain"), 10)!;
+    const next = tick(withCargo, [{ kind: "sell", shipId, good: "grain", qty: 10 }]);
+    expect(next.ledger.length).toBe(before.ledger.length + 1);
+    expect(next.ledger[next.ledger.length - 1]).toEqual({
+      kind: "trade",
+      tick: withCargo.tick,
+      shipId,
+      portId: port.id,
+      good: "grain",
+      side: "sell",
+      qty: 10,
+      thalers: revenue,
+      routeId: undefined,
+    });
   });
 
   it("rejects selling more than the cargo holds", () => {
@@ -157,9 +198,16 @@ describe("long-run determinism (M1 success criterion)", () => {
       return w;
     };
     const a = run();
-    expect(a).toEqual(run());
+    const b = run();
+    expect(a).toEqual(b);
     expect(a.tick).toBe(5000);
     expect(JSON.parse(JSON.stringify(a))).toEqual(a); // mid-session save round-trip
+    // Byte-equal Ledger (docs/specs/E9 — Testing: determinism): same seed +
+    // same commands ⇒ the serialized event stream is identical, not just
+    // deep-equal — a stricter check that catches key-order/undefined drift
+    // JSON.stringify would otherwise hide.
+    expect(JSON.stringify(a.ledger)).toBe(JSON.stringify(b.ledger));
+    expect(a.ledger.length).toBeGreaterThan(0);
   });
 });
 

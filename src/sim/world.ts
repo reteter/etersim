@@ -1,6 +1,7 @@
 import type { Headquarters } from "./building";
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
+import type { LedgerEvent } from "./ledger";
 import { effectiveBase, price } from "./market";
 import type { LaneId, PortId, Region } from "./region";
 import { nextInt, seedRng, type RngState } from "./rng";
@@ -45,6 +46,11 @@ export interface World {
    *  (docs/specs/E8-living-economy.md — Trade osmosis); transient display
    *  state for the UI's ambient layer, harmless to serialize. */
   readonly osmosisPulse: Record<LaneId, number>;
+  /** Canonical event stream of every thaler/goods movement, plus daily
+   *  net-worth snapshots (CONTEXT.md: Ledger; docs/specs/E9-fleet-and-routes.md
+   *  — Ledger and the performance board). Full retention, appended at the
+   *  point of mutation by `applyCommand`/tick phases (ledger.ts). */
+  readonly ledger: readonly LedgerEvent[];
 }
 
 /** FNV-1a — maps a seed string onto the RNG's uint32 seed space. */
@@ -78,6 +84,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     priceSnapshots: snapshotPrices(region),
     flowDrift: initialFlowDrift(region),
     osmosisPulse: initialOsmosisPulse(region),
+    ledger: [],
   };
 }
 

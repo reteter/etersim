@@ -1,4 +1,5 @@
 import { GOOD_IDS, type GoodId } from "./goods";
+import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
 import { effectiveBase, quoteBuy } from "./market";
 import type { PortId } from "./region";
 import { TICKS_PER_DAY } from "./region";
@@ -107,7 +108,7 @@ export function launchIfComplete(world: World): World {
     cargo: emptyCargo(),
     location: { kind: "docked", portId: hq.portId },
   };
-  return {
+  const launched: World = {
     ...world,
     company: {
       ...world.company,
@@ -115,6 +116,12 @@ export function launchIfComplete(world: World): World {
       headquarters: { portId: hq.portId },
     },
   };
+  return appendLedgerEvent(launched, {
+    kind: "launch",
+    tick: world.tick,
+    shipId: newShip.id,
+    portId: hq.portId,
+  });
 }
 
 /** Run one tick's auto-draw for the HQ build site (after docking, before the
@@ -135,6 +142,7 @@ export function runBuildSiteAutoDraw(world: World): World {
   const portIdx = ports.findIndex((p) => p.id === hq.portId);
   if (portIdx < 0) return world;
   let hqPort = ports[portIdx];
+  const events: LedgerEvent[] = [];
 
   for (const good of GOOD_IDS) {
     const need = remainingNeed(siteStore, good);
@@ -152,6 +160,7 @@ export function runBuildSiteAutoDraw(world: World): World {
       market: { ...hqPort.market, [good]: { ...entry, stock: entry.stock - buyQty } },
     };
     ports[portIdx] = hqPort;
+    events.push({ kind: "autoDraw", tick: world.tick, portId: hq.portId, good, qty: buyQty, thalers: cost });
   }
 
   const drawn: World = {
@@ -163,5 +172,5 @@ export function runBuildSiteAutoDraw(world: World): World {
     },
     region: { ...world.region, ports },
   };
-  return launchIfComplete(drawn);
+  return launchIfComplete(appendLedgerEvents(drawn, events));
 }

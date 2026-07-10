@@ -8,6 +8,7 @@ import {
   type Headquarters,
 } from "./building";
 import { GOOD_IDS, type GoodId } from "./goods";
+import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
 import { effectiveBase, maxAffordableQty, quoteBuy, quoteSell } from "./market";
 import { shortestCourse } from "./pathfinding";
 import type { Port, PortId } from "./region";
@@ -22,8 +23,22 @@ import { replaceShip, type World } from "./world";
  */
 export type Command =
   | { readonly kind: "sailTo"; readonly shipId: ShipId; readonly portId: PortId }
-  | { readonly kind: "buy"; readonly shipId: ShipId; readonly good: GoodId; readonly qty: number }
-  | { readonly kind: "sell"; readonly shipId: ShipId; readonly good: GoodId; readonly qty: number }
+  | {
+      readonly kind: "buy";
+      readonly shipId: ShipId;
+      readonly good: GoodId;
+      readonly qty: number;
+      /** Set only when dispatched from a Route's buy Stop (tick.ts) — tags
+       *  the resulting Ledger trade event (docs/specs/E9 — Ledger). */
+      readonly routeId?: RouteId;
+    }
+  | {
+      readonly kind: "sell";
+      readonly shipId: ShipId;
+      readonly good: GoodId;
+      readonly qty: number;
+      readonly routeId?: RouteId;
+    }
   // E9 route commands (all player mutations stay Commands — determinism + E11 replay).
   | { readonly kind: "createRoute"; readonly route: Route }
   | { readonly kind: "updateRoute"; readonly route: Route }
@@ -124,7 +139,7 @@ export function applyCommand(world: World, command: Command): World {
       if (world.company.headquarters) return world;
       if (world.company.thalers < HEADQUARTERS_COST) return world;
       if (!world.region.ports.some((p) => p.id === command.portId)) return world;
-      return {
+      const founded: World = {
         ...world,
         company: {
           ...world.company,
@@ -132,13 +147,19 @@ export function applyCommand(world: World, command: Command): World {
           headquarters: { portId: command.portId },
         },
       };
+      return appendLedgerEvent(founded, {
+        kind: "founding",
+        tick: world.tick,
+        portId: command.portId,
+        thalers: HEADQUARTERS_COST,
+      });
     }
     case "placeBuildOrder": {
       const hq = world.company.headquarters;
       if (!hq || hq.buildOrder) return world;
       if (world.company.thalers < LABOR_FEE) return world;
       const nextHq: Headquarters = { portId: hq.portId, buildOrder: { siteStore: emptySiteStore() } };
-      return {
+      const placed: World = {
         ...world,
         company: {
           ...world.company,
@@ -146,6 +167,7 @@ export function applyCommand(world: World, command: Command): World {
           headquarters: nextHq,
         },
       };
+      return appendLedgerEvent(placed, { kind: "laborFee", tick: world.tick, thalers: LABOR_FEE });
     }
     case "rushBuild": {
       const hq = world.company.headquarters;
@@ -157,6 +179,7 @@ export function applyCommand(world: World, command: Command): World {
       let siteStore = { ...hq.buildOrder.siteStore };
       const ports = [...world.region.ports];
       let port = ports[portIdx];
+      const events: LedgerEvent[] = [];
 
       for (const good of GOOD_IDS) {
         const need = remainingNeed(siteStore, good);
@@ -165,10 +188,12 @@ export function applyCommand(world: World, command: Command): World {
         const base = effectiveBase(port, good);
         const q = maxAffordableQty(entry, base, need, thalers);
         if (q <= 0) continue;
-        thalers -= quoteBuy(entry, base, q)!;
+        const cost = quoteBuy(entry, base, q)!;
+        thalers -= cost;
         siteStore = { ...siteStore, [good]: (siteStore[good] ?? 0) + q };
         port = { ...port, market: { ...port.market, [good]: { ...entry, stock: entry.stock - q } } };
         ports[portIdx] = port;
+        events.push({ kind: "rush", tick: world.tick, portId: hq.portId, good, qty: q, thalers: cost });
       }
 
       const rushed: World = {
@@ -180,7 +205,7 @@ export function applyCommand(world: World, command: Command): World {
         },
         region: { ...world.region, ports },
       };
-      return launchIfComplete(rushed);
+      return launchIfComplete(appendLedgerEvents(rushed, events));
     }
     case "deliver": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
@@ -200,13 +225,23 @@ export function applyCommand(world: World, command: Command): World {
         cargo: { ...ship.cargo, [command.good]: ship.cargo[command.good] - moved },
       };
       const withShip = replaceShip(world, delivered);
-      return launchIfComplete({
+      const withDelivery: World = {
         ...withShip,
         company: {
           ...withShip.company,
           headquarters: { portId: hq.portId, buildOrder: { siteStore } },
         },
-      });
+      };
+      return launchIfComplete(
+        appendLedgerEvent(withDelivery, {
+          kind: "delivery",
+          tick: world.tick,
+          shipId: ship.id,
+          portId: hq.portId,
+          good: command.good,
+          qty: moved,
+        }),
+      );
     }
     case "buy": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
@@ -217,7 +252,7 @@ export function applyCommand(world: World, command: Command): World {
       if (total === null) return world;
       if (total > world.company.thalers) return world;
       if (cargoUsed(ship) + command.qty > ship.hold) return world;
-      return applyTrade(world, ship, port, command.good, -command.qty, -total);
+      return applyTrade(world, ship, port, command.good, -command.qty, -total, command.routeId);
     }
     case "sell": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
@@ -228,7 +263,7 @@ export function applyCommand(world: World, command: Command): World {
       if (ship.cargo[command.good] < command.qty) return world;
       const total = quoteSell(port.market[command.good], effectiveBase(port, command.good), command.qty);
       if (total === null) return world;
-      return applyTrade(world, ship, port, command.good, command.qty, total);
+      return applyTrade(world, ship, port, command.good, command.qty, total, command.routeId);
     }
     case "sailTo": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
@@ -260,7 +295,12 @@ export function applyCommand(world: World, command: Command): World {
 }
 
 /** stockDelta moves the port stock; thalerDelta moves the company purse.
- *  Cargo moves opposite to stock. Positive stockDelta = ship selling. */
+ *  Cargo moves opposite to stock. Positive stockDelta = ship selling. The
+ *  trade event's side/qty/thalers are derived from these same two deltas
+ *  (their sign and magnitude), not passed separately — a single source of
+ *  truth, so a caller can never hand the Ledger a value inconsistent with
+ *  the state change it actually applied. `routeId` tags a route-driven trade
+ *  (docs/specs/E9 — Ledger). */
 function applyTrade(
   world: World,
   ship: Ship,
@@ -268,6 +308,7 @@ function applyTrade(
   good: GoodId,
   stockDelta: number,
   thalerDelta: number,
+  routeId?: RouteId,
 ): World {
   const tradedShip: Ship = {
     ...ship,
@@ -281,7 +322,7 @@ function applyTrade(
     },
   };
   const withShip = replaceShip(world, tradedShip);
-  return {
+  const traded: World = {
     ...withShip,
     company: { ...withShip.company, thalers: withShip.company.thalers + thalerDelta },
     region: {
@@ -289,4 +330,15 @@ function applyTrade(
       ports: withShip.region.ports.map((p) => (p.id === port.id ? tradedPort : p)),
     },
   };
+  return appendLedgerEvent(traded, {
+    kind: "trade",
+    tick: world.tick,
+    shipId: ship.id,
+    portId: port.id,
+    good,
+    side: stockDelta > 0 ? "sell" : "buy",
+    qty: Math.abs(stockDelta),
+    thalers: Math.abs(thalerDelta),
+    routeId,
+  });
 }

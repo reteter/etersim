@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { GOOD_IDS, type GoodId } from "./goods";
+import { computeNetWorth } from "./ledger";
 import { DRIFT_MAX, DRIFT_MIN, driftStep, tick } from "./tick";
-import type { MarketGood, Port, PortId, Region } from "./region";
+import { TICKS_PER_DAY, type MarketGood, type Port, type PortId, type Region } from "./region";
 import { seedRng } from "./rng";
 import { createWorld, type World } from "./world";
 
@@ -160,5 +161,37 @@ describe("tick — flow drift wiring (E8)", () => {
       expect(typeof world.osmosisPulse[lane.id]).toBe("number");
     }
     expect(Object.keys(world.osmosisPulse).length).toBe(world.region.lanes.length);
+  });
+});
+
+describe("tick — daily net-worth snapshot (docs/specs/E9 — Ledger)", () => {
+  it("appends exactly one netWorth event per day boundary, never mid-day", () => {
+    const world = createWorld(13);
+    let current = world;
+    for (let t = 1; t <= 2 * TICKS_PER_DAY; t++) {
+      const before = current.ledger.length;
+      current = tick(current, []);
+      const netWorthEventsAdded = current.ledger.length - before;
+      expect(netWorthEventsAdded).toBe(t % TICKS_PER_DAY === 0 ? 1 : 0);
+    }
+    const netWorthEvents = current.ledger.filter((e) => e.kind === "netWorth");
+    expect(netWorthEvents.length).toBe(2);
+  });
+
+  it("the netWorth event's total matches an independent recomputation from the same state", () => {
+    let w = createWorld(14);
+    for (let t = 0; t < TICKS_PER_DAY; t++) w = tick(w, []);
+    const event = w.ledger.find((e) => e.kind === "netWorth");
+    expect(event).toBeDefined();
+    const recomputed = computeNetWorth(w);
+    if (event?.kind === "netWorth") {
+      expect(event.tick).toBe(TICKS_PER_DAY);
+      expect(event.thalers).toBe(recomputed.thalers);
+      expect(event.cargoValue).toBeCloseTo(recomputed.cargoValue, 10);
+      expect(event.siteStoreValue).toBeCloseTo(recomputed.siteStoreValue, 10);
+      expect(event.total).toBeCloseTo(recomputed.total, 10);
+      // No fleet, no build yet on a fresh world: net worth is exactly the purse.
+      expect(event.total).toBeCloseTo(w.company.thalers, 10);
+    }
   });
 });

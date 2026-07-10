@@ -1,12 +1,13 @@
 import { runBuildSiteAutoDraw } from "./building";
 import { applyCommand, type Command } from "./commands";
 import { GOOD_IDS, type GoodId } from "./goods";
+import { appendLedgerEvent, computeNetWorth } from "./ledger";
 import { effectiveBase, marketTick, maxAffordableQty, NEUTRAL_MODIFIERS } from "./market";
 import { osmosisTick } from "./osmosis";
 import { shortestCourse } from "./pathfinding";
 import { ARCHETYPE_PROFILES, DOCKING_FEE, TICKS_PER_DAY, type PortId, type Region } from "./region";
 import { nextFloat, type RngState } from "./rng";
-import type { Route } from "./route";
+import type { Route, RouteId } from "./route";
 import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
 import { replaceShip, snapshotPrices, type World } from "./world";
 
@@ -52,12 +53,24 @@ export function driftStep(
 }
 
 /** Deduct the docking fee for `portId` from the shared purse (min(fee, thalers),
- *  no debt). Charged once per docking transition, manual or routed. */
-function chargeDockingFee(world: World, portId: PortId): World {
+ *  no debt). Charged once per docking transition, manual or routed. A paid-0
+ *  docking (empty purse, or a hypothetically fee-less archetype) moves no
+ *  thalers, so it appends no Ledger event. */
+function chargeDockingFee(world: World, portId: PortId, shipId: ShipId): World {
   const port = world.region.ports.find((p) => p.id === portId)!;
   const paid = Math.min(DOCKING_FEE[port.archetype] ?? 0, world.company.thalers);
   if (paid <= 0) return world;
-  return { ...world, company: { ...world.company, thalers: world.company.thalers - paid } };
+  const charged: World = {
+    ...world,
+    company: { ...world.company, thalers: world.company.thalers - paid },
+  };
+  return appendLedgerEvent(charged, {
+    kind: "dockingFee",
+    tick: world.tick,
+    shipId,
+    portId,
+    thalers: paid,
+  });
 }
 
 /** Execute one Stop's orders best-effort, in list order, by dispatching the
@@ -65,7 +78,12 @@ function chargeDockingFee(world: World, portId: PortId): World {
  *  never out- or under-perform the identical manual trades (E9 equivalence
  *  guarantee). buy fills the affordable share of the Hold; sell empties the
  *  good; deliver moves min(cargo, need) into the build site (no-op off-HQ). */
-function executeStop(world: World, shipId: ShipId, orders: Route["stops"][number]["orders"]): World {
+function executeStop(
+  world: World,
+  shipId: ShipId,
+  orders: Route["stops"][number]["orders"],
+  routeId: RouteId,
+): World {
   let w = world;
   for (const order of orders) {
     const ship = w.company.ships.find((s) => s.id === shipId)!;
@@ -80,10 +98,10 @@ function executeStop(world: World, shipId: ShipId, orders: Route["stops"][number
         holdSpace,
         w.company.thalers,
       );
-      if (qty > 0) w = applyCommand(w, { kind: "buy", shipId, good: order.good, qty });
+      if (qty > 0) w = applyCommand(w, { kind: "buy", shipId, good: order.good, qty, routeId });
     } else if (order.kind === "sell") {
       const have = ship.cargo[order.good];
-      if (have > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty: have });
+      if (have > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty: have, routeId });
     } else {
       w = applyCommand(w, { kind: "deliver", shipId, good: order.good });
     }
@@ -144,7 +162,7 @@ function runRouteForShip(world: World, shipId: ShipId): World {
   }
 
   // At our next Stop's port: execute best-effort, advance the index, dwell.
-  const executed = executeStop(world, shipId, route.stops[idx].orders);
+  const executed = executeStop(world, shipId, route.stops[idx].orders, route.id);
   const advanced = executed.company.ships.find((s) => s.id === shipId)!;
   const nextIdx = (idx + 1) % route.stops.length;
   return replaceShip(executed, { ...advanced, assignment: { ...asn, nextStopIndex: nextIdx } });
@@ -164,7 +182,7 @@ function runDockingPhase(world: World, before: readonly Ship[], advanced: readon
       before[i].location.kind === "underway" && advanced[i].location.kind === "docked";
     if (transitioned) {
       const loc = advanced[i].location;
-      if (loc.kind === "docked") w = chargeDockingFee(w, loc.portId);
+      if (loc.kind === "docked") w = chargeDockingFee(w, loc.portId, advanced[i].id);
     }
     w = runRouteForShip(w, advanced[i].id);
   }
@@ -204,7 +222,7 @@ export function tick(world: World, commands: readonly Command[]): World {
   let rng = w.rng;
   if (isDayBoundary) [flowDrift, rng] = driftStep(region, w.flowDrift, w.rng);
 
-  return {
+  const next: World = {
     ...w,
     tick: nextTick,
     rng,
@@ -213,4 +231,12 @@ export function tick(world: World, commands: readonly Command[]): World {
     flowDrift,
     osmosisPulse: pulse,
   };
+  // Daily net-worth snapshot (docs/specs/E9 — Ledger): thalers + fleet cargo +
+  // build-site store, at region-average mid price; ships/buildings carry no
+  // book value. Tagged with the boundary tick (nextTick), same cadence as the
+  // price snapshot above.
+  if (isDayBoundary) {
+    return appendLedgerEvent(next, { kind: "netWorth", tick: nextTick, ...computeNetWorth(next) });
+  }
+  return next;
 }
