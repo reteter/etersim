@@ -45,7 +45,6 @@ describe("computeLoopMetrics", () => {
     const { route } = twoStopRoute(w0);
     const w: World = { ...w0, company: { ...w0.company, routes: [route] }, ledger: [] };
     const metrics = computeLoopMetrics(w, route);
-    expect(metrics.lastLoopTicks).toBeNull();
     expect(metrics.lastLoopTradeResult).toBeNull();
     expect(metrics.lastLoopDockingFees).toBeNull();
     expect(metrics.lastLoopNet).toBeNull();
@@ -83,7 +82,6 @@ describe("computeLoopMetrics", () => {
     const metrics = computeLoopMetrics(w, route);
     // Last loop window is [30, 50): the tick-50 buy (next loop's opener) is
     // excluded, matching "between consecutive Stop-0 visits".
-    expect(metrics.lastLoopTicks).toBe(20);
     // trade result: sell 190 - buy 150 = 40.
     expect(metrics.lastLoopTradeResult).toBe(40);
     // docking fees in [30, 50): tick 30 (5) + tick 40 (5) = 10.
@@ -91,10 +89,54 @@ describe("computeLoopMetrics", () => {
     expect(metrics.lastLoopNet).toBe(30);
   });
 
-  it("does not attribute docking fees from ships no longer assigned to this route", () => {
+  it("keeps per-ship loops separate: two offset ships don't shred each other's windows", () => {
+    const w0 = createWorld("metrics-multiship");
+    const { route, a, b } = twoStopRoute(w0);
+    const s0 = assignedShip(w0, route.id);
+    const s1: Ship = { ...s0, id: "s1" as Ship["id"], name: "Second" };
+
+    // s0 and s1 run the same loop offset by half a loop. Boundaries must be
+    // per ship: s0 closes loops at t30 and t50, s1 at t40. The most recently
+    // completed loop is s0's [30, 50) — its fold must contain only s0's
+    // trades and fees, not s1's tick-40 buy that happens to fall inside.
+    const ledger: LedgerEvent[] = [
+      { kind: "trade", tick: 10, shipId: s0.id, portId: a, good: "grain", side: "buy", qty: 10, thalers: 100, routeId: route.id },
+      { kind: "dockingFee", tick: 10, shipId: s0.id, portId: a, thalers: 5 },
+      { kind: "trade", tick: 20, shipId: s1.id, portId: a, good: "grain", side: "buy", qty: 10, thalers: 110, routeId: route.id },
+      { kind: "dockingFee", tick: 20, shipId: s1.id, portId: a, thalers: 7 },
+      { kind: "trade", tick: 20, shipId: s0.id, portId: b, good: "grain", side: "sell", qty: 10, thalers: 130, routeId: route.id },
+      { kind: "dockingFee", tick: 20, shipId: s0.id, portId: b, thalers: 5 },
+      { kind: "trade", tick: 30, shipId: s0.id, portId: a, good: "grain", side: "buy", qty: 12, thalers: 150, routeId: route.id },
+      { kind: "dockingFee", tick: 30, shipId: s0.id, portId: a, thalers: 5 },
+      { kind: "trade", tick: 30, shipId: s1.id, portId: b, good: "grain", side: "sell", qty: 10, thalers: 140, routeId: route.id },
+      { kind: "dockingFee", tick: 30, shipId: s1.id, portId: b, thalers: 7 },
+      { kind: "trade", tick: 40, shipId: s1.id, portId: a, good: "grain", side: "buy", qty: 10, thalers: 160, routeId: route.id },
+      { kind: "dockingFee", tick: 40, shipId: s1.id, portId: a, thalers: 7 },
+      { kind: "trade", tick: 40, shipId: s0.id, portId: b, good: "grain", side: "sell", qty: 12, thalers: 190, routeId: route.id },
+      { kind: "dockingFee", tick: 40, shipId: s0.id, portId: b, thalers: 5 },
+      { kind: "trade", tick: 50, shipId: s0.id, portId: a, good: "grain", side: "buy", qty: 8, thalers: 90, routeId: route.id },
+    ];
+    const w: World = {
+      ...w0,
+      company: { ...w0.company, routes: [route], ships: [s0, s1] },
+      ledger,
+    };
+
+    const metrics = computeLoopMetrics(w, route);
+    // s0's last loop [30, 50): buy 150 @t30, sell 190 @t40 → +40. s1's
+    // tick-40 buy (160) and fees (7) inside the window belong to s1's loop
+    // and must not leak in.
+    expect(metrics.lastLoopTradeResult).toBe(40);
+    // s0's fees in [30, 50): tick 30 (5) + tick 40 (5) = 10 — not s1's 14.
+    expect(metrics.lastLoopDockingFees).toBe(10);
+    expect(metrics.lastLoopNet).toBe(30);
+  });
+
+  it("attributes docking fees to the ship that drove the loop, even after unassignment", () => {
     const w0 = createWorld("metrics-unassigned");
     const { route, a, b } = twoStopRoute(w0);
-    // s0 is NOT assigned to the route (e.g. it was unassigned after sailing it).
+    // s0 is no longer assigned to the route, but its routeId-tagged trades
+    // identify it as the ship that drove the loop — the loop's fees are its.
     const ship = w0.company.ships[0];
     const ledger: LedgerEvent[] = [
       { kind: "trade", tick: 10, shipId: ship.id, portId: a, good: "grain", side: "buy", qty: 5, thalers: 50, routeId: route.id },
@@ -106,7 +148,7 @@ describe("computeLoopMetrics", () => {
     const w: World = { ...w0, company: { ...w0.company, routes: [route], ships: [ship] }, ledger };
 
     const metrics = computeLoopMetrics(w, route);
-    expect(metrics.lastLoopTradeResult).toBe(65 - 50); // trades still fold by routeId alone
-    expect(metrics.lastLoopDockingFees).toBe(0); // no currently-assigned ship to correlate
+    expect(metrics.lastLoopTradeResult).toBe(65 - 50);
+    expect(metrics.lastLoopDockingFees).toBe(10); // fees follow the loop's ship, not current assignment
   });
 });
