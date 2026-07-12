@@ -1013,12 +1013,15 @@ body {
   filter: drop-shadow(0 0 2.5px #5fc9e0) drop-shadow(0 0 1px #5fc9e0);
 }
 
+/* Founding CTA: prominent but color-neutral — gold belongs to the
+   Controlled Ship alone (ADR-0006; incident 0002), and a call-to-action is
+   not a selection state. Emphasis comes from the brighter border. */
 .headquarters-found-btn {
   display: block;
   margin: 0.75rem 0;
   padding: 0.5rem 0.9rem;
-  background: rgba(224, 168, 64, 0.12);
-  border: 1px solid #e0a840;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 4px;
   color: #e6e6e6;
   cursor: pointer;
@@ -1088,9 +1091,12 @@ body {
   cursor: pointer;
 }
 
+/* Active tab reuses the Ledger tabs' blue (#4c7bab = "active control in a
+   group" — one color, one meaning, ADR-0006); cyan stays exclusive to the
+   selected Route. */
 .headquarters-tab--active {
   color: #e6e6e6;
-  border-bottom-color: #5fc9e0;
+  border-bottom-color: #4c7bab;
 }
 
 .route-list {
@@ -1228,8 +1234,11 @@ body {
   cursor: pointer;
 }
 
+/* Active chip = "active control in a group", the same meaning (and blue) as
+   an active tab — a Stop order toggle is not Route selection, so no cyan
+   here (ADR-0006). */
 .chip--active {
-  background: rgba(95, 201, 224, 0.2);
-  border-color: #5fc9e0;
+  background: rgba(76, 123, 171, 0.25);
+  border-color: #4c7bab;
   color: #e6e6e6;
 }
