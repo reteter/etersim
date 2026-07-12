@@ -65,7 +65,7 @@ function ConstructionTab({ world }: { world: World }) {
 
       {confirming && estimate && !buildOrder ? (
         <div className="build-confirm">
-          <p>Zlecić budowę? Szacunkowy koszt: ₸{estimate.total} + rezerwa nietknięta.</p>
+          <p>Zlecić budowę? Szacunkowy koszt: ₸{estimate.total} (przy dzisiejszych cenach).</p>
           {estimate.total > thalers && (
             <p className="headquarters-stall">
               Masz ₸{thalers} — budowa stanie na rezerwie ₸{CONSTRUCTION_RESERVE}, dopóki nie
