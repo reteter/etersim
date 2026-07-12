@@ -303,14 +303,14 @@ function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; reg
  */
 function HeadquartersSection({ world, portId }: { world: World; portId: PortId }) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const hq = world.company.headquarters;
+  const headquarters = world.company.headquarters;
 
-  if (!hq) {
+  if (!headquarters) {
     const canAfford = world.company.thalers >= HEADQUARTERS_COST;
     return (
       <button
         type="button"
-        className="hq-found-btn"
+        className="headquarters-found-btn"
         disabled={!canAfford}
         title={canAfford ? undefined : "Not enough thalers."}
         onClick={() => dispatch({ kind: "foundHeadquarters", portId })}
@@ -320,13 +320,13 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
     );
   }
 
-  if (hq.portId !== portId) return null;
+  if (headquarters.portId !== portId) return null;
 
   return (
-    <div className="hq-section">
+    <div className="headquarters-section">
       <h3 className="side-panel__heading">Headquarters</h3>
-      {hq.buildOrder ? (
-        <BuildProgress siteStore={hq.buildOrder.siteStore} />
+      {headquarters.buildOrder ? (
+        <BuildProgress siteStore={headquarters.buildOrder.siteStore} />
       ) : (
         <p className="side-panel__hint">
           No active build order — open Headquarters from the TopBar to start one.

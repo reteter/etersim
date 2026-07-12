@@ -9,40 +9,41 @@ import {
   type Port,
   type PortId,
   type Route,
+  type RouteId,
   type ShipId,
   type Stop,
   type StopOrder,
   type World,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
-import { deriveStallReason } from "../store/hqStall";
+import { deriveStallReason } from "../store/headquartersStall";
 import { computeLoopMetrics } from "../store/routeMetrics";
 import { BuildProgress } from "./BuildProgress";
 
-type Tab = "budowa" | "trasy";
+type Tab = "construction" | "routes";
 
 const STALL_LABEL: Record<"funds" | "goods", string> = {
   funds: "wstrzymane: brak środków",
   goods: "wstrzymane: brak towaru",
 };
 
-/** Budowa tab (docs/specs/E9 — UX skeleton): place a Build Order, watch its
- *  per-good progress, auto-draw rate and stall reason, and rush the
+/** The "Budowa" tab (docs/specs/E9 — UX skeleton): place a Build Order,
+ *  watch its per-good progress, auto-draw rate and stall reason, and rush the
  *  remainder at a live quote computed by the same sim function that charges it. */
-function BudowaTab({ world }: { world: World }) {
+function ConstructionTab({ world }: { world: World }) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const hq = world.company.headquarters!;
-  const buildOrder = hq.buildOrder;
+  const headquarters = world.company.headquarters!;
+  const buildOrder = headquarters.buildOrder;
   const canPlace = !buildOrder && world.company.thalers >= LABOR_FEE;
-  const stallReason = buildOrder ? deriveStallReason(world, hq) : null;
+  const stallReason = buildOrder ? deriveStallReason(world, headquarters) : null;
   const quote = buildOrder ? computeRushQuote(world) : null;
 
   return (
-    <div className="hq-budowa">
+    <div className="headquarters-construction">
       <button
         type="button"
         className="menu-btn"
-        disabled={!!buildOrder || !canPlace}
+        disabled={!canPlace}
         title={buildOrder ? "A build is already running." : undefined}
         onClick={() => dispatch({ kind: "placeBuildOrder" })}
       >
@@ -55,7 +56,7 @@ function BudowaTab({ world }: { world: World }) {
           <p className="side-panel__hint">
             Auto-draw: up to {AUTO_DRAW_PER_DAY} units/good/day from the Headquarters market.
           </p>
-          {stallReason && <p className="hq-stall">{STALL_LABEL[stallReason]}</p>}
+          {stallReason && <p className="headquarters-stall">{STALL_LABEL[stallReason]}</p>}
           <button
             type="button"
             className="menu-btn"
@@ -305,10 +306,29 @@ function RouteRow({
   );
 }
 
-/** Trasy tab (docs/specs/E9 — UX skeleton): the Company's Route templates —
- *  create/edit via a list-based Stop editor, assign/unassign ships, and each
- *  Route's loop metrics (route-rot legible at a glance). */
-function TrasyTab({ world }: { world: World }) {
+/** Next Route id: "r" + one past the highest numeric id used so far — by a
+ *  live Route or by any routeId-tagged trade in the Ledger, so a deleted
+ *  Route's id is never recycled into a new Route (its old Ledger tags would
+ *  pollute the new Route's loop metrics). Deterministic, derived from World
+ *  state only — the ship-name precedent (keyed by count, no wall clock, no
+ *  RNG draw) applied to ids. */
+function nextRouteId(world: World): RouteId {
+  let max = 0;
+  const consider = (id: string) => {
+    const m = /^r(\d+)$/.exec(id);
+    if (m) max = Math.max(max, Number(m[1]));
+  };
+  for (const route of world.company.routes) consider(route.id);
+  for (const event of world.ledger) {
+    if (event.kind === "trade" && event.routeId !== undefined) consider(event.routeId);
+  }
+  return `r${max + 1}`;
+}
+
+/** The "Trasy" tab (docs/specs/E9 — UX skeleton): the Company's Route
+ *  templates — create/edit via a list-based Stop editor, assign/unassign
+ *  ships, and each Route's loop metrics (route-rot legible at a glance). */
+function RoutesTab({ world }: { world: World }) {
   const dispatch = useGameStore((s) => s.dispatch);
   const selectedRouteId = useGameStore((s) => s.selectedRouteId);
   const selectRoute = useGameStore((s) => s.selectRoute);
@@ -318,8 +338,7 @@ function TrasyTab({ world }: { world: World }) {
   const editingExisting = draft ? routes.some((r) => r.id === draft.id) : false;
 
   const startNew = () => {
-    const id = `r${world.tick}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-    setDraft({ id, name: `Route ${routes.length + 1}`, stops: [] });
+    setDraft({ id: nextRouteId(world), name: `Route ${routes.length + 1}`, stops: [] });
   };
   const startEdit = (route: Route) => {
     setDraft(route);
@@ -332,13 +351,13 @@ function TrasyTab({ world }: { world: World }) {
     setDraft(null);
   };
   const cancel = () => setDraft(null);
-  const remove = (routeId: string) => {
+  const remove = (routeId: RouteId) => {
     dispatch({ kind: "deleteRoute", routeId });
     if (selectedRouteId === routeId) selectRoute(null);
   };
 
   return (
-    <div className="hq-trasy">
+    <div className="headquarters-routes">
       <div className="route-list">
         {routes.length === 0 && <p className="side-panel__hint">No routes yet.</p>}
         {routes.map((route) => (
@@ -371,7 +390,7 @@ function TrasyTab({ world }: { world: World }) {
  */
 export function HeadquartersPanel({ onClose }: { onClose: () => void }) {
   const world = useGameStore((s) => s.world);
-  const [tab, setTab] = useState<Tab>("budowa");
+  const [tab, setTab] = useState<Tab>("construction");
 
   if (!world || !world.company.headquarters) return null;
 
@@ -379,27 +398,27 @@ export function HeadquartersPanel({ onClose }: { onClose: () => void }) {
     <div className="overlay" role="dialog" aria-label="Headquarters" aria-modal="true">
       <div className="overlay__panel overlay__panel--wide">
         <h2 className="overlay__title">Headquarters</h2>
-        <div className="hq-tabs" role="tablist">
+        <div className="headquarters-tabs" role="tablist">
           <button
             type="button"
             role="tab"
-            aria-selected={tab === "budowa"}
-            className={tab === "budowa" ? "hq-tab hq-tab--active" : "hq-tab"}
-            onClick={() => setTab("budowa")}
+            aria-selected={tab === "construction"}
+            className={tab === "construction" ? "headquarters-tab headquarters-tab--active" : "headquarters-tab"}
+            onClick={() => setTab("construction")}
           >
             Budowa
           </button>
           <button
             type="button"
             role="tab"
-            aria-selected={tab === "trasy"}
-            className={tab === "trasy" ? "hq-tab hq-tab--active" : "hq-tab"}
-            onClick={() => setTab("trasy")}
+            aria-selected={tab === "routes"}
+            className={tab === "routes" ? "headquarters-tab headquarters-tab--active" : "headquarters-tab"}
+            onClick={() => setTab("routes")}
           >
             Trasy
           </button>
         </div>
-        {tab === "budowa" ? <BudowaTab world={world} /> : <TrasyTab world={world} />}
+        {tab === "construction" ? <ConstructionTab world={world} /> : <RoutesTab world={world} />}
         <button type="button" className="menu-btn" onClick={onClose}>
           Close
         </button>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyCommand, HEADQUARTERS_COST, LABOR_FEE, SHIP_RECIPE, type World } from "../sim";
 import { createWorld } from "../sim";
-import { deriveStallReason } from "./hqStall";
+import { deriveStallReason } from "./headquartersStall";
 
 function foundedAndPlaced(seedStr: string, thalers: number): World {
   const w0 = createWorld(seedStr);

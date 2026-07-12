@@ -30,7 +30,7 @@ export function TopBar() {
   const hasHeadquarters = useGameStore((s) => !!s.world?.company.headquarters);
   const [priceBoardOpen, setPriceBoardOpen] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(false);
-  const [hqOpen, setHqOpen] = useState(false);
+  const [headquartersOpen, setHeadquartersOpen] = useState(false);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -70,14 +70,14 @@ export function TopBar() {
       {/* Persistent shortcut once the Headquarters is founded (docs/specs/E9
           — UX skeleton: "a persistent TopBar shortcut once founded"). */}
       {hasHeadquarters && (
-        <button type="button" className="menu-btn" onClick={() => setHqOpen(true)}>
+        <button type="button" className="menu-btn" onClick={() => setHeadquartersOpen(true)}>
           Headquarters
         </button>
       )}
       <GameMenu />
       {priceBoardOpen && <PriceBoardOverlay onClose={() => setPriceBoardOpen(false)} />}
       {ledgerOpen && <LedgerOverlay onClose={() => setLedgerOpen(false)} />}
-      {hqOpen && <HeadquartersPanel onClose={() => setHqOpen(false)} />}
+      {headquartersOpen && <HeadquartersPanel onClose={() => setHeadquartersOpen(false)} />}
     </header>
   );
 }

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { createWorld, generateShipName, GOODS, type Ship, type World } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
 
@@ -61,6 +61,31 @@ async function continueWithWorld(page: Page, world: World) {
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
+/** Drives the Trasy tab's editor through the canonical two-Stop route —
+ *  buy grain at `a` (Stop 1), sell grain at `b` (Stop 2) — and saves it. */
+async function createGrainRoute(dialog: Locator, a: string, b: string) {
+  await dialog.getByRole('button', { name: /^New route$/ }).click();
+  await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+  await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+
+  const stopRows = dialog.locator('.stop-row');
+  await expect(stopRows).toHaveCount(2);
+  await stopRows.nth(0).locator('select').selectOption(a);
+  await stopRows
+    .nth(0)
+    .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} buy at Stop 1$`) })
+    .click();
+  await stopRows.nth(1).locator('select').selectOption(b);
+  await stopRows
+    .nth(1)
+    .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} sell at Stop 2$`) })
+    .click();
+
+  const saveBtn = dialog.getByRole('button', { name: /^Save route$/ });
+  await expect(saveBtn).toBeEnabled();
+  await saveBtn.click();
+}
+
 test.describe('save-injection harness smoke test', () => {
   test('a funded World loads via Continue with the founding button enabled', async ({ page }) => {
     await continueWithWorld(page, fundedWorld('hq-smoke'));
@@ -83,12 +108,12 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await expect(foundBtn).toHaveCount(0); // founding button gone once founded
 
     // TopBar shortcut appears once founded.
-    const hqBtn = page.getByRole('button', { name: /^Headquarters$/ });
-    await expect(hqBtn).toBeVisible();
+    const headquartersBtn = page.getByRole('button', { name: /^Headquarters$/ });
+    await expect(headquartersBtn).toBeVisible();
 
     // PortPanel's Headquarters section shows a build progress bar once a
     // build exists — place one from the panel first.
-    await hqBtn.click();
+    await headquartersBtn.click();
     const dialog = page.getByRole('dialog', { name: /headquarters/i });
     await expect(dialog).toBeVisible();
     const placeBtn = dialog.getByRole('button', { name: /Zleć budowę/ });
@@ -97,7 +122,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await expect(placeBtn).toBeDisabled(); // disabled while a build runs
 
     // Per-good progress bars render, one per good.
-    await expect(dialog.locator('.hq-progress__row')).toHaveCount(5);
+    await expect(dialog.locator('.headquarters-progress__row')).toHaveCount(5);
 
     // The HQ port's own PortPanel also shows the progress section (design:
     // "readable from the port level") — checked *before* rushing, since a
@@ -105,7 +130,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     // the ship, clearing buildOrder (and this section along with it).
     await dialog.getByRole('button', { name: /^Close$/ }).click();
     await page.locator('g.port').first().click({ force: true });
-    await expect(page.locator('.hq-section .hq-progress__row')).toHaveCount(5);
+    await expect(page.locator('.headquarters-section .headquarters-progress__row')).toHaveCount(5);
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
     const dialog2 = page.getByRole('dialog', { name: /headquarters/i });
 
@@ -141,26 +166,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // Create a two-Stop route: buy grain at A, sell grain at B.
-    await dialog.getByRole('button', { name: /^New route$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-
-    const stopRows = dialog.locator('.stop-row');
-    await expect(stopRows).toHaveCount(2);
-    await stopRows.nth(0).locator('select').selectOption(a);
-    await stopRows
-      .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} buy at Stop 1$`) })
-      .click();
-    await stopRows.nth(1).locator('select').selectOption(b);
-    await stopRows
-      .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} sell at Stop 2$`) })
-      .click();
-
-    const saveBtn = dialog.getByRole('button', { name: /^Save route$/ });
-    await expect(saveBtn).toBeEnabled();
-    await saveBtn.click();
+    await createGrainRoute(dialog, a, b);
 
     // Route now shows in the list with a placeholder last-loop result.
     const routeRow = dialog.locator('.route-row').first();
@@ -212,21 +218,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // Route: buy grain at A, sell grain at B.
-    await dialog.getByRole('button', { name: /^New route$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-    const stopRows = dialog.locator('.stop-row');
-    await stopRows.nth(0).locator('select').selectOption(a);
-    await stopRows
-      .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} buy at Stop 1$`) })
-      .click();
-    await stopRows.nth(1).locator('select').selectOption(b);
-    await stopRows
-      .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} sell at Stop 2$`) })
-      .click();
-    await dialog.getByRole('button', { name: /^Save route$/ }).click();
+    await createGrainRoute(dialog, a, b);
 
     const routeRow = dialog.locator('.route-row').first();
     await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });

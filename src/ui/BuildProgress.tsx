@@ -8,25 +8,25 @@ import { GOOD_IDS, GOODS, SHIP_RECIPE, type GoodId } from "../sim";
  */
 export function BuildProgress({ siteStore }: { siteStore: Record<GoodId, number> }) {
   return (
-    <div className="hq-progress">
+    <div className="headquarters-progress">
       {GOOD_IDS.map((good) => {
         const have = siteStore[good] ?? 0;
         const need = SHIP_RECIPE[good];
         const pct = need > 0 ? Math.min(100, (have / need) * 100) : 100;
         return (
-          <div key={good} className="hq-progress__row">
-            <span className="hq-progress__label">{GOODS[good].name}</span>
+          <div key={good} className="headquarters-progress__row">
+            <span className="headquarters-progress__label">{GOODS[good].name}</span>
             <div
-              className="hq-progress__bar"
+              className="headquarters-progress__bar"
               role="progressbar"
               aria-label={`${GOODS[good].name} build progress`}
               aria-valuenow={have}
               aria-valuemin={0}
               aria-valuemax={need}
             >
-              <div className="hq-progress__fill" style={{ width: `${pct}%` }} />
+              <div className="headquarters-progress__fill" style={{ width: `${pct}%` }} />
             </div>
-            <span className="hq-progress__count">
+            <span className="headquarters-progress__count">
               {have}/{need}
             </span>
           </div>

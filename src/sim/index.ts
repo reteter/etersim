@@ -49,7 +49,6 @@ export {
   computeRushQuote,
   generateShipName,
   HEADQUARTERS_COST,
-  isRecipeComplete,
   LABOR_FEE,
   remainingNeed,
   SHIP_RECIPE,
@@ -79,7 +78,6 @@ export {
 export {
   effectiveBase,
   marketTick,
-  maxAffordableQty,
   NEUTRAL_MODIFIERS,
   price,
   quoteBuy,

@@ -1013,7 +1013,7 @@ body {
   filter: drop-shadow(0 0 2.5px #5fc9e0) drop-shadow(0 0 1px #5fc9e0);
 }
 
-.hq-found-btn {
+.headquarters-found-btn {
   display: block;
   margin: 0.75rem 0;
   padding: 0.5rem 0.9rem;
@@ -1024,23 +1024,23 @@ body {
   cursor: pointer;
 }
 
-.hq-found-btn:disabled {
+.headquarters-found-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.hq-section {
+.headquarters-section {
   margin: 0.75rem 0;
 }
 
-.hq-progress {
+.headquarters-progress {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   margin: 0.5rem 0;
 }
 
-.hq-progress__row {
+.headquarters-progress__row {
   display: grid;
   grid-template-columns: 6rem 1fr 4.5rem;
   align-items: center;
@@ -1048,7 +1048,7 @@ body {
   font-size: 0.85rem;
 }
 
-.hq-progress__bar {
+.headquarters-progress__bar {
   position: relative;
   height: 0.5rem;
   background: rgba(255, 255, 255, 0.08);
@@ -1056,30 +1056,30 @@ body {
   overflow: hidden;
 }
 
-.hq-progress__fill {
+.headquarters-progress__fill {
   height: 100%;
   background: #5fbf7f;
 }
 
-.hq-progress__count {
+.headquarters-progress__count {
   text-align: right;
   font-variant-numeric: tabular-nums;
   color: #a8b2c2;
 }
 
-.hq-stall {
+.headquarters-stall {
   color: #d9705f;
   font-weight: 600;
 }
 
-.hq-tabs {
+.headquarters-tabs {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.hq-tab {
+.headquarters-tab {
   padding: 0.4rem 0.9rem;
   background: none;
   border: none;
@@ -1088,7 +1088,7 @@ body {
   cursor: pointer;
 }
 
-.hq-tab--active {
+.headquarters-tab--active {
   color: #e6e6e6;
   border-bottom-color: #5fc9e0;
 }

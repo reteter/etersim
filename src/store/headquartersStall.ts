@@ -23,19 +23,19 @@ import {
  */
 export type StallReason = "funds" | "goods" | null;
 
-export function deriveStallReason(world: World, hq: Headquarters, region: Region = world.region): StallReason {
-  if (!hq.buildOrder) return null;
+export function deriveStallReason(world: World, headquarters: Headquarters, region: Region = world.region): StallReason {
+  if (!headquarters.buildOrder) return null;
   const dayTick = world.tick % TICKS_PER_DAY;
   if (dayTick >= AUTO_DRAW_PER_DAY) return null; // today's window is spent, not stalled
 
-  const port = region.ports.find((p) => p.id === hq.portId);
+  const port = region.ports.find((p) => p.id === headquarters.portId);
   if (!port) return null;
 
   let anyBuyable = false;
   let anyUnaffordable = false;
   let anyOutOfStock = false;
   for (const good of GOOD_IDS) {
-    const need = remainingNeed(hq.buildOrder.siteStore, good);
+    const need = remainingNeed(headquarters.buildOrder.siteStore, good);
     if (need <= 0) continue;
     const entry = port.market[good];
     if (Math.floor(entry.stock) <= 0) {
