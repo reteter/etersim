@@ -68,16 +68,16 @@ function walkTotal(entry: MarketGood, base: number, fromStock: number, count: nu
  * available stock.
  */
 export function quoteBuy(entry: MarketGood, base: number, qty: number): number | null {
-  if (!Number.isInteger(qty) || qty <= 0 || qty > Math.floor(entry.stock)) return null;
-  return Math.round(walkTotal(entry, base, entry.stock - qty + 1, qty) * (1 + SPREAD));
+  if (qty > Math.floor(entry.stock)) return null;
+  return estimateBuy(entry, base, qty);
 }
 
 /**
  * Estimate variant of `quoteBuy` without the stock cap: the same marginal
  * walk, with units beyond today's stock priced at the curve's ceiling
- * (`price` clamps stock at 1). Equal to `quoteBuy` whenever qty ≤ stock.
- * For estimates only (`computeBuildEstimate`, #122) — never for charging:
- * the market cannot actually sell past its stock.
+ * (`price` clamps stock at 1). `quoteBuy` delegates here, so the two can
+ * never drift apart within stock. For estimates only (`computeBuildEstimate`,
+ * #122) — never for charging: the market cannot actually sell past its stock.
  */
 export function estimateBuy(entry: MarketGood, base: number, qty: number): number | null {
   if (!Number.isInteger(qty) || qty <= 0) return null;

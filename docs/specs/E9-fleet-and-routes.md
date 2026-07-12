@@ -365,9 +365,12 @@ comment is corrected in the same PR (setting verdict above).
   `deliver(shipId, good)` (docked at the Headquarters port; moves
   `min(cargo, remaining)`).
 - `computeBuildEstimate(world)`: pure preview of a prospective Build Order's cost —
-  Recipe × current asks (marginal walk via `quoteBuy`) + `LABOR_FEE`; the
-  `computeRushQuote` pattern, consumed by the Budowa tab's estimate + confirmation
-  step (#122 grill).
+  Recipe × current asks + `LABOR_FEE`; the `computeRushQuote` pattern, consumed by
+  the Budowa tab's estimate + confirmation step (#122 grill). Priced via
+  `estimateBuy` (market.ts): `quoteBuy`'s exact marginal walk without the stock cap
+  — units beyond today's stock price at the curve's ceiling, so a full-Recipe
+  estimate stays finite when the market can't cover it today (`quoteBuy` delegates
+  to it within stock, so the two can never drift).
 - Auto-draw (tick phase): for each good in `GOOD_IDS` order with remaining need and
   per-day budget left, buy `min(rate share, remaining, affordable above the Reserve,
   floor(stock))` via `quoteBuy` from the Headquarters port — a purchase never takes

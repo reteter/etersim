@@ -369,23 +369,39 @@ describe("computeBuildEstimate (#122)", () => {
 
 describe("Reserve guardrail (#122 AC 12)", () => {
   it("founding + Build Order + auto-draw + daily rushes never take the purse below the Reserve", () => {
+    // Below-floor budgets exercise the rejection branch: commands must bounce
+    // and leave the purse untouched, so on any budget
+    // thalers ≥ min(starting purse, CONSTRUCTION_RESERVE) holds throughout.
     const budgets = [
+      400, // below the Reserve itself — founding must bounce, purse untouched
+      HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE - 1, // founding OK, labor fee must bounce
       HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE, // exact floor
       HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE + 900, // thin working capital
       8_000, // roughly a recipe's worth
       20_000, // comfortable
     ];
     for (const budget of budgets) {
+      const floor = Math.min(budget, CONSTRUCTION_RESERVE);
       let w = rich(`guardrail-${budget}`, budget);
       w = applyCommand(w, { kind: "foundHeadquarters", portId: w.region.ports[0].id });
       w = applyCommand(w, { kind: "placeBuildOrder" });
-      expect(w.company.thalers).toBeGreaterThanOrEqual(CONSTRUCTION_RESERVE);
+      expect(w.company.thalers).toBeGreaterThanOrEqual(floor);
       for (let t = 0; t < 3 * TICKS_PER_DAY; t++) {
         // A rush attempt at every day boundary stresses the cap alongside auto-draw.
         w = tick(w, t % TICKS_PER_DAY === 0 ? [{ kind: "rushBuild" }] : []);
-        expect(w.company.thalers).toBeGreaterThanOrEqual(CONSTRUCTION_RESERVE);
+        expect(w.company.thalers).toBeGreaterThanOrEqual(floor);
       }
     }
+  });
+
+  it("rejected construction commands leave the purse exactly untouched", () => {
+    const below = rich("guardrail-bounce", 400); // below the Reserve itself
+    expect(applyCommand(below, { kind: "foundHeadquarters", portId: below.region.ports[0].id })).toBe(below);
+
+    const thin = rich("guardrail-bounce2", HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE - 1);
+    const founded = applyCommand(thin, { kind: "foundHeadquarters", portId: thin.region.ports[0].id });
+    expect(founded.company.thalers).toBe(LABOR_FEE + CONSTRUCTION_RESERVE - 1);
+    expect(applyCommand(founded, { kind: "placeBuildOrder" })).toBe(founded);
   });
 });
 

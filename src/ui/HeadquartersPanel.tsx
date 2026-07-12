@@ -66,7 +66,7 @@ function ConstructionTab({ world }: { world: World }) {
       {confirming && estimate && !buildOrder ? (
         <div className="build-confirm">
           <p>Zlecić budowę? Szacunkowy koszt: ₸{estimate.total} (przy dzisiejszych cenach).</p>
-          {estimate.total > thalers && (
+          {estimate.total > thalers - CONSTRUCTION_RESERVE && (
             <p className="headquarters-stall">
               Masz ₸{thalers} — budowa stanie na rezerwie ₸{CONSTRUCTION_RESERVE}, dopóki nie
               dowieziesz materiałów albo nie zarobisz więcej.
@@ -95,7 +95,7 @@ function ConstructionTab({ world }: { world: World }) {
           disabled={!canPlace}
           title={
             buildOrder
-              ? "A build is already running."
+              ? "budowa już trwa"
               : canPlace
                 ? undefined
                 : `wymaga ₸${LABOR_FEE + CONSTRUCTION_RESERVE} — robocizna ₸${LABOR_FEE} + rezerwa ₸${CONSTRUCTION_RESERVE}`
