@@ -73,6 +73,18 @@ export function quoteBuy(entry: MarketGood, base: number, qty: number): number |
 }
 
 /**
+ * Estimate variant of `quoteBuy` without the stock cap: the same marginal
+ * walk, with units beyond today's stock priced at the curve's ceiling
+ * (`price` clamps stock at 1). Equal to `quoteBuy` whenever qty ≤ stock.
+ * For estimates only (`computeBuildEstimate`, #122) — never for charging:
+ * the market cannot actually sell past its stock.
+ */
+export function estimateBuy(entry: MarketGood, base: number, qty: number): number | null {
+  if (!Number.isInteger(qty) || qty <= 0) return null;
+  return Math.round(walkTotal(entry, base, entry.stock - qty + 1, qty) * (1 + SPREAD));
+}
+
+/**
  * Largest quantity in `[0, maxQty]` whose `quoteBuy` fits within `purse`, also
  * capped by available stock. `quoteBuy` is monotone increasing in qty, so this
  * walks the affordability frontier and stops at the first unaffordable unit.

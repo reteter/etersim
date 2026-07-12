@@ -1,6 +1,6 @@
 import { GOOD_IDS, type GoodId } from "./goods";
 import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
-import { effectiveBase, maxAffordableQty, quoteBuy } from "./market";
+import { effectiveBase, estimateBuy, maxAffordableQty, quoteBuy } from "./market";
 import type { PortId } from "./region";
 import { TICKS_PER_DAY } from "./region";
 import { emptyCargo, type Ship } from "./ship";
@@ -15,6 +15,11 @@ import type { World } from "./world";
  */
 
 export const HEADQUARTERS_COST = 2500;
+/** The Reserve (CONTEXT.md; #122 grill 2026-07-12): no construction spend —
+ *  founding, labor fee, auto-draw, rush — may take the purse below this
+ *  floor. Equal to STARTING_THALERS so the rule reads "building never
+ *  touches your last starting-purse". Tuning ≠ spec drift. */
+export const CONSTRUCTION_RESERVE = 500;
 export const SHIP_RECIPE: Record<GoodId, number> = {
   grain: 100,
   textiles: 30,
@@ -120,7 +125,9 @@ export function computeRushQuote(world: World): RushQuote {
   const port = world.region.ports.find((p) => p.id === hq.portId);
   if (!port) return { lines: [], total: 0 };
 
-  let thalers = world.company.thalers;
+  // Only the purse above the Reserve is spendable (#122): the quote walks
+  // affordability against it, so rushBuild inherits the floor for free.
+  let thalers = world.company.thalers - CONSTRUCTION_RESERVE;
   const siteStore = hq.buildOrder.siteStore;
   const lines: RushQuoteLine[] = [];
   for (const good of GOOD_IDS) {
@@ -136,6 +143,47 @@ export function computeRushQuote(world: World): RushQuote {
   }
   const total = lines.reduce((sum, line) => sum + line.thalers, 0);
   return { lines, total };
+}
+
+/** One good's line in a build estimate: the full Recipe quantity at today's
+ *  asks (ceiling-priced past current stock — see `estimateBuy`). */
+export interface BuildEstimateLine {
+  readonly good: GoodId;
+  readonly qty: number;
+  readonly thalers: number;
+}
+
+/** A prospective Build Order's cost "at today's prices": per-good Recipe
+ *  lines, the flat labor fee, and their sum. */
+export interface BuildEstimate {
+  readonly lines: readonly BuildEstimateLine[];
+  readonly laborFee: number;
+  readonly total: number;
+}
+
+/** Pure preview of what commissioning a hull would cost at today's prices:
+ *  Recipe × current asks at the Headquarters port (`estimateBuy` — the same
+ *  marginal walk `quoteBuy` charges, ceiling-priced past current stock) plus
+ *  the labor fee. Deliberately independent of the purse — it is an estimate
+ *  shown *against* the purse, not an affordability quote (#122 grill; the
+ *  `computeRushQuote` pattern, so the Budowa tab's displayed breakdown can
+ *  never drift from the price curve that charges auto-draw and rush).
+ *  `null` without a Headquarters. */
+export function computeBuildEstimate(world: World): BuildEstimate | null {
+  const hq = world.company.headquarters;
+  if (!hq) return null;
+  const port = world.region.ports.find((p) => p.id === hq.portId);
+  if (!port) return null;
+
+  const lines: BuildEstimateLine[] = [];
+  for (const good of GOOD_IDS) {
+    const qty = SHIP_RECIPE[good];
+    if (qty <= 0) continue;
+    const thalers = estimateBuy(port.market[good], effectiveBase(port, good), qty)!;
+    lines.push({ good, qty, thalers });
+  }
+  const materials = lines.reduce((sum, line) => sum + line.thalers, 0);
+  return { lines, laborFee: LABOR_FEE, total: materials + LABOR_FEE };
 }
 
 /** Launch a new ship when the current siteStore completes the recipe: append a
@@ -173,7 +221,8 @@ export function launchIfComplete(world: World): World {
 /** Run one tick's auto-draw for the HQ build site (after docking, before the
  *  market tick). In GOOD_IDS order, per-good daily cap via autoDrawCapForDayTick,
  *  paid at quoteBuy from the HQ port, stock-limited. Buys 0 (silent stall) when
- *  unaffordable or out of stock. Attempts a launch afterward. Pure. */
+ *  the purchase would take the purse below CONSTRUCTION_RESERVE or the port is
+ *  out of stock. Attempts a launch afterward. Pure. */
 export function runBuildSiteAutoDraw(world: World): World {
   const hq = world.company.headquarters;
   if (!hq || !hq.buildOrder) return world;
@@ -197,7 +246,7 @@ export function runBuildSiteAutoDraw(world: World): World {
     const buyQty = Math.min(cap, need, Math.floor(entry.stock));
     if (buyQty <= 0) continue;
     const cost = quoteBuy(entry, effectiveBase(hqPort, good), buyQty);
-    if (cost === null || cost > thalers) continue; // stall silently
+    if (cost === null || cost > thalers - CONSTRUCTION_RESERVE) continue; // stall silently at the Reserve (#122)
 
     thalers -= cost;
     siteStore = { ...siteStore, [good]: (siteStore[good] ?? 0) + buyQty };

@@ -92,6 +92,14 @@ test.describe('save-injection harness smoke test', () => {
     await page.locator('g.port').first().click({ force: true });
     await expect(page.getByRole('button', { name: /Załóż siedzibę/ })).toBeEnabled();
   });
+
+  test('founding is gated at cost + Reserve: ₸2,999 disables the button (#122)', async ({ page }) => {
+    await continueWithWorld(page, fundedWorld('hq-gate', 2_999));
+    await page.locator('g.port').first().click({ force: true });
+    const foundBtn = page.getByRole('button', { name: /Załóż siedzibę/ });
+    await expect(foundBtn).toBeDisabled();
+    await expect(foundBtn).toHaveAttribute('title', /rezerwa/);
+  });
 });
 
 test.describe('Headquarters — Budowa tab (#84)', () => {
@@ -118,7 +126,18 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await expect(dialog).toBeVisible();
     const placeBtn = dialog.getByRole('button', { name: /Zleć budowę/ });
     await expect(placeBtn).toBeEnabled();
+
+    // Pre-build estimate breakdown renders "at today's prices" (#122).
+    await expect(dialog.locator('.build-estimate__lines li')).toHaveCount(6); // 5 goods + labor fee
+    await expect(dialog).toContainText(/Szacunkowy koszt: ₸\d+ \(przy dzisiejszych cenach\)/);
+
+    // Placing goes through a confirmation step (#122) — no warning here:
+    // the purse (₸100,000) comfortably covers the estimate.
     await placeBtn.click();
+    const confirmBtn = dialog.getByRole('button', { name: /Potwierdź — ₸\d/ });
+    await expect(confirmBtn).toBeVisible();
+    await expect(dialog.locator('.headquarters-stall')).toHaveCount(0);
+    await confirmBtn.click();
     await expect(placeBtn).toBeDisabled(); // disabled while a build runs
 
     // Per-good progress bars render, one per good.
@@ -146,6 +165,27 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await rushBtn.click();
     const afterThalers = Number((await page.locator('.top-bar__thalers').innerText()).replace(/[^\d]/g, ''));
     expect(beforeThalers - afterThalers).toBe(quoted);
+  });
+
+  test('thin purse: the confirmation step warns the build will stall at the Reserve (#122)', async ({
+    page,
+  }) => {
+    // ₸4,000: founding (₸2,500) and the labor fee (₸800) both clear their
+    // Reserve gates, but the estimate (≈₸8,000) far exceeds what remains.
+    await continueWithWorld(page, fundedWorld('hq-thin', 4_000));
+    await page.locator('g.port').first().click({ force: true });
+    await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
+    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+
+    await dialog.getByRole('button', { name: /Zleć budowę/ }).click();
+    await expect(dialog.locator('.headquarters-stall')).toContainText(/stanie na rezerwie ₸500/);
+    await dialog.getByRole('button', { name: /Potwierdź — ₸\d/ }).click();
+
+    // The order is placed; auto-draw will now spend down to the Reserve and
+    // the Budowa tab shows the reserve stall reason once it gets there — the
+    // sim-side floor itself is pinned by unit tests (building.test.ts #122).
+    await expect(dialog.getByRole('button', { name: /Zleć budowę/ })).toBeDisabled();
   });
 });
 
