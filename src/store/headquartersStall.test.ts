@@ -35,8 +35,8 @@ describe("deriveStallReason", () => {
 
   it("reports 'goods' when the port is out of stock for every needed good, within the draw window", () => {
     let w = foundedAndPlaced("stall-goods", 1_000_000);
-    const hq = w.company.headquarters!;
-    const portIdx = w.region.ports.findIndex((p) => p.id === hq.portId);
+    const headquarters = w.company.headquarters!;
+    const portIdx = w.region.ports.findIndex((p) => p.id === headquarters.portId);
     const port = w.region.ports[portIdx];
     const zeroedMarket = { ...port.market };
     for (const good of Object.keys(SHIP_RECIPE) as (keyof typeof SHIP_RECIPE)[]) {
@@ -45,17 +45,17 @@ describe("deriveStallReason", () => {
     const ports = [...w.region.ports];
     ports[portIdx] = { ...port, market: zeroedMarket };
     w = { ...w, tick: 0, region: { ...w.region, ports } };
-    expect(deriveStallReason(w, hq)).toBe("goods");
+    expect(deriveStallReason(w, headquarters)).toBe("goods");
   });
 
   it("is null once the site store fully covers the recipe (no remaining need)", () => {
     let w = foundedAndPlaced("stall-complete", 1_000_000);
-    const hq = w.company.headquarters!;
+    const headquarters = w.company.headquarters!;
     const full = { ...SHIP_RECIPE };
     w = {
       ...w,
       tick: 0,
-      company: { ...w.company, headquarters: { portId: hq.portId, buildOrder: { siteStore: full } } },
+      company: { ...w.company, headquarters: { portId: headquarters.portId, buildOrder: { siteStore: full } } },
     };
     expect(deriveStallReason(w, w.company.headquarters!)).toBeNull();
   });
