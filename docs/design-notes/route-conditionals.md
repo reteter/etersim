@@ -28,3 +28,8 @@ obligations, which sharpens the question of *when* a loop should realize its mar
 - E9 playtests: does route rot actually feel like gameplay, or like babysitting?
 - E3 contracts: do standing obligations make conditional sells more or less necessary?
   (A contract quota may already *be* the "when to sell" answer.)
+- Fresh-eyes playtest ([2026-07-12](playtest-2026-07-12-fresh-eyes-kacper.md), raw log
+  item 10): the first outside player, unprompted, asked for exactly this — "buy below
+  the average price, sell above it, automate the process" — *and* found the route
+  editor too complicated as-is. Signal that price conditionals are the intuitive mental
+  model for route automation; the grill must answer why route rot is better, or fold.
