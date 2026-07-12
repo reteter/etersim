@@ -3,6 +3,7 @@ import { applyCommand } from "./commands";
 import {
   AUTO_DRAW_PER_DAY,
   autoDrawCapForDayTick,
+  computeRushQuote,
   emptySiteStore,
   generateShipName,
   HEADQUARTERS_COST,
@@ -256,6 +257,29 @@ describe("rush (#81)", () => {
     const w0 = rich("rush2", HEADQUARTERS_COST + 10);
     const w = applyCommand(w0, { kind: "foundHeadquarters", portId: w0.region.ports[0].id });
     expect(applyCommand(w, { kind: "rushBuild" })).toBe(w);
+  });
+
+  it("computeRushQuote previews exactly what rushBuild charges (same sim function, #84 AC)", () => {
+    const w0 = rich("rush-quote", 1_000_000);
+    const portId = w0.region.ports[0].id;
+    let w = applyCommand(w0, { kind: "foundHeadquarters", portId });
+    w = applyCommand(w, { kind: "placeBuildOrder" });
+
+    const quote = computeRushQuote(w);
+    const after = applyCommand(w, { kind: "rushBuild" });
+
+    const rushEvents = after.ledger
+      .filter((e) => e.kind === "rush")
+      .map((e) => (e.kind === "rush" ? { good: e.good, qty: e.qty, thalers: e.thalers } : null));
+    expect(quote.lines).toEqual(rushEvents);
+    expect(quote.total).toBe(rushEvents.reduce((sum, e) => sum + (e?.thalers ?? 0), 0));
+    expect(w.company.thalers - after.company.thalers).toBe(quote.total);
+  });
+
+  it("computeRushQuote is empty with no active build order", () => {
+    const w0 = rich("rush-quote-none", HEADQUARTERS_COST + 10);
+    const w = applyCommand(w0, { kind: "foundHeadquarters", portId: w0.region.ports[0].id });
+    expect(computeRushQuote(w)).toEqual({ lines: [], total: 0 });
   });
 });
 

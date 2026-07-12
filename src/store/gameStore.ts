@@ -6,6 +6,7 @@ import {
   tick,
   type Command,
   type PortId,
+  type RouteId,
   type Ship,
   type ShipId,
   type Speed,
@@ -43,6 +44,13 @@ interface GameState {
    * untouched by newGame/loadWorld/reset.
    */
   readonly autoPauseOnArrival: boolean;
+  /**
+   * The Route selected in the Headquarters panel's Trasy tab (E9): drives
+   * the map's Stop-port highlighting only (docs/specs/E9 — "on the map, the
+   * selected Route only highlights its Stop ports"). Independent of
+   * `selection` (port/ship panel focus).
+   */
+  readonly selectedRouteId: RouteId | null;
 
   newGame(seed: number | string): void;
   loadWorld(world: World): void;
@@ -50,6 +58,7 @@ interface GameState {
   setSpeed(speed: Speed): void;
   setAutoPauseOnArrival(value: boolean): void;
   select(selection: Selection): void;
+  selectRoute(routeId: RouteId | null): void;
   /** Designates a ship as Controlled and focuses its ShipPanel — the shared
    *  path for map, Harbor and header clicks (docs/specs/E2-trade-loop.md). */
   openShip(id: ShipId): void;
@@ -65,6 +74,7 @@ const INITIAL = {
   carryMs: 0,
   selection: null,
   controlledShipId: null,
+  selectedRouteId: null,
 };
 
 /** The Controlled Ship a fresh world starts with — the company's first ship. */
@@ -122,6 +132,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
   },
 
   select: (selection) => set({ selection }),
+
+  selectRoute: (routeId) => set({ selectedRouteId: routeId }),
 
   openShip: (id) => set({ controlledShipId: id, selection: { kind: "ship", id } }),
 

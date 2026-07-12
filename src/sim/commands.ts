@@ -1,15 +1,15 @@
 import {
   applyDeliveryToSite,
+  computeRushQuote,
   emptySiteStore,
   HEADQUARTERS_COST,
   LABOR_FEE,
   launchIfComplete,
-  remainingNeed,
   type Headquarters,
 } from "./building";
-import { GOOD_IDS, type GoodId } from "./goods";
+import type { GoodId } from "./goods";
 import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
-import { effectiveBase, maxAffordableQty, quoteBuy, quoteSell } from "./market";
+import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { shortestCourse } from "./pathfinding";
 import type { Port, PortId } from "./region";
 import type { Route, RouteId } from "./route";
@@ -182,25 +182,35 @@ export function applyCommand(world: World, command: Command): World {
       const portIdx = world.region.ports.findIndex((p) => p.id === hq.portId);
       if (portIdx < 0) return world;
 
+      // computeRushQuote (building.ts) is the single source of "what would
+      // rushing buy right now" — the UI previews the same quote before the
+      // player confirms (docs/specs/E9 — "same sim function").
+      const quote = computeRushQuote(world);
+      if (quote.lines.length === 0) return world;
+
       let thalers = world.company.thalers;
       let siteStore = { ...hq.buildOrder.siteStore };
       const ports = [...world.region.ports];
       let port = ports[portIdx];
       const events: LedgerEvent[] = [];
 
-      for (const good of GOOD_IDS) {
-        const need = remainingNeed(siteStore, good);
-        if (need <= 0) continue;
-        const entry = port.market[good];
-        const base = effectiveBase(port, good);
-        const q = maxAffordableQty(entry, base, need, thalers);
-        if (q <= 0) continue;
-        const cost = quoteBuy(entry, base, q)!;
-        thalers -= cost;
-        siteStore = { ...siteStore, [good]: (siteStore[good] ?? 0) + q };
-        port = { ...port, market: { ...port.market, [good]: { ...entry, stock: entry.stock - q } } };
+      for (const line of quote.lines) {
+        const entry = port.market[line.good];
+        thalers -= line.thalers;
+        siteStore = { ...siteStore, [line.good]: (siteStore[line.good] ?? 0) + line.qty };
+        port = {
+          ...port,
+          market: { ...port.market, [line.good]: { ...entry, stock: entry.stock - line.qty } },
+        };
         ports[portIdx] = port;
-        events.push({ kind: "rush", tick: world.tick, portId: hq.portId, good, qty: q, thalers: cost });
+        events.push({
+          kind: "rush",
+          tick: world.tick,
+          portId: hq.portId,
+          good: line.good,
+          qty: line.qty,
+          thalers: line.thalers,
+        });
       }
 
       const rushed: World = {
