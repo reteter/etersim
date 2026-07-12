@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyCommand, HEADQUARTERS_COST, LABOR_FEE, SHIP_RECIPE, type World } from "../sim";
+import { applyCommand, CONSTRUCTION_RESERVE, HEADQUARTERS_COST, LABOR_FEE, SHIP_RECIPE, type World } from "../sim";
 import { createWorld } from "../sim";
 import { deriveStallReason } from "./headquartersStall";
 
@@ -15,22 +15,23 @@ function foundedAndPlaced(seedStr: string, thalers: number): World {
 describe("deriveStallReason", () => {
   it("is null with no active build order", () => {
     const w0 = createWorld("stall-none");
-    const rich: World = { ...w0, company: { ...w0.company, thalers: HEADQUARTERS_COST + 100 } };
+    const rich: World = { ...w0, company: { ...w0.company, thalers: HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 100 } };
     const w = applyCommand(rich, { kind: "foundHeadquarters", portId: rich.region.ports[0].id });
     expect(deriveStallReason(w, w.company.headquarters!)).toBeNull();
   });
 
-  it("is null (waiting for tomorrow) once today's auto-draw window is spent, even if broke", () => {
-    let w = foundedAndPlaced("stall-window", HEADQUARTERS_COST + LABOR_FEE);
+  it("is null (waiting for tomorrow) once today's auto-draw window is spent, even at the Reserve", () => {
+    let w = foundedAndPlaced("stall-window", HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE);
     // Fast-forward past AUTO_DRAW_PER_DAY ticks within the same day.
     w = { ...w, tick: 15 };
     expect(deriveStallReason(w, w.company.headquarters!)).toBeNull();
   });
 
-  it("reports 'funds' when every needed good is affordable-blocked, within the draw window", () => {
-    let w = foundedAndPlaced("stall-funds", HEADQUARTERS_COST + LABOR_FEE);
-    w = { ...w, tick: 0, company: { ...w.company, thalers: 0 } };
-    expect(deriveStallReason(w, w.company.headquarters!)).toBe("funds");
+  it("reports 'reserve' when every needed good would dip below the Reserve, within the draw window (#122)", () => {
+    // Purse exactly at the floor: any purchase would cross it.
+    const w = foundedAndPlaced("stall-reserve", HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE);
+    expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE);
+    expect(deriveStallReason({ ...w, tick: 0 }, w.company.headquarters!)).toBe("reserve");
   });
 
   it("reports 'goods' when the port is out of stock for every needed good, within the draw window", () => {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   cargoUsed,
+  CONSTRUCTION_RESERVE,
   effectiveBase,
   GOOD_IDS,
   GOODS,
@@ -306,13 +307,18 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
   const headquarters = world.company.headquarters;
 
   if (!headquarters) {
-    const canAfford = world.company.thalers >= HEADQUARTERS_COST;
+    // Founding may not dip into the Reserve (#122 — E9 spec §The Reserve).
+    const canAfford = world.company.thalers >= HEADQUARTERS_COST + CONSTRUCTION_RESERVE;
     return (
       <button
         type="button"
         className="headquarters-found-btn"
         disabled={!canAfford}
-        title={canAfford ? undefined : "Not enough thalers."}
+        title={
+          canAfford
+            ? undefined
+            : `wymaga ₸${HEADQUARTERS_COST + CONSTRUCTION_RESERVE} — koszt ₸${HEADQUARTERS_COST} + nienaruszalna rezerwa ₸${CONSTRUCTION_RESERVE}`
+        }
         onClick={() => dispatch({ kind: "foundHeadquarters", portId })}
       >
         Załóż siedzibę — ₸{HEADQUARTERS_COST}

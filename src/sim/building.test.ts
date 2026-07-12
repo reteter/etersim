@@ -3,7 +3,9 @@ import { applyCommand } from "./commands";
 import {
   AUTO_DRAW_PER_DAY,
   autoDrawCapForDayTick,
+  computeBuildEstimate,
   computeRushQuote,
+  CONSTRUCTION_RESERVE,
   emptySiteStore,
   generateShipName,
   HEADQUARTERS_COST,
@@ -30,15 +32,15 @@ function rich(seedStr: string, thalers: number): World {
 
 describe("foundHeadquarters (#81)", () => {
   it("charges the flat cost and plants the HQ at the chosen port", () => {
-    const w = rich("found", HEADQUARTERS_COST + 100);
+    const w = rich("found", HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 100);
     const portId = w.region.ports[2].id;
     const next = applyCommand(w, { kind: "foundHeadquarters", portId });
-    expect(next.company.thalers).toBe(100);
+    expect(next.company.thalers).toBe(CONSTRUCTION_RESERVE + 100);
     expect(next.company.headquarters).toEqual({ portId });
   });
 
   it("appends exactly one founding event", () => {
-    const w = rich("found-ledger", HEADQUARTERS_COST + 100);
+    const w = rich("found-ledger", HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 100);
     const portId = w.region.ports[2].id;
     const next = applyCommand(w, { kind: "foundHeadquarters", portId });
     expect(next.ledger.length).toBe(w.ledger.length + 1);
@@ -51,7 +53,8 @@ describe("foundHeadquarters (#81)", () => {
   });
 
   it("rejects a second HQ, an unaffordable one, and an unknown port — no ledger event either", () => {
-    const poor = rich("found2", HEADQUARTERS_COST - 1);
+    // Unaffordable now means "would dip into the Reserve" (#122).
+    const poor = rich("found2", HEADQUARTERS_COST + CONSTRUCTION_RESERVE - 1);
     expect(applyCommand(poor, { kind: "foundHeadquarters", portId: poor.region.ports[0].id })).toBe(poor);
 
     const w = rich("found3", HEADQUARTERS_COST * 2);
@@ -65,7 +68,7 @@ describe("foundHeadquarters (#81)", () => {
 
 describe("placeBuildOrder (#81)", () => {
   const founded = (): World => {
-    const w = rich("place", HEADQUARTERS_COST + LABOR_FEE + 500);
+    const w = rich("place", HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE);
     return applyCommand(w, { kind: "foundHeadquarters", portId: w.region.ports[0].id });
   };
 
@@ -87,12 +90,12 @@ describe("placeBuildOrder (#81)", () => {
     });
   });
 
-  it("rejects a second concurrent build and an unaffordable labor fee", () => {
+  it("rejects a second concurrent build and a labor fee that would dip into the Reserve", () => {
     const w = founded();
     const running = applyCommand(w, { kind: "placeBuildOrder" });
     expect(applyCommand(running, { kind: "placeBuildOrder" })).toBe(running); // one at a time
 
-    const broke = { ...w, company: { ...w.company, thalers: LABOR_FEE - 1 } };
+    const broke = { ...w, company: { ...w.company, thalers: LABOR_FEE + CONSTRUCTION_RESERVE - 1 } };
     expect(applyCommand(broke, { kind: "placeBuildOrder" })).toBe(broke);
   });
 
@@ -135,16 +138,30 @@ describe("auto-draw (#81)", () => {
     }
   });
 
-  it("stalls silently when the purse cannot afford it — no error, no debt, no store growth", () => {
-    // Purse just covers founding + labor, leaving ~nothing for the market.
-    const w0 = rich("stall", HEADQUARTERS_COST + LABOR_FEE);
+  it("stalls silently at the Reserve — no error, no dip below it, no store growth (#122)", () => {
+    // Purse just covers founding + labor + the Reserve: auto-draw finds the
+    // purse already at the floor and must never move it.
+    const w0 = rich("stall", HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE);
     let w = applyCommand(w0, { kind: "foundHeadquarters", portId: w0.region.ports[0].id });
     w = applyCommand(w, { kind: "placeBuildOrder" });
-    expect(w.company.thalers).toBe(0);
+    expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE);
     for (let t = 0; t < TICKS_PER_DAY; t++) w = tick(w, []);
-    expect(w.company.thalers).toBe(0);
+    expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE);
     for (const good of GOOD_IDS) expect(w.company.headquarters!.buildOrder!.siteStore[good]).toBe(0);
     expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(false); // no movement, no event
+  });
+
+  it("spends down to the Reserve, never past it (#122)", () => {
+    // A little working capital above the floor: auto-draw may buy, but every
+    // purchase must leave the purse at or above the Reserve.
+    const w0 = rich("draw-reserve", HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE + 100);
+    let w = applyCommand(w0, { kind: "foundHeadquarters", portId: w0.region.ports[0].id });
+    w = applyCommand(w, { kind: "placeBuildOrder" });
+    for (let t = 0; t < 2 * TICKS_PER_DAY; t++) {
+      w = tick(w, []);
+      expect(w.company.thalers).toBeGreaterThanOrEqual(CONSTRUCTION_RESERVE);
+    }
+    expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(true); // ₸100 buys something
   });
 });
 
@@ -277,9 +294,114 @@ describe("rush (#81)", () => {
   });
 
   it("computeRushQuote is empty with no active build order", () => {
-    const w0 = rich("rush-quote-none", HEADQUARTERS_COST + 10);
+    const w0 = rich("rush-quote-none", HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 10);
     const w = applyCommand(w0, { kind: "foundHeadquarters", portId: w0.region.ports[0].id });
     expect(computeRushQuote(w)).toEqual({ lines: [], total: 0 });
+  });
+
+  it("quotes and spends at most purse − Reserve; rushBuild leaves the Reserve intact (#122)", () => {
+    // ₸2,000 of working capital above the floor — far short of the full
+    // recipe, so the quote is genuinely purse-bound, not stock-bound.
+    const w0 = rich("rush-reserve", HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE + 2000);
+    let w = applyCommand(w0, { kind: "foundHeadquarters", portId: w0.region.ports[0].id });
+    w = applyCommand(w, { kind: "placeBuildOrder" });
+    expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE + 2000);
+
+    const quote = computeRushQuote(w);
+    expect(quote.total).toBeGreaterThan(0);
+    expect(quote.total).toBeLessThanOrEqual(2000);
+
+    const after = applyCommand(w, { kind: "rushBuild" });
+    expect(w.company.thalers - after.company.thalers).toBe(quote.total);
+    expect(after.company.thalers).toBeGreaterThanOrEqual(CONSTRUCTION_RESERVE);
+  });
+});
+
+describe("computeBuildEstimate (#122)", () => {
+  const founded = (seedStr: string, thalers: number): World => {
+    const w = rich(seedStr, thalers);
+    return applyCommand(w, { kind: "foundHeadquarters", portId: w.region.ports[0].id });
+  };
+
+  it("prices the full Recipe at current asks plus the labor fee; equals quoteBuy where stock suffices", () => {
+    const w = founded("estimate", 1_000_000);
+    const estimate = computeBuildEstimate(w)!;
+    const port = w.region.ports[0];
+
+    expect(estimate.lines.map((l) => l.good)).toEqual(GOOD_IDS.filter((g) => SHIP_RECIPE[g] > 0));
+    let materials = 0;
+    for (const line of estimate.lines) {
+      expect(line.qty).toBe(SHIP_RECIPE[line.good]);
+      expect(line.thalers).toBeGreaterThan(0);
+      const entry = port.market[line.good];
+      if (Math.floor(entry.stock) >= line.qty) {
+        // The estimate is the exact quote whenever today's stock covers it.
+        expect(line.thalers).toBe(quoteBuy(entry, effectiveBase(port, line.good), line.qty));
+      }
+      materials += line.thalers;
+    }
+    expect(estimate.laborFee).toBe(LABOR_FEE);
+    expect(estimate.total).toBe(materials + LABOR_FEE);
+  });
+
+  it("is null without a Headquarters", () => {
+    expect(computeBuildEstimate(rich("estimate-nohq", 1_000_000))).toBeNull();
+  });
+
+  it("is independent of the purse — an estimate, not an affordability quote", () => {
+    const richWorld = founded("estimate-purse", 1_000_000);
+    const poorWorld = { ...richWorld, company: { ...richWorld.company, thalers: 0 } };
+    expect(computeBuildEstimate(poorWorld)).toEqual(computeBuildEstimate(richWorld));
+  });
+
+  it("still prices goods the market cannot fully stock today (ceiling tail, finite)", () => {
+    const w = founded("estimate-short", 1_000_000);
+    // Zero out grain stock at the HQ port: need 100, stock 0.
+    const ports = [...w.region.ports];
+    ports[0] = { ...ports[0], market: { ...ports[0].market, grain: { ...ports[0].market.grain, stock: 0 } } };
+    const short = { ...w, region: { ...w.region, ports } };
+    const line = computeBuildEstimate(short)!.lines.find((l) => l.good === "grain")!;
+    expect(line.qty).toBe(SHIP_RECIPE.grain);
+    expect(Number.isFinite(line.thalers)).toBe(true);
+    expect(line.thalers).toBeGreaterThan(0);
+  });
+});
+
+describe("Reserve guardrail (#122 AC 12)", () => {
+  it("founding + Build Order + auto-draw + daily rushes never take the purse below the Reserve", () => {
+    // Below-floor budgets exercise the rejection branch: commands must bounce
+    // and leave the purse untouched, so on any budget
+    // thalers ≥ min(starting purse, CONSTRUCTION_RESERVE) holds throughout.
+    const budgets = [
+      400, // below the Reserve itself — founding must bounce, purse untouched
+      HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE - 1, // founding OK, labor fee must bounce
+      HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE, // exact floor
+      HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE + 900, // thin working capital
+      8_000, // roughly a recipe's worth
+      20_000, // comfortable
+    ];
+    for (const budget of budgets) {
+      const floor = Math.min(budget, CONSTRUCTION_RESERVE);
+      let w = rich(`guardrail-${budget}`, budget);
+      w = applyCommand(w, { kind: "foundHeadquarters", portId: w.region.ports[0].id });
+      w = applyCommand(w, { kind: "placeBuildOrder" });
+      expect(w.company.thalers).toBeGreaterThanOrEqual(floor);
+      for (let t = 0; t < 3 * TICKS_PER_DAY; t++) {
+        // A rush attempt at every day boundary stresses the cap alongside auto-draw.
+        w = tick(w, t % TICKS_PER_DAY === 0 ? [{ kind: "rushBuild" }] : []);
+        expect(w.company.thalers).toBeGreaterThanOrEqual(floor);
+      }
+    }
+  });
+
+  it("rejected construction commands leave the purse exactly untouched", () => {
+    const below = rich("guardrail-bounce", 400); // below the Reserve itself
+    expect(applyCommand(below, { kind: "foundHeadquarters", portId: below.region.ports[0].id })).toBe(below);
+
+    const thin = rich("guardrail-bounce2", HEADQUARTERS_COST + LABOR_FEE + CONSTRUCTION_RESERVE - 1);
+    const founded = applyCommand(thin, { kind: "foundHeadquarters", portId: thin.region.ports[0].id });
+    expect(founded.company.thalers).toBe(LABOR_FEE + CONSTRUCTION_RESERVE - 1);
+    expect(applyCommand(founded, { kind: "placeBuildOrder" })).toBe(founded);
   });
 });
 

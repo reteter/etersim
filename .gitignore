@@ -15,3 +15,5 @@ playwright-report/
 test-results/
 
 tmp/
+# Local per-machine Claude Code launch config (not shared)
+.claude/launch.json

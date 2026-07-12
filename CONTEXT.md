@@ -280,8 +280,11 @@ and rush all stop at it; equal to the Company's starting capital, so the rule re
 outside it (pay-what-you-have, no-debt). Born of the agency guarantee (#122 grill,
 2026-07-12: the game may slow down, never die — a dead state is a defect).
 Calibration is tuning ≠ spec drift.
-_Implementation_: locked at the #122 grill — `CONSTRUCTION_RESERVE` in
-`src/sim/building.ts`; not in build yet.
+_Implementation_: shipped in the #122 fix — `CONSTRUCTION_RESERVE`
+(`src/sim/building.ts`), enforced at all four points: `foundHeadquarters` and
+`placeBuildOrder` gates (`commands.ts`), the auto-draw skip and the
+`computeRushQuote` purse cap; the upfront estimate is `computeBuildEstimate`
+(same file) behind the Budowa tab's confirmation step.
 _Avoid_: buffer, safety margin, minimum balance
 
 **Docking fee** (PL: opłata dokowa):

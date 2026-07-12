@@ -1,7 +1,9 @@
 import { useState } from "react";
 import {
   AUTO_DRAW_PER_DAY,
+  computeBuildEstimate,
   computeRushQuote,
+  CONSTRUCTION_RESERVE,
   GOOD_IDS,
   GOODS,
   LABOR_FEE,
@@ -22,33 +24,87 @@ import { BuildProgress } from "./BuildProgress";
 
 type Tab = "construction" | "routes";
 
-const STALL_LABEL: Record<"funds" | "goods", string> = {
-  funds: "wstrzymane: brak środków",
+const STALL_LABEL: Record<"reserve" | "goods", string> = {
+  reserve: "wstrzymane: rezerwa skarbca",
   goods: "wstrzymane: brak towaru",
 };
 
-/** The "Budowa" tab (docs/specs/E9 — UX skeleton): place a Build Order,
- *  watch its per-good progress, auto-draw rate and stall reason, and rush the
- *  remainder at a live quote computed by the same sim function that charges it. */
+/** The "Budowa" tab (docs/specs/E9 — UX skeleton): place a Build Order —
+ *  behind an upfront estimate and a confirmation step (#122, spec §The
+ *  Reserve) — watch its per-good progress, auto-draw rate and stall reason,
+ *  and rush the remainder at a live quote computed by the same sim function
+ *  that charges it. */
 function ConstructionTab({ world }: { world: World }) {
   const dispatch = useGameStore((s) => s.dispatch);
+  const [confirming, setConfirming] = useState(false);
   const headquarters = world.company.headquarters!;
   const buildOrder = headquarters.buildOrder;
-  const canPlace = !buildOrder && world.company.thalers >= LABOR_FEE;
+  const thalers = world.company.thalers;
+  const canPlace = !buildOrder && thalers >= LABOR_FEE + CONSTRUCTION_RESERVE;
   const stallReason = buildOrder ? deriveStallReason(world, headquarters) : null;
   const quote = buildOrder ? computeRushQuote(world) : null;
+  const estimate = buildOrder ? null : computeBuildEstimate(world);
 
   return (
     <div className="headquarters-construction">
-      <button
-        type="button"
-        className="menu-btn"
-        disabled={!canPlace}
-        title={buildOrder ? "A build is already running." : undefined}
-        onClick={() => dispatch({ kind: "placeBuildOrder" })}
-      >
-        Zleć budowę — ₸{LABOR_FEE}
-      </button>
+      {estimate && (
+        <div className="build-estimate">
+          <ul className="build-estimate__lines">
+            {estimate.lines.map((line) => (
+              <li key={line.good}>
+                {GOODS[line.good].name} × {line.qty} — ₸{line.thalers}
+              </li>
+            ))}
+            <li>Robocizna — ₸{estimate.laborFee}</li>
+          </ul>
+          <p className="side-panel__hint">
+            Szacunkowy koszt: ₸{estimate.total} (przy dzisiejszych cenach)
+          </p>
+        </div>
+      )}
+
+      {confirming && estimate && !buildOrder ? (
+        <div className="build-confirm">
+          <p>Zlecić budowę? Szacunkowy koszt: ₸{estimate.total} (przy dzisiejszych cenach).</p>
+          {estimate.total > thalers - CONSTRUCTION_RESERVE && (
+            <p className="headquarters-stall">
+              Masz ₸{thalers} — budowa stanie na rezerwie ₸{CONSTRUCTION_RESERVE}, dopóki nie
+              dowieziesz materiałów albo nie zarobisz więcej.
+            </p>
+          )}
+          <div className="build-confirm__actions">
+            <button
+              type="button"
+              className="menu-btn"
+              onClick={() => {
+                dispatch({ kind: "placeBuildOrder" });
+                setConfirming(false);
+              }}
+            >
+              Potwierdź — ₸{LABOR_FEE}
+            </button>
+            <button type="button" className="menu-btn" onClick={() => setConfirming(false)}>
+              Anuluj
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="menu-btn"
+          disabled={!canPlace}
+          title={
+            buildOrder
+              ? "budowa już trwa"
+              : canPlace
+                ? undefined
+                : `wymaga ₸${LABOR_FEE + CONSTRUCTION_RESERVE} — robocizna ₸${LABOR_FEE} + rezerwa ₸${CONSTRUCTION_RESERVE}`
+          }
+          onClick={() => setConfirming(true)}
+        >
+          Zleć budowę — ₸{LABOR_FEE}
+        </button>
+      )}
 
       {buildOrder && (
         <>

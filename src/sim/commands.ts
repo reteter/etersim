@@ -1,6 +1,7 @@
 import {
   applyDeliveryToSite,
   computeRushQuote,
+  CONSTRUCTION_RESERVE,
   emptySiteStore,
   HEADQUARTERS_COST,
   LABOR_FEE,
@@ -144,7 +145,8 @@ export function applyCommand(world: World, command: Command): World {
     }
     case "foundHeadquarters": {
       if (world.company.headquarters) return world;
-      if (world.company.thalers < HEADQUARTERS_COST) return world;
+      // Founding may not dip into the Reserve (#122 — E9 spec §The Reserve).
+      if (world.company.thalers < HEADQUARTERS_COST + CONSTRUCTION_RESERVE) return world;
       if (!world.region.ports.some((p) => p.id === command.portId)) return world;
       const founded: World = {
         ...world,
@@ -164,7 +166,8 @@ export function applyCommand(world: World, command: Command): World {
     case "placeBuildOrder": {
       const hq = world.company.headquarters;
       if (!hq || hq.buildOrder) return world;
-      if (world.company.thalers < LABOR_FEE) return world;
+      // The labor fee may not dip into the Reserve (#122 — E9 spec §The Reserve).
+      if (world.company.thalers < LABOR_FEE + CONSTRUCTION_RESERVE) return world;
       const nextHq: Headquarters = { portId: hq.portId, buildOrder: { siteStore: emptySiteStore() } };
       const placed: World = {
         ...world,

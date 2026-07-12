@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GOOD_IDS, GOODS } from "./goods";
 import {
   effectiveBase,
+  estimateBuy,
   FLOW_MULT_MAX,
   FLOW_MULT_MIN,
   marketTick,
@@ -367,5 +368,30 @@ describe("marketTick — price-elastic flows (soft saturation, E8)", () => {
       elastic = marketTick(elastic, CONSUMER_ONLY, NEUTRAL);
     }
     expect(elastic.grain.stock).toBe(0);
+  });
+});
+
+describe("estimateBuy (#122)", () => {
+  it("equals quoteBuy whenever qty is within stock", () => {
+    const entry = mg(300);
+    for (const qty of [1, 50, 300]) {
+      expect(estimateBuy(entry, GRAIN, qty)).toBe(quoteBuy(entry, GRAIN, qty));
+    }
+  });
+
+  it("returns a finite ceiling-priced total beyond stock, where quoteBuy returns null", () => {
+    const entry = mg(10);
+    expect(quoteBuy(entry, GRAIN, 20)).toBeNull();
+    const estimate = estimateBuy(entry, GRAIN, 20)!;
+    expect(Number.isFinite(estimate)).toBe(true);
+    // The out-of-stock tail can only price at or above the in-stock walk.
+    expect(estimate).toBeGreaterThan(quoteBuy(entry, GRAIN, 10)!);
+  });
+
+  it("rejects non-positive and non-integer quantities like quoteBuy", () => {
+    const entry = mg(100);
+    expect(estimateBuy(entry, GRAIN, 0)).toBeNull();
+    expect(estimateBuy(entry, GRAIN, -3)).toBeNull();
+    expect(estimateBuy(entry, GRAIN, 1.5)).toBeNull();
   });
 });

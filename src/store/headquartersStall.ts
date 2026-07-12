@@ -1,5 +1,6 @@
 import {
   AUTO_DRAW_PER_DAY,
+  CONSTRUCTION_RESERVE,
   effectiveBase,
   GOOD_IDS,
   quoteBuy,
@@ -13,15 +14,16 @@ import {
 /**
  * Auto-draw stalls silently at the sim level (`runBuildSiteAutoDraw`,
  * src/sim/building.ts) — this derives a human reason for the Headquarters
- * panel's Budowa tab (docs/specs/E9 — "stall reason: wstrzymane: brak
- * środków / brak towaru"), mirroring the sim's per-good walk without
- * mutating anything.
+ * panel's Budowa tab (docs/specs/E9 — "stall reason: wstrzymane: rezerwa
+ * skarbca / brak towaru"), mirroring the sim's per-good walk without
+ * mutating anything. "reserve" means the next purchase would take the purse
+ * below CONSTRUCTION_RESERVE (#122 — auto-draw never crosses the floor).
  *
  * `null` also covers the *normal* daily-cap window (today's per-good ticks
  * already spent) — that's "waiting for tomorrow", not a stall, so it must
  * not show a "no funds/goods" message.
  */
-export type StallReason = "funds" | "goods" | null;
+export type StallReason = "reserve" | "goods" | null;
 
 export function deriveStallReason(world: World, headquarters: Headquarters, region: Region = world.region): StallReason {
   if (!headquarters.buildOrder) return null;
@@ -43,7 +45,7 @@ export function deriveStallReason(world: World, headquarters: Headquarters, regi
       continue;
     }
     const cost = quoteBuy(entry, effectiveBase(port, good), 1);
-    if (cost === null || cost > world.company.thalers) {
+    if (cost === null || cost > world.company.thalers - CONSTRUCTION_RESERVE) {
       anyUnaffordable = true;
       continue;
     }
@@ -51,7 +53,7 @@ export function deriveStallReason(world: World, headquarters: Headquarters, regi
   }
 
   if (anyBuyable) return null; // at least one good makes progress this tick
-  if (anyUnaffordable) return "funds";
+  if (anyUnaffordable) return "reserve";
   if (anyOutOfStock) return "goods";
   return null; // recipe complete or no goods left to draw
 }
