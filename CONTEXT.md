@@ -266,12 +266,23 @@ _Avoid_: blueprint, cost table
 The active ship construction at the Headquarters — one at a time in E9. Holds the build
 site's own material store and fills it from three sources: **auto-draw** (each tick the
 site buys missing materials from the Headquarters port's market at the normal ask,
-rate-capped per day, paid from the Company purse — it stalls visibly when purse or local
-stock run dry), **deliveries** (deliver orders and commands), and **rush** (one-click
+rate-capped per day, paid from the Company purse — it stalls visibly at the Reserve or
+when local stock runs dry), **deliveries** (deliver orders and commands), and **rush** (one-click
 instant buy of the remainder at the normal market quote, limited by local stock — money
 does not teleport timber). The ship launches the moment the Recipe completes, empty and
 routeless.
 _Avoid_: construction job, project, queue (E9 has none)
+
+**Reserve** (PL: rezerwa):
+The ₸500 floor that no construction spend may cross — founding, labor fee, auto-draw
+and rush all stop at it; equal to the Company's starting capital, so the rule reads
+"building never touches your last starting-purse". Docking fees are deliberately
+outside it (pay-what-you-have, no-debt). Born of the agency guarantee (#122 grill,
+2026-07-12: the game may slow down, never die — a dead state is a defect).
+Calibration is tuning ≠ spec drift.
+_Implementation_: locked at the #122 grill — `CONSTRUCTION_RESERVE` in
+`src/sim/building.ts`; not in build yet.
+_Avoid_: buffer, safety margin, minimum balance
 
 **Docking fee** (PL: opłata dokowa):
 A flat per-docking charge, differentiated per Port (by archetype/size); paid on every

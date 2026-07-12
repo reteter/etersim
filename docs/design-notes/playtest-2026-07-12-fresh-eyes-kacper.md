@@ -18,6 +18,15 @@ attempt with **zero tutorial**. The funnel works; the labels on it mostly don't 
 
 ## Finding of the session: construction softlock (item 14) → #122
 
+> **Resolved → spec (#122 grill, 2026-07-12):** agency guarantee locked (the game may
+> slow down, never die — a dead state is a defect); universal construction **Reserve**
+> (₸500 = starting capital) across founding / labor fee / auto-draw / rush; upfront
+> estimate + confirmation on placing a Build Order (`computeBuildEstimate`); no
+> recovery mechanic needed. See E9 spec §The Reserve, CONTEXT.md (Reserve), final
+> acceptance criteria on #122. The manual fee-drain pathology is parked as E3 grill
+> input (E3 spec §Upkeep, #95); the stockpile/investment-policy idea raised at the
+> grill is parked as its own issue.
+
 Dead state on Day 44: **₸0, hold 0/50, ship docked** — no income-generating action
 exists from there. Verified against code: `runBuildSiteAutoDraw` never overdrafts but
 has no reserve floor (`src/sim/building.ts:200` stalls silently only *after* spending

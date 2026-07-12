@@ -115,6 +115,17 @@ a margin question. Calibration principle (tuning ≠ spec drift): **a lone start
 stays comfortably viable** — upkeep lands only now because the E9 Ledger finally makes
 it a legible line, not an unexplained penalty.
 
+**Named gap — grill input for this epic (from the #122 grill, 2026-07-12):** E9 locked
+the agency guarantee (from every reachable state a path to income exists; the game may
+slow down, never die) and enforces it for construction via the Reserve (E9 spec §The
+Reserve) — but upkeep is a standing daily drain (`min(fee, purse)` can reach ₸0), and
+docking fees already allow a pathological manual drain (sailing an empty hold until
+broke). Before implementing #95, the E3 grill must answer what the agency guarantee
+means under a standing daily cost: does an idle, broke company simply stall at ₸0
+(upkeep unpaid, no penalty, consistent with no-debt) with trading always possible the
+moment any thaler arrives — or does insolvency need a floor/rescue mechanic? See #95
+and #122.
+
 ### UX skeleton
 
 - **PriceBoardOverlay grows tabs**: **Ceny** (today's board, unchanged) and
