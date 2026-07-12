@@ -109,6 +109,10 @@ Rules, all locked:
   hulls launch (build near your loops?).
 - Cost calibration: **₸2,500** — reachable around world day 20–30 of natural play at the
   E8-verified earning pace (tuning ≠ spec drift).
+- **Reserve gate (amended 2026-07-12, #122 grill)**: founding requires
+  `HEADQUARTERS_COST + CONSTRUCTION_RESERVE` in the purse — see §The Reserve below.
+  Below the threshold the founding button is disabled with the honest label:
+  "requires ₸3,000 — founding may not touch the ₸500 reserve".
 
 ### Ship construction: the market builds your fleet
 
@@ -129,9 +133,12 @@ The build site's material store fills from three sources:
    materials from the Headquarters port's market at the normal ask, paid from the
    Company purse, rate-capped per day. The site is simply a consumer on the market: its
    demand raises local prices, osmosis starts pulling the good in from neighbors — the
-   living economy supplies the shipyard with no dedicated mechanism. When purse or
-   local stock run dry the build visibly stalls ("paused: no funds") — no penalties,
-   consistent with best-effort Stops.
+   living economy supplies the shipyard with no dedicated mechanism. When the purse
+   hits the Reserve or local stock runs dry the build visibly stalls ("paused:
+   treasury reserve" / "paused: no stock") — no penalties, consistent with
+   best-effort Stops; auto-draw never takes the Company below the Reserve
+   (amended 2026-07-12, #122 grill — originally "purse run dry", which allowed
+   spending to ₸0).
 2. **Deliveries.** The `deliver` command (docked ship at the Headquarters port) or a
    Route's deliver Stop moves `min(cargo, remaining need)` into the site for free —
    hauling timber from a cheap producer beats paying the local ask; supplying your own
@@ -147,6 +154,40 @@ The build site's material store fills from three sources:
 The ship **launches the moment the Recipe completes**: docked at the Headquarters port,
 empty, routeless, named (see UX). Payback target for the second ship: **20–40 world
 days** (tuning ≠ spec drift).
+
+### The Reserve: construction never touches starting capital
+
+Locked at the #122 grill (2026-07-12), after the first fresh-eyes playtest reached a
+dead state — ₸0, empty hold, docked; no income-generating action exists from there
+([playtest note](../design-notes/playtest-2026-07-12-fresh-eyes-kacper.md)). The
+original stall rule above was spec-compliant with that outcome: it never asked what
+happens at ₸0. Root philosophy locked with the fix: **agency guarantee** — from every
+reachable state a path to income exists; the game may slow down, never die. No
+bankruptcy screen; a dead state is a defect by definition.
+
+- **One rule, four enforcement points**: no construction spend may take the purse
+  below the **Reserve** (CONTEXT.md; `CONSTRUCTION_RESERVE = 500` — equal to
+  `STARTING_THALERS`, so the rule reads "building never touches your last
+  starting-purse"; calibration is tuning ≠ spec drift). Founding requires
+  `cost + Reserve`; `placeBuildOrder` requires `labor fee + Reserve`; auto-draw
+  stalls at the Reserve (visible stall reason); rush quotes at most `purse − Reserve`.
+- **Docking fees stay deliberately outside the rule** — pay-what-you-have, no debt:
+  fees are the cost of activity, not investments. The pathological manual drain
+  (sailing an empty hold in circles until fees hit ₸0) remains theoretically open;
+  it is named grill input to E3 (insolvency under daily upkeep — see #95 and the E3
+  spec §Upkeep), not mechanized here.
+- **Upfront estimate + confirmation on placing a Build Order**: the Budowa tab shows
+  a Recipe × current asks + labor fee breakdown computed by a pure sim function
+  (`computeBuildEstimate` — the `computeRushQuote` pattern: the displayed number can
+  never drift from what gets charged), labeled "at today's prices" (auto-draw spreads
+  purchases over days; prices drift). Clicking "Zleć budowę" opens a confirmation
+  step with the total; when the estimate exceeds the purse, the confirmation says so
+  plainly — the build will stall at the Reserve unless the player delivers materials
+  or keeps earning.
+- **No recovery mechanic** (cancel order / withdraw from site): with the Reserve
+  universal, the construction dead state is unreachable, so none is needed for #122.
+  If site-store withdrawal ever ships, it rides E13's store/withdraw semantics as its
+  own design decision, not a rescue.
 
 ### Docking fee: the fixed cost of activity
 
@@ -211,7 +252,10 @@ consume the same schema — one schema, two consumers.
 
 - **Headquarters view** — one panel, two tabs. **Budowa**: active Build Order (per-good
   progress, auto-draw rate, stall reason when stalled, rush button with live quote,
-  "Zleć budowę" button — disabled while a build runs). **Trasy**: the Company's Route
+  "Zleć budowę" button — disabled while a build runs; before a build, the estimate
+  breakdown from `computeBuildEstimate` "at today's prices" and a confirmation step
+  on placing the order, with the stall-at-Reserve warning when the estimate exceeds
+  the purse — #122 grill, design §The Reserve). **Trasy**: the Company's Route
   templates — Stop editor, assigned ships, last-loop result. Two entrances: a
   "Headquarters" section on the Headquarters port's PortPanel (with build progress bar —
   the owner's "readable from the port level" requirement) and a persistent TopBar
@@ -309,19 +353,27 @@ comment is corrected in the same PR (setting verdict above).
   (≈ ₸7,150 at equilibrium mid prices); `LABOR_FEE = 800` (charged on
   `placeBuildOrder`); `AUTO_DRAW_PER_DAY = 10` units per good (spread per tick like
   E8 flows — grain is the 10-day pole by auto-draw alone; a 50-hold delivery is worth
-  5 days).
-- New Commands: `foundHeadquarters(portId)` (rejected if one exists or purse < cost),
-  `placeBuildOrder()` (rejected while one runs or purse < labor fee),
+  5 days); `CONSTRUCTION_RESERVE = 500` (= `STARTING_THALERS`; #122 grill 2026-07-12
+  — see design §The Reserve).
+- New Commands: `foundHeadquarters(portId)` (rejected if one exists or
+  purse < cost + Reserve),
+  `placeBuildOrder()` (rejected while one runs or purse < labor fee + Reserve),
   `rushBuild()` (buys every remaining good via `quoteBuy`, bounded by current local
-  stock **and** the purse — `maxAffordableQty` per good, so it is partial by stock and,
-  consistent with the no-debt principle, never spends past the purse; full quote shown
-  UI-side from the same function),
+  stock **and** the purse above the Reserve — `maxAffordableQty` per good against
+  `purse − CONSTRUCTION_RESERVE`, so it is partial by stock and never dips into the
+  Reserve; full quote shown UI-side from the same function),
   `deliver(shipId, good)` (docked at the Headquarters port; moves
   `min(cargo, remaining)`).
+- `computeBuildEstimate(world)`: pure preview of a prospective Build Order's cost —
+  Recipe × current asks (marginal walk via `quoteBuy`) + `LABOR_FEE`; the
+  `computeRushQuote` pattern, consumed by the Budowa tab's estimate + confirmation
+  step (#122 grill).
 - Auto-draw (tick phase): for each good in `GOOD_IDS` order with remaining need and
-  per-day budget left, buy `min(rate share, remaining, affordable, floor(stock))` via
-  `quoteBuy` from the Headquarters port. Stalls (buys 0) silently at the sim level; the
-  UI derives and displays the stall reason from state.
+  per-day budget left, buy `min(rate share, remaining, affordable above the Reserve,
+  floor(stock))` via `quoteBuy` from the Headquarters port — a purchase never takes
+  the purse below `CONSTRUCTION_RESERVE`. Stalls (buys 0) silently at the sim level;
+  the UI derives and displays the stall reason from state (Reserve reached vs no
+  local stock).
 - Launch: the tick `siteStore` completes the Recipe — append a new `Ship` (hold 50,
   empty cargo, docked at the Headquarters port, generated name), clear `buildOrder`.
 
@@ -372,6 +424,12 @@ comment is corrected in the same PR (setting verdict above).
 - **Issues** — #54 and #56 retargeted into the E9 milestone; #54's scope lands inside
   the fleet-list issue (comment + close-by that PR).
 - No new ADR: nothing here is hard to reverse; calibrations declared tunable.
+- **Amendment 2026-07-12 (#122 grill — the Reserve)**: CONTEXT.md gains the Reserve
+  entry and the Build Order entry's stall wording is corrected ("stalls at the
+  Reserve", not "purse run dry"); E3 spec §Upkeep gains the named insolvency gap
+  (grill input via #95); the fresh-eyes playtest note's finding section gets its
+  "Resolved → spec" blockquote; final acceptance criteria posted as a comment on
+  #122.
 
 ## Testing
 
