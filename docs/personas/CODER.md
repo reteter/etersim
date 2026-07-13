@@ -32,7 +32,7 @@ All of SELFCHECK.md §4 applies. The ones coders have actually broken or nearly 
 - **TDD for `src/sim`** — failing test first, and tests must be able to fail:
   exact-value assertions, adversarial paths. Weak self-authored assertions once hid
   real bugs behind "247 green" (incident 0005).
-- **Never suppress your way to green**: no `lint --fix` as conflict resolution, no
+- **Never suppress your way to green**: no `lint --fix` to clear errors, no
   `--no-verify`, no weakening a test to pass it (incident 0005).
 - **Determinism and sim purity** (ADR-0002/0003); identifiers from CONTEXT.md,
   glossary first.
