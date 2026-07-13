@@ -29,6 +29,13 @@ export type Selection =
 interface GameState {
   readonly world: World | null;
   readonly speed: Speed;
+  /**
+   * The most recent non-"paused" Speed the player selected (#123): a pause —
+   * manual or automatic (e.g. arrival auto-pause) — never overwrites this, so
+   * `togglePause` can restore exactly the rate the player had chosen instead
+   * of always falling back to 1x.
+   */
+  readonly lastActiveSpeed: Speed;
   readonly carryMs: number;
   readonly selection: Selection;
   /**
@@ -56,6 +63,11 @@ interface GameState {
   loadWorld(world: World): void;
   reset(): void;
   setSpeed(speed: Speed): void;
+  /** Pauses at the current speed (remembered in `lastActiveSpeed`) if
+   *  running, or resumes to `lastActiveSpeed` if already paused (#123). The
+   *  TopBar's pause button uses this instead of `setSpeed("paused")` so
+   *  unpausing restores the player's chosen rate rather than resetting it. */
+  togglePause(): void;
   setAutoPauseOnArrival(value: boolean): void;
   select(selection: Selection): void;
   selectRoute(routeId: RouteId | null): void;
@@ -71,6 +83,7 @@ interface GameState {
 const INITIAL = {
   world: null,
   speed: "paused" as Speed,
+  lastActiveSpeed: 1 as Speed,
   carryMs: 0,
   selection: null,
   controlledShipId: null,
@@ -119,11 +132,21 @@ export const useGameStore = create<GameState>()((set, get) => ({
   // Pause-drops-carry is owned by elapsedToTicks; the next frame applies it.
   // Pausing is also an autosave point (spec: autosave on pause).
   setSpeed: (speed) => {
-    set({ speed });
+    set((state) => ({
+      speed,
+      // A pause (any Speed === "paused") never overwrites lastActiveSpeed —
+      // it keeps remembering the rate the player had running (#123).
+      lastActiveSpeed: speed === "paused" ? state.lastActiveSpeed : speed,
+    }));
     if (speed === "paused") {
       const { world } = get();
       if (world) saveAutosave(world);
     }
+  },
+
+  togglePause: () => {
+    const { speed, lastActiveSpeed, setSpeed } = get();
+    setSpeed(speed === "paused" ? lastActiveSpeed : "paused");
   },
 
   setAutoPauseOnArrival: (value) => {
