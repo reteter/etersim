@@ -508,6 +508,14 @@ body {
   margin-top: 0.4rem;
 }
 
+/* Names the constraint binding Buy max — hold space, port stock, or
+   thalers (#124) — right where the Buy max button sits. */
+.market-row__cap-hint {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: #8891a3;
+}
+
 .market-row__qty {
   width: 3.5rem;
   background: #10141a;
