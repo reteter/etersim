@@ -20,6 +20,7 @@ import {
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { BuildProgress } from "./BuildProgress";
+import { buyCapHint, buyCapReason } from "./buyCap";
 import { ShipIcon } from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
@@ -155,6 +156,12 @@ function MarketRow({
 
   const buyMax = trading ? computeBuyMax(entry, base, ship, thalers) : 0;
   const sellMax = trading ? computeSellMax(entry, base, ship, good) : 0;
+  // Which constraint binds Buy max — hold space, port stock or thalers
+  // (#124: a capped Buy gave no reason, so a fresh player with a full hold
+  // concluded the game was broken). Shown near the Buy control below.
+  const holdSpace = ship.hold - cargoUsed(ship);
+  const stockMax = Math.floor(entry.stock);
+  const capHint = trading ? buyCapHint(buyCapReason(holdSpace, stockMax, buyMax), holdSpace, stockMax) : null;
   // Qty is shared by both actions, so it's clamped to whichever side allows
   // more — each button still disables independently via canBuy/canSell.
   const maxQty = Math.max(buyMax, sellMax);
@@ -214,6 +221,12 @@ function MarketRow({
               Sell max
             </button>
           </div>
+          {capHint && (
+            // Names the binding constraint on Buy max — hold space, port
+            // stock, or thalers (#124) — instead of leaving a capped Buy
+            // unexplained.
+            <p className="market-row__cap-hint">{capHint}</p>
+          )}
           <div className="market-row__trade">
             {/* Explicit aria-labels keep the action buttons' accessible names
                 distinct from the "Buy max"/"Sell max" buttons above (exact

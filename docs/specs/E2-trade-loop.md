@@ -238,6 +238,7 @@ The market row in PortPanel supports:
 - Qty input clamped to the currently tradable maximum.
 - "Max" buttons for buy and sell (Buy max = min(available stock, hold space, thalers ÷ marginal cost of next unit); Sell max = held quantity of the good).
 - The marginal price of the *next single unit* is always visible alongside the lot-total quote on the action buttons. This makes the marginal (walking) pricing behaviour legible.
+- An inline hint next to the Buy max button names whichever constraint binds Buy max — hold space, port stock, or thalers (fresh-eyes playtest finding, #124: a capped Buy with no visible reason read as broken). Ties between hold space and stock favour hold. Pure logic in `src/ui/buyCap.ts`.
 
 "Max" values and unit price are expected to update live with market changes. Layout remains compact within the existing 320 px panel.
 
