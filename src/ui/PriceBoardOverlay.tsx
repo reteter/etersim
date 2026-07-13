@@ -13,6 +13,7 @@ import {
 import { useGameStore } from "../store/gameStore";
 import { priceTrend, TREND_GLYPH, type Trend } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
+import { useOverlayDismiss } from "./useOverlayDismiss";
 
 /** One port×good cell's two-sided quote plus the mid-price trend (E8). */
 interface Cell {
@@ -69,6 +70,7 @@ export function PriceBoardOverlay({ onClose }: { onClose: () => void }) {
   const world = useGameStore((s) => s.world);
   const controlledShipId = useGameStore((s) => s.controlledShipId);
   const select = useGameStore((s) => s.select);
+  const { onBackdropClick } = useOverlayDismiss(onClose);
 
   if (!world) return null;
 
@@ -89,7 +91,13 @@ export function PriceBoardOverlay({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="overlay" role="dialog" aria-label="Price board" aria-modal="true">
+    <div
+      className="overlay"
+      role="dialog"
+      aria-label="Price board"
+      aria-modal="true"
+      onClick={onBackdropClick}
+    >
       <div className="overlay__panel overlay__panel--wide">
         <h2 className="overlay__title">Price Board</h2>
         <div className="price-board" role="table" aria-label="Region price board">
