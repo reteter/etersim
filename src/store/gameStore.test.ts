@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  createWorld,
   effectiveBase,
   etaTicks,
   MAX_TICKS_PER_CALL,
@@ -7,6 +8,8 @@ import {
   quoteBuy,
   shortestCourse,
   type PortId,
+  type Route,
+  type World,
 } from "../sim";
 import { useGameStore } from "./gameStore";
 import { loadAutosave, type StorageLike } from "./persistence";
@@ -282,6 +285,72 @@ describe("gameStore auto-pause on arrival", () => {
 
     expect(store().world!.company.ships[0].location.kind).toBe("underway");
     expect(store().speed).toBe(1);
+  });
+});
+
+describe("gameStore auto-pause under an active route (#151)", () => {
+  beforeEach(() => {
+    store().setAutoPauseOnArrival(true);
+  });
+
+  /** A funded World with s0 docked at one end of its shortest lane and a
+   *  two-Stop grain loop (buy at A, sell at B) already in the Company — the
+   *  same shape the Trasy-tab E2E builds, minimal enough for a store unit. */
+  function routedControlledWorld(seed: string): { world: World; a: PortId; b: PortId; laneTicks: number } {
+    const w0 = createWorld(seed);
+    const lane = [...w0.region.lanes].sort((x, y) => x.voyageTicks - y.voyageTicks)[0];
+    const route: Route = {
+      id: "r",
+      name: "loop",
+      stops: [
+        { portId: lane.a, orders: [{ kind: "buy", good: "grain" }] },
+        { portId: lane.b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const ship = { ...w0.company.ships[0], location: { kind: "docked", portId: lane.a } as const };
+    const world: World = { ...w0, company: { ...w0.company, thalers: 100_000, ships: [ship], routes: [route] } };
+    return { world, a: lane.a, b: lane.b, laneTicks: lane.voyageTicks };
+  }
+
+  it("does not auto-pause when the Controlled Ship docks at a route Stop (never a final destination)", () => {
+    const { world, b, laneTicks } = routedControlledWorld("hq-trasy");
+    store().loadWorld(world);
+    store().dispatch({ kind: "assignRoute", shipId: "s0", routeId: "r" });
+    store().setSpeed(1);
+
+    // Tick one at a time so the exact underway→docked transition at Stop B —
+    // which looks identical to a manual sailTo's terminal arrival at the
+    // ShipLocation level — is caught in its own single-tick advance (a
+    // multi-tick fold could straddle the arrival and hide the bug).
+    let dockedAtB = false;
+    for (let i = 0; i < laneTicks + 4; i++) {
+      store().advance(MS_PER_TICK_AT_1X);
+      expect(store().speed).toBe(1); // active route: arrival never pauses
+      const loc = store().world!.company.ships[0].location;
+      if (loc.kind === "docked" && loc.portId === b) dockedAtB = true;
+    }
+    // The assertion above is only meaningful if the ship really reached the Stop.
+    expect(dockedAtB).toBe(true);
+  });
+
+  it("still auto-pauses a manual sailTo that suspended the route (manual control resumes the feature)", () => {
+    const { world, a } = routedControlledWorld("hq-trasy");
+    store().loadWorld(world);
+    store().dispatch({ kind: "assignRoute", shipId: "s0", routeId: "r" });
+    // A manual sailTo auto-suspends the assignment (commands.ts) — the ship is
+    // now under manual control, so its arrival should pause as it did pre-route.
+    const region = store().world!.region;
+    const target = region.ports.find(
+      (p) => p.id !== a && (shortestCourse(region, a, p.id)?.length ?? 0) >= 1,
+    )!;
+    store().dispatch({ kind: "sailTo", shipId: "s0", portId: target.id });
+    const eta = etaTicks(store().world!.company.ships[0], region);
+    store().setSpeed(1);
+
+    for (let i = 0; i < eta; i++) store().advance(MS_PER_TICK_AT_1X);
+
+    expect(store().world!.company.ships[0].location).toEqual({ kind: "docked", portId: target.id });
+    expect(store().speed).toBe("paused");
   });
 });
 

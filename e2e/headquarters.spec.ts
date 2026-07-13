@@ -205,18 +205,11 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
   }) => {
     test.setTimeout(60_000);
     const { world, a, b } = routeReadyWorld('hq-trasy');
-    // autoPauseOnArrival (a separate, on-by-default player preference) fires on
-    // the Controlled Ship's arrival at its course destination. A routed ship
-    // docks at each Stop to trade, so under some region geometries a Stop
-    // arrival trips auto-pause on an *intermediate* Stop, freezing the sim
-    // before a loop can close. That auto-pause × route-Stop interaction is a
-    // tracked store bug (gameStore's `arrivedAtFinalDestination` can't tell a
-    // route Stop from a manual course's true terminal, violating its own
-    // "never intermediate ports" intent) — filed as a follow-up, exposed here
-    // by HEARTLAND v2's per-seed voyage-tick numbers. This test's subject is
-    // route looping, not auto-pause, so disable the confound to exercise the
-    // loop deterministically.
-    await continueWithWorld(page, world, { autoPauseOnArrival: false });
+    // autoPauseOnArrival stays at its on-by-default value here on purpose: a
+    // ship under active route autopilot is exempt from arrival auto-pause
+    // (#151), so the loop must close even at 100x. This is the end-to-end
+    // guard for that fix — before it, this exact seed froze on its first Stop.
+    await continueWithWorld(page, world);
 
     // Found the Headquarters (any port — s0's home port is convenient).
     await page.locator('g.port').first().click({ force: true });
