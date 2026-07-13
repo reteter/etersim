@@ -51,9 +51,22 @@ The sixth Port archetype (glossary: Free port). Exactly one per region.
 
 ### Template & archetypes (`src/sim/template.ts`, `region.ts`, `goods.ts` untouched)
 
-- `PortArchetype` union += `"freeport"`. `HEARTLAND.portCountRange` → `[7, 9]`.
+- Split the archetype union into two distinct populations:
+  - `type EconomicArchetype = "agrarian" | "industrial" | "urban" | "mining" | "verdant"`
+    with `ECONOMIC_ARCHETYPES: readonly EconomicArchetype[]` — the weighted worldgen
+    **draw pool**.
+  - `type PortArchetype = EconomicArchetype | "freeport"` with
+    `PORT_ARCHETYPES = [...ECONOMIC_ARCHETYPES, "freeport"]` — the canonical **all-kinds
+    iteration / exhaustiveness** order.
+  - `archetypeWeights: Record<EconomicArchetype, number>` — freeport is now
+    *structurally* excluded, so TypeScript enforces "the freeport is not in the weights
+    table" instead of compile-forcing a weight the spec forbids.
+  - `drawArchetypes` / `drawWeighted` draw from `ECONOMIC_ARCHETYPES`; the six-element
+    keyed records (`ARCHETYPE_PROFILES`, `ARCHETYPE_BIAS`, `DOCKING_FEE`, palette token)
+    stay keyed on `PortArchetype`.
+  - `HEARTLAND.portCountRange` → `[7, 9]`.
 - Worldgen guarantees **exactly one** freeport per region: `drawArchetypes` assigns one
-  freeport slot outright, the remaining ports draw from the five weighted archetypes as
+  freeport slot outright, the remaining ports draw from `ECONOMIC_ARCHETYPES` weighted as
   today (the freeport is not in the weights table).
 - `ARCHETYPE_PROFILES.freeport = { productionPerDay: {}, consumptionPerDay: { grain: 6,
   textiles: 2 } }` (tuning ≠ spec drift; the intent is "breathes, but originates no
@@ -80,7 +93,11 @@ The sixth Port archetype (glossary: Free port). Exactly one per region.
 
 ### Docs sync
 
-- CONTEXT.md: Port archetype + Free port entries (done live at the grill sweep — verify).
+- CONTEXT.md: Port archetype + Free port entries + **Economic archetype** entry (the
+  `EconomicArchetype`/`PortArchetype` split, locked at the 2026-07-13 grill from Professor
+  finding A).
+- E3 spec §Tech: `GuildId = EconomicArchetype` replaces `Exclude<PortArchetype, "freeport">`
+  (same cross-epic fracture line; amended in this sweep, not deferred).
 - PRD M3 bullet links this spec (done in the same sweep — verify).
 - After merge: pick and record the new standard playtest seed (used by E3/E13 guardrail
   tests and manual playtests).

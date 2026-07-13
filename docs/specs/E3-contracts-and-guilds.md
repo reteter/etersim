@@ -144,8 +144,10 @@ and #122.
 
 ### Guild state (`src/sim/guild.ts`, new)
 
-- `type GuildId = Exclude<PortArchetype, "freeport">`; `GUILDS: Record<GuildId,
-  { name: string; domain: GoodId }>`.
+- `type GuildId = EconomicArchetype`; `GUILDS: Record<GuildId,
+  { name: string; domain: GoodId }>`. (`EconomicArchetype` = the five producing
+  archetypes, split from `PortArchetype` in E12 — a Guild exists per economic archetype,
+  never at the Free port.)
 - `Company.guilds: Partial<Record<GuildId, { points: number }>>` — enrolled iff key
   present; rank derived via `rankOf(points)` (pure; `RANK_THRESHOLDS = [0, 4, 10, 18]`).
 - Constants (tuning ≠ spec drift): `ENROLLMENT_FEE = 400`; `UPKEEP_PER_DAY = 10`;
