@@ -97,19 +97,33 @@ function initialControlledShip(world: World): ShipId | null {
 
 /**
  * True when `before` was underway to some destination and `after` is now
- * docked at that same destination — i.e. a *final* arrival, not an
- * intermediate lane hop. `advanceShip` (src/sim/ship.ts) only transitions a
- * ship from "underway" to "docked" once its course is exhausted; an
- * intermediate voyage completing instead rolls straight into the next
- * voyage, keeping the ship "underway" with the same `destination`. So this
- * underway→docked transition can only fire on the final destination.
+ * docked at that same destination. `advanceShip` (src/sim/ship.ts) only
+ * transitions a ship from "underway" to "docked" once its *course* is
+ * exhausted; intermediate voyages within one course roll straight into the
+ * next, keeping the ship "underway". So this fires at a course terminal —
+ * but a route's per-leg courses each span a single Stop-to-Stop hop
+ * (tick.ts `dispatchToStop`), so every route Stop is a course terminal too.
+ * Distinguishing a manual sailTo's real destination from a route Stop needs
+ * `underActiveRoute` below, not this geometry alone (#151).
  */
-function arrivedAtFinalDestination(before: Ship, after: Ship): boolean {
+function arrivedAtCourseDestination(before: Ship, after: Ship): boolean {
   return (
     before.location.kind === "underway" &&
     after.location.kind === "docked" &&
     after.location.portId === before.location.destination
   );
+}
+
+/**
+ * True when the ship is running a Route on autopilot (assigned, not
+ * suspended). Such a ship has no *final* destination — it loops its Stops
+ * forever — so arrival auto-pause must never fire for it (#151; design lock
+ * trade-loop-followups.md §4: "not intermediate ports"). A manual sailTo
+ * auto-suspends the assignment (commands.ts), flipping this false so the
+ * arrival pauses as it did before the ship was ever routed.
+ */
+function underActiveRoute(ship: Ship): boolean {
+  return ship.assignment !== undefined && !ship.assignment.suspended;
 }
 
 export const useGameStore = create<GameState>()((set, get) => ({
@@ -187,10 +201,16 @@ export const useGameStore = create<GameState>()((set, get) => ({
     // Auto-pause on arrival (design-notes item 4): only on the Controlled
     // Ship's final-destination arrival, never intermediate ports; a no-op if
     // already paused (reuses setSpeed so it also autosaves, matching the
-    // regular pause path).
+    // regular pause path). A ship under active route autopilot is exempt — its
+    // Stops are all intermediate, so it has no final destination to pause on
+    // (#151).
     if (autoPauseOnArrival && speed !== "paused" && shipBefore) {
       const shipAfter = next.company.ships.find((s) => s.id === controlledShipId);
-      if (shipAfter && arrivedAtFinalDestination(shipBefore, shipAfter)) {
+      if (
+        shipAfter &&
+        !underActiveRoute(shipAfter) &&
+        arrivedAtCourseDestination(shipBefore, shipAfter)
+      ) {
         get().setSpeed("paused");
       }
     }
