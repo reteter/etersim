@@ -148,6 +148,38 @@ test.describe('main game UI after start', () => {
     }
   });
 
+  test('HEARTLAND v2: map renders 7-9 ports with matching orbit rings, and exactly one Free port (#146/#147/#148)', async ({
+    page,
+  }) => {
+    const map = page.locator('svg.region-map');
+    const ports = map.locator('g.port');
+    const portCount = await ports.count();
+    expect(portCount).toBeGreaterThanOrEqual(7);
+    expect(portCount).toBeLessThanOrEqual(9);
+    await expect(map.locator('.orbit-ring')).toHaveCount(portCount);
+
+    // Free port (E12): exactly one per region, own disc/icon, and tinted
+    // with the neutral freeport token — never gold (ADR-0006/incident-0002:
+    // gold is reserved for the Controlled Ship).
+    const freeports = map.locator('g.port[data-archetype="freeport"]');
+    await expect(freeports).toHaveCount(1);
+    const freeport = freeports.first();
+    await expect(freeport.locator('.port__disc')).toHaveCount(1);
+    await expect(freeport.locator('.port__icon')).toHaveCount(1);
+
+    const discFill = await freeport.locator('.port__disc').evaluate((el) => getComputedStyle(el).fill);
+    expect(discFill).not.toBe('rgb(224, 168, 64)'); // gold, reserved for the Controlled Ship
+
+    // PortPanel shows the Free port archetype label. `toHaveText` compares
+    // raw textContent (CSS text-transform doesn't apply, unlike `innerText`
+    // — see openDockedPortMarket's note above on the same class), so this
+    // checks the underlying string PortPanel renders, not the visually
+    // capitalized "Free Port".
+    await freeport.click({ force: true });
+    await expect(page.locator('.market')).toBeVisible();
+    await expect(page.locator('.side-panel__subtitle')).toHaveText('Free port');
+  });
+
   test('selecting a port gives its port disc a gold selection glow (#44)', async ({ page }) => {
     const port = page.locator('g.port').first();
     await port.click({ force: true });
@@ -331,8 +363,8 @@ test.describe('region price board (#62)', () => {
     const dialog = page.getByRole('dialog', { name: /price board/i });
     await expect(dialog).toBeVisible();
 
-    // Port count varies by seed (portCountRange is [5, 6], src/sim/template.ts);
-    // row count must match whatever the map shows, not a hardcoded 6.
+    // Port count varies by seed (portCountRange is [7, 9], src/sim/template.ts);
+    // row count must match whatever the map shows, not a hardcoded count.
     const portCount = await page.locator('g.port').count();
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
     await expect(rows).toHaveCount(portCount);
@@ -512,7 +544,7 @@ test.describe('trading interactions (when docked)', () => {
   }) => {
     // Seed is random (blank seed → Date.now(), src/ui/StartScreen.tsx), so
     // the home port index varies; probe ports until a remote one shows the
-    // Sail control (portCountRange is [5, 6], src/sim/template.ts, so one
+    // Sail control (portCountRange is [7, 9], src/sim/template.ts, so one
     // always exists).
     const portGroups = page.locator('g.port');
     const count = await portGroups.count();
