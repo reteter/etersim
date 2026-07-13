@@ -8,18 +8,18 @@ type Tab = "general" | "keybinds";
  *  this list mirrors it for discoverability. Remappable bindings are deferred,
  *  so a static list is the whole feature here. */
 const KEYBINDS: ReadonlyArray<{ keys: string; action: string }> = [
-  { keys: "Spacja", action: "Pauza / wznów" },
-  { keys: "1 / 2 / 3", action: "Prędkość 1x / 10x / 100x" },
-  { keys: "B", action: "Tablica cen (Price Board)" },
+  { keys: "Space", action: "Pause / resume" },
+  { keys: "1 / 2 / 3", action: "Speed 1x / 10x / 100x" },
+  { keys: "B", action: "Price Board" },
 ];
 
 /**
  * Options/settings overlay (#37): a unified settings surface reconciled with
  * the #17 menu (GameMenu.tsx) rather than a separate/duplicate one. Two tabs
- * (#56): "Ogólne" holds the auto-pause-on-arrival toggle (#36, persisted via
+ * (#56): "General" holds the auto-pause-on-arrival toggle (#36, persisted via
  * `setAutoPauseOnArrival` → the standalone settings localStorage key,
  * src/store/settings.ts); "Keybinds" lists the fixed speed/pause hotkeys
- * read-only. "Ogólne" is the default tab so the toggle stays first-class.
+ * read-only. "General" is the default tab so the toggle stays first-class.
  */
 export function OptionsOverlay({ onClose }: { onClose: () => void }) {
   const autoPauseOnArrival = useGameStore((s) => s.autoPauseOnArrival);
@@ -38,7 +38,7 @@ export function OptionsOverlay({ onClose }: { onClose: () => void }) {
             className={tab === "general" ? "options__tab options__tab--active" : "options__tab"}
             onClick={() => setTab("general")}
           >
-            Ogólne
+            General
           </button>
           <button
             type="button"

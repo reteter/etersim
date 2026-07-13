@@ -144,13 +144,13 @@ test.describe('main game UI after start', () => {
     await page.getByRole('button', { name: /^Options$/ }).click();
     const dialog = page.getByRole('dialog', { name: /options/i });
 
-    // Default tab is "Ogólne" — the auto-pause toggle is first-class.
+    // Default tab is "General" — the auto-pause toggle is first-class.
     await expect(dialog.getByRole('checkbox', { name: /auto-pause on arrival/i })).toBeVisible();
 
     await dialog.getByRole('tab', { name: /keybinds/i }).click();
-    await expect(dialog.getByText('Pauza / wznów')).toBeVisible();
-    await expect(dialog.getByText('Prędkość 1x / 10x / 100x')).toBeVisible();
-    await expect(dialog.getByText(/Tablica cen/)).toBeVisible();
+    await expect(dialog.getByText('Pause / resume')).toBeVisible();
+    await expect(dialog.getByText('Speed 1x / 10x / 100x')).toBeVisible();
+    await expect(dialog.getByText('Price Board')).toBeVisible();
   });
 
   test('orrery: star, orbit rings and planet discs render (#44)', async ({ page }) => {
