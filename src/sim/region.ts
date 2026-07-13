@@ -12,16 +12,35 @@ export const TICKS_PER_DAY = 24;
 export type PortId = string;
 export type LaneId = string;
 
-export type PortArchetype = "agrarian" | "industrial" | "urban" | "mining" | "verdant";
+/**
+ * The five producing archetypes (E12/Professor finding A): each has a
+ * production/consumption gradient and (from E3) a Guild. This is the
+ * worldgen weighted-draw pool — the Free port is deliberately excluded so
+ * `archetypeWeights` can be keyed on this type instead of compile-forcing a
+ * weight the spec forbids.
+ */
+export type EconomicArchetype = "agrarian" | "industrial" | "urban" | "mining" | "verdant";
 
-/** Canonical iteration order (determinism: never iterate object keys). */
-export const PORT_ARCHETYPES: readonly PortArchetype[] = [
+/** Canonical draw-pool order (determinism: never iterate object keys). */
+export const ECONOMIC_ARCHETYPES: readonly EconomicArchetype[] = [
   "agrarian",
   "industrial",
   "urban",
   "mining",
   "verdant",
 ];
+
+/**
+ * All port kinds, including the neutral Free port (E12): no gradient, no
+ * Guild, structurally excluded from the worldgen weighted-draw pool. This is
+ * the canonical all-kinds iteration/exhaustiveness order for the
+ * archetype-keyed records below (`ARCHETYPE_PROFILES`, `ARCHETYPE_BIAS`,
+ * `DOCKING_FEE`).
+ */
+export type PortArchetype = EconomicArchetype | "freeport";
+
+/** Canonical iteration order (determinism: never iterate object keys). */
+export const PORT_ARCHETYPES: readonly PortArchetype[] = [...ECONOMIC_ARCHETYPES, "freeport"];
 
 /**
  * An archetype's economic profile as net flows per world day — exact
@@ -55,6 +74,12 @@ export const ARCHETYPE_PROFILES: Record<PortArchetype, ArchetypeProfile> = {
     productionPerDay: { timber: 6 },
     consumptionPerDay: { grain: 12, textiles: 5 },
   },
+  // Free port (E12): no production — no gradient originates here — with
+  // light, balanced consumption so its stock still breathes.
+  freeport: {
+    productionPerDay: {},
+    consumptionPerDay: { grain: 6, textiles: 2 },
+  },
 };
 
 /** Flat docking fee by archetype (E9). No debt: the caller clamps to available
@@ -65,6 +90,8 @@ export const DOCKING_FEE: Record<PortArchetype, number> = {
   mining: 12,
   agrarian: 8,
   verdant: 5,
+  // Free port (E12): mid-table — an entrepôt lives off passage, not favor.
+  freeport: 10,
 };
 
 /**
@@ -80,6 +107,9 @@ export const ARCHETYPE_BIAS: Record<PortArchetype, Record<GoodId, number>> = {
   urban: { grain: 1.35, textiles: 0.8, aetherSalt: 1.15, electronics: 1.2, timber: 1.2 },
   mining: { grain: 1.3, textiles: 1.15, aetherSalt: 0.8, electronics: 1.2, timber: 1.0 },
   verdant: { grain: 1.2, textiles: 1.2, aetherSalt: 1.0, electronics: 1.0, timber: 0.8 },
+  // Free port (E12): neutral by design — no jitter is applied on top of this
+  // in worldgen, so every freeport quotes exactly the global base price.
+  freeport: { grain: 1.0, textiles: 1.0, aetherSalt: 1.0, electronics: 1.0, timber: 1.0 },
 };
 
 /** Per-good market state at one port. */

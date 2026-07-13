@@ -11,6 +11,12 @@
   --archetype-urban: #437ab6;
   --archetype-mining: #7e55ab;
   --archetype-verdant: #369169;
+  /* Free port (E12): deliberately desaturated — neutral ground, not a sixth
+     hue on the producer wheel. Gold (#e0a840) is reserved for the
+     Controlled Ship (docs/adr/0006-svg-icon-strategy.md; incident 0002) —
+     this grey-slate has ~0% saturation and reads unmistakably distinct from
+     gold's warm, saturated hue at a glance. */
+  --archetype-freeport: #8c8f96;
 }
 
 html,

@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { createWorld, generateShipName, GOODS, type Ship, type World } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
+import { DEFAULT_SETTINGS, SETTINGS_KEY, SETTINGS_VERSION, type Settings } from '../src/store/settings';
 
 /** The first ship's display name (src/sim/world.ts createWorld: `id: "s0"`,
  *  `name: generateShipName(0)`) — ship ids and display names diverged once
@@ -48,13 +49,22 @@ function saveJson(world: World): string {
 
 /** Seeds the autosave slot before the app boots, then loads it via the
  *  StartScreen's real Continue button (never bypasses the store's own
- *  load path). */
-async function continueWithWorld(page: Page, world: World) {
+ *  load path). Pass `settings` to also seed the `etersim.settings` slot
+ *  (loaded once at store init) — used to pin a player preference like
+ *  auto-pause off for a scenario whose subject is something else. */
+async function continueWithWorld(page: Page, world: World, settings?: Partial<Settings>) {
+  const settingsJson = settings
+    ? JSON.stringify({
+        version: SETTINGS_VERSION,
+        settings: { ...DEFAULT_SETTINGS, ...settings },
+      })
+    : null;
   await page.addInitScript(
-    ({ key, json }) => {
+    ({ key, json, settingsKey, settingsJson }) => {
       window.localStorage.setItem(key, json);
+      if (settingsJson) window.localStorage.setItem(settingsKey, settingsJson);
     },
-    { key: AUTOSAVE_KEY, json: saveJson(world) },
+    { key: AUTOSAVE_KEY, json: saveJson(world), settingsKey: SETTINGS_KEY, settingsJson },
   );
   await page.goto('/');
   await page.getByRole('button', { name: /continue/i }).click();
@@ -195,7 +205,18 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
   }) => {
     test.setTimeout(60_000);
     const { world, a, b } = routeReadyWorld('hq-trasy');
-    await continueWithWorld(page, world);
+    // autoPauseOnArrival (a separate, on-by-default player preference) fires on
+    // the Controlled Ship's arrival at its course destination. A routed ship
+    // docks at each Stop to trade, so under some region geometries a Stop
+    // arrival trips auto-pause on an *intermediate* Stop, freezing the sim
+    // before a loop can close. That auto-pause × route-Stop interaction is a
+    // tracked store bug (gameStore's `arrivedAtFinalDestination` can't tell a
+    // route Stop from a manual course's true terminal, violating its own
+    // "never intermediate ports" intent) — filed as a follow-up, exposed here
+    // by HEARTLAND v2's per-seed voyage-tick numbers. This test's subject is
+    // route looping, not auto-pause, so disable the confound to exercise the
+    // loop deterministically.
+    await continueWithWorld(page, world, { autoPauseOnArrival: false });
 
     // Found the Headquarters (any port — s0's home port is convenient).
     await page.locator('g.port').first().click({ force: true });

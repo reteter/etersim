@@ -26,6 +26,17 @@ import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
 import { previewCourseTicks } from "./coursePreview";
 
+/** Archetype label text (CONTEXT.md: Port archetype). The other five render
+ *  as their raw identifier — `.side-panel__subtitle`'s `text-transform:
+ *  capitalize` (src/index.css) capitalizes every word, same trick already
+ *  relied on for ShipPanel's "Docked at" (e2e/ui.spec.ts). "freeport" is one
+ *  word in code but CONTEXT.md's Free port entry explicitly avoids "freeport"
+ *  as one word in prose — "Free port" (two words) here renders "Free Port"
+ *  after the same CSS transform. */
+function archetypeLabel(archetype: Port["archetype"]): string {
+  return archetype === "freeport" ? "Free port" : archetype;
+}
+
 /** Compact cargo summary for a Harbor hover tooltip, e.g. "Grain 5, Iron 2". */
 function cargoSummary(ship: Ship): string {
   const held = GOOD_IDS.filter((good) => ship.cargo[good] > 0).map(
@@ -379,7 +390,7 @@ export function PortPanel({ portId }: { portId: PortId }) {
   return (
     <>
       <h2 className="side-panel__title">{port.name}</h2>
-      <p className="side-panel__subtitle">{port.archetype}</p>
+      <p className="side-panel__subtitle">{archetypeLabel(port.archetype)}</p>
 
       <Harbor port={port} ships={world.company.ships} controlledShipId={controlledShipId} />
 

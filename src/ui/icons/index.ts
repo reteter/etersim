@@ -6,3 +6,4 @@ export { IndustrialIcon } from "./IndustrialIcon";
 export { UrbanIcon } from "./UrbanIcon";
 export { MiningIcon } from "./MiningIcon";
 export { VerdantIcon } from "./VerdantIcon";
+export { FreeportIcon } from "./FreeportIcon";

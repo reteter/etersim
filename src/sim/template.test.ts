@@ -1,19 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { PORT_ARCHETYPES } from "./region";
+import { ECONOMIC_ARCHETYPES } from "./region";
 import { HEARTLAND } from "./template";
 
 describe("HEARTLAND region template", () => {
   it("matches the spec parameters", () => {
-    expect(HEARTLAND.portCountRange).toEqual([5, 6]);
+    expect(HEARTLAND.portCountRange).toEqual([7, 9]);
     expect(HEARTLAND.laneDensity).toBe(0.6);
     expect(HEARTLAND.voyageTicksPerUnit).toBe(130);
-    expect(HEARTLAND.orbitRadiusRange).toEqual([0.18, 0.46]);
+    expect(HEARTLAND.orbitRadiusRange).toEqual([0.14, 0.48]);
   });
 
-  it("weights every archetype positively (equal weights in v1)", () => {
-    for (const archetype of PORT_ARCHETYPES) {
+  it("weights every economic archetype positively (equal weights in v1); freeport has no weight", () => {
+    for (const archetype of ECONOMIC_ARCHETYPES) {
       expect(HEARTLAND.archetypeWeights[archetype]).toBeGreaterThan(0);
     }
+    // freeport is structurally excluded from archetypeWeights (E12) — not a
+    // runtime check, TypeScript enforces it at compile time.
+    expect(Object.keys(HEARTLAND.archetypeWeights).sort()).toEqual(
+      [...ECONOMIC_ARCHETYPES].sort(),
+    );
   });
 
   it("has enough unique port names for the largest possible region", () => {

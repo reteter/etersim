@@ -1,7 +1,15 @@
 import { useState, type ComponentType, type CSSProperties, type ReactNode, type SVGProps } from "react";
 import { shortestCourse, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
 import { useGameStore } from "../store/gameStore";
-import { AgrarianIcon, IndustrialIcon, MiningIcon, ShipIcon, UrbanIcon, VerdantIcon } from "./icons";
+import {
+  AgrarianIcon,
+  FreeportIcon,
+  IndustrialIcon,
+  MiningIcon,
+  ShipIcon,
+  UrbanIcon,
+  VerdantIcon,
+} from "./icons";
 import { projectToViewBox } from "./mapProjection";
 import { shipPosition } from "./shipPosition";
 
@@ -46,6 +54,7 @@ const ARCHETYPE_ICONS: Record<PortArchetype, ComponentType<SVGProps<SVGSVGElemen
   urban: UrbanIcon,
   mining: MiningIcon,
   verdant: VerdantIcon,
+  freeport: FreeportIcon,
 };
 
 /** Orbit ring radius (viewBox units): distance from the region center
