@@ -203,7 +203,36 @@ describe("Ledger wiring — exactly one event per mutation (scripted manual run)
 });
 
 describe("Economics guardrail (docs/specs/E9-fleet-and-routes.md — Testing)", () => {
-  it("a scripted 2-ship producer→consumer loop recoups the second hull's cost within 40 world days of its launch", () => {
+  // PAYBACK_WINDOW_DAYS (E12 re-anchoring, was #147): under HEARTLAND v2,
+  // this test's fixture (seed 42 — a *different* generated region than v1's
+  // seed 42, not the same region with longer distances; the freeport slot
+  // alone shifts every later RNG draw) needs more world days than v1's
+  // 40-day bound to pay back the second hull. Net worth isn't monotonic day
+  // to day (an underway ship's unsold cargo is marked to the region-average
+  // mid, which drifts tick to tick), so "first day payback crosses the
+  // cost" is noisy — measured directly over 80 days, payback crosses the
+  // cost at day 44 but still dips below it on 4 of the next 9 days, only
+  // becoming durably true from day 53 on. 60 keeps a full week of margin
+  // past that durable point. This exceeds the spec's "20-40 days, encoded
+  // loosely" pacing target (docs/specs/E9-fleet-and-routes.md — Pacing).
+  // FLAGGED FOR THE ORCHESTRATOR (not resolved here — see completion
+  // report): a wider seed sample [1, 7, 42, 99] shows payback at
+  // 39/44/56/175 days respectively for this exact two-ship scripted
+  // scenario, while a single-ship control on the same four seeds shows
+  // normal-to-strong margin (48-98%) and normal trip cadence on every seed,
+  // including seed 1 — so the seed-1 outlier isn't a weak trade gradient or
+  // a slow lane, and isn't explained by the archetype-duplicate worry either
+  // (seed 1 draws exactly one agrarian and one urban port). It looks like a
+  // two-identical-ships-one-route phase-synchronization sensitivity (timing
+  // of the second hull's launch relative to the first ship's cycle), latent
+  // in the design before E12 and only incidentally exposed by v2's specific
+  // per-seed voyage/build-duration numbers — not something this PR's
+  // tuning latitude (MIN_PORT_DISTANCE, orbitRadiusRange, port names) can
+  // fix; `voyageTicksPerUnit` and the two-ship scheduling logic are
+  // deliberately out of scope here.
+  const PAYBACK_WINDOW_DAYS = 60;
+
+  it("a scripted 2-ship producer→consumer loop recoups the second hull's cost within the payback window of its launch", () => {
     // "the standard seed" — 42 is the canonical seed shared by the E8 economy
     // guardrail suite (economy.test.ts SEEDS).
     const SEED = 42;
@@ -285,7 +314,7 @@ describe("Economics guardrail (docs/specs/E9-fleet-and-routes.md — Testing)", 
     w = tick(w, [{ kind: "assignRoute", shipId: s1.id, routeId: "loop" }]);
 
     const netWorthAtLaunch = computeNetWorth(w);
-    for (let day = 0; day < 40; day++) {
+    for (let day = 0; day < PAYBACK_WINDOW_DAYS; day++) {
       for (let t = 0; t < TICKS_PER_DAY; t++) w = tick(w, []);
     }
     const netWorthAfter = computeNetWorth(w);

@@ -2,7 +2,8 @@ import { GOOD_IDS, type GoodId } from "./goods";
 import {
   ARCHETYPE_BIAS,
   ARCHETYPE_PROFILES,
-  PORT_ARCHETYPES,
+  ECONOMIC_ARCHETYPES,
+  type EconomicArchetype,
   type Lane,
   type MarketGood,
   type Port,
@@ -12,8 +13,17 @@ import {
 import { nextFloat, nextInt, nextShuffle, type RngState } from "./rng";
 import type { RegionTemplate } from "./template";
 
-/** Ports closer than this on the unit plane are rejected during placement. */
-export const MIN_PORT_DISTANCE = 0.25;
+/** Ports closer than this on the unit plane are rejected during placement.
+ *  Retuned for HEARTLAND v2's 7-9 ports (E12, was #147; v1 used 0.25 for
+ *  5-6 ports) — chosen empirically, together with `orbitRadiusRange`
+ *  (template.ts): preserves v1's ratio of MIN_PORT_DISTANCE to ring spacing
+ *  (~4.5×) at the new, tighter 9-ring spacing (~0.0425). Measured over 2000
+ *  seeds per port count: worst case (9 ports) needs a whole-attempt retry
+ *  8.85% of the time, at most 3 retries before success — nowhere near the
+ *  1000-attempt hard cap below. v1's 0.25 at 9 ports would need a retry 97%
+ *  of the time (up to 340 retries), which is why this moved. See the
+ *  placement sample test (worldgen.test.ts) for the asserted bound. */
+export const MIN_PORT_DISTANCE = 0.2;
 
 /**
  * Procedural region generation (docs/specs/E2-trade-loop.md — Worldgen).
@@ -24,7 +34,7 @@ export function generateRegion(rng: RngState, template: RegionTemplate): [Region
   const [portCount, s1] = nextInt(rng, template.portCountRange[0], template.portCountRange[1]);
   const [archetypes, s2] = drawArchetypes(s1, portCount, template);
   const [names, s3] = nextShuffle(s2, template.portNamePool);
-  const [positions, s4] = placePorts(s3, portCount, template.orbitRadiusRange);
+  const [positions, , s4] = placePorts(s3, portCount, template.orbitRadiusRange);
 
   let state = s4;
   const ports: Port[] = [];
@@ -48,35 +58,44 @@ export function generateRegion(rng: RngState, template: RegionTemplate): [Region
   return [{ ports, lanes }, s5];
 }
 
-/** Every archetype appears once before any weighted repeat (arbitrage
- *  invariant: producers of all goods exist wherever port count allows). */
+/** Exactly one freeport slot, plus every economic archetype appears once
+ *  among the remaining slots before any weighted repeat (arbitrage
+ *  invariant: producers of all goods exist wherever port count allows). The
+ *  freeport's position among the generated ports is itself drawn from the
+ *  RNG so it carries no correlation with generation order (E12). */
 function drawArchetypes(
   rng: RngState,
   portCount: number,
   template: RegionTemplate,
 ): [PortArchetype[], RngState] {
-  let [archetypes, state] = nextShuffle(rng, PORT_ARCHETYPES);
-  archetypes = archetypes.slice(0, portCount);
-  while (archetypes.length < portCount) {
-    let extra: PortArchetype;
+  const nonFreeportCount = portCount - 1;
+  const [shuffledEconomic, s1] = nextShuffle(rng, ECONOMIC_ARCHETYPES);
+  const archetypes: PortArchetype[] = shuffledEconomic.slice(0, nonFreeportCount);
+  let state = s1;
+  while (archetypes.length < nonFreeportCount) {
+    let extra: EconomicArchetype;
     [extra, state] = drawWeighted(state, template.archetypeWeights);
     archetypes.push(extra);
   }
-  return [archetypes, state];
+
+  const [freeportIndex, s2] = nextInt(state, 0, portCount - 1);
+  archetypes.splice(freeportIndex, 0, "freeport");
+
+  return [archetypes, s2];
 }
 
 function drawWeighted(
   rng: RngState,
-  weights: Record<PortArchetype, number>,
-): [PortArchetype, RngState] {
-  const total = PORT_ARCHETYPES.reduce((sum, a) => sum + weights[a], 0);
+  weights: Record<EconomicArchetype, number>,
+): [EconomicArchetype, RngState] {
+  const total = ECONOMIC_ARCHETYPES.reduce((sum, a) => sum + weights[a], 0);
   const [fraction, state] = nextFloat(rng);
   let remaining = fraction * total;
-  for (const archetype of PORT_ARCHETYPES) {
+  for (const archetype of ECONOMIC_ARCHETYPES) {
     remaining -= weights[archetype];
     if (remaining < 0) return [archetype, state];
   }
-  return [PORT_ARCHETYPES[PORT_ARCHETYPES.length - 1], state];
+  return [ECONOMIC_ARCHETYPES[ECONOMIC_ARCHETYPES.length - 1], state];
 }
 
 /** Evenly spaced ring radii across [min, max], inclusive endpoints — one
@@ -129,20 +148,26 @@ function tryPlacePorts(
  *  MIN_PORT_DISTANCE against already-placed ports (bounded attempts).
  *  Sequential angle placement has no backtracking, so a whole attempt can
  *  rarely corner itself; retrying the attempt with fresh draws (bounded)
- *  keeps generation a hard stop away from spinning forever. */
-function placePorts(
+ *  keeps generation a hard stop away from spinning forever.
+ *
+ *  Exported (not just for `generateRegion`): the middle element of the
+ *  return tuple is the number of failed whole-attempt retries before success
+ *  (0 if the first attempt placed every port) — telemetry the placement
+ *  sample test (worldgen.test.ts) reads directly, rather than inferring
+ *  retry behavior indirectly from generated regions. */
+export function placePorts(
   rng: RngState,
   portCount: number,
   orbitRadiusRange: readonly [number, number],
-): [Array<{ x: number; y: number }>, RngState] {
+): [Array<{ x: number; y: number }>, number, RngState] {
   let state = rng;
   for (let restart = 0; restart < 1000; restart++) {
     let result: Array<{ x: number; y: number }> | undefined;
     [result, state] = tryPlacePorts(state, portCount, orbitRadiusRange);
-    if (result) return [result, state];
+    if (result) return [result, restart, state];
   }
-  // Statistically unreachable for ≤6 ports at distance 0.25; a hard stop
-  // keeps a bad template from spinning forever.
+  // The bounded-retry guard from #43: a hard stop keeps a bad template from
+  // spinning forever, however unreachable in practice for a well-tuned one.
   throw new Error(`worldgen: could not place ${portCount} ports`);
 }
 
@@ -170,7 +195,11 @@ function seedMarket(
 
 /** priceBias = archetype bias × jitter in [0.95, 1.05] — structural price
  *  gradients with per-port texture (docs/specs/E8-living-economy.md). One
- *  draw per good in GOOD_IDS order (determinism). */
+ *  draw per good in GOOD_IDS order (determinism), even for freeports, so the
+ *  RNG stream position never depends on archetype (a freeport swapped for
+ *  an economic archetype at the same generation index must not perturb any
+ *  later draw). The Free port (E12) skips the jitter itself — neutrality is
+ *  exact (bias exactly 1.0), not approximate — but still consumes the draw. */
 function drawPriceBias(
   rng: RngState,
   archetype: PortArchetype,
@@ -180,7 +209,10 @@ function drawPriceBias(
   for (const good of GOOD_IDS) {
     let u: number;
     [u, state] = nextFloat(state);
-    bias[good] = ARCHETYPE_BIAS[archetype][good] * (0.95 + 0.1 * u);
+    bias[good] =
+      archetype === "freeport"
+        ? ARCHETYPE_BIAS.freeport[good]
+        : ARCHETYPE_BIAS[archetype][good] * (0.95 + 0.1 * u);
   }
   return [bias, state];
 }

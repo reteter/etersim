@@ -37,15 +37,18 @@ _Avoid_: port type, class, specialization
 
 **Economic archetype** (PL: archetyp ekonomiczny):
 The five producing Port archetypes — agrarian, industrial, urban, mining, verdant — each with a production/consumption gradient and (from E3) a Guild. The worldgen weighted draw pool and the Guild domain are keyed on these five; the Free port is the one Port archetype that is *not* an Economic archetype (neutral, no gradient, no Guild).
-_Implementation_: E12 (PRD M3) — `EconomicArchetype` type + `ECONOMIC_ARCHETYPES`; `PortArchetype = EconomicArchetype | "freeport"`. Not in build yet.
+_Implementation_: shipped in #146/#147 — `EconomicArchetype` type + `ECONOMIC_ARCHETYPES` (`region.ts`); `PortArchetype = EconomicArchetype | "freeport"`, `PORT_ARCHETYPES = [...ECONOMIC_ARCHETYPES, "freeport"]`.
 _Avoid_: weighted archetype, guild archetype
 
 **Free port** (PL: wolny port):
-The sixth Port archetype (E12): no dominant production or consumption, price bias ~1.0 —
-an economic crossroads, not a factory. Exactly one per region. No Guild has a seat there
-and no Contracts originate there — the region's neutral ground; the one place any guild
-Building may be built regardless of archetype.
-_Implementation_: E12 (PRD M3) — not in build yet.
+The sixth Port archetype (E12): no production, light balanced consumption, price bias
+exactly 1.0 (no jitter) — an economic crossroads, not a factory. Exactly one per region.
+No Guild has a seat there and no Contracts originate there — the region's neutral ground;
+the one place any guild Building may be built regardless of archetype.
+_Implementation_: shipped in #146/#147 — `ARCHETYPE_PROFILES.freeport`, `ARCHETYPE_BIAS.freeport`
+(exactly 1.0 for every good), `DOCKING_FEE.freeport` (`region.ts`); worldgen guarantees exactly
+one per region and skips its price-bias jitter (`worldgen.ts`). UI (palette token, icon,
+PortPanel label) is #148, not yet shipped.
 _Avoid_: neutral port (as identifier), hub, freeport (one word, in prose)
 
 **Archetype palette** (PL: paleta archetypów):

@@ -4,7 +4,7 @@ import { ARCHETYPE_BIAS } from "./region";
 import type { PortId, Region } from "./region";
 import { seedRng } from "./rng";
 import { HEARTLAND } from "./template";
-import { generateRegion, MIN_PORT_DISTANCE } from "./worldgen";
+import { generateRegion, MIN_PORT_DISTANCE, placePorts } from "./worldgen";
 
 const genAt = (seed: number): Region => generateRegion(seedRng(seed), HEARTLAND)[0];
 
@@ -29,11 +29,22 @@ describe("worldgen", () => {
     expect(generateRegion(seedRng(42), HEARTLAND)).toEqual(generateRegion(seedRng(42), HEARTLAND));
   });
 
-  it("is deterministic on the whole-attempt-retry path (seed 4 needs a retry)", () => {
-    // Seed 4 hits the sequential-placement dead end (no backtracking) on
-    // its first attempt and requires placePorts to retry the whole
-    // attempt; pins that this retry path is itself deterministic.
-    expect(generateRegion(seedRng(4), HEARTLAND)).toEqual(generateRegion(seedRng(4), HEARTLAND));
+  it("is deterministic on the whole-attempt-retry path", () => {
+    // A deliberately tight orbit range (not HEARTLAND's tuned one) forces
+    // placePorts to exhaust a ring's attempts and retry the whole placement
+    // at least once, regardless of how HEARTLAND's own constants happen to
+    // be tuned — pins that the retry path itself is deterministic without
+    // depending on a "magic" seed that only retries under today's tuning.
+    const tightRange: readonly [number, number] = [0.3, 0.32];
+    const portCount = 9;
+    const seed = 4;
+    const run = () => placePorts(seedRng(seed), portCount, tightRange);
+    const [positions1, retries1, state1] = run();
+    const [positions2, retries2, state2] = run();
+    expect(retries1).toBeGreaterThan(0); // actually exercises the retry path
+    expect(positions1).toEqual(positions2);
+    expect(retries1).toBe(retries2);
+    expect(state1).toBe(state2);
   });
 
   it("never throws while placing ports, across thousands of seeds", () => {
@@ -42,6 +53,31 @@ describe("worldgen", () => {
     // retry-the-whole-attempt fallback this threw for ~1.3% of seeds.
     for (let seed = 0; seed < 2000; seed++) {
       expect(() => generateRegion(seedRng(seed), HEARTLAND)).not.toThrow();
+    }
+  });
+
+  it("keeps the placement retry rate under a stated bound at every port count, across 500 seeds each (E12 sample test)", () => {
+    // Empirical measurement against HEARTLAND's recalibrated constants
+    // (worldgen.ts MIN_PORT_DISTANCE = 0.2, orbitRadiusRange = [0.14, 0.48]):
+    // over 2000 seeds per port count, the observed worst case (9 ports) was
+    // an 8.85% whole-attempt retry rate with at most 3 retries before
+    // success. The bounds below give comfortable margin above that
+    // measurement while still being a real, falsifiable claim — the old v1
+    // MIN_PORT_DISTANCE (0.25) blows both bounds at 9 ports (~97% retry
+    // rate, up to 340 retries out of the 1000 hard cap).
+    const N = 500;
+    const RETRY_RATE_BOUND = 0.15;
+    const MAX_RETRIES_BOUND = 50; // hard cap is 1000; this is nowhere close
+    const [minPorts, maxPorts] = HEARTLAND.portCountRange;
+    for (let portCount = minPorts; portCount <= maxPorts; portCount++) {
+      let needingRetry = 0;
+      for (let seed = 0; seed < N; seed++) {
+        const [, retries] = placePorts(seedRng(seed), portCount, HEARTLAND.orbitRadiusRange);
+        expect(retries, `portCount=${portCount} seed=${seed}`).toBeLessThan(MAX_RETRIES_BOUND);
+        if (retries > 0) needingRetry++;
+      }
+      const retryRate = needingRetry / N;
+      expect(retryRate, `portCount=${portCount}`).toBeLessThan(RETRY_RATE_BOUND);
     }
   });
 
@@ -63,11 +99,23 @@ describe("worldgen", () => {
     expect(counts.size).toBeGreaterThan(1); // the range is actually sampled
   });
 
-  it("covers all five archetypes in every region (arbitrage invariant)", () => {
+  it("covers all five economic archetypes plus exactly one freeport in every region (E12 invariants)", () => {
     for (const seed of SEEDS) {
       const region = genAt(seed);
       const distinct = new Set(region.ports.map((p) => p.archetype));
-      expect(distinct.size).toBe(5);
+      expect(distinct.size).toBe(6); // 5 economic archetypes + freeport
+      const freeports = region.ports.filter((p) => p.archetype === "freeport");
+      expect(freeports).toHaveLength(1);
+    }
+  });
+
+  it("gives the freeport an exact 1.0 price bias for every good, never a jitter (E12)", () => {
+    for (const seed of SEEDS) {
+      const region = genAt(seed);
+      const freeport = region.ports.find((p) => p.archetype === "freeport")!;
+      for (const good of GOOD_IDS) {
+        expect(freeport.priceBias[good], `${freeport.id}/${good}`).toBe(1);
+      }
     }
   });
 

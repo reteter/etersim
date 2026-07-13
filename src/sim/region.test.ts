@@ -1,10 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { GOOD_IDS, type GoodId } from "./goods";
-import { ARCHETYPE_BIAS, ARCHETYPE_PROFILES, PORT_ARCHETYPES } from "./region";
+import {
+  ARCHETYPE_BIAS,
+  ARCHETYPE_PROFILES,
+  DOCKING_FEE,
+  ECONOMIC_ARCHETYPES,
+  PORT_ARCHETYPES,
+} from "./region";
 
 describe("port archetype profiles", () => {
-  it("covers all five archetypes", () => {
-    expect(PORT_ARCHETYPES).toEqual(["agrarian", "industrial", "urban", "mining", "verdant"]);
+  it("ECONOMIC_ARCHETYPES covers the five producing archetypes (the worldgen draw pool)", () => {
+    expect(ECONOMIC_ARCHETYPES).toEqual(["agrarian", "industrial", "urban", "mining", "verdant"]);
+  });
+
+  it("PORT_ARCHETYPES is the five economic archetypes plus the neutral Free port (E12)", () => {
+    expect(PORT_ARCHETYPES).toEqual([
+      "agrarian",
+      "industrial",
+      "urban",
+      "mining",
+      "verdant",
+      "freeport",
+    ]);
   });
 
   it("gives every good exactly one producing archetype (arbitrage invariant)", () => {
@@ -58,14 +75,18 @@ describe("archetype price bias (E8)", () => {
       urban: { grain: 1.35, textiles: 0.8, aetherSalt: 1.15, electronics: 1.2, timber: 1.2 },
       mining: { grain: 1.3, textiles: 1.15, aetherSalt: 0.8, electronics: 1.2, timber: 1.0 },
       verdant: { grain: 1.2, textiles: 1.2, aetherSalt: 1.0, electronics: 1.0, timber: 0.8 },
+      freeport: { grain: 1.0, textiles: 1.0, aetherSalt: 1.0, electronics: 1.0, timber: 1.0 },
     });
   });
 
   it("biases produced goods below base and consumed goods above (gradient invariant)", () => {
     // The structural engine of trade: an archetype values what it consumes
     // above the global base and what it produces below it — so a resting
-    // producer→consumer gradient exists for every good.
-    for (const archetype of PORT_ARCHETYPES) {
+    // producer→consumer gradient exists for every good. Scoped to the five
+    // economic archetypes: the Free port (E12) deliberately breaks this —
+    // neutral bias (1.0) despite light consumption, by design (see the
+    // freeport-specific test below).
+    for (const archetype of ECONOMIC_ARCHETYPES) {
       const { productionPerDay, consumptionPerDay } = ARCHETYPE_PROFILES[archetype];
       for (const good of GOOD_IDS) {
         if ((productionPerDay[good] ?? 0) > 0) {
@@ -76,5 +97,19 @@ describe("archetype price bias (E8)", () => {
         }
       }
     }
+  });
+
+  it("the Free port is neutral: no production, light consumption, bias exactly 1.0 for every good (E12)", () => {
+    expect(ARCHETYPE_PROFILES.freeport.productionPerDay).toEqual({});
+    expect(ARCHETYPE_PROFILES.freeport.consumptionPerDay).toEqual({ grain: 6, textiles: 2 });
+    for (const good of GOOD_IDS) {
+      expect(ARCHETYPE_BIAS.freeport[good], good).toBe(1);
+    }
+  });
+});
+
+describe("docking fee (E9)", () => {
+  it("charges the Free port the spec's mid-table fee of 10 (E12)", () => {
+    expect(DOCKING_FEE.freeport).toBe(10);
   });
 });

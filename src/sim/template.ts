@@ -1,4 +1,4 @@
-import type { PortArchetype } from "./region";
+import type { EconomicArchetype } from "./region";
 
 /**
  * Region template (CONTEXT.md): data describing how to generate a region.
@@ -7,7 +7,9 @@ import type { PortArchetype } from "./region";
  */
 export interface RegionTemplate {
   readonly portCountRange: readonly [min: number, max: number];
-  readonly archetypeWeights: Record<PortArchetype, number>;
+  /** Weighted draw pool for the non-Free-port slots (E12); the Free port is
+   *  structurally excluded — worldgen assigns exactly one outright. */
+  readonly archetypeWeights: Record<EconomicArchetype, number>;
   /** Fraction of all candidate edges kept in total (never below the
    *  spanning tree), (0, 1] — sparse on purpose so routing matters. */
   readonly laneDensity: number;
@@ -21,17 +23,25 @@ export interface RegionTemplate {
   readonly portNamePool: readonly string[];
 }
 
-/** The default v1 region (docs/specs/E2-trade-loop.md — Worldgen). */
+/** The v2 region (E12, docs/specs/E12-region-v2.md — HEARTLAND v2 template).
+ *  v1 was docs/specs/E2-trade-loop.md — Worldgen; 5–6 ports, no Free port. */
 export const HEARTLAND: RegionTemplate = {
-  // Min 5: with fewer ports than archetypes one good loses its only
-  // producer and turns into dead cargo (arbitrage invariant).
-  portCountRange: [5, 6],
+  // 7-9 (E12): one slot is always the Free port, the rest draw from the five
+  // economic archetypes — min 7 leaves 6 non-freeport slots, enough for
+  // every economic archetype to appear once before any weighted repeat
+  // (arbitrage invariant).
+  portCountRange: [7, 9],
   archetypeWeights: { agrarian: 1, industrial: 1, urban: 1, mining: 1, verdant: 1 },
   laneDensity: 0.6,
   voyageTicksPerUnit: 130,
-  // Fits the unit plane with margin; ring spacing for 6 ports ≈ 0.056, so
-  // MIN_PORT_DISTANCE does real work between neighboring rings.
-  orbitRadiusRange: [0.18, 0.46],
+  // Recalibrated for 7-9 ports (E12, was #147): widened from v1's
+  // [0.18, 0.46] so 9 rings still have breathing room — ring spacing for 9
+  // ports is ~0.0425, versus v1's ~0.056 at 6 ports — so MIN_PORT_DISTANCE
+  // (worldgen.ts, retuned from 0.25 to 0.2 alongside this range) still packs
+  // acceptably. Both values chosen empirically against the placement sample
+  // test (worldgen.test.ts): worst case (9 ports), 500 seeds, ~8% need a
+  // whole-attempt retry, none come close to the hard retry cap.
+  orbitRadiusRange: [0.14, 0.48],
   portNamePool: [
     "Velharrow",
     "Kruxhaven",
@@ -41,5 +51,8 @@ export const HEARTLAND: RegionTemplate = {
     "Palegate",
     "Emberdock",
     "Saltmere",
+    "Ravenshoal",
+    "Coppervale",
+    "Duskferry",
   ],
 };
