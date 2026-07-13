@@ -48,3 +48,12 @@ come after.
 
 Design and scope suggestions discovered mid-task go in the report, not in the diff
 (advisor rule, ORCHESTRATOR.md). Good ideas reach the owner through the grill.
+
+## Review ownership
+
+The two-axis `/code-review` is dispatched by the Orchestrator **after** your completion
+report — never run it (or spawn any subagent) yourself; a self-review burns budget and
+reviews its own blind spots (issue #142). Of SELFCHECK §6 you own the docs-sync sweep
+and spec-sync; the code-review and E2E gates are the Orchestrator's — list them as OPEN
+in your report. Sanctioned exception: consulting the advisor for in-flight critique of
+the implementation (advisor rule above); flag every consult in your report.
