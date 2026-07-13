@@ -32,8 +32,13 @@ A directional flow along a lane that shortens or lengthens voyage time.
 _Avoid_: wind, stream
 
 **Port archetype** (PL: archetyp portu):
-A port's economic role assigned at worldgen (agrarian, industrial, urban, mining, verdant); defines its production/consumption profile. E12 (M3) adds a sixth: the Free port.
+A port's economic role assigned at worldgen (agrarian, industrial, urban, mining, verdant); defines its production/consumption profile. E12 (M3) adds a sixth, the Free port — the one Port archetype that is not an Economic archetype.
 _Avoid_: port type, class, specialization
+
+**Economic archetype** (PL: archetyp ekonomiczny):
+The five producing Port archetypes — agrarian, industrial, urban, mining, verdant — each with a production/consumption gradient and (from E3) a Guild. The worldgen weighted draw pool and the Guild domain are keyed on these five; the Free port is the one Port archetype that is *not* an Economic archetype (neutral, no gradient, no Guild).
+_Implementation_: E12 (PRD M3) — `EconomicArchetype` type + `ECONOMIC_ARCHETYPES`; `PortArchetype = EconomicArchetype | "freeport"`. Not in build yet.
+_Avoid_: weighted archetype, guild archetype
 
 **Free port** (PL: wolny port):
 The sixth Port archetype (E12): no dominant production or consumption, price bias ~1.0 —
