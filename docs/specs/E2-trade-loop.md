@@ -247,6 +247,9 @@ When the Controlled Ship docks at its *final destination*, the game auto-pauses 
 - No-op if already paused.
 - Toggle lives in future options/settings (see item 5 / #17 reconciliation).
 - Persists via localStorage (tied to save/load mechanics in the store layer).
+- Unpausing (manual pause or auto-pause alike) restores the Speed the player had
+  selected before the pause, never resetting to 1x — the TopBar's pause button is a
+  toggle backed by the store's `lastActiveSpeed` (#123).
 
 ### Options / settings view (high-level, E2 follow-up)
 A unified settings surface (first tenant: auto-pause toggle from item 4).

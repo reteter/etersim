@@ -27,6 +27,7 @@ export function TopBar() {
   const tick = useGameStore((s) => s.world?.tick ?? 0);
   const speed = useGameStore((s) => s.speed);
   const setSpeed = useGameStore((s) => s.setSpeed);
+  const togglePause = useGameStore((s) => s.togglePause);
   const hasHeadquarters = useGameStore((s) => !!s.world?.company.headquarters);
   const [priceBoardOpen, setPriceBoardOpen] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(false);
@@ -55,7 +56,10 @@ export function TopBar() {
             type="button"
             className={s === speed ? "speed-btn speed-btn--active" : "speed-btn"}
             aria-pressed={s === speed}
-            onClick={() => setSpeed(s)}
+            // The pause button toggles: pausing remembers the running speed,
+            // unpausing restores it (#123) — instead of resetting to 1x. The
+            // rate buttons stay explicit overrides regardless of pause state.
+            onClick={() => (s === "paused" ? togglePause() : setSpeed(s))}
           >
             {SPEED_LABELS[s]}
           </button>

@@ -119,6 +119,24 @@ describe("gameStore", () => {
     expect(store().world).toEqual(snapshot);
     expect(store().speed).toBe("paused");
   });
+
+  it("togglePause pauses at the current speed and resumes to exactly that speed (#123)", () => {
+    store().newGame(7);
+    store().setSpeed(10);
+
+    store().togglePause();
+    expect(store().speed).toBe("paused");
+
+    store().togglePause();
+    expect(store().speed).toBe(10); // not 1x — the speed selected before the pause
+  });
+
+  it("setSpeed('paused') does not overwrite lastActiveSpeed, so a later resume is exact (#123)", () => {
+    store().newGame(7);
+    store().setSpeed(100);
+    store().setSpeed("paused");
+    expect(store().lastActiveSpeed).toBe(100);
+  });
 });
 
 describe("gameStore Controlled Ship", () => {
@@ -238,6 +256,20 @@ describe("gameStore auto-pause on arrival", () => {
 
     expect(store().world!.company.ships[0].location.kind).toBe("underway");
     expect(store().speed).toBe("paused");
+  });
+
+  it("resumes to the pre-arrival speed (not 1x) after auto-pause on arrival (#123)", () => {
+    store().newGame(7);
+    const home = homePortId();
+    const target = store().world!.region.ports.find((p) => p.id !== home)!;
+    const eta = sailAndGetEta(target.id);
+    store().setSpeed(10);
+
+    store().advance(eta * MS_PER_TICK_AT_1X);
+
+    expect(store().speed).toBe("paused"); // auto-pause behavior itself: unchanged
+    store().togglePause();
+    expect(store().speed).toBe(10); // restores 10x, not 1x
   });
 
   it("does not auto-pause before the destination is reached", () => {
