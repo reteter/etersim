@@ -21,6 +21,7 @@ import { useGameStore } from "../store/gameStore";
 import { deriveStallReason } from "../store/headquartersStall";
 import { computeLoopMetrics } from "../store/routeMetrics";
 import { BuildProgress } from "./BuildProgress";
+import { useOverlayDismiss } from "./useOverlayDismiss";
 
 type Tab = "construction" | "routes";
 
@@ -447,11 +448,18 @@ function RoutesTab({ world }: { world: World }) {
 export function HeadquartersPanel({ onClose }: { onClose: () => void }) {
   const world = useGameStore((s) => s.world);
   const [tab, setTab] = useState<Tab>("construction");
+  const { onBackdropClick } = useOverlayDismiss(onClose);
 
   if (!world || !world.company.headquarters) return null;
 
   return (
-    <div className="overlay" role="dialog" aria-label="Headquarters" aria-modal="true">
+    <div
+      className="overlay"
+      role="dialog"
+      aria-label="Headquarters"
+      aria-modal="true"
+      onClick={onBackdropClick}
+    >
       <div className="overlay__panel overlay__panel--wide">
         <h2 className="overlay__title">Headquarters</h2>
         <div className="headquarters-tabs" role="tablist">

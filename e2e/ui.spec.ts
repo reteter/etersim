@@ -403,6 +403,32 @@ test.describe('region price board (#62)', () => {
     await expect(page.locator('.market')).toBeVisible();
     await expect(page.locator('.side-panel__title')).toHaveText(portName);
   });
+
+  test('clicking the backdrop closes the overlay; clicking inside the panel does not (#126)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await expect(dialog).toBeVisible();
+
+    // `dialog` is the `.overlay` backdrop itself (role="dialog" sits on the
+    // outer div); a position near its corner lands outside the centered
+    // `.overlay__panel`, unlike a plain .click() which hits the panel.
+    await dialog.locator('.overlay__title').click();
+    await expect(dialog).toBeVisible();
+
+    await dialog.click({ position: { x: 5, y: 5 } });
+    await expect(dialog).not.toBeVisible();
+  });
+
+  test('Esc closes the overlay (#126)', async ({ page }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await expect(dialog).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+  });
 });
 
 test.describe('trading interactions (when docked)', () => {

@@ -302,3 +302,42 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     });
   });
 });
+
+test.describe('Headquarters overlay dismissal (#126)', () => {
+  test('clicking the backdrop closes the overlay; clicking inside the panel does not', async ({
+    page,
+  }) => {
+    await continueWithWorld(page, fundedWorld('hq-dismiss-backdrop'));
+    await page.locator('g.port').first().click({ force: true });
+    await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
+
+    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await expect(dialog).toBeVisible();
+
+    // `dialog` is the `.overlay` backdrop itself (role="dialog" sits on the
+    // outer div); a position near its corner lands outside the centered
+    // `.overlay__panel`, unlike a plain .click() which hits the panel.
+    await dialog.locator('.overlay__title').click();
+    await expect(dialog).toBeVisible();
+    // Clicking a tab (deep inside the panel) must not close it either.
+    await dialog.getByRole('tab', { name: 'Trasy' }).click();
+    await expect(dialog).toBeVisible();
+
+    await dialog.click({ position: { x: 5, y: 5 } });
+    await expect(dialog).not.toBeVisible();
+  });
+
+  test('Esc closes the overlay', async ({ page }) => {
+    await continueWithWorld(page, fundedWorld('hq-dismiss-esc'));
+    await page.locator('g.port').first().click({ force: true });
+    await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
+
+    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await expect(dialog).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
+  });
+});
