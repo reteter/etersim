@@ -127,6 +127,17 @@ _Implementation_: shipped in #57 ([spec](docs/specs/E8-living-economy.md)) — `
 per good (#61).
 _Avoid_: fee, tax, commission (for this mechanism)
 
+**Market impact** (PL: wpływ na rynek):
+The price movement a Company's own trades cause: buying walks the marginal price up as it
+drains Stock, selling walks it down as it floods Stock (the same curve that anchors on
+Equilibrium and Price bias). The effect is durable until elasticity and Trade osmosis
+restore equilibrium, so concentrating volume on one Lane has diminishing returns — two
+ships on a single Route compress that Route's margin against themselves, and on a thin
+gradient a second hull can earn less than one. Emergent from the price curve, not a
+separate mechanism; the reason second-ship payback is lane-conditional (E9 spec — Pacing).
+_Avoid_: slippage, price elasticity (that names the production/consumption response, not
+this), demand shock
+
 **Flow drift** (PL: dryf przepływów):
 A per-port, per-good mean-reverting multiplier on production/consumption rates, stepped
 once per world day from the seeded RNG. Creates transient disequilibria that elasticity
