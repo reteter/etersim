@@ -104,6 +104,55 @@ test.describe('main game UI after start', () => {
     await expect(page.getByRole('dialog', { name: /options/i }).getByRole('checkbox')).not.toBeChecked();
   });
 
+  test('digit hotkeys switch speed; space pauses and resumes to the previous speed (#56)', async ({
+    page,
+  }) => {
+    const rate = (label: string) => page.getByRole('button', { name: label });
+    await expect(rate('1x')).toHaveAttribute('aria-pressed', 'true'); // default after newGame
+
+    // Set speed via hotkeys so no rate button holds focus (space would else
+    // both activate the button and toggle pause — preventDefault guards that,
+    // but driving purely by keyboard keeps the assertion unambiguous).
+    await page.keyboard.press('3');
+    await expect(rate('100x')).toHaveAttribute('aria-pressed', 'true');
+
+    await page.keyboard.press('Space'); // pause
+    await expect(rate('⏸')).toHaveAttribute('aria-pressed', 'true');
+
+    await page.keyboard.press('Space'); // resume — to 100x, not 1x (#123 lastActiveSpeed)
+    await expect(rate('100x')).toHaveAttribute('aria-pressed', 'true');
+
+    await page.keyboard.press('2');
+    await expect(rate('10x')).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('1');
+    await expect(rate('1x')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('speed hotkeys are ignored while typing in a text field (#56)', async ({ page }) => {
+    const rate = (label: string) => page.getByRole('button', { name: label });
+    await page.locator('.fleet-list__item--controlled').click();
+    const nameInput = page.getByRole('textbox', { name: /ship name/i });
+    await nameInput.click(); // focus a text input
+
+    await page.keyboard.press('3'); // would be 100x if the guard were absent
+    await expect(rate('1x')).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Space'); // would pause if the guard were absent
+    await expect(rate('1x')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('Options → Keybinds tab lists the fixed bindings read-only (#56)', async ({ page }) => {
+    await page.getByRole('button', { name: /^Options$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /options/i });
+
+    // Default tab is "General" — the auto-pause toggle is first-class.
+    await expect(dialog.getByRole('checkbox', { name: /auto-pause on arrival/i })).toBeVisible();
+
+    await dialog.getByRole('tab', { name: /keybinds/i }).click();
+    await expect(dialog.getByText('Pause / resume')).toBeVisible();
+    await expect(dialog.getByText('Speed 1x / 10x / 100x')).toBeVisible();
+    await expect(dialog.getByText('Price Board')).toBeVisible();
+  });
+
   test('orrery: star, orbit rings and planet discs render (#44)', async ({ page }) => {
     const map = page.locator('svg.region-map');
     await expect(map).toBeVisible();

@@ -933,6 +933,61 @@ body {
   border-bottom-color: #4c7bab;
 }
 
+/* Options overlay tabs (#56): Ogólne (settings) + Keybinds (read-only key
+   list). Mirrors the Ledger tab shell; active blue is the shared "active
+   control in a group" hue (#4c7bab, ADR-0006). */
+.options__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid #2a3040;
+}
+
+.options__tab {
+  background: none;
+  border: none;
+  color: #8891a3;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 2px solid transparent;
+}
+
+.options__tab:hover {
+  color: #e6e6e6;
+}
+
+.options__tab--active {
+  color: #e6e6e6;
+  border-bottom-color: #4c7bab;
+}
+
+/* Read-only key → action list in the Keybinds tab. */
+.keybinds {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.keybinds__row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.keybinds__keys {
+  flex: 0 0 6rem;
+  margin: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: #e6e6e6;
+}
+
+.keybinds__action {
+  margin: 0;
+  color: #a8b2c2;
+}
+
 .ledger__filter-row {
   display: flex;
   align-items: center;

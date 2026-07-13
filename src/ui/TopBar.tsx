@@ -14,14 +14,20 @@ const SPEED_LABELS: Record<Speed, string> = {
   100: "100x",
 };
 
-/** Text-entry elements the "b" hotkey must not hijack (e.g. the seed input,
- *  market quantity fields) while they're focused. */
-const TEXT_INPUT_TAGS = new Set(["INPUT", "TEXTAREA"]);
+/** Text-entry elements the global hotkeys must not hijack (e.g. the seed
+ *  input, market quantity fields, route-editor selects) while focused. */
+const TEXT_INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+
+/** Digit hotkey → speed rate (#56, v1-lite fixed bindings): 1/2/3 map to the
+ *  three running rates in `SPEEDS`. Pause has no digit — `<space>` owns it. */
+const DIGIT_SPEEDS: Record<string, Speed> = { "1": 1, "2": 10, "3": 100 };
 
 /** Top bar (docs/specs/E2-trade-loop.md — UI layout): thalers, world date,
  *  speed controls wired to the store's speed ladder, plus the region price
  *  board entry (#62) — a button and a default "b" hotkey, both toggling the
- *  same overlay. Hotkey configurability is deferred to #56. */
+ *  same overlay. Speed/pause hotkeys (#56): <space> toggles pause, 1/2/3 set
+ *  the rate. All bindings are fixed (v1-lite) and listed in the Options →
+ *  Keybinds tab; remappable bindings are deferred. */
 export function TopBar() {
   const thalers = useGameStore((s) => s.world?.company.thalers ?? 0);
   const tick = useGameStore((s) => s.world?.tick ?? 0);
@@ -38,12 +44,23 @@ export function TopBar() {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
       if (target && TEXT_INPUT_TAGS.has(target.tagName)) return;
-      if (e.key.toLowerCase() !== "b") return;
-      setPriceBoardOpen((open) => !open);
+      // <space> toggles pause ↔ last running speed (#56). preventDefault stops
+      // the page scroll and any re-trigger of the focused button.
+      if (e.key === " ") {
+        e.preventDefault();
+        togglePause();
+        return;
+      }
+      const digitSpeed = DIGIT_SPEEDS[e.key];
+      if (digitSpeed !== undefined) {
+        setSpeed(digitSpeed);
+        return;
+      }
+      if (e.key.toLowerCase() === "b") setPriceBoardOpen((open) => !open);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [togglePause, setSpeed]);
 
   return (
     <header className="top-bar">
