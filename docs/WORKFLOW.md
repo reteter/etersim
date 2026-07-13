@@ -8,6 +8,7 @@ How an idea becomes shipped code in etersim. Written for the model first.
 - **Claude as Designer / Engineer** (docs/personas/) — hats worn in dialogue with the user during grilling and spec writing. Design and architecture are conversations, never delegated.
 - **Claude as Analyst** (docs/personas/ANALYST.md) — after owner playtests: verifies each observation against the codebase (root cause, classification), produces the playtest design note and routes items to the Designer grill, straight Engineer issues, or the parking lot. Diagnoses, never decides.
 - **Claude as Orchestrator** — during implementation: breaks the approved spec into issues, delegates self-contained tasks to coder subagents (parallel where independent), reviews and integrates.
+- **Coder subagents** (docs/personas/CODER.md; harness def `.claude/agents/coder.md`) — implementation specialists dispatched by the Orchestrator with a self-contained task package; deliver PR-ready feature branches and evidence-based completion reports, never merge.
 
 ## Pipeline
 
