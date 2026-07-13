@@ -152,8 +152,9 @@ The build site's material store fills from three sources:
    (anti-pillar 1).
 
 The ship **launches the moment the Recipe completes**: docked at the Headquarters port,
-empty, routeless, named (see UX). Payback target for the second ship: **20–40 world
-days** (tuning ≠ spec drift).
+empty, routeless, named (see UX). Payback target for the second ship on a healthy
+reference lane: **~40–60 world days**, lane-conditional by design (see Pacing —
+Market impact) (tuning ≠ spec drift).
 
 ### The Reserve: construction never touches starting capital
 
@@ -241,8 +242,19 @@ consume the same schema — one schema, two consumers.
   routes run? Only then discuss distance tuning.
 - **Balance targets live in world days**: Headquarters ~day 20–30; first hull by
   auto-draw alone ~10–15 days (deliveries/rush compress toward 2–3); second-ship
-  payback 20–40 days. At 10× a world day is 2.4 s — a two-week build is ~34 s of
-  watching, felt but not boring.
+  payback ~40–60 days on a healthy reference lane. At 10× a world day is 2.4 s — a
+  two-week build is ~34 s of watching, felt but not boring.
+- **Second-ship payback is lane-conditional by Market impact** (amended 2026-07-14,
+  #152): a second hull on the *same* route compresses that route's margin — both ships
+  walk the same marginal buy/sell prices, so 2× volume pushes the buy price up and the
+  sell price down against themselves. On a healthy gradient the second hull still adds
+  net profit (payback ~40–60 days); on a thin gradient it can earn *less* than the route
+  ran with one ship (observed seed 1 under HEARTLAND v2: single-ship margin ~84% collapses
+  to ~21% with two hulls, payback ~175 days). This is intended texture, not a bug — the
+  game signals "this lane can't carry a second hull, diversify routes." The old 20–40 day
+  figure was a v1 target; HEARTLAND v2's distances/gradients moved even the healthy lane
+  to ~40–60. Legibility rides the route's last-loop result (see #130 for surfacing
+  undiscovered mechanics).
 - **#56 (speed hotkeys) joins the E9 milestone**: orchestration is constant
   speed-juggling; `1/2/3/space` stop being QoL and become part of the loop. Scope locked
   v1-lite (owner, 2026-07-09): fixed default bindings + read-only Keybinds tab;
@@ -426,6 +438,15 @@ comment is corrected in the same PR (setting verdict above).
   "Resolved → spec" blockquotes.
 - **Issues** — #54 and #56 retargeted into the E9 milestone; #54's scope lands inside
   the fleet-list issue (comment + close-by that PR).
+- **Amendment 2026-07-14 (#152 grill — Market impact)**: the second-ship payback target
+  is reframed from a flat "20–40 days" to a lane-conditional "~40–60 days on a healthy
+  reference lane" (Founding-launch note, Pacing, Economics guardrail all updated).
+  CONTEXT.md gains the **Market impact** entry (Trade & economy). The seed-1 outlier is
+  reclassified from bug/phase-sync to working-as-designed (thin-gradient lane); the
+  investigation and per-seed data live in
+  `docs/design-notes/market-impact-second-ship-2026-07-14.md`. Owner decisions Q1–Q6 in
+  that note. No engine change; `ledger.test.ts` guardrail keeps seed 42 @ 60 days and
+  gains a market-impact property test.
 - No new ADR: nothing here is hard to reverse; calibrations declared tunable.
 - **Amendment 2026-07-12 (#122 grill — the Reserve)**: CONTEXT.md gains the Reserve
   entry and the Build Order entry's stall wording is corrected ("stalls at the
@@ -455,9 +476,12 @@ comment is corrected in the same PR (setting verdict above).
     clamps at 0, never negative.
   - **Ledger**: every purse/cargo/stock mutation has exactly one event; netWorth math
     matches state recomputation; route events carry `routeId`.
-  - **Economics guardrail**: on the standard seed, a scripted 2-ship company running a
-    producer→consumer loop recoups `LABOR_FEE + recipe market cost` within 40 world
-    days of the second ship's launch (payback target, encoded loosely).
+  - **Economics guardrail**: on the standard (healthy reference) seed, a scripted 2-ship
+    company running a producer→consumer loop recoups `LABOR_FEE + recipe market cost`
+    within the reference payback window (~60 world days under HEARTLAND v2) of the second
+    ship's launch. Payback is lane-conditional by Market impact (see Pacing), so the
+    guardrail also locks the market-impact property itself: a second hull compresses
+    per-unit margin yet still adds net profit on this healthy lane.
 - UI (Playwright E2E): found the Headquarters from a PortPanel; create a Route, assign
   the ship, watch it execute a loop (seeded fast scenario); manual sailTo shows
   "suspended", resume continues; Build Order progress renders per good; rush button

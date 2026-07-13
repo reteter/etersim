@@ -205,31 +205,27 @@ describe("Ledger wiring — exactly one event per mutation (scripted manual run)
 describe("Economics guardrail (docs/specs/E9-fleet-and-routes.md — Testing)", () => {
   // PAYBACK_WINDOW_DAYS (E12 re-anchoring, was #147): under HEARTLAND v2,
   // this test's fixture (seed 42 — a *different* generated region than v1's
-  // seed 42, not the same region with longer distances; the freeport slot
-  // alone shifts every later RNG draw) needs more world days than v1's
-  // 40-day bound to pay back the second hull. Net worth isn't monotonic day
-  // to day (an underway ship's unsold cargo is marked to the region-average
-  // mid, which drifts tick to tick), so "first day payback crosses the
-  // cost" is noisy — measured directly over 80 days, payback crosses the
-  // cost at day 44 but still dips below it on 4 of the next 9 days, only
-  // becoming durably true from day 53 on. 60 keeps a full week of margin
-  // past that durable point. This exceeds the spec's "20-40 days, encoded
-  // loosely" pacing target (docs/specs/E9-fleet-and-routes.md — Pacing).
-  // FLAGGED FOR THE ORCHESTRATOR (not resolved here — see completion
-  // report): a wider seed sample [1, 7, 42, 99] shows payback at
-  // 39/44/56/175 days respectively for this exact two-ship scripted
-  // scenario, while a single-ship control on the same four seeds shows
-  // normal-to-strong margin (48-98%) and normal trip cadence on every seed,
-  // including seed 1 — so the seed-1 outlier isn't a weak trade gradient or
-  // a slow lane, and isn't explained by the archetype-duplicate worry either
-  // (seed 1 draws exactly one agrarian and one urban port). It looks like a
-  // two-identical-ships-one-route phase-synchronization sensitivity (timing
-  // of the second hull's launch relative to the first ship's cycle), latent
-  // in the design before E12 and only incidentally exposed by v2's specific
-  // per-seed voyage/build-duration numbers — not something this PR's
-  // tuning latitude (MIN_PORT_DISTANCE, orbitRadiusRange, port names) can
-  // fix; `voyageTicksPerUnit` and the two-ship scheduling logic are
-  // deliberately out of scope here.
+  // seed 42; the freeport slot alone shifts every later RNG draw) needs more
+  // world days than v1's 40-day bound to pay back the second hull. Net worth
+  // isn't monotonic day to day (an underway ship's unsold cargo is marked to
+  // the region-average mid, which drifts tick to tick), so "first day payback
+  // crosses the cost" is noisy — measured directly over 80 days, payback
+  // crosses the cost at day 44 but still dips below it on 4 of the next 9
+  // days, only becoming durably true from day 53 on. 60 keeps a full week of
+  // margin past that durable point.
+  //
+  // Seed 42 is the *healthy reference lane*. Payback is lane-conditional by
+  // Market impact (#152 grill, 2026-07-14 — resolved; CONTEXT.md "Market
+  // impact", E9 spec — Pacing): a second hull on the same route walks the same
+  // marginal buy/sell prices, compressing that route's margin. Across
+  // [1, 7, 42, 99] the two-ship payback is ~40–60 days on the three healthy
+  // lanes (seeds 7/42/99) but ~175+ on seed 1, whose single-ship margin (~84%)
+  // is the thinnest of the four and collapses to ~21% with two hulls. That is NOT a
+  // bug and NOT the phase-synchronization once hypothesized here (staggering
+  // the second hull's launch 0–13 days barely moves seed 1: ~200→~178) — it
+  // is the designed diminishing return of concentrating volume on one lane.
+  // The property test below locks that mechanic so a future change can't
+  // silently remove it.
   const PAYBACK_WINDOW_DAYS = 60;
 
   it("a scripted 2-ship producer→consumer loop recoups the second hull's cost within the payback window of its launch", () => {
@@ -321,5 +317,78 @@ describe("Economics guardrail (docs/specs/E9-fleet-and-routes.md — Testing)", 
 
     const payback = netWorthAfter.total - netWorthAtLaunch.total;
     expect(payback).toBeGreaterThanOrEqual(buildCost);
+  });
+
+  // Market impact property (#152 grill, 2026-07-14): locks the designed
+  // diminishing return so a future change can't silently remove it. On the
+  // healthy reference lane (seed 42) a second hull on the *same* route must
+  // (a) still add net profit — scaling a good lane is rewarded — yet (b) earn a
+  // lower per-unit margin than one ship, because both ships walk the same
+  // marginal buy/sell prices against each other (CONTEXT.md "Market impact";
+  // E9 spec — Pacing).
+  it("a second hull on a healthy lane adds net profit but at a compressed per-unit margin (Market impact)", () => {
+    const SEED = 42;
+    const good: GoodId = "grain";
+    const WINDOW_DAYS = 90;
+
+    const runShips = (nShips: number) => {
+      const base = createWorld(SEED);
+      const producer = base.region.ports.find((p) => p.archetype === "agrarian")!;
+      const consumer = base.region.ports.find((p) => p.archetype === "urban")!;
+      const route: Route = {
+        id: "loop",
+        name: "loop",
+        stops: [
+          { portId: producer.id, orders: [{ kind: "buy", good }] },
+          { portId: consumer.id, orders: [{ kind: "sell", good }] },
+        ],
+      };
+      const extras = Array.from({ length: nShips - 1 }, (_, i) => ({
+        ...base.company.ships[0],
+        id: `market-impact-probe-${i + 1}`,
+      }));
+      const ships = [base.company.ships[0], ...extras].map((s) => ({
+        ...s,
+        location: { kind: "docked" as const, portId: producer.id },
+      }));
+      let w: World = {
+        ...base,
+        company: { ...base.company, thalers: 30_000, routes: [route], ships },
+      };
+      w = tick(
+        w,
+        ships.map((s) => ({ kind: "assignRoute" as const, shipId: s.id, routeId: "loop" })),
+      );
+      const start = w.ledger.length;
+      for (let day = 0; day < WINDOW_DAYS; day++) {
+        for (let t = 0; t < TICKS_PER_DAY; t++) w = tick(w, []);
+      }
+      let buySpend = 0;
+      let buyQty = 0;
+      let sellRevenue = 0;
+      let sellQty = 0;
+      for (const e of w.ledger.slice(start)) {
+        if (e.kind !== "trade" || e.good !== good) continue;
+        if (e.side === "buy") {
+          buySpend += e.thalers;
+          buyQty += e.qty;
+        } else {
+          sellRevenue += e.thalers;
+          sellQty += e.qty;
+        }
+      }
+      const avgBuy = buySpend / buyQty;
+      const avgSell = sellRevenue / sellQty;
+      return { profit: sellRevenue - buySpend, margin: (avgSell - avgBuy) / avgBuy };
+    };
+
+    const one = runShips(1);
+    const two = runShips(2);
+
+    // (a) scaling a healthy lane is rewarded: two hulls out-earn one.
+    expect(two.profit).toBeGreaterThan(one.profit);
+    // (b) but at a compressed per-unit margin — the trades move the price
+    //     against themselves (Market impact).
+    expect(two.margin).toBeLessThan(one.margin);
   });
 });
