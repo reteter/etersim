@@ -2,7 +2,9 @@
 
 Feature spec for epic E3 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)). Terms
 per [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-09.
-Status: **approved (2026-07-09)**.
+Status: **approved (2026-07-09); refreshed at the 2026-07-14 spec-currency grill**
+([grill record](../design-notes/e3-spec-refresh-grill-2026-07-14.md)) — Professor
+findings B/C folded in, upkeep insolvency gap resolved, guardrail seeds pinned.
 
 Grill inputs: M3 grill (owner's core reframe: contracts are *continuous* — "keep doing X
 for at least Y", not "do X by Y" — and loss-leaders played for reputation are the
@@ -108,23 +110,23 @@ threshold), and posts an offer to *keep supplying it*:
 
 ### Upkeep: the cost of existing
 
-A flat daily fee per ship (`upkeep` Ledger kind), charged at the day boundary,
-`min(fee, purse)` — no debt. A ship costs thalers even when idle: fleets should sail or
+A flat daily fee per ship (`upkeep` Ledger kind), charged at the day boundary. **Upkeep
+never takes the purse below the Reserve (₸500, the same `CONSTRUCTION_RESERVE`)**: the
+charge is `min(fee, max(0, purse − RESERVE))`, and whatever cannot be paid simply
+evaporates — no debt, no penalty, no arrears. A ship costs thalers even when idle: fleets should sail or
 shrink, and "does the third hull pay for itself" becomes a break-even question, not just
 a margin question. Calibration principle (tuning ≠ spec drift): **a lone starter ship
 stays comfortably viable** — upkeep lands only now because the E9 Ledger finally makes
 it a legible line, not an unexplained penalty.
 
-**Named gap — grill input for this epic (from the #122 grill, 2026-07-12):** E9 locked
-the agency guarantee (from every reachable state a path to income exists; the game may
-slow down, never die) and enforces it for construction via the Reserve (E9 spec §The
-Reserve) — but upkeep is a standing daily drain (`min(fee, purse)` can reach ₸0), and
-docking fees already allow a pathological manual drain (sailing an empty hold until
-broke). Before implementing #95, the E3 grill must answer what the agency guarantee
-means under a standing daily cost: does an idle, broke company simply stall at ₸0
-(upkeep unpaid, no penalty, consistent with no-debt) with trading always possible the
-moment any thaler arrives — or does insolvency need a floor/rescue mechanic? See #95
-and #122.
+**Resolved (2026-07-14 grill; was the named gap from the #122 grill):** upkeep is a
+*standing* drain — reachable by inaction — so it must not be able to kill (agency
+guarantee: the game may slow down, never die). The Reserve extends its meaning: "no
+construction spend crosses ₸500" becomes "no construction spend *and no standing cost*
+crosses ₸500". Below the Reserve, upkeep goes unpaid with no consequence; trading is
+always affordable again. Docking fees stay as shipped (`min(fee, purse)`, outside the
+Reserve) — docking is an active player choice, not a standing cost. CONTEXT.md Reserve
+and Upkeep entries carry the clause.
 
 ### UX skeleton
 
@@ -170,12 +172,25 @@ and #122.
   already share one code path per E9) increment `deliveredThisPeriod` of matching
   active contracts (good + port). The generator never emits two open offers for the
   same (good, port); asserted.
-- Generation & expiry run at the day boundary from a seeded RNG substream (the flow
-  drift pattern); offers are deterministic functions of (world state, seed, day).
+- Generation & expiry run at the day boundary from an **isolated RNG substream**:
+  `deriveSubstream(state, tag)` (new helper in `rng.ts`, 2026-07-14 grill — Professor
+  finding B) hash-mixes the world RNG state with a per-consumer tag, so day-boundary
+  consumers (drift, offer generation; E13 will add more) never perturb one another's
+  draws. The flow drift step migrates to its own substream in the same issue that adds
+  the second consumer (#93). Offers remain deterministic functions of
+  (world state, seed, day) — ADR-0003 extended, not challenged.
 
 ### Tick day-boundary order (extends E8/E9)
 
-Within the day boundary, deterministic order: drift step → price snapshots → **upkeep**
+**Enabling refactor (2026-07-14 grill — Professor finding C):** the day-boundary
+sequence, today inline in `tick()`, is extracted first into a pure named phase
+`dayBoundary(world)` — a behavior-preserving `refactor(sim)` issue merged before the
+E3 sim wave (proof: byte-equal Ledger on a seed sample). The ordering law then has a
+single home to be asserted in, and E3 phases slot into a named seam instead of a
+growing inline block. The `deriveSubstream` helper lands in the same refactor issue
+(pure addition, unit-tested, consumed from #93 on).
+
+Within `dayBoundary`, deterministic order: drift step → price snapshots → **upkeep**
 → **contract settlements** → **offer refresh** → netWorth snapshot (the E9 snapshot
 stays last, so the day's fees and fines are inside the day's curve point).
 
@@ -214,12 +229,16 @@ stays last, so the day's fees and fines are inside the day's curve point).
     `trade` events.
   - **Offers**: causal expiry when stock recovers; ≤ max per guild; no duplicate
     (good, port) offers; tier gating on accept.
-  - **Upkeep**: per ship per day, `min(fee, purse)`, own Ledger kind; charged before
+  - **Upkeep**: per ship per day, `min(fee, max(0, purse − RESERVE))` — never crosses
+    the Reserve, unpaid remainder evaporates; own Ledger kind; charged before
     settlements (order asserted via netWorth).
   - **Save/load** round-trips guilds, points, offers, active contracts.
-  - **Loss-leader guardrail** (standard seed): a scripted strategy running one modestly
-    unprofitable contract loop reaches rank 2 while staying solvent — the epic's core
-    promise, encoded.
+  - **Loss-leader guardrail** (2026-07-14 grill — the #115 lesson: a single-seed
+    guardrail is an untested generality claim): scripted strategies tailored to **2–3
+    explicitly pinned seeds — seed 1 among them** (the seed that bit #115), each with a
+    comment saying why it was pinned; on each, one modestly unprofitable contract loop
+    reaches rank 2 while staying solvent — the epic's core promise, encoded. Generality
+    is carried by the feasibility property test's seed sample, not by these scripts.
 - UI (Playwright E2E): enroll from a guildhouse PortPanel section (disabled
   pre-Headquarters); offer appears on the Kontrakty tab with basis line; accept → active
   contract with period progress; resign shows the cost and executes; settlement notice
@@ -232,10 +251,11 @@ stays last, so the day's fees and fines are inside the day's curve point).
 
 | Track | Scope | Depends on |
 | --- | --- | --- |
+| sim | `refactor(sim)`: extract `dayBoundary(world)` + `deriveSubstream` helper (behavior-preserving; byte-equal Ledger proof) | — (merges before the wave) |
 | sim | `feat(sim)`: guilds, enrollment, points/ranks (`guild.ts`) | E12 |
 | sim | `feat(sim)`: offer generator + causal expiry (`contract.ts`) | guilds issue |
 | sim | `feat(sim)`: accept/resign, sale attribution, settlements, Ledger kinds | generator issue |
-| sim | `feat(sim)`: ship upkeep (day-boundary charge + Ledger kind) | E12 |
+| sim | `feat(sim)`: ship upkeep (day-boundary charge + Ledger kind, Reserve floor) | dayBoundary refactor |
 | ui | `feat(ui)`: PriceBoardOverlay tabs + Kontrakty tab | settlements issue |
 | ui | `feat(ui)`: PortPanel guildhouse section + rank/settlement notices | guilds issue |
 | tests | `test(sim)`: feasibility property test + loss-leader guardrail | settlements issue |
