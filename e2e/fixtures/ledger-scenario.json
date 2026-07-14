@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "world": {
     "tick": 273,
     "rng": 1528315252,
@@ -265,7 +265,8 @@
       "headquarters": {
         "portId": "p1"
       },
-      "guilds": {}
+      "guilds": {},
+      "contracts": []
     },
     "priceSnapshots": {
       "p0": {

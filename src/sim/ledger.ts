@@ -93,6 +93,21 @@ export type LedgerEvent =
       readonly tick: number;
       readonly shipId: ShipId;
       readonly thalers: number;
+    }
+  | {
+      readonly kind: "contractFee";
+      readonly tick: number;
+      readonly guildId: GuildId;
+      readonly contractId: string;
+      readonly thalers: number;
+    }
+  | {
+      readonly kind: "settlement";
+      readonly tick: number;
+      readonly contractId: string;
+      readonly guildId: GuildId;
+      readonly outcome: "met" | "missed";
+      readonly pointsDelta: number;
     };
 
 /** Appends one event to the Ledger. The single seam every mutation point

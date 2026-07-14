@@ -1,9 +1,52 @@
 import { describe, expect, it } from "vitest";
-import { MAX_SHIP_NAME_LENGTH } from "./commands";
+import { HEADQUARTERS_COST, CONSTRUCTION_RESERVE } from "./building";
+import { applyCommand, MAX_SHIP_NAME_LENGTH } from "./commands";
+import type { ActiveContract, ContractOffer } from "./contract";
+import { RANK_THRESHOLDS, UPKEEP_PER_DAY } from "./guild";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
+import { TICKS_PER_DAY } from "./region";
 import { tick } from "./tick";
 import { cargoUsed, etaTicks, type Ship } from "./ship";
 import { createWorld, STARTING_HOLD, STARTING_THALERS, type World } from "./world";
+
+/** World with a founded HQ, exactly `thalers` in the purse, enrolled in
+ *  `guildId` with `points` progress — the shared precondition for accept/resign
+ *  command tests (docs/specs/E3-contracts-and-guilds.md — Tech: Contracts). */
+function contractWorld(
+  seedStr: string,
+  thalers: number,
+  guildId: ContractOffer["guildId"],
+  points: number,
+): World {
+  const w = createWorld(seedStr);
+  const rich: World = {
+    ...w,
+    company: { ...w.company, thalers: HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 10_000 },
+  };
+  const founded = applyCommand(rich, { kind: "foundHeadquarters", portId: rich.region.ports[0].id });
+  return {
+    ...founded,
+    company: {
+      ...founded.company,
+      thalers,
+      guilds: { ...founded.company.guilds, [guildId]: { points } },
+    },
+  };
+}
+
+const sampleOffer = (overrides: Partial<ContractOffer> = {}): ContractOffer => ({
+  id: "agrarian:agrarian-port:textiles",
+  guildId: "agrarian",
+  portId: "agrarian-port",
+  good: "textiles",
+  quotaPerPeriod: 50,
+  periodDays: 7,
+  minPeriods: 3,
+  feePerPeriod: 200,
+  tier: 1,
+  basis: { sourcePortId: "urban-port", roundTripTicks: 40, expectedTrips: 2 },
+  ...overrides,
+});
 
 const world0 = createWorld("test-seed");
 const ship = (w: World): Ship => w.company.ships[0];
@@ -247,6 +290,381 @@ describe("long-run determinism (M1 success criterion)", () => {
     // JSON.stringify would otherwise hide.
     expect(JSON.stringify(a.ledger)).toBe(JSON.stringify(b.ledger));
     expect(a.ledger.length).toBeGreaterThan(0);
+  });
+});
+
+describe("acceptContract command (#94)", () => {
+  it("rejects an unknown offerId, leaving the world unchanged", () => {
+    const w = contractWorld("no-offer", 5000, "agrarian", 0);
+    const next = applyCommand(w, { kind: "acceptContract", offerId: "missing" });
+    expect(next).toEqual(w);
+  });
+
+  it("rejects when not enrolled in the offering guild, leaving the world unchanged", () => {
+    const offer = sampleOffer();
+    let w = contractWorld("not-enrolled", 5000, "urban", 0); // enrolled elsewhere
+    w = { ...w, contractOffers: [offer] };
+    const next = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    expect(next).toEqual(w);
+  });
+
+  it("rejects when enrolled but below the offer's tier, leaving the world unchanged", () => {
+    const offer = sampleOffer({ tier: 2 });
+    let w = contractWorld("low-rank", 5000, "agrarian", 0); // rank 1
+    w = { ...w, contractOffers: [offer] };
+    const next = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    expect(next).toEqual(w);
+  });
+
+  it("accepts when enrolled and rank meets the tier: contract added, offer removed from the board, no Ledger event", () => {
+    const offer = sampleOffer({ tier: 1 });
+    let w = contractWorld("happy-accept", 5000, "agrarian", 0);
+    w = { ...w, contractOffers: [offer] };
+    const next = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    expect(next.contractOffers).toEqual([]);
+    expect(next.company.contracts).toHaveLength(1);
+    const contract = next.company.contracts[0] as ActiveContract;
+    expect(contract).toMatchObject({
+      ...offer,
+      startTick: w.tick,
+      periodIndex: 0,
+      deliveredThisPeriod: 0,
+      consecutiveMisses: 0,
+    });
+    expect(next.ledger).toEqual(w.ledger);
+  });
+
+  it("higher rank than required still qualifies", () => {
+    const offer = sampleOffer({ tier: 1 });
+    let w = contractWorld("high-rank", 5000, "agrarian", RANK_THRESHOLDS[3]); // rank 4
+    w = { ...w, contractOffers: [offer] };
+    const next = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    expect(next.company.contracts).toHaveLength(1);
+  });
+
+  it("rejects re-accepting an offer already active as a contract (drops unchanged)", () => {
+    const offer = sampleOffer({ tier: 1 });
+    let w = contractWorld("dup-accept", 5000, "agrarian", 0);
+    w = { ...w, contractOffers: [offer] };
+    const once = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    // Same offer id reappears on the board (a fresh generation cycle) while
+    // the contract is still active — acceptance must still drop, never
+    // duplicate the active contract.
+    const withOfferBack = { ...once, contractOffers: [offer] };
+    const twice = applyCommand(withOfferBack, { kind: "acceptContract", offerId: offer.id });
+    expect(twice).toEqual(withOfferBack);
+  });
+});
+
+describe("resignContract command (#94)", () => {
+  it("rejects an unknown contractId, leaving the world unchanged", () => {
+    const w = contractWorld("no-contract", 5000, "agrarian", 0);
+    const next = applyCommand(w, { kind: "resignContract", contractId: "missing" });
+    expect(next).toEqual(w);
+  });
+
+  it("removes the contract and applies POINTS_BREACH_OR_RESIGN (-3), floored at 0, any time", () => {
+    const offer = sampleOffer({ tier: 1 });
+    let w = contractWorld("resign", 5000, "agrarian", 5);
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    const contractId = accepted.company.contracts[0].id;
+    const resigned = applyCommand(accepted, { kind: "resignContract", contractId });
+    expect(resigned.company.contracts).toEqual([]);
+    expect(resigned.company.guilds.agrarian).toEqual({ points: 2 }); // 5 - 3
+  });
+
+  it("floors at 0 when points would go negative", () => {
+    const offer = sampleOffer({ tier: 1 });
+    let w = contractWorld("resign-floor", 5000, "agrarian", 1);
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    const contractId = accepted.company.contracts[0].id;
+    const resigned = applyCommand(accepted, { kind: "resignContract", contractId });
+    expect(resigned.company.guilds.agrarian).toEqual({ points: 0 });
+  });
+
+  it("no Ledger event on resignation (only the state mutation)", () => {
+    const offer = sampleOffer({ tier: 1 });
+    let w = contractWorld("resign-no-ledger", 5000, "agrarian", 5);
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    const contractId = accepted.company.contracts[0].id;
+    const resigned = applyCommand(accepted, { kind: "resignContract", contractId });
+    expect(resigned.ledger).toEqual(accepted.ledger);
+  });
+});
+
+describe("sale attribution to active contracts — the E9 equivalence guarantee (#94)", () => {
+  it("manual sell of the contracted good at the contracted port increments deliveredThisPeriod", () => {
+    let w = contractWorld("manual-sell", 5000, "agrarian", 0);
+    const portId = w.region.ports[0].id;
+    const offer = sampleOffer({ portId, good: "grain", tier: 1 });
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+
+    // Move the ship to the contracted port and give it cargo to sell.
+    const shipId = accepted.company.ships[0].id;
+    const withCargoAtPort: World = {
+      ...accepted,
+      company: {
+        ...accepted.company,
+        ships: accepted.company.ships.map((s) =>
+          s.id === shipId
+            ? { ...s, cargo: { ...s.cargo, grain: 10 }, location: { kind: "docked", portId } }
+            : s,
+        ),
+      },
+    };
+    const sold = applyCommand(withCargoAtPort, { kind: "sell", shipId, good: "grain", qty: 10 });
+    expect(sold.company.contracts[0].deliveredThisPeriod).toBe(10);
+  });
+
+  it("sale of a different good at the contracted port never counts", () => {
+    let w = contractWorld("wrong-good", 5000, "agrarian", 0);
+    const portId = w.region.ports[0].id;
+    const offer = sampleOffer({ portId, good: "grain", tier: 1 });
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    const shipId = accepted.company.ships[0].id;
+    const withCargoAtPort: World = {
+      ...accepted,
+      company: {
+        ...accepted.company,
+        ships: accepted.company.ships.map((s) =>
+          s.id === shipId
+            ? {
+                ...s,
+                cargo: { ...s.cargo, textiles: 10 },
+                location: { kind: "docked", portId },
+              }
+            : s,
+        ),
+      },
+    };
+    const sold = applyCommand(withCargoAtPort, { kind: "sell", shipId, good: "textiles", qty: 10 });
+    expect(sold.company.contracts[0].deliveredThisPeriod).toBe(0);
+  });
+
+  it("sale of the contracted good at a different port never counts", () => {
+    let w = contractWorld("wrong-port", 5000, "agrarian", 0);
+    const portId = w.region.ports[0].id;
+    const elsewhereId = w.region.ports[1].id;
+    const offer = sampleOffer({ portId, good: "grain", tier: 1 });
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    const shipId = accepted.company.ships[0].id;
+    const withCargoAtPort: World = {
+      ...accepted,
+      company: {
+        ...accepted.company,
+        ships: accepted.company.ships.map((s) =>
+          s.id === shipId
+            ? {
+                ...s,
+                cargo: { ...s.cargo, grain: 10 },
+                location: { kind: "docked", portId: elsewhereId },
+              }
+            : s,
+        ),
+      },
+    };
+    const sold = applyCommand(withCargoAtPort, { kind: "sell", shipId, good: "grain", qty: 10 });
+    expect(sold.company.contracts[0].deliveredThisPeriod).toBe(0);
+  });
+
+  it("routed sale (route dispatch's same sell command) counts identically to a manual sale", () => {
+    let w = contractWorld("routed-sell", 5000, "agrarian", 0);
+    const portId = w.region.ports[0].id;
+    const offer = sampleOffer({ portId, good: "grain", tier: 1 });
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    const shipId = accepted.company.ships[0].id;
+    const withCargoAtPort: World = {
+      ...accepted,
+      company: {
+        ...accepted.company,
+        ships: accepted.company.ships.map((s) =>
+          s.id === shipId
+            ? { ...s, cargo: { ...s.cargo, grain: 10 }, location: { kind: "docked", portId } }
+            : s,
+        ),
+      },
+    };
+    const manual = applyCommand(withCargoAtPort, { kind: "sell", shipId, good: "grain", qty: 10 });
+    const routed = applyCommand(withCargoAtPort, {
+      kind: "sell",
+      shipId,
+      good: "grain",
+      qty: 10,
+      routeId: "r0",
+    });
+    expect(routed.company.contracts[0].deliveredThisPeriod).toBe(
+      manual.company.contracts[0].deliveredThisPeriod,
+    );
+  });
+});
+
+describe("contract settlement at the day boundary (#94)", () => {
+  it("quota met: fee paid, +1 point, contractFee + settlement(met) Ledger events, contract continues", () => {
+    let w = contractWorld("settle-met", 5000, "agrarian", 0);
+    const shipId0 = w.company.ships[0].id;
+    const portId = w.region.ports[0].id;
+    const offer = sampleOffer({
+      portId,
+      good: "grain",
+      tier: 1,
+      quotaPerPeriod: 10,
+      periodDays: 1, // 1 day period for a fast test
+      feePerPeriod: 200,
+    });
+    w = { ...w, contractOffers: [offer] };
+    let accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    accepted = {
+      ...accepted,
+      company: {
+        ...accepted.company,
+        ships: accepted.company.ships.map((s) =>
+          s.id === shipId0
+            ? { ...s, cargo: { ...s.cargo, grain: 10 }, location: { kind: "docked", portId } }
+            : s,
+        ),
+      },
+    };
+    const sold = applyCommand(accepted, { kind: "sell", shipId: shipId0, good: "grain", qty: 10 });
+
+    let world = sold;
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+
+    // One ship's daily upkeep is charged before settlement in the same
+    // boundary (spec order: upkeep → contract settlements).
+    expect(world.company.thalers).toBe(sold.company.thalers - UPKEEP_PER_DAY + offer.feePerPeriod);
+    expect(world.company.guilds.agrarian).toEqual({ points: 1 });
+    const contractFeeEvents = world.ledger.filter((e) => e.kind === "contractFee");
+    expect(contractFeeEvents).toHaveLength(1);
+    expect(contractFeeEvents[0]).toMatchObject({
+      kind: "contractFee",
+      guildId: "agrarian",
+      contractId: offer.id,
+      thalers: offer.feePerPeriod,
+    });
+    const settlementEvents = world.ledger.filter((e) => e.kind === "settlement");
+    expect(settlementEvents).toHaveLength(1);
+    expect(settlementEvents[0]).toMatchObject({
+      kind: "settlement",
+      contractId: offer.id,
+      guildId: "agrarian",
+      outcome: "met",
+      pointsDelta: 1,
+    });
+    expect(world.company.contracts).toHaveLength(1);
+    expect(world.company.contracts[0].periodIndex).toBe(1);
+    expect(world.company.contracts[0].deliveredThisPeriod).toBe(0);
+    expect(world.company.contracts[0].consecutiveMisses).toBe(0);
+  });
+
+  it("quota missed: no fee, -1 point, settlement(missed) Ledger event, contract continues", () => {
+    let w = contractWorld("settle-missed", 5000, "agrarian", 3);
+    const offer = sampleOffer({
+      portId: w.region.ports[0].id,
+      good: "grain",
+      tier: 1,
+      quotaPerPeriod: 10,
+      periodDays: 1,
+      feePerPeriod: 200,
+    });
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+
+    let world = accepted; // never deliver anything this period
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+
+    expect(world.company.thalers).toBe(accepted.company.thalers - UPKEEP_PER_DAY);
+    expect(world.company.guilds.agrarian).toEqual({ points: 2 }); // 3 - 1
+    expect(world.ledger.filter((e) => e.kind === "contractFee")).toEqual([]);
+    const settlementEvents = world.ledger.filter((e) => e.kind === "settlement");
+    expect(settlementEvents).toHaveLength(1);
+    expect(settlementEvents[0]).toMatchObject({
+      kind: "settlement",
+      contractId: offer.id,
+      guildId: "agrarian",
+      outcome: "missed",
+      pointsDelta: -1,
+    });
+    expect(world.company.contracts).toHaveLength(1);
+    expect(world.company.contracts[0].consecutiveMisses).toBe(1);
+  });
+
+  it("two consecutive misses: guild terminates the contract (breach, additional -3)", () => {
+    let w = contractWorld("settle-breach", 5000, "agrarian", 5);
+    const offer = sampleOffer({
+      portId: w.region.ports[0].id,
+      good: "grain",
+      tier: 1,
+      quotaPerPeriod: 10,
+      periodDays: 1,
+      feePerPeriod: 200,
+    });
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+
+    let world = accepted;
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // miss 1: 5-1=4
+    expect(world.company.contracts).toHaveLength(1);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // miss 2 -> breach: 4-1-3=0
+
+    expect(world.company.contracts).toEqual([]);
+    expect(world.company.guilds.agrarian).toEqual({ points: 0 });
+    const settlementEvents = world.ledger.filter((e) => e.kind === "settlement");
+    expect(settlementEvents).toHaveLength(2);
+    expect(settlementEvents[1]).toMatchObject({ outcome: "missed", pointsDelta: -1 });
+  });
+
+  it("settlement math is recomputable from trade events alone (audit trail)", () => {
+    let w = contractWorld("settle-recompute", 5000, "agrarian", 0);
+    const shipId0 = w.company.ships[0].id;
+    const portId = w.region.ports[0].id;
+    const offer = sampleOffer({
+      portId,
+      good: "grain",
+      tier: 1,
+      quotaPerPeriod: 10,
+      periodDays: 1,
+      feePerPeriod: 200,
+    });
+    w = { ...w, contractOffers: [offer] };
+    let accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    accepted = {
+      ...accepted,
+      company: {
+        ...accepted.company,
+        ships: accepted.company.ships.map((s) =>
+          s.id === shipId0
+            ? { ...s, cargo: { ...s.cargo, grain: 12 }, location: { kind: "docked", portId } }
+            : s,
+        ),
+      },
+    };
+    const sold = applyCommand(accepted, { kind: "sell", shipId: shipId0, good: "grain", qty: 12 });
+
+    let world = sold;
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+
+    const acceptTick = accepted.tick;
+    const deliveredFromTrades = world.ledger
+      .filter(
+        (e) =>
+          e.kind === "trade" &&
+          e.side === "sell" &&
+          e.portId === offer.portId &&
+          e.good === offer.good &&
+          e.tick >= acceptTick,
+      )
+      .reduce((sum, e) => sum + (e as { qty: number }).qty, 0);
+    expect(deliveredFromTrades).toBe(12);
+    expect(deliveredFromTrades).toBeGreaterThanOrEqual(offer.quotaPerPeriod);
+    const settlementEvent = world.ledger.find((e) => e.kind === "settlement")!;
+    expect(settlementEvent).toMatchObject({ outcome: "met" });
   });
 });
 

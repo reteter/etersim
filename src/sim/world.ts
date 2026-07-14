@@ -1,5 +1,5 @@
 import { generateShipName, type Headquarters } from "./building";
-import type { ContractOffer } from "./contract";
+import type { ActiveContract, ContractOffer } from "./contract";
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
 import type { GuildId } from "./guild";
@@ -27,6 +27,10 @@ export interface Company {
   /** Guild enrollment + progress (E3, guild.ts): enrolled iff the guild's key
    *  is present. Rank is always derived via `rankOf`, never stored here. */
   readonly guilds: Partial<Record<GuildId, { points: number }>>;
+  /** Contracts the Company has accepted off a guild's board (E3, #94,
+   *  contract.ts): fulfilment is attributed on the shared sell path (E9
+   *  equivalence), settled at the day boundary (`settleContracts`). */
+  readonly contracts: readonly ActiveContract[];
 }
 
 /**
@@ -94,7 +98,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     tick: 0,
     rng: rng2,
     region,
-    company: { thalers: STARTING_THALERS, ships: [ship], routes: [], guilds: {} },
+    company: { thalers: STARTING_THALERS, ships: [ship], routes: [], guilds: {}, contracts: [] },
     priceSnapshots: snapshotPrices(region),
     flowDrift: initialFlowDrift(region),
     osmosisPulse: initialOsmosisPulse(region),
