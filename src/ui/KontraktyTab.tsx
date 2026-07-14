@@ -58,6 +58,18 @@ function portName(world: World, portId: string): string {
   return world.region.ports.find((p) => p.id === portId)?.name ?? portId;
 }
 
+/** Polish noun declension by count (wave-check finding: a hardcoded plural
+ *  read wrong for n≥5 — "5 kursy" is ungrammatical, it must be "5 kursów").
+ *  Standard three-way rule: 1 → singular; 2-4 (excluding the 12-14 teens) →
+ *  few; everything else (0, 5-21 teens, 5+, ...) → many. */
+function pluralPl(n: number, singular: string, few: string, many: string): string {
+  if (n === 1) return singular;
+  const lastDigit = n % 10;
+  const lastTwo = n % 100;
+  if (lastDigit >= 2 && lastDigit <= 4 && !(lastTwo >= 12 && lastTwo <= 14)) return few;
+  return many;
+}
+
 /** One open offer: guild badge, good → port, quota/period, min periods, fee,
  *  the basis line (#93's `ContractOffer.basis`), and either an Accept button
  *  or — above the company's rank with that guild — a Polish lock label
@@ -78,11 +90,12 @@ function OfferRow({ world, offer, rank }: { world: World; offer: ContractOffer; 
           {GOODS[offer.good].name} → {portName(world, offer.portId)}
         </p>
         <p className="kontrakty-offer__terms">
-          Kwota {offer.quotaPerPeriod}/okres ({offer.periodDays} dni), min. {offer.minPeriods} okr.,
+          Norma {offer.quotaPerPeriod}/okres ({offer.periodDays} dni), min. {offer.minPeriods} okr.,
           opłata ₸{offer.feePerPeriod}
         </p>
         <p className="kontrakty-offer__basis">
-          Oczekiwane ~{offer.basis.expectedTrips} kursy/okres, najbliższe źródło:{" "}
+          Oczekiwane ~{offer.basis.expectedTrips}{" "}
+          {pluralPl(offer.basis.expectedTrips, "kurs", "kursy", "kursów")}/okres, najbliższe źródło:{" "}
           {portName(world, offer.basis.sourcePortId)}
         </p>
         {locked ? (

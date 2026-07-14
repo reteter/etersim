@@ -90,16 +90,23 @@ function boardWorld(seed: string): { world: World; homePortId: string; sourcePor
 }
 
 test.describe('Kontrakty tab (#96)', () => {
-  test('tab switch keeps the Ceny hotkey/overlay, and opens Kontrakty', async ({ page }) => {
+  test('the "b" hotkey opens the same overlay (default Ceny tab), and switching tabs keeps it open', async ({
+    page,
+  }) => {
     const { world } = boardWorld('kontrakty-tabs');
     await continueWithWorld(page, world);
 
-    await page.getByRole('button', { name: 'Price Board' }).click();
+    await page.keyboard.press('b');
     await expect(page.getByRole('tab', { name: 'Ceny' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.price-board')).toBeVisible();
 
     await page.getByRole('tab', { name: 'Kontrakty' }).click();
     await expect(page.locator('.kontrakty-tab')).toBeVisible();
+
+    // Same "b" hotkey still toggles the one overlay closed, even mid-Kontrakty
+    // (#96 AC1: "same overlay, same B hotkey").
+    await page.keyboard.press('b');
+    await expect(page.locator('.overlay__panel')).toHaveCount(0);
   });
 
   test('offer renders with its basis line, and a higher-tier offer renders locked with the required rank', async ({
