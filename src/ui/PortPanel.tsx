@@ -472,7 +472,7 @@ function GuildhouseSection({ world, portId }: { world: World; portId: PortId }) 
         <div
           className="rank-progress__bar"
           role="progressbar"
-          aria-label={`${GUILD_NAME_PL[guildId]} rank progress`}
+          aria-label={`Postęp rangi — ${GUILD_NAME_PL[guildId]}`}
           aria-valuenow={points}
           aria-valuemin={rankFloor}
           aria-valuemax={ceiling ?? points}
