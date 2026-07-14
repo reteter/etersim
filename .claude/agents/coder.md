@@ -77,8 +77,11 @@ the repo read-set, the SELFCHECK §5 report, and the §6 gates are the Orchestra
 ## Delivery
 
 1. Full local gate, observed not assumed: `npm test && npm run typecheck && npm run lint`.
-2. Push the branch; open the PR with `Closes #<n>` via `--body-file`. Never merge it.
-3. Completion report: branch + PR, **each acceptance criterion mapped to its
+2. Push the branch. **Do NOT open a PR** — PRs open only after the Orchestrator closes
+   the wave check (owner decision 2026-07-14: an open PR invites a pre-review merge).
+   Open one only when your task package explicitly says so; then `Closes #<n>` via
+   `--body-file`, and never merge it.
+3. Completion report: branch name + head SHA, **each acceptance criterion mapped to its
    deliverable**, gate output, every deviation or ambiguity flagged, design/scope
    suggestions listed for the Orchestrator (never implemented on your own). A
    criterion you can't point at a deliverable for is a flag, not a footnote.
