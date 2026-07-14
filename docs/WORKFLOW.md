@@ -69,7 +69,9 @@ wave (a fix touching `src/sim` → tier 3 on the fix's diff).
 **E2E certification points.** Affected specs per PR (coder-side). One full Playwright
 run on `main` after all of a wave's PRs merge — red returns the wave to the fix loop,
 never "merged, fix later". Full run + baseline (tests, typecheck, lint) at
-epic/milestone close.
+epic/milestone close. Every certification run starts by printing `pwd` +
+`git branch --show-current` and stops on a mismatch — a persistent shell may still
+sit in a coder worktree (incident 0008).
 
 **Batching.** 2–4 small same-area issues per coder package; separate branch + PR per
 issue, each cut from `main` (disjoint files → no stacks); the wave check reads them
