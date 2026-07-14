@@ -32,6 +32,7 @@ export function TopBar() {
   const thalers = useGameStore((s) => s.world?.company.thalers ?? 0);
   const tick = useGameStore((s) => s.world?.tick ?? 0);
   const speed = useGameStore((s) => s.speed);
+  const pauseCause = useGameStore((s) => s.pauseCause);
   const setSpeed = useGameStore((s) => s.setSpeed);
   const togglePause = useGameStore((s) => s.togglePause);
   const hasHeadquarters = useGameStore((s) => !!s.world?.company.headquarters);
@@ -66,21 +67,31 @@ export function TopBar() {
     <header className="top-bar">
       <span className="top-bar__thalers">₸ {thalers}</span>
       <span className="top-bar__date">{formatWorldDate(tick)}</span>
-      <div className="top-bar__speed" role="group" aria-label="Speed controls">
-        {SPEEDS.map((s) => (
-          <button
-            key={String(s)}
-            type="button"
-            className={s === speed ? "speed-btn speed-btn--active" : "speed-btn"}
-            aria-pressed={s === speed}
-            // The pause button toggles: pausing remembers the running speed,
-            // unpausing restores it (#123) — instead of resetting to 1x. The
-            // rate buttons stay explicit overrides regardless of pause state.
-            onClick={() => (s === "paused" ? togglePause() : setSpeed(s))}
-          >
-            {SPEED_LABELS[s]}
-          </button>
-        ))}
+      <div className="top-bar__speed-group">
+        <div className="top-bar__speed" role="group" aria-label="Speed controls">
+          {SPEEDS.map((s) => (
+            <button
+              key={String(s)}
+              type="button"
+              className={s === speed ? "speed-btn speed-btn--active" : "speed-btn"}
+              aria-pressed={s === speed}
+              // The pause button toggles: pausing remembers the running speed,
+              // unpausing restores it (#123) — instead of resetting to 1x. The
+              // rate buttons stay explicit overrides regardless of pause state.
+              onClick={() => (s === "paused" ? togglePause() : setSpeed(s))}
+            >
+              {SPEED_LABELS[s]}
+            </button>
+          ))}
+        </div>
+        {/* Pause-cause readout (#130): answers "why is the game stopped?"
+            whenever it isn't "you pressed pause" — every time the automatic
+            arrival pause fires, not a one-time hint (design-notes/pause-cause-note). */}
+        {pauseCause === "autoArrival" && (
+          <p className="top-bar__pause-note" role="status">
+            auto-pauza: statek zacumował (wyłączalna w Opcjach)
+          </p>
+        )}
       </div>
       <button type="button" className="menu-btn" onClick={() => setPriceBoardOpen(true)}>
         Price Board
