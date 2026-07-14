@@ -7,7 +7,7 @@ How an idea becomes shipped code in etersim. Written for the model first.
 - **User (Jakub)** — product owner; final call on design, scope and merges.
 - **Claude as Designer / Engineer** (docs/personas/) — hats worn in dialogue with the user during grilling and spec writing. Design and architecture are conversations, never delegated.
 - **Claude as Analyst** (docs/personas/ANALYST.md) — after owner playtests: verifies each observation against the codebase (root cause, classification), produces the playtest design note and routes items to the Designer grill, straight Engineer issues, or the parking lot. Diagnoses, never decides.
-- **Claude as Orchestrator** — during implementation: breaks the approved spec into issues, delegates self-contained tasks to coder subagents (parallel where independent), reviews and integrates.
+- **Claude as Orchestrator** — during implementation: breaks the approved spec into issues, delegates self-contained tasks to coder subagents (parallel where independent), closes the tiered wave check (§Verification gates) and integrates.
 - **Coder subagents** (docs/personas/CODER.md; harness def `.claude/agents/coder.md`) — implementation specialists dispatched by the Orchestrator with a self-contained task package; deliver PR-ready feature branches and evidence-based completion reports, never merge.
 - **The Professor** (docs/personas/PROFESSOR.md; harness def `.claude/agents/professor.md`) — read-only architecture reviewer of one named subsystem, invoked by the owner or proposed by the Orchestrator at epic/milestone boundaries; complements the diff-scoped `/code-review`, findings route to grill/issues/design-notes, never straight into code.
 
@@ -22,9 +22,58 @@ idea → grill → feature spec → user approval → GH issues → implementati
 3. **Approval** — user signs off on the spec before any issue is created.
 4. **Issues** — via `gh`. One GitHub **milestone per epic** (`E1 — Foundation`, …). Issue title: imperative English. Body: context, acceptance criteria, link to spec section. Labels: `type:feat|bug|infra|spec|docs` + `area:sim|ui|docs`. When criteria are refined after filing (a later grill, re-scoping), post the final version as an issue **comment** — the newest acceptance-criteria comment supersedes the body. Coders and reviewers read the newest criteria comment first, then the body.
 5. **Implementation** — branch `feat/<issue>-<slug>` (or `fix/`, `chore/`). Conventional commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`). Sim code (`src/sim`) grows test-first (TDD, Vitest).
-6. **PR** — body links `Closes #<n>`. Before merge: tests green, typecheck + lint clean, `/code-review` run. Exception: for a trivial one-file infra/docs diff an inline Orchestrator review suffices; any change touching `src/sim` or UI code always gets the full two-axis `/code-review`. The user merges — final call on every PR.
+6. **PR** — body links `Closes #<n>`. Before merge: tests green, typecheck + lint clean, and the wave check for the change's tier closed (§Verification gates below). The user merges — final call on every PR.
    - **Independent PRs** (disjoint files) merge in any order, no rebase. **Stacked PRs** (a chain where each branches off the previous) need care: `gh pr merge N --squash` **without** `--delete-branch` on the base (deleting it *closes* the children — GitHub won't retarget a closed PR), then `gh pr edit CHILD --base main` to retarget, then delete the base branch. After the first squash-merge, cascade-rebase the rest locally (`git rebase --onto <new-parent> <old-parent-head> <branch>`, then `--force-with-lease`); GitHub reports children as CONFLICTING until rebased because their branches still carry the pre-squash commits.
 7. **Spec sync** — if implementation drifted from the spec, updating the spec is part of the task, not optional cleanup.
+
+## Verification gates (tiered) — the wave check
+
+Verification cost scales with a change's **risk surface**, not flat ceremony (#162
+grill, [design-notes/tiered-verification-gates-2026-07-14.md](design-notes/tiered-verification-gates-2026-07-14.md)).
+The Orchestrator dispatches coders with self-contained packages, then closes the
+repo-level gates **once per wave** — not once per issue.
+
+**Coder minimum** (the coder's entire checklist; receiving side in personas/CODER.md):
+
+1. Baseline green in the assigned worktree before the first change.
+2. Hard laws (SELFCHECK §4) + own green: tests/typecheck/lint observed, TDD for `src/sim`.
+3. Affected Playwright specs if UI changed (grep the diff's selectors/routes across
+   `e2e/*.spec.ts`; doubt resolves toward "include the spec").
+4. Evidence report mapping each acceptance criterion to its deliverable.
+
+No repo read-set, no SELFCHECK §5 stop-and-wait, no §6 gates — those move up.
+
+**Wave check** (Orchestrator, after coder reports, before merges). The tier follows
+mechanically from the wave's combined `git diff --stat`; escalate up freely, never
+downgrade below what the paths dictate:
+
+| Tier | Wave touches | Check |
+| --- | --- | --- |
+| 1 | docs/infra only | Session driver inline: diff vs ACs + docs-sweep greps. No subagents. |
+| 2 | UI only (no `src/sim`) | **One** review subagent on the cheap model tier, given a distilled package (ACs, ADR-0006, area scars) — it never re-derives repo context. Affected e2e specs already ran coder-side. |
+| 3 | `src/sim` / economy / multi-file wave | **One** two-axis (Standards + Spec) review subagent on the strong model tier, reading the whole wave's diffs in one context, package supplied. |
+
+**Model ladder.** The session driver (most expensive rung) composes packages, reads
+reports, and decides — it does not read whole diffs, write code, or run line-by-line
+review. Reviews run one rung down; coding two rungs down. Implementing directly
+in-session is allowed only when the delegation overhead exceeds the task *and* the
+session driver is not the most expensive rung.
+
+**Fix loop.** Findings return to the *same* coder via resume (full transcript, zero
+re-orientation); a fresh coder only when that context is bloated or stale.
+Micro-exception: the session driver may apply a purely mechanical one-liner (typo,
+missing `aria-label`) directly — every such fix is **logged in the wave report**;
+anything behavioral goes back to the coder. The re-check scales to the fix, not the
+wave (a fix touching `src/sim` → tier 3 on the fix's diff).
+
+**E2E certification points.** Affected specs per PR (coder-side). One full Playwright
+run on `main` after all of a wave's PRs merge — red returns the wave to the fix loop,
+never "merged, fix later". Full run + baseline (tests, typecheck, lint) at
+epic/milestone close.
+
+**Batching.** 2–4 small same-area issues per coder package; separate branch + PR per
+issue, each cut from `main` (disjoint files → no stacks); the wave check reads them
+all in one pass.
 
 ## Definition of done (per issue)
 
