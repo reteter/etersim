@@ -56,6 +56,10 @@ downgrade below what the paths dictate:
 | 2 | UI only (no `src/sim`) | **One** review subagent on the cheap model tier, given a distilled package (ACs, ADR-0006, area scars) — it never re-derives repo context. Affected e2e specs already ran coder-side. |
 | 3 | `src/sim` / economy / multi-file wave | **One** two-axis (Standards + Spec) review subagent on the strong model tier, reading the whole wave's diffs in one context, package supplied. |
 
+Closing a wave check includes appending one row per coder PR to
+[design-notes/coder-scorecard.md](design-notes/coder-scorecard.md) (findings,
+fix-loop rounds, cert outcome) — the durable sample behind coder-model decisions.
+
 **Model ladder.** The session driver (most expensive rung) composes packages, reads
 reports, and decides — it does not read whole diffs, write code, or run line-by-line
 review. Reviews run one rung down; coding two rungs down. Implementing directly
