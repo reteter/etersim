@@ -42,7 +42,12 @@ function App() {
     <div className="app">
       <TopBar />
       <div className="app__body">
-        <RegionMap region={world.region} ship={world.company.ships[0]} osmosisPulse={world.osmosisPulse} />
+        <RegionMap
+          region={world.region}
+          ship={world.company.ships[0]}
+          osmosisPulse={world.osmosisPulse}
+          tick={world.tick}
+        />
         <SidePanel />
       </div>
     </div>
