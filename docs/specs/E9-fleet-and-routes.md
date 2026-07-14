@@ -220,8 +220,10 @@ consume the same schema — one schema, two consumers.
 - **Every thaler or goods movement is an event**: trades (manual and routed), docking
   fees, auto-draw purchases, rush purchases, deliveries, labor fees, the Headquarters
   founding, ship launches — tagged with `tick, kind, shipId?, portId?, good?, qty?,
-  thalers?, routeId?`. **`routeId` on route-driven events is the keystone**: per-route
-  economics fall out of a filter.
+  thalers?`; `routeId?` lives on `trade` events only (the Tech union below is the exact
+  contract). **`routeId` on route-driven trades is the keystone**: per-route
+  economics fall out of a filter; other kinds (`dockingFee`, …) correlate to a Route by
+  ship + time window.
 - **Daily net-worth snapshot**: thalers + fleet cargo + build-site store at mid price;
   **ships and buildings carry no book value** — the company-value chart tells the
   honest investment story (a build is a visible dip, then steeper growth; "did the
@@ -230,8 +232,9 @@ consume the same schema — one schema, two consumers.
   is a problem for the future, not a design for today).
 - The player-facing board in E9: **transaction list** (filter per ship), **company
   value chart** (from snapshots), and — priority, not garnish — **last-loop result per
-  Route** ("loop: +₸320 / −₸40") shown in the Route panel, computed from `routeId`
-  events. That number is what makes route rot visible at a glance — the heart of E9's
+  Route** ("loop: +₸320 / −₸40") shown in the Route panel, computed from
+  `routeId`-tagged trades (fees folded in by ship + time window). That number is what
+  makes route rot visible at a glance — the heart of E9's
   gameplay.
 
 ### Pacing
@@ -478,7 +481,7 @@ comment is corrected in the same PR (setting verdict above).
   - **Fees**: charged per docking (manual and routed), not on pass-through; empty purse
     clamps at 0, never negative.
   - **Ledger**: every purse/cargo/stock mutation has exactly one event; netWorth math
-    matches state recomputation; route events carry `routeId`.
+    matches state recomputation; route-driven `trade` events carry `routeId`.
   - **Economics guardrail**: on the standard (healthy reference) seed, a scripted 2-ship
     company running a producer→consumer loop recoups `LABOR_FEE + recipe market cost`
     within the reference payback window (~60 world days under HEARTLAND v2) of the second

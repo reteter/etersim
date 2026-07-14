@@ -311,8 +311,11 @@ _Avoid_: construction job, project, queue (E9 has none)
 **Reserve** (PL: rezerwa):
 The ₸500 floor that no construction spend may cross — founding, labor fee, auto-draw
 and rush all stop at it; equal to the Company's starting capital, so the rule reads
-"building never touches your last starting-purse". Docking fees are deliberately
-outside it (pay-what-you-have, no-debt). Born of the agency guarantee (#122 grill,
+"building never touches your last starting-purse". From E3 (2026-07-14 grill) standing
+costs respect it too: Upkeep never takes the purse below the Reserve — a passive drain
+must not be able to kill. Docking fees are deliberately
+outside it (pay-what-you-have, no-debt — docking is an active player choice). Born of
+the agency guarantee (#122 grill,
 2026-07-12: the game may slow down, never die — a dead state is a defect).
 Calibration is tuning ≠ spec drift.
 _Implementation_: shipped in the #122 fix — `CONSTRUCTION_RESERVE`
@@ -414,7 +417,9 @@ _Avoid_: warehouse (as identifier), depot
 
 **Upkeep** (PL: utrzymanie):
 The daily per-ship fixed cost (E3), its own Ledger event kind. A ship costs thalers even
-when idle — fleets should sail or shrink. Calibration principle: a lone starter ship
+when idle — fleets should sail or shrink. Never crosses the Reserve (2026-07-14 grill):
+below ₸500 upkeep goes unpaid with no consequence — no debt, no arrears; a standing
+cost may slow the game down, never kill it. Calibration principle: a lone starter ship
 stays comfortably viable (upkeep must never feel like an unexplained penalty — it ships
 only now because the Ledger makes it legible).
 _Avoid_: maintenance, wages (crew wages remain a parked, separate idea)
@@ -452,7 +457,8 @@ _Avoid_: sweep, suite (in identifiers)
 The canonical event stream of a Company's activity: every thaler or goods movement —
 trades (manual and routed), docking fees, build-site auto-draw and rush purchases,
 deliveries, labor fees, the Headquarters founding, ship launches — tagged with tick,
-ship, port and originating Route where applicable, plus daily net-worth snapshots
+ship and port where applicable (route-driven trades additionally carry their Route;
+other kinds correlate to a Route by ship + time window), plus daily net-worth snapshots
 (thalers + fleet cargo + build-site store, all at mid price; ships and buildings carry
 no book value, so the chart tells the honest investment story: a build is a visible dip,
 then steeper growth). Full retention. One schema, two consumers: the in-game performance
