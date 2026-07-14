@@ -1,4 +1,5 @@
 import { generateShipName, type Headquarters } from "./building";
+import type { ContractOffer } from "./contract";
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
 import type { GuildId } from "./guild";
@@ -55,6 +56,11 @@ export interface World {
    *  — Ledger and the performance board). Full retention, appended at the
    *  point of mutation by `applyCommand`/tick phases (ledger.ts). */
   readonly ledger: readonly LedgerEvent[];
+  /** Open Contract offers across every guild's board (CONTEXT.md: Contract
+   *  board; docs/specs/E3-contracts-and-guilds.md — Contracts). Refreshed
+   *  (generated + causally expired) at every day boundary by
+   *  `refreshContractOffers` (contract.ts); empty until the first boundary. */
+  readonly contractOffers: readonly ContractOffer[];
 }
 
 /** FNV-1a — maps a seed string onto the RNG's uint32 seed space. */
@@ -93,6 +99,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     flowDrift: initialFlowDrift(region),
     osmosisPulse: initialOsmosisPulse(region),
     ledger: [],
+    contractOffers: [],
   };
 }
 

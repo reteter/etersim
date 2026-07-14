@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CONSTRUCTION_RESERVE } from "./building";
 import { UPKEEP_PER_DAY } from "./guild";
 import { TICKS_PER_DAY } from "./region";
+import { nextUint32 } from "./rng";
 import { emptyCargo, type Ship } from "./ship";
 import { tick } from "./tick";
 import { createWorld, type World } from "./world";
@@ -64,10 +65,24 @@ describe("dayBoundary behavior contracts (#168)", () => {
         }
         const prevRngAtBoundary = world.rng;
         world = tick(world, []);
-        // Boundary tick: rng must advance (driftStep is its only consumer today).
+        // Boundary tick: rng must advance (day-boundary consumers — drift,
+        // offer generation (#93) — draw from isolated `deriveSubstream`
+        // substreams derived from the pre-advance state; the main stream
+        // itself advances exactly once, unconditionally).
         expect(world.rng).not.toBe(prevRngAtBoundary);
         expect(world.priceSnapshots).not.toBe(beforeBoundary.priceSnapshots);
         expect(world.flowDrift).not.toBe(beforeBoundary.flowDrift);
+      }
+    });
+
+    it(`seed ${seed}: the main rng advances exactly once per day boundary (#93 — no double draw, substreams never leak into the main stream)`, () => {
+      let world = createWorld(seed);
+      for (let day = 1; day <= 10; day++) {
+        for (let i = 0; i < TICKS_PER_DAY - 1; i++) world = tick(world, []);
+        const prevRng = world.rng;
+        world = tick(world, []);
+        const [, expected] = nextUint32(prevRng);
+        expect(world.rng).toBe(expected);
       }
     });
   }

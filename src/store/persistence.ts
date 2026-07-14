@@ -23,8 +23,12 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  every event-appending mutation would throw on the missing array.
  *  v6: E3 added `Company.guilds` (docs/specs/E3-contracts-and-guilds.md —
  *  Guild state, #92) — again no migration — a v5 save would load with
- *  `guilds` undefined and `enroll` would throw indexing into it. */
-export const SAVE_VERSION = 6;
+ *  `guilds` undefined and `enroll` would throw indexing into it.
+ *  v7: E3 added `World.contractOffers` (docs/specs/E3-contracts-and-guilds.md
+ *  — Contracts, #93) — again no migration — a v6 save would load with
+ *  `contractOffers` undefined and the next day boundary's `refreshContractOffers`
+ *  would throw filtering it. */
+export const SAVE_VERSION = 7;
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
 export const AUTOSAVE_INTERVAL_TICKS = 24;

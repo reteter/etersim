@@ -1,5 +1,6 @@
 import { CONSTRUCTION_RESERVE, runBuildSiteAutoDraw } from "./building";
 import { applyCommand, type Command } from "./commands";
+import { refreshContractOffers } from "./contract";
 import { GOOD_IDS, type GoodId } from "./goods";
 import { UPKEEP_PER_DAY } from "./guild";
 import { appendLedgerEvent, computeNetWorth } from "./ledger";
@@ -13,10 +14,10 @@ import {
   type PortId,
   type Region,
 } from "./region";
-import { nextFloat, type RngState } from "./rng";
+import { deriveSubstream, nextFloat, nextUint32, type RngState } from "./rng";
 import type { Route, RouteId } from "./route";
 import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
-import { replaceShip, snapshotPrices, type World } from "./world";
+import { replaceShip, snapshotPrices, STARTING_HOLD, type World } from "./world";
 
 export type { Command };
 
@@ -231,7 +232,21 @@ function chargeUpkeep(world: World): World {
  * day-boundary order).
  */
 function dayBoundary(world: World): World {
-  const [flowDrift, rng] = driftStep(world.region, world.flowDrift, world.rng);
+  // Every day-boundary consumer (drift, offer generation — #93) draws from
+  // its own isolated substream derived from `world.rng` *before* this boundary
+  // advances it (deriveSubstream, rng.ts) — so no consumer's draw count can
+  // perturb another's. The main stream itself advances exactly once,
+  // unconditionally, regardless of how many (if any) draws a substream makes
+  // internally; that advanced state is the only one ever threaded back into
+  // `World.rng` (docs/specs/E3-contracts-and-guilds.md — Contracts).
+  // Offer generation (contract.ts) turned out to need no randomness at all —
+  // candidates are picked by largest shortfall with a canonical tie-break,
+  // never the RNG — so no "offers" substream is derived here; flagged in the
+  // #93 completion report as a deliberate deviation from the spec's literal
+  // `deriveSubstream(state, "offers")` wording (nothing would ever consume
+  // it). The main stream's single unconditional advance below still holds.
+  const [flowDrift] = driftStep(world.region, world.flowDrift, deriveSubstream(world.rng, "drift"));
+  const [, rng] = nextUint32(world.rng);
 
   let next: World = {
     ...world,
@@ -240,6 +255,15 @@ function dayBoundary(world: World): World {
     flowDrift,
   };
   next = chargeUpkeep(next);
+  // Offer refresh (#93): generation + causal expiry, after upkeep and before
+  // (future) contract settlements/the netWorth snapshot, per the spec's
+  // day-boundary order. Sized against a fixed reference hold (STARTING_HOLD)
+  // rather than any real ship's hold — a guild's offer is a promise to the
+  // market, not tailored to the player's current fleet.
+  next = {
+    ...next,
+    contractOffers: refreshContractOffers(next.region, next.contractOffers, STARTING_HOLD),
+  };
   // Daily net-worth snapshot (docs/specs/E9 — Ledger): thalers + fleet cargo +
   // build-site store, at region-average mid price; ships/buildings carry no
   // book value. Tagged with the boundary tick, same cadence as the price
