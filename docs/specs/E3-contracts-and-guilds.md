@@ -34,13 +34,13 @@ gate them here); crew wages (parked); save migration (pre-1.0).
 Five guilds, one per non-freeport archetype, each with a **domain** — the good its
 archetype produces (per `ARCHETYPE_PROFILES`):
 
-| Guild (working name, tunable flavor) | Archetype | Domain good |
+| Guild (working name, tunable flavor — Polish per the 2026-07-14 UI-language lock) | Archetype | Domain good |
 | --- | --- | --- |
-| Granary Guild | agrarian | grain |
-| Weavers' Assembly | urban | textiles |
-| Saltworkers' Brotherhood | mining | aetherSalt |
-| Foundry League | industrial | electronics |
-| Livingwood Consortium | verdant | timber |
+| Gildia Spichlerzy (Granary Guild) | agrarian | grain |
+| Zgromadzenie Tkaczy (Weavers' Assembly) | urban | textiles |
+| Bractwo Solowarów (Saltworkers' Brotherhood) | mining | aetherSalt |
+| Liga Odlewników (Foundry League) | industrial | electronics |
+| Konsorcjum Żywodrzewu (Livingwood Consortium) | verdant | timber |
 
 A guild has a **guildhouse** at every port of its archetype (world-side, NPC-owned —
 the region's first institutions with addresses). Guilds own no ships, make no trades,
@@ -139,8 +139,12 @@ and Upkeep entries carry the clause.
 - **PortPanel gains a guildhouse section** at guild-seat ports: guild name + icon,
   enroll button with fee (disabled pre-Headquarters or when unaffordable), rank badge
   and points progress once enrolled.
-- Rank changes and settlements surface as transient notices (the pattern used for
-  save/load toasts); settlement day is a natural "look at the board" beat at 10×/100×.
+- Rank changes and settlements surface on a **persistent notice strip** (2026-07-14
+  UI grill — the previously cited "save/load toast pattern" never existed): the UI
+  derives notices from Ledger events appended since a `lastSeenTick` (immune to
+  tick-folding at speed), shown as a compact strip with a count badge, click → the
+  board. Settlement outcomes are visible in the Ledger via the `settlement` kind
+  (met **and** missed). Settlement day stays a "look at the board" beat at 10×/100×.
 
 ## Tech
 
@@ -172,13 +176,15 @@ and Upkeep entries carry the clause.
   already share one code path per E9) increment `deliveredThisPeriod` of matching
   active contracts (good + port). The generator never emits two open offers for the
   same (good, port); asserted.
-- Generation & expiry run at the day boundary from an **isolated RNG substream**:
-  `deriveSubstream(state, tag)` (new helper in `rng.ts`, 2026-07-14 grill — Professor
-  finding B) hash-mixes the world RNG state with a per-consumer tag, so day-boundary
-  consumers (drift, offer generation; E13 will add more) never perturb one another's
-  draws. The flow drift step migrates to its own substream in the same issue that adds
-  the second consumer (#93). Offers remain deterministic functions of
-  (world state, seed, day) — ADR-0003 extended, not challenged.
+- Generation & expiry run at the day boundary. RNG isolation (2026-07-14 grill —
+  Professor finding B): `deriveSubstream(state, tag)` in `rng.ts` hash-mixes the
+  world RNG state with a per-consumer tag; the drift step consumes
+  `deriveSubstream(rng, "drift")` and the main stream advances exactly once per
+  boundary (test-pinned). **As shipped (#93), the generator itself is fully
+  deterministic** — largest-shortfall selection with canonical tie-breaks, zero
+  draws — so the `"offers"` substream is *reserved*, not consumed; derive it only
+  when generation gains a random element. Offers are deterministic functions of
+  (world state, day) — ADR-0003 extended, not challenged.
 
 ### Tick day-boundary order (extends E8/E9)
 
@@ -197,7 +203,9 @@ stays last, so the day's fees and fines are inside the day's curve point).
 ### Ledger (`src/sim/ledger.ts`)
 
 - Kind union += `enrollmentFee` (guildId), `contractFee` (guildId, contractId),
-  `upkeep` (shipId). Emitted at the point of mutation, as E9 mandates.
+  `upkeep` (shipId), and `settlement` (contractId, guildId, met/missed, points
+  delta — 2026-07-14 UI grill: the audit trail must carry the *missed* outcome too;
+  the notice strip and E11 read it). Emitted at the point of mutation, as E9 mandates.
 - Contract fulfilment counters are state, the Ledger is the audit trail — settlement
   math must be recomputable from `trade` events (asserted by test).
 
