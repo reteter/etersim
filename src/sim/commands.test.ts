@@ -666,6 +666,54 @@ describe("contract settlement at the day boundary (#94)", () => {
     const settlementEvent = world.ledger.find((e) => e.kind === "settlement")!;
     expect(settlementEvent).toMatchObject({ outcome: "met" });
   });
+
+  it("save/load round-trips an active Company.contracts entry via a JSON round-trip", () => {
+    let w = contractWorld("contract-roundtrip", 5000, "agrarian", 0);
+    const offer = sampleOffer({ portId: w.region.ports[0].id, good: "grain", tier: 1 });
+    w = { ...w, contractOffers: [offer] };
+    const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    expect(accepted.company.contracts).toHaveLength(1);
+    expect(JSON.parse(JSON.stringify(accepted))).toEqual(accepted);
+  });
+
+  it("determinism: same seed + same command script (incl. enroll/accept/resign) ⇒ byte-equal Ledger", () => {
+    const run = () => {
+      let w = contractWorld("contract-ledger-determinism", 5000, "agrarian", 0);
+      const portId = w.region.ports[0].id;
+      const offer = sampleOffer({
+        portId,
+        good: "grain",
+        tier: 1,
+        quotaPerPeriod: 10,
+        periodDays: 1,
+        feePerPeriod: 200,
+      });
+      w = { ...w, contractOffers: [offer] };
+      let world = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+      const shipId = world.company.ships[0].id;
+      world = {
+        ...world,
+        company: {
+          ...world.company,
+          ships: world.company.ships.map((s) =>
+            s.id === shipId
+              ? { ...s, cargo: { ...s.cargo, grain: 10 }, location: { kind: "docked", portId } }
+              : s,
+          ),
+        },
+      };
+      world = applyCommand(world, { kind: "sell", shipId, good: "grain", qty: 10 });
+      for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // settles: met, +1 point
+      const contractId = world.company.contracts[0].id;
+      world = applyCommand(world, { kind: "resignContract", contractId });
+      return world;
+    };
+    const a = run();
+    const b = run();
+    expect(JSON.stringify(a.ledger)).toBe(JSON.stringify(b.ledger));
+    expect(a.ledger.some((e) => e.kind === "contractFee")).toBe(true);
+    expect(a.ledger.some((e) => e.kind === "settlement")).toBe(true);
+  });
 });
 
 describe("tick keeps day-boundary price snapshots for trend arrows", () => {
