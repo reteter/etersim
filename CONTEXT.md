@@ -339,8 +339,9 @@ _Avoid_: port tax, harbor dues, toll
 
 Terms locked at the M3 grill (2026-07-09). Axis: the region gains faces — institutions
 with addresses and demands; reputation is the long-term currency. E3 wave 1–2 shipped the
-sim model for Guilds, Enrollment, Ranks and Upkeep (see per-term notes); Contracts,
-Settlement periods, the Contract board and Building permits are not in the build yet.
+sim model for Guilds, Enrollment, Ranks and Upkeep; wave 3 shipped the full Contract
+lifecycle and Settlement (see per-term notes). Still not in the build: the Contract
+board and guildhouse UI (#96/#97) and Building permits (E13).
 
 **Guild** (PL: gildia):
 An NPC institution, one per non-freeport Port archetype — five in a region (working
@@ -350,7 +351,7 @@ tunable). A Guild expresses needs as Contracts and tracks the Company's Rank. No
 agent: guilds own no ships and make no trades — they read the same living economy the
 player reads.
 _Implementation_: shipped in #168/#170 — `guild.ts`: `GuildId = EconomicArchetype`,
-`GUILDS` (five defs, one per Economic archetype). Contracts not yet.
+`GUILDS` (five defs, one per Economic archetype). Contracts followed in wave 3 (below).
 _Avoid_: faction, NPC company
 
 **Guildhouse** (PL: dom gildii):
@@ -374,8 +375,8 @@ The Company's discrete standing with one Guild: four steps, a facade over hidden
 progress points (settled period +, missed period −, breach −−; ranks can fall). Rank
 gates which Contract tiers the guild offers and which Building permits it grants.
 _Implementation_: model shipped in #168/#170 — `rankOf(points)`, `RANK_THRESHOLDS`
-and the `POINTS_*` constants (`guild.ts`); nothing moves the points yet — that arrives
-with Contract settlement.
+and the `POINTS_*` constants (`guild.ts`); since #94 the points move — Contract
+settlements, breach and resignation are the only mutations (floor at 0).
 _Avoid_: level, reputation score (as identifiers)
 
 **Reputation** (PL: reputacja):
@@ -393,6 +394,12 @@ construction; the offer shows its own basis ("expected ~2 trips/period, nearest 
 …"). The market pays bid for the goods as in any sale; the Guild pays a flat fee per met
 period — the market pays for goods, the guild pays for reliability. Contracts add no
 waiting mechanics: fulfilment is read from the Ledger after the fact.
+_Implementation_: offers shipped in #93 — `contract.ts` (`refreshContractOffers`,
+causal expiry at the day boundary, feasibility-by-construction basis); lifecycle in
+#94 — `acceptContract` (enrollment + accept-side rank gating) / `resignContract`
+commands, sale attribution on the shared `applyTrade` seam (manual == routed by
+construction), settlements in `dayBoundary`. Guardrail suite: `e3-guardrails.test.ts`
+(#98).
 _Avoid_: quest, mission, order (collides with Stop orders)
 
 **Settlement period** (PL: okres rozliczeniowy):
@@ -400,6 +407,12 @@ A Contract's repeating window of L world days, settled at its final day boundary
 met → fee paid + rank progress; missed → no fee + rank step down. Two consecutive missed
 periods → the Guild terminates the contract (breach, large rank hit). The player may
 resign any time at the same breach cost, shown before confirming.
+_Implementation_: shipped in #94 — `settleContracts` runs at the day boundary between
+Upkeep and offer refresh (fees land inside the day's netWorth point). A breach period
+nets exactly the resign cost, replacing that period's miss penalty (owner decision
+2026-07-14: resign = breach parity). Every outcome leaves a Ledger `settlement` event
+(`met|missed|breached|resigned`); folding `pointsDelta` with the per-step floor at 0
+reproduces stored points (pinned invariant test).
 _Avoid_: deadline, billing cycle
 
 **Contract board** (PL: tablica kontraktów):
@@ -484,9 +497,10 @@ performance board (`LedgerOverlay.tsx`) shipped in #86 — Transakcje (transacti
 per-ship filter) and Wartość firmy (SVG company-value chart, no library). A **transaction**
 (UI-only term, not a distinct sim type) is any Ledger event except a netWorth snapshot —
 the Transakcje tab's row unit. The E11 Harness consumer is still pending. M3 extends the
-kind union — `enrollmentFee` (#92) and `upkeep` (#95) are in; contract fees and
-store/withdraw follow — and adds a third consumer: contract settlement reads fulfilment
-from the same stream.
+kind union — `enrollmentFee` (#92), `upkeep` (#95), and `contractFee` + the
+four-outcome `settlement` (#94) are in; store/withdraw follows (E13) — and adds a
+third consumer: contract settlement reads fulfilment from the same stream (shipped
+in #94: sale attribution + the settlement fold invariant).
 _Avoid_: log, history (as identifiers)
 
 **Direct play** (PL: gra bezpośrednia):

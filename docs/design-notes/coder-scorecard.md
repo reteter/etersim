@@ -44,12 +44,14 @@ Opus subagent over all three diffs in one context, resumed for the fix-diff re-c
 
 | Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 07-14 | #188 | #181 (+#176) | 3 | 0 | 0 | pass (pre-merge) | OverlayShell + Tabs; coder proved the #176 fix load-bearing (test red pre-fix); Tabs unit test deliberately deferred → #187. |
-| 07-14 | #189 | #94 | 3 | 2 (minor) | 1 | pass (pre-merge) | Breach parity + termination Ledger trace — both surfaced by review, both owner-decided, fixed in one round; re-check verified incl. the clamped-fold case; 2 cosmetic notes deferred to the #96/#97 wave (stale settleOne docstring, spec fold-seed wording). |
-| 07-14 | #190 | #98 | 3 | 2 (note) | 0 | pass (pre-merge) | Loss-leader guardrail honestly scoped (proves the weaker still-profitable claim, disclosed in-file); feasibility bound self-referential but #93 owns the independent geometry recomputation. Byte-identical through the post-fix rebase. |
+| 07-14 | #188 | #181 (+#176) | 3 | 0 | 0 | pass | OverlayShell + Tabs; coder proved the #176 fix load-bearing (test red pre-fix); Tabs unit test deliberately deferred → #187. |
+| 07-14 | #189 | #94 | 3 | 2 (minor) | 1 | pass | Breach parity + termination Ledger trace — both surfaced by review, both owner-decided, fixed in one round; re-check verified incl. the clamped-fold case; 2 cosmetic notes deferred to the #96/#97 wave (stale settleOne docstring, spec fold-seed wording). |
+| 07-14 | #190 | #98 | 3 | 2 (note) | 0 | pass | Loss-leader guardrail honestly scoped (proves the weaker still-profitable claim, disclosed in-file); feasibility bound self-referential but #93 owns the independent geometry recomputation. Byte-identical through the post-fix rebase. |
 
-Cert column reads "pre-merge" until the full Playwright run on main after the wave's
-merges (E2E certification points, WORKFLOW.md); updated to `pass`/`returned` then.
+Certified 2026-07-14 post-merge: full Playwright on main 64/64, unit/typecheck/lint
+clean (main @ a08bcd3). Merge-side note, not a coder metric: #190's squash landed on
+its stale base instead of main (incident 0010) — relanded via #192, prevention now in
+WORKFLOW §Batching.
 Coder advisor usage this wave: 3a consulted twice (caught two AC6 gaps pre-review),
 3b twice (design + test-must-fail trap) — zero overlap with review findings, so the
 advisor/review layers are complementary so far, not duplicative.
