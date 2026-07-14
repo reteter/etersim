@@ -50,6 +50,16 @@ export const POINTS_BREACH_OR_RESIGN = -3;
  *  always derived from points via `rankOf`, never stored. */
 export const RANK_THRESHOLDS: readonly [number, number, number, number] = [0, 4, 10, 18];
 
+/** Maximum open Contract offers a guild keeps at once (spec: Contract board —
+ *  "~2–3 open offers"; contract.ts's generator). */
+export const OFFERS_PER_GUILD_MAX = 3;
+
+/** A port's stock must sit below this fraction of its Equilibrium for a good
+ *  to qualify as a real shortage worth a Contract offer (spec: Contracts —
+ *  "far below Equilibrium"). The same threshold heals an offer causally when
+ *  crossed back upward (contract.ts). */
+export const SHORTAGE_THRESHOLD = 0.5;
+
 /** Derives rank 1-4 from (floored-at-0) progress points, per
  *  `RANK_THRESHOLDS`. Points below 0 clamp to rank 1 — `rankOf` never
  *  assumes its caller already floored. */

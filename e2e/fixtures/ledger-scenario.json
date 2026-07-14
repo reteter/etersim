@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "world": {
     "tick": 273,
     "rng": 1528315252,
@@ -520,6 +520,7 @@
         "siteStoreValue": 0,
         "total": 6359
       }
-    ]
+    ],
+    "contractOffers": []
   }
 }
