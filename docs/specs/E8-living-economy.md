@@ -128,6 +128,14 @@ competitor the player always outruns:
 
 ### Ambient ships (osmosis made visible)
 
+> **Superseded 2026-07-14 (#161)**: the ambient layer now renders as **osmosis
+> skiffs** — small NPC trader ships (CONTEXT.md: *Osmosis skiff*), replacing the
+> pulses described below. The 2026-07-08 "not as vessels" call was reversed by the
+> #131 grill after a fresh-eyes playtester misread the pulses as small ships — the
+> misreading became the design
+> ([route-events-2026-07-14](../design-notes/route-events-2026-07-14.md)). Still
+> cosmetic, view-local, derived from `osmosisPulse`; original text kept for history.
+
 The "living region" must be visible, not just simulated. Active osmosis renders as
 **small ambient pulses** traveling along the lane in the flow's direction — glyphs
 *clearly smaller* than the Controlled Ship, read as signal moving through a network,
