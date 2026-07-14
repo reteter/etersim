@@ -216,9 +216,9 @@ stays last, so the day's fees and fines are inside the day's curve point).
   `resignContract` likewise emits `outcome: "resigned"`, `pointsDelta:
   POINTS_BREACH_OR_RESIGN`, at the contract's current `periodIndex`. Invariant:
   summing every `settlement.pointsDelta` for a guild across a command script,
-  floored at 0 after each step (matching Ranks' "floor at 0"), reproduces that
-  guild's actual stored points — a missing termination event would silently
-  undercount it.
+  starting from enrollment (0 points) and floored at 0 after each step
+  (matching Ranks' "floor at 0"), reproduces that guild's actual stored
+  points — a missing termination event would silently undercount it.
 - Contract fulfilment counters are state, the Ledger is the audit trail — settlement
   math must be recomputable from `trade` events (asserted by test).
 
