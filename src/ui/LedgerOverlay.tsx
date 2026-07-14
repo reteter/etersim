@@ -31,6 +31,7 @@ function transactionShipId(event: TransactionEvent): ShipId | null {
     case "dockingFee":
     case "delivery":
     case "launch":
+    case "upkeep":
       return event.shipId;
     default:
       return null;
@@ -50,6 +51,7 @@ function transactionDelta(event: TransactionEvent): number | null {
     case "rush":
     case "laborFee":
     case "founding":
+    case "upkeep":
       return -event.thalers;
     case "delivery":
     case "launch":
@@ -96,6 +98,11 @@ function describeTransaction(event: TransactionEvent, world: World): string {
     // issue's scope wall; flagged in the completion report.
     case "enrollmentFee":
       return `Enrolled in a guild (guildId: ${event.guildId})`;
+    // upkeep (E3, #95): same minimal-exhaustiveness precedent as enrollmentFee
+    // above — no dedicated Kontrakty-tab-adjacent UI polish, out of this
+    // issue's scope wall (sim-only task); flagged in the completion report.
+    case "upkeep":
+      return `Upkeep fee (${shipName(world, event.shipId)})`;
   }
 }
 

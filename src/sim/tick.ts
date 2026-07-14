@@ -1,6 +1,7 @@
-import { runBuildSiteAutoDraw } from "./building";
+import { CONSTRUCTION_RESERVE, runBuildSiteAutoDraw } from "./building";
 import { applyCommand, type Command } from "./commands";
 import { GOOD_IDS, type GoodId } from "./goods";
+import { UPKEEP_PER_DAY } from "./guild";
 import { appendLedgerEvent, computeNetWorth } from "./ledger";
 import { effectiveBase, marketTick, maxAffordableQty, NEUTRAL_MODIFIERS } from "./market";
 import { osmosisTick } from "./osmosis";
@@ -196,26 +197,49 @@ function runDockingPhase(world: World, before: readonly Ship[], advanced: readon
 }
 
 /**
+ * Daily per-ship upkeep charge (#95, docs/specs/E3-contracts-and-guilds.md —
+ * Upkeep): `min(UPKEEP_PER_DAY, max(0, purse - CONSTRUCTION_RESERVE))` per
+ * ship, applied sequentially in fleet-array order so an earlier ship's charge
+ * limits what a later ship can be charged (deterministic, no ordering
+ * ambiguity). The unpaid remainder below the Reserve simply evaporates — no
+ * debt, no arrears, no penalty (the agency guarantee: a standing cost must
+ * never be able to kill). A zero-amount charge (purse already at or below the
+ * Reserve) mutates nothing and emits no Ledger event.
+ */
+function chargeUpkeep(world: World): World {
+  let w = world;
+  for (const ship of w.company.ships) {
+    const charge = Math.min(UPKEEP_PER_DAY, Math.max(0, w.company.thalers - CONSTRUCTION_RESERVE));
+    if (charge <= 0) continue;
+    w = { ...w, company: { ...w.company, thalers: w.company.thalers - charge } };
+    w = appendLedgerEvent(w, { kind: "upkeep", tick: w.tick, shipId: ship.id, thalers: charge });
+  }
+  return w;
+}
+
+/**
  * Day-boundary phase (#168 — extracted, behavior-preserving, from the inline
  * block this replaces; docs/specs/E3-contracts-and-guilds.md — Tick
- * day-boundary order): drift step → price snapshots → netWorth snapshot.
- * `world` is already advanced to the boundary tick (tick+1, post-osmosis
- * region/pulse folded in) by the caller — the same values the inline block
- * read before extraction. Runs unconditionally; the caller gates on the
- * boundary check (this function does none itself), so it must be called at
- * most once per tick. E3 phases (upkeep, contract settlements, offer
- * refresh) slot into this seam between price snapshots and the netWorth
- * snapshot, which always stays last (docs/specs/E3 — Tick day-boundary order).
+ * day-boundary order): drift step → price snapshots → upkeep → netWorth
+ * snapshot. `world` is already advanced to the boundary tick (tick+1,
+ * post-osmosis region/pulse folded in) by the caller — the same values the
+ * inline block read before extraction. Runs unconditionally; the caller gates
+ * on the boundary check (this function does none itself), so it must be
+ * called at most once per tick. E3 phases still to come (contract
+ * settlements, offer refresh) slot into this seam between upkeep and the
+ * netWorth snapshot, which always stays last (docs/specs/E3 — Tick
+ * day-boundary order).
  */
 function dayBoundary(world: World): World {
   const [flowDrift, rng] = driftStep(world.region, world.flowDrift, world.rng);
 
-  const next: World = {
+  let next: World = {
     ...world,
     rng,
     priceSnapshots: snapshotPrices(world.region),
     flowDrift,
   };
+  next = chargeUpkeep(next);
   // Daily net-worth snapshot (docs/specs/E9 — Ledger): thalers + fleet cargo +
   // build-site store, at region-average mid price; ships/buildings carry no
   // book value. Tagged with the boundary tick, same cadence as the price

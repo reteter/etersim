@@ -32,6 +32,13 @@ export const GUILDS: Record<GuildId, GuildDef> = {
  *  only (docs/specs/E3-contracts-and-guilds.md — Upkeep). */
 export const ENROLLMENT_FEE = 400;
 
+/** Flat daily fee per ship (spec: Upkeep), charged at the day boundary
+ *  (tick.ts, `chargeUpkeep`). Reserve-gated: the charge never takes the purse
+ *  below `CONSTRUCTION_RESERVE` (building.ts) — the unpaid remainder simply
+ *  evaporates, no debt, no arrears (docs/specs/E3-contracts-and-guilds.md —
+ *  Upkeep; the 2026-07-14 grill's agency guarantee). */
+export const UPKEEP_PER_DAY = 10;
+
 /** Progress-point deltas (spec: Ranks — settled/missed period, breach or
  *  resignation). Consumed by later issues (contract settlement); named here
  *  so the constants have one home. */
