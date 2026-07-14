@@ -8,6 +8,11 @@ it. Work through the phases in order: §1–§5 **before** touching anything, §
 declaring the work done**. If any check fails, stop at §7 — do not improvise around a
 failed check.
 
+**Scope:** this checklist binds the session-driving model (Orchestrator or solo) and
+external agents. Coder subagents dispatched with a task package follow the **coder
+minimum** instead (WORKFLOW.md §Verification gates; receiving side in
+docs/personas/CODER.md) — not this document.
+
 ## 1. Identify the task, pick the gate
 
 Name what kind of work you were asked to do — each kind has a different bar:
@@ -61,8 +66,9 @@ npm test && npm run typecheck && npm run lint   # BASELINE green before you chan
 3. **TDD for `src/sim`**: the failing test comes first. UI is verified with Playwright.
 4. **Glossary first**: new domain concept ⇒ CONTEXT.md entry before the identifier.
 5. **Feature branch + PR, conventional commits, `Closes #n`.** Before merge: tests,
-   typecheck, lint, code review (two-axis for any `src/sim`/UI change). **The owner
-   merges — never merge your own PR without explicit owner consent.**
+   typecheck, lint, and the wave check at the change's tier (WORKFLOW.md
+   §Verification gates). **The owner merges — never merge your own PR without
+   explicit owner consent.**
 6. **Never act on `main`**: no commits, checkouts, resets. In a worktree, address git
    as `git -C <worktree>`; verify with `git worktree list` (incident 0001).
 7. **Tuning ≠ spec drift**: constants marked as tuning may move without spec changes;
@@ -90,21 +96,28 @@ Selfcheck complete.
 - Watch-outs: <incident/log items or spec non-goals that touch this task>
 ```
 
+**Short form** — for a small standalone in-session task (single issue, no `src/sim`,
+no spec change), three lines suffice:
+
+```
+Selfcheck (short): <task> → gate <row from §1> | env: <branch, baseline> | plan: <one line>
+```
+
+Epics, grills, external-agent work, and anything touching `src/sim` always get the
+full report.
+
 ## 6. Post-work — before you declare done
 
 Green tests and a commit are **not** "done" (incident 0004). Before telling the owner
 the work is finished, walk the PR-template checklist
-(`.github/pull_request_template.md`) and close or explicitly flag every gate:
+(`.github/pull_request_template.md`) and close or explicitly flag every gate.
 
-1. **Docs sync sweep** — read the current spec's "Docs sync" section; grep the old
-   names/behavior across `*.md`; flip pending `_Implementation_` notes in CONTEXT.md
-   from future to past tense (WORKFLOW.md §Docs sync sweep).
-2. **Code review** — two-axis `/code-review` for any `src/sim`/UI change; inline
-   review only for a trivial one-file infra/docs diff (WORKFLOW.md §6).
-3. **E2E** — if UI code changed, run Playwright on a dedicated port
-   (`PLAYWRIGHT_PORT=59xx`) and update tests.
-4. **Spec sync** — if behavior drifted from the spec, the spec update ships in the
-   same task.
+**The gates and their depth are defined in one place: WORKFLOW.md §Verification gates
+(tiered).** Classify the change by its risk surface (paths in the diff — escalate up,
+never down), then walk that tier's checks: docs sync sweep, code review (inline /
+one cheap-tier subagent / one two-axis strong-tier subagent), E2E (affected specs
+per PR, full run at wave merge and epic close), and spec sync (behavior drifted ⇒
+spec update ships in the same task).
 
 If a gate cannot be closed — a skill is unavailable in your harness, a tool errors
 out, you lack access (`/code-review`, Playwright, `gh`, …) — **report it, don't route

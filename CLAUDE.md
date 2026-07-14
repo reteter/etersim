@@ -17,7 +17,7 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - Language: code, docs, commits, issues — English. Conversation with the user — Polish.
 - Every epic starts with grilling, then a spec approved by the user, then GitHub issues (`gh`; milestone = epic).
 - TDD for `src/sim` (Vitest). UI verified with Playwright E2E tests (plus light unit tests for the store bridge); manual playtesting recommended for exploration.
-- Feature branches + PR (`Closes #n`), conventional commits. Before merge: tests, typecheck, lint, `/code-review`.
+- Feature branches + PR (`Closes #n`), conventional commits. Before merge: tests, typecheck, lint, and the tiered wave check (review depth scales with the diff's risk surface — `docs/WORKFLOW.md` §Verification gates).
 - Spec drift: updating the spec is part of the task.
 - Determinism is sacred: all sim randomness flows from the seeded RNG; no `Math.random`, no `Date.now` inside `src/sim`.
 - Session start: check open work with `gh issue list`. Before starting any task, run the pre-work checklist in `docs/SELFCHECK.md` and post its report.
