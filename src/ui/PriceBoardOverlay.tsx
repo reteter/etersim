@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import {
   effectiveBase,
   GOOD_IDS,
@@ -11,9 +11,16 @@ import {
   type PortId,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { KontraktyTab } from "./KontraktyTab";
 import { OverlayShell } from "./OverlayShell";
 import { priceTrend, TREND_GLYPH, type Trend } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
+import { Tabs } from "./Tabs";
+
+/** #96 (docs/specs/E3-contracts-and-guilds.md — UX skeleton): the overlay's
+ *  two tabs. "ceny" behaves exactly as before this issue; "kontrakty" is new
+ *  (KontraktyTab.tsx). */
+type Tab = "ceny" | "kontrakty";
 
 /** One port×good cell's two-sided quote plus the mid-price trend (E8). */
 interface Cell {
@@ -66,10 +73,20 @@ function columnExtremes(
  * straight to that port's own panel (docs/specs/E8-living-economy.md — Price
  * bias, Bid-ask spread).
  */
-export function PriceBoardOverlay({ onClose }: { onClose: () => void }) {
+export function PriceBoardOverlay({
+  onClose,
+  initialTab = "ceny",
+}: {
+  onClose: () => void;
+  /** #97's notice strip opens straight to Kontrakty; every other caller
+   *  keeps today's default (docs/specs/E3 — UX skeleton: "same overlay, same
+   *  B hotkey"). */
+  initialTab?: Tab;
+}) {
   const world = useGameStore((s) => s.world);
   const controlledShipId = useGameStore((s) => s.controlledShipId);
   const select = useGameStore((s) => s.select);
+  const [tab, setTab] = useState<Tab>(initialTab);
 
   if (!world) return null;
 
@@ -90,69 +107,95 @@ export function PriceBoardOverlay({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <OverlayShell ariaLabel="Price board" title="Price Board" onClose={onClose} wide>
-      <div className="price-board" role="table" aria-label="Region price board">
-        <div className="price-board__row price-board__row--header" role="row">
-          <span className="price-board__port-header">Port</span>
-          {GOOD_IDS.map((good) => (
-            <span key={good} className="price-board__good-header">
-              {GOODS[good].name}
-            </span>
-          ))}
-        </div>
-        {ports.map((port) => {
-          const docked = port.id === dockedPortId;
-          return (
-            <div
-              key={port.id}
-              className={docked ? "price-board__row price-board__row--docked" : "price-board__row"}
-              data-archetype={port.archetype}
-              style={{ "--port-color": `var(--archetype-${port.archetype})` } as CSSProperties}
-              role="row"
-              tabIndex={0}
-              onClick={() => openPort(port.id)}
-              onKeyDown={(e) => {
-                // Enter/Space activate the row, matching native button
-                // behavior (Harbor.tsx uses real <button>s for its rows;
-                // here role="row" must stay valid grid semantics, so
-                // keyboard activation is wired explicitly instead).
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  openPort(port.id);
+    <OverlayShell
+      ariaLabel="Price board"
+      title="Price Board"
+      onClose={onClose}
+      wide
+      tabs={
+        <Tabs
+          ariaLabel="Price board tabs"
+          active={tab}
+          onChange={setTab}
+          tabs={[
+            { id: "ceny", label: "Ceny" },
+            { id: "kontrakty", label: "Kontrakty" },
+          ]}
+        />
+      }
+    >
+      {tab === "kontrakty" ? (
+        <KontraktyTab world={world} />
+      ) : (
+        <div className="price-board" role="table" aria-label="Region price board">
+          <div className="price-board__row price-board__row--header" role="row">
+            <span className="price-board__port-header">Port</span>
+            {GOOD_IDS.map((good) => (
+              <span key={good} className="price-board__good-header">
+                {GOODS[good].name}
+              </span>
+            ))}
+          </div>
+          {ports.map((port) => {
+            const docked = port.id === dockedPortId;
+            return (
+              <div
+                key={port.id}
+                className={
+                  docked ? "price-board__row price-board__row--docked" : "price-board__row"
                 }
-              }}
-            >
-              <span className="price-board__port-name">{port.name}</span>
-              {GOOD_IDS.map((good) => {
-                const cell = cellsByPort[port.id][good];
-                const isBestAsk = cell.ask !== null && cell.ask === bestAsk[good];
-                const isBestBid = cell.bid !== null && cell.bid === bestBid[good];
-                return (
-                  <span key={good} className="price-board__cell" role="cell">
-                    <span
-                      className={
-                        isBestBid ? "price-board__bid price-board__bid--best" : "price-board__bid"
-                      }
-                    >
-                      {quoteLabel(cell.bid)}
+                data-archetype={port.archetype}
+                style={{ "--port-color": `var(--archetype-${port.archetype})` } as CSSProperties}
+                role="row"
+                tabIndex={0}
+                onClick={() => openPort(port.id)}
+                onKeyDown={(e) => {
+                  // Enter/Space activate the row, matching native button
+                  // behavior (Harbor.tsx uses real <button>s for its rows;
+                  // here role="row" must stay valid grid semantics, so
+                  // keyboard activation is wired explicitly instead).
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    openPort(port.id);
+                  }
+                }}
+              >
+                <span className="price-board__port-name">{port.name}</span>
+                {GOOD_IDS.map((good) => {
+                  const cell = cellsByPort[port.id][good];
+                  const isBestAsk = cell.ask !== null && cell.ask === bestAsk[good];
+                  const isBestBid = cell.bid !== null && cell.bid === bestBid[good];
+                  return (
+                    <span key={good} className="price-board__cell" role="cell">
+                      <span
+                        className={
+                          isBestBid
+                            ? "price-board__bid price-board__bid--best"
+                            : "price-board__bid"
+                        }
+                      >
+                        {quoteLabel(cell.bid)}
+                      </span>
+                      <span className={`price-board__trend price-board__trend--${cell.trend}`}>
+                        {TREND_GLYPH[cell.trend]}
+                      </span>
+                      <span
+                        className={
+                          isBestAsk
+                            ? "price-board__ask price-board__ask--best"
+                            : "price-board__ask"
+                        }
+                      >
+                        {quoteLabel(cell.ask)}
+                      </span>
                     </span>
-                    <span className={`price-board__trend price-board__trend--${cell.trend}`}>
-                      {TREND_GLYPH[cell.trend]}
-                    </span>
-                    <span
-                      className={
-                        isBestAsk ? "price-board__ask price-board__ask--best" : "price-board__ask"
-                      }
-                    >
-                      {quoteLabel(cell.ask)}
-                    </span>
-                  </span>
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </OverlayShell>
   );
 }

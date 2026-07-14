@@ -237,11 +237,12 @@ export function refreshContractOffers(
   return result;
 }
 
-/** Applies one contract's settlement outcome (met or missed) to `world`,
- *  returning the mutated world and the survivor (undefined on breach
- *  termination). Guild points are read fresh from `world` each call so two
- *  contracts of the same guild settling in the same boundary compound
- *  correctly, in `company.contracts` array order (deterministic, no RNG). */
+/** Applies one contract's settlement outcome (met, missed, or breached — a
+ *  second consecutive miss) to `world`, returning the mutated world and the
+ *  survivor (undefined on breach termination). Guild points are read fresh
+ *  from `world` each call so two contracts of the same guild settling in the
+ *  same boundary compound correctly, in `company.contracts` array order
+ *  (deterministic, no RNG). */
 function settleOne(world: World, contract: ActiveContract): [World, ActiveContract | undefined] {
   const met = contract.deliveredThisPeriod >= contract.quotaPerPeriod;
   const points = world.company.guilds[contract.guildId]?.points ?? 0;

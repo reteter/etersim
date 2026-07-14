@@ -32,9 +32,11 @@ export { GOOD_IDS, GOODS, type GoodDef, type GoodId } from "./goods";
 export {
   ARCHETYPE_PROFILES,
   DOCKING_FEE,
+  ECONOMIC_ARCHETYPES,
   PORT_ARCHETYPES,
   TICKS_PER_DAY,
   type ArchetypeProfile,
+  type EconomicArchetype,
   type Lane,
   type LaneId,
   type MarketGood,
@@ -76,6 +78,23 @@ export {
   type ContractOffer,
   type ContractOfferBasis,
 } from "./contract";
+// E3 (#96/#97, docs/specs/E3-contracts-and-guilds.md — Store & UI): the
+// Kontrakty tab and the PortPanel guildhouse section both need the guild
+// domain model — the barrel had no guild.ts re-export at all until this wave.
+export {
+  ENROLLMENT_FEE,
+  GUILDS,
+  OFFERS_PER_GUILD_MAX,
+  POINTS_BREACH_OR_RESIGN,
+  POINTS_MISSED,
+  POINTS_SETTLED,
+  RANK_THRESHOLDS,
+  rankOf,
+  SHORTAGE_THRESHOLD,
+  UPKEEP_PER_DAY,
+  type GuildDef,
+  type GuildId,
+} from "./guild";
 export {
   OSMOSIS_CAP,
   OSMOSIS_DEADBAND,
