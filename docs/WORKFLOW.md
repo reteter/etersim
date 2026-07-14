@@ -80,6 +80,11 @@ sit in a coder worktree (incident 0008).
 issue, each cut from `main` (disjoint files → no stacks); the wave check reads them
 all in one pass.
 
+**PR timing.** Coders push branches and report; **PRs open only after the wave check
+closes** (Orchestrator opens them, or explicitly instructs the coder to). An open PR
+invites a pre-review merge — the owner merges on sight of green CI, and the gate
+order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
+
 ## Definition of done (per issue)
 
 - Acceptance criteria met.
