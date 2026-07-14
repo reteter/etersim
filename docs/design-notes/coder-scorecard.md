@@ -52,6 +52,23 @@ Certified 2026-07-14 post-merge: full Playwright on main 64/64, unit/typecheck/l
 clean (main @ a08bcd3). Merge-side note, not a coder metric: #190's squash landed on
 its stale base instead of main (incident 0010) — relanded via #192, prevention now in
 WORKFLOW §Batching.
+
+## E3 wave 3c (#96 + #97 — epic close)
+
+One Sonnet coder, two branches from main (no stack), Opus reviewer resumed across
+three passes. The coder survived a double infrastructure kill (API stall + session
+limit) AND its assigned worktree being wiped by the reset — it rebuilt two fresh
+worktrees, re-verified baseline, and continued; zero content lost.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-14 | #194 | #96 | 3 | 2 (note) | 1 | pass | Kontrakty tab. Findings: Polish wording/declension + overclaiming test title; fixed in one round with a proper `pluralPl` helper and an honest hotkey press. |
+| 07-14 | #198 | #97 | 3 | 4 (minor) | 2 | pass | Guildhouse + notice strip. Round 1: aria-label language; round 2: planned integration pass (guildDisplay extraction, CSS dedup, initialTab wiring, lastSeenTick owner decision). Final re-check verified timing arithmetic of the coder's self-caught e2e race fix (700→300ms, period math). 2 edge notes left open in the PR body (tab-switch on open board, import re-seed) → nit pass with #195. |
+
+Epic-close certification 2026-07-14: 431 unit, typecheck, lint, full Playwright
+73/73 on main @ 527edbe. E3 sample complete: 5 live tier-3 rows, findings all
+minor/note, no coder-side correctness escape reached main; the one content escape
+(incident 0010) was merge-procedure-side.
 Coder advisor usage this wave: 3a consulted twice (caught two AC6 gaps pre-review),
 3b twice (design + test-must-fail trap) — zero overlap with review findings, so the
 advisor/review layers are complementary so far, not duplicative.

@@ -340,8 +340,8 @@ _Avoid_: port tax, harbor dues, toll
 Terms locked at the M3 grill (2026-07-09). Axis: the region gains faces — institutions
 with addresses and demands; reputation is the long-term currency. E3 wave 1–2 shipped the
 sim model for Guilds, Enrollment, Ranks and Upkeep; wave 3 shipped the full Contract
-lifecycle and Settlement (see per-term notes). Still not in the build: the Contract
-board and guildhouse UI (#96/#97) and Building permits (E13).
+lifecycle and Settlement; wave 3c the Contract board and guildhouse UI (#96/#97) —
+the epic is complete. Still not in the build: Building permits (E13).
 
 **Guild** (PL: gildia):
 An NPC institution, one per non-freeport Port archetype — five in a region (working
@@ -358,6 +358,11 @@ _Avoid_: faction, NPC company
 A Guild's seat, present at every port of its archetype. World-side (NPC-owned) — not a
 Company Building. Enrollment happens here; its PortPanel section shows rank and
 cooperation history.
+_Implementation_: shipped in #97 — `GuildhouseSection` in `PortPanel.tsx` at every
+non-freeport port (enroll with fee and Polish gating reasons, rank badge on a neutral
+ramp, points progress). Settlement notices surface in the TopBar notice strip,
+derived from `settlement` Ledger events since a UI-local `lastSeenTick` (seeded to
+the world tick on mount).
 _Avoid_: guild hall, office
 
 **Enrollment** (PL: wstąpienie):
@@ -421,6 +426,11 @@ offers of enrolled Guilds plus active contracts with period progress ("period 3/
 42/50, settles in 2 d"). Each guild keeps ~2–3 open offers, refreshed at day boundaries;
 an offer dies causally when its shortage heals. The board is a barometer of the region,
 not a quest log.
+_Implementation_: shipped in #96 — the Kontrakty tab of `PriceBoardOverlay` on the
+shared Tabs component (#181): offers of enrolled guilds with guild badge
+(`guildDisplay.tsx`), basis line and board-side tier locks ("Wymaga rangi N"); active
+contracts with period progress and two-step resign stating −3. The notice strip (#97)
+opens it via `initialTab="kontrakty"`.
 _Avoid_: quest log, job board
 
 **Building permit** (PL: pozwolenie budowlane):
