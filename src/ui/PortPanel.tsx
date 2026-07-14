@@ -21,7 +21,7 @@ import {
 import { useGameStore } from "../store/gameStore";
 import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
-import { FOUNDING_GOAL, foundingProgress } from "./foundingProgress";
+import { FOUNDING_GOAL, foundingProgress, foundingSavings } from "./foundingProgress";
 import { ShipIcon } from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
@@ -334,6 +334,7 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
   if (!headquarters) {
     // Founding may not dip into the Reserve (#122 — E9 spec §The Reserve).
     const thalers = world.company.thalers;
+    const savings = foundingSavings(thalers);
     const canAfford = thalers >= FOUNDING_GOAL;
     return (
       <div className="founding-goal">
@@ -354,7 +355,7 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
           className="founding-goal__bar"
           role="progressbar"
           aria-label="Founding savings progress"
-          aria-valuenow={Math.min(Math.max(thalers, 0), FOUNDING_GOAL)}
+          aria-valuenow={savings}
           aria-valuemin={0}
           aria-valuemax={FOUNDING_GOAL}
         >
@@ -364,7 +365,7 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
           />
         </div>
         <span className="founding-goal__count">
-          ₸{thalers} / ₸{FOUNDING_GOAL}
+          ₸{savings} / ₸{FOUNDING_GOAL}
         </span>
       </div>
     );

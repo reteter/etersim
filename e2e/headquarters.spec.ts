@@ -137,6 +137,7 @@ test.describe('Founding progress bar (#157)', () => {
 
     const bar = page.getByRole('progressbar', { name: 'Founding savings progress' });
     await expect(bar).toHaveAttribute('aria-valuenow', '3000'); // clamped at the gate
+    await expect(page.locator('.founding-goal__count')).toContainText('₸3000 / ₸3000');
 
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
     await expect(bar).toHaveCount(0); // pre-founding branch gone once founded
