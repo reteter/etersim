@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import {
   cargoUsed,
   CONSTRUCTION_RESERVE,
@@ -26,14 +26,8 @@ import { useGameStore } from "../store/gameStore";
 import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
 import { FOUNDING_GOAL, foundingProgress, foundingSavings } from "./foundingProgress";
-import {
-  AgrarianIcon,
-  IndustrialIcon,
-  MiningIcon,
-  ShipIcon,
-  UrbanIcon,
-  VerdantIcon,
-} from "./icons";
+import { GUILD_NAME_PL, GuildBadge } from "./guildDisplay";
+import { ShipIcon } from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
 import { previewCourseTicks } from "./coursePreview";
@@ -398,27 +392,6 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
   );
 }
 
-/** Polish working names from the spec's guild table (Design: Guilds) —
- *  display-only. `GUILDS[id].name` (guild.ts) stays the English flavor name
- *  owned by #92/#170's scope wall; untouched here. */
-const GUILD_NAME_PL: Record<GuildId, string> = {
-  agrarian: "Gildia Spichlerzy",
-  urban: "Zgromadzenie Tkaczy",
-  mining: "Bractwo Solowarów",
-  industrial: "Liga Odlewników",
-  verdant: "Konsorcjum Żywodrzewu",
-};
-
-/** Guild badge = the EXISTING archetype icon (ADR-0006 — no new icon set,
- *  guilds are 1:1 with economic archetypes, no second color axis). */
-const GUILD_ICON: Record<GuildId, typeof AgrarianIcon> = {
-  agrarian: AgrarianIcon,
-  urban: UrbanIcon,
-  mining: MiningIcon,
-  industrial: IndustrialIcon,
-  verdant: VerdantIcon,
-};
-
 /** The next rank's point threshold, or null once already at the top rank
  *  (spec: Ranks — four steps). `RANK_THRESHOLDS[rank]` is the next
  *  threshold because `rankOf` returns `i + 1` when floored points clear
@@ -444,7 +417,6 @@ function GuildhouseSection({ world, portId }: { world: World; portId: PortId }) 
   if (!port || port.archetype === "freeport") return null;
 
   const guildId: GuildId = port.archetype;
-  const Icon = GUILD_ICON[guildId];
   const enrollment = world.company.guilds[guildId];
 
   if (enrollment) {
@@ -458,12 +430,7 @@ function GuildhouseSection({ world, portId }: { world: World; portId: PortId }) 
       <div className="guildhouse-section">
         <h3 className="side-panel__heading">Dom gildii</h3>
         <div className="guildhouse-header">
-          <span
-            className="guild-badge"
-            style={{ "--guild-color": `var(--archetype-${guildId})` } as CSSProperties}
-          >
-            <Icon className="guild-badge__icon" />
-          </span>
+          <GuildBadge guildId={guildId} />
           <span className="guildhouse-name">{GUILD_NAME_PL[guildId]}</span>
           <span className={`rank-badge rank-badge--${rank}`} title={`Ranga ${rank}`}>
             {rank}
@@ -498,12 +465,7 @@ function GuildhouseSection({ world, portId }: { world: World; portId: PortId }) 
     <div className="guildhouse-section">
       <h3 className="side-panel__heading">Dom gildii</h3>
       <div className="guildhouse-header">
-        <span
-          className="guild-badge"
-          style={{ "--guild-color": `var(--archetype-${guildId})` } as CSSProperties}
-        >
-          <Icon className="guild-badge__icon" />
-        </span>
+        <GuildBadge guildId={guildId} />
         <span className="guildhouse-name">{GUILD_NAME_PL[guildId]}</span>
       </div>
       <button

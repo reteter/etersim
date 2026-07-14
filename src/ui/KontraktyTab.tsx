@@ -1,15 +1,14 @@
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import {
   GOODS,
   rankOf,
   TICKS_PER_DAY,
   type ActiveContract,
   type ContractOffer,
-  type GuildId,
   type World,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
-import { AgrarianIcon, IndustrialIcon, MiningIcon, UrbanIcon, VerdantIcon } from "./icons";
+import { GuildBadge } from "./guildDisplay";
 
 /**
  * Kontrakty tab (#96, docs/specs/E3-contracts-and-guilds.md — UX skeleton,
@@ -19,40 +18,6 @@ import { AgrarianIcon, IndustrialIcon, MiningIcon, UrbanIcon, VerdantIcon } from
  * resign affordance that states its −3 rank cost before executing. All
  * strings Polish (2026-07-14 UI grill, lock 2).
  */
-
-/** Polish working names from the spec's guild table (Design: Guilds) —
- *  display-only. `GUILDS[id].name` (guild.ts) stays the English flavor name
- *  owned by #92/#170's scope wall; untouched here. */
-const GUILD_NAME_PL: Record<GuildId, string> = {
-  agrarian: "Gildia Spichlerzy",
-  urban: "Zgromadzenie Tkaczy",
-  mining: "Bractwo Solowarów",
-  industrial: "Liga Odlewników",
-  verdant: "Konsorcjum Żywodrzewu",
-};
-
-/** Guild badge = the EXISTING archetype icon (#96 AC2 — no new icon set,
- *  ADR-0006's vendored set covers all five economic archetypes already). */
-const GUILD_ICON: Record<GuildId, typeof AgrarianIcon> = {
-  agrarian: AgrarianIcon,
-  urban: UrbanIcon,
-  mining: MiningIcon,
-  industrial: IndustrialIcon,
-  verdant: VerdantIcon,
-};
-
-function GuildBadge({ guildId }: { guildId: GuildId }) {
-  const Icon = GUILD_ICON[guildId];
-  return (
-    <span
-      className="guild-badge"
-      style={{ "--guild-color": `var(--archetype-${guildId})` } as CSSProperties}
-      title={GUILD_NAME_PL[guildId]}
-    >
-      <Icon className="guild-badge__icon" />
-    </span>
-  );
-}
 
 function portName(world: World, portId: string): string {
   return world.region.ports.find((p) => p.id === portId)?.name ?? portId;

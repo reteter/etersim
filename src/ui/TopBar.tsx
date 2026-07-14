@@ -38,6 +38,11 @@ export function TopBar() {
   const togglePause = useGameStore((s) => s.togglePause);
   const hasHeadquarters = useGameStore((s) => !!s.world?.company.headquarters);
   const [priceBoardOpen, setPriceBoardOpen] = useState(false);
+  // Which tab the board opens to (#96's PriceBoardOverlay `initialTab` prop):
+  // "ceny" for every existing entry point (button, "b" hotkey — unchanged
+  // behavior), "kontrakty" only when the notice strip itself opens the board,
+  // so the click lands straight on the settlement audit trail.
+  const [priceBoardTab, setPriceBoardTab] = useState<"ceny" | "kontrakty">("ceny");
   const [ledgerOpen, setLedgerOpen] = useState(false);
   const [headquartersOpen, setHeadquartersOpen] = useState(false);
   // Notice strip (#97, 2026-07-14 UI grill lock 1 — replaces the spec's
@@ -45,10 +50,14 @@ export function TopBar() {
   // derived from Ledger `settlement` events appended since `lastSeenTick` —
   // immune to tick-folding at 10x/100x by construction, since every settled
   // period appends its own event regardless of how many ticks one `advance`
-  // call folds together.
-  const [lastSeenTick, setLastSeenTick] = useState(0);
+  // call folds together. Seeded to the current world tick on mount (owner
+  // decision, wave-check finding 3) rather than 0 — otherwise loading an old
+  // save with existing settlement history would flood the badge with the
+  // save's entire lifetime count on first render.
+  const [lastSeenTick, setLastSeenTick] = useState(() => tick);
   const noticeCount = ledger.filter((e) => e.kind === "settlement" && e.tick > lastSeenTick).length;
   const openNotices = () => {
+    setPriceBoardTab("kontrakty");
     setPriceBoardOpen(true);
     setLastSeenTick(tick);
   };
@@ -70,7 +79,12 @@ export function TopBar() {
         setSpeed(digitSpeed);
         return;
       }
-      if (e.key.toLowerCase() === "b") setPriceBoardOpen((open) => !open);
+      if (e.key.toLowerCase() === "b") {
+        setPriceBoardOpen((open) => {
+          if (!open) setPriceBoardTab("ceny");
+          return !open;
+        });
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -106,15 +120,21 @@ export function TopBar() {
           </p>
         )}
       </div>
-      {/* Persistent compact strip (grill lock 1): click opens the board —
-          today the price-tab overlay (this branch cut before #96's Kontrakty
-          tab landed); once merged, this call site takes an `initialTab="kontrakty"`
-          prop so the click lands straight on the settlement audit trail. */}
+      {/* Persistent compact strip (grill lock 1): click opens the board
+          straight on the Kontrakty tab, where the settlement audit trail
+          lives (#96's PriceBoardOverlay `initialTab` prop). */}
       <button type="button" className="notice-strip" onClick={openNotices}>
         Powiadomienia
         {noticeCount > 0 && <span className="notice-strip__badge">{noticeCount}</span>}
       </button>
-      <button type="button" className="menu-btn" onClick={() => setPriceBoardOpen(true)}>
+      <button
+        type="button"
+        className="menu-btn"
+        onClick={() => {
+          setPriceBoardTab("ceny");
+          setPriceBoardOpen(true);
+        }}
+      >
         Price Board
       </button>
       <button type="button" className="menu-btn" onClick={() => setLedgerOpen(true)}>
@@ -128,7 +148,9 @@ export function TopBar() {
         </button>
       )}
       <GameMenu />
-      {priceBoardOpen && <PriceBoardOverlay onClose={() => setPriceBoardOpen(false)} />}
+      {priceBoardOpen && (
+        <PriceBoardOverlay onClose={() => setPriceBoardOpen(false)} initialTab={priceBoardTab} />
+      )}
       {ledgerOpen && <LedgerOverlay onClose={() => setLedgerOpen(false)} />}
       {headquartersOpen && <HeadquartersPanel onClose={() => setHeadquartersOpen(false)} />}
     </header>

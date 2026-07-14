@@ -163,16 +163,25 @@ test.describe('Notice strip (#97, 2026-07-14 UI grill lock 1)', () => {
     await continueWithWorld(page, world);
 
     await page.getByRole('button', { name: '100x' }).click();
-    await page.waitForTimeout(700); // >> 24 ticks at 100x — crosses the day boundary
+    // 300ms at 100x (~30 ticks) crosses the first day boundary (24 ticks,
+    // settling the "met" period and resetting deliveredThisPeriod to 0) but
+    // stops short of the second (48 ticks) — past that, an unattended
+    // contract starts missing periods and eventually breaches (removed from
+    // company.contracts), which would make the assertion below flaky.
+    await page.waitForTimeout(300);
 
     await expect(page.locator('.notice-strip__badge')).toBeVisible();
 
-    // Pause before marking seen — periodDays 1 means another boundary is only
-    // ~240ms away at 100x; pausing first keeps the "marked seen" assertion
-    // from racing a second settlement event.
+    // Pause before marking seen, to freeze the tick count the assertions below rely on.
     await page.getByRole('button', { name: '⏸' }).click();
     await page.getByRole('button', { name: 'Powiadomienia' }).click();
-    await expect(page.locator('.overlay__panel')).toBeVisible();
+    // Opens straight on Kontrakty (initialTab), where the settlement lives —
+    // not the default Ceny tab a plain "Price Board" click would land on.
+    await expect(page.getByRole('tab', { name: 'Kontrakty' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.locator('.kontrakty-contract')).toBeVisible();
     await expect(page.locator('.notice-strip__badge')).toHaveCount(0);
   });
 });
