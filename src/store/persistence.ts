@@ -27,8 +27,12 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  v7: E3 added `World.contractOffers` (docs/specs/E3-contracts-and-guilds.md
  *  — Contracts, #93) — again no migration — a v6 save would load with
  *  `contractOffers` undefined and the next day boundary's `refreshContractOffers`
- *  would throw filtering it. */
-export const SAVE_VERSION = 7;
+ *  would throw filtering it.
+ *  v8: E3 added `Company.contracts` (docs/specs/E3-contracts-and-guilds.md —
+ *  Tech: Contracts, #94) — again no migration — a v7 save would load with
+ *  `contracts` undefined and `acceptContract`/the sell path/`settleContracts`
+ *  would throw indexing into it. */
+export const SAVE_VERSION = 8;
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
 export const AUTOSAVE_INTERVAL_TICKS = 24;

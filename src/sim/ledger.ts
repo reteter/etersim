@@ -93,6 +93,26 @@ export type LedgerEvent =
       readonly tick: number;
       readonly shipId: ShipId;
       readonly thalers: number;
+    }
+  | {
+      readonly kind: "contractFee";
+      readonly tick: number;
+      readonly guildId: GuildId;
+      readonly contractId: string;
+      readonly thalers: number;
+    }
+  | {
+      readonly kind: "settlement";
+      readonly tick: number;
+      readonly contractId: string;
+      readonly guildId: GuildId;
+      /** "breached" (two consecutive misses; the guild terminates) and
+       *  "resigned" (the player exits, same -3 cost) both carry the contract's
+       *  termination in the audit trail — summing `pointsDelta` over every
+       *  settlement event for a guild must reproduce its actual points
+       *  (docs/specs/E3-contracts-and-guilds.md — Ledger). */
+      readonly outcome: "met" | "missed" | "breached" | "resigned";
+      readonly pointsDelta: number;
     };
 
 /** Appends one event to the Ledger. The single seam every mutation point

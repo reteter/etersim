@@ -34,6 +34,10 @@ function transactionShipId(event: TransactionEvent): ShipId | null {
     case "launch":
     case "upkeep":
       return event.shipId;
+    // contractFee/settlement (E3, #94): company-wide events, no single ship —
+    // same precedent as enrollmentFee below (minimal exhaustiveness fix,
+    // no dedicated Kontrakty-tab UI treatment; out of this sim-only issue's
+    // scope wall, flagged in the completion report).
     default:
       return null;
   }
@@ -54,6 +58,8 @@ function transactionDelta(event: TransactionEvent): number | null {
     case "founding":
     case "upkeep":
       return -event.thalers;
+    case "contractFee":
+      return event.thalers;
     case "delivery":
     case "launch":
     // enrollmentFee (E3, #92): the event carries no thalers field per the
@@ -61,6 +67,9 @@ function transactionDelta(event: TransactionEvent): number | null {
     // out of this issue's scope wall (no UI/store changes); flagged in the
     // completion report.
     case "enrollmentFee":
+    // settlement (E3, #94): the audit record has no thalers field (points,
+    // not purse movement) — same minimal-exhaustiveness precedent.
+    case "settlement":
       return null;
   }
 }
@@ -104,6 +113,16 @@ function describeTransaction(event: TransactionEvent, world: World): string {
     // issue's scope wall (sim-only task); flagged in the completion report.
     case "upkeep":
       return `Upkeep fee (${shipName(world, event.shipId)})`;
+    // contractFee/settlement (E3, #94/#94-fix): same minimal-exhaustiveness
+    // precedent as enrollmentFee/upkeep above — no dedicated Kontrakty-tab UI
+    // treatment; out of this sim-only issue's scope wall, flagged in the
+    // completion report. `settlement.outcome` now widens to "met" | "missed" |
+    // "breached" | "resigned" (owner decision — termination is part of the
+    // audit stream) — this generic interpolation covers all four unchanged.
+    case "contractFee":
+      return `Contract fee (contract ${event.contractId})`;
+    case "settlement":
+      return `Contract ${event.contractId} settlement: ${event.outcome} (${event.pointsDelta >= 0 ? "+" : ""}${event.pointsDelta} pts)`;
   }
 }
 

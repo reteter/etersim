@@ -203,9 +203,22 @@ stays last, so the day's fees and fines are inside the day's curve point).
 ### Ledger (`src/sim/ledger.ts`)
 
 - Kind union += `enrollmentFee` (guildId), `contractFee` (guildId, contractId),
-  `upkeep` (shipId), and `settlement` (contractId, guildId, met/missed, points
+  `upkeep` (shipId), and `settlement` (contractId, guildId, outcome, points
   delta — 2026-07-14 UI grill: the audit trail must carry the *missed* outcome too;
   the notice strip and E11 read it). Emitted at the point of mutation, as E9 mandates.
+- **`settlement.outcome` is a four-way union — `"met" | "missed" | "breached" |
+  "resigned"`** (#94 wave-check finding 1, 2026-07-14): contract *termination*
+  is part of the audit stream too, not just ordinary period outcomes. A breach
+  (two consecutive missed periods) emits exactly one `settlement` event,
+  `outcome: "breached"`, carrying the *full* `POINTS_BREACH_OR_RESIGN` delta —
+  it replaces that period's own miss penalty rather than stacking with it
+  (owner decision: parity with `resignContract`'s identical −3 cost).
+  `resignContract` likewise emits `outcome: "resigned"`, `pointsDelta:
+  POINTS_BREACH_OR_RESIGN`, at the contract's current `periodIndex`. Invariant:
+  summing every `settlement.pointsDelta` for a guild across a command script,
+  floored at 0 after each step (matching Ranks' "floor at 0"), reproduces that
+  guild's actual stored points — a missing termination event would silently
+  undercount it.
 - Contract fulfilment counters are state, the Ledger is the audit trail — settlement
   math must be recomputable from `trade` events (asserted by test).
 

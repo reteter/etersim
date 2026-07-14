@@ -71,6 +71,12 @@ export {
   type NetWorthBreakdown,
 } from "./ledger";
 export {
+  refreshContractOffers,
+  type ActiveContract,
+  type ContractOffer,
+  type ContractOfferBasis,
+} from "./contract";
+export {
   OSMOSIS_CAP,
   OSMOSIS_DEADBAND,
   OSMOSIS_RATE,

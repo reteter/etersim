@@ -1,8 +1,17 @@
 import { GOOD_IDS, type GoodId } from "./goods";
-import { OFFERS_PER_GUILD_MAX, SHORTAGE_THRESHOLD, type GuildId } from "./guild";
+import {
+  OFFERS_PER_GUILD_MAX,
+  POINTS_BREACH_OR_RESIGN,
+  POINTS_MISSED,
+  POINTS_SETTLED,
+  SHORTAGE_THRESHOLD,
+  type GuildId,
+} from "./guild";
+import { appendLedgerEvent } from "./ledger";
 import { effectiveBase, price } from "./market";
 import { ARCHETYPE_PROFILES, ECONOMIC_ARCHETYPES, TICKS_PER_DAY, type PortId, type Region } from "./region";
 import { shortestCourse } from "./pathfinding";
+import type { World } from "./world";
 
 /**
  * Contract offer generation (CONTEXT.md — Contract, Settlement period;
@@ -20,6 +29,26 @@ export interface ContractOfferBasis {
   readonly sourcePortId: PortId;
   readonly roundTripTicks: number;
   readonly expectedTrips: number;
+}
+
+/**
+ * A Contract offer the Company has accepted (docs/specs/E3-contracts-and-guilds.md
+ * — Tech: Contracts): the offer's fields plus the lifecycle state that
+ * fulfilment/settlement mutate. `startTick` anchors period boundaries —
+ * `periodEndTick` (this module) derives each period's settlement tick from it,
+ * never re-measured from a day-boundary-aligned clock, so accepting mid-day
+ * still settles on schedule.
+ */
+export interface ActiveContract extends ContractOffer {
+  readonly startTick: number;
+  readonly periodIndex: number;
+  readonly deliveredThisPeriod: number;
+  readonly consecutiveMisses: number;
+}
+
+/** The tick at which `contract`'s *current* period (its `periodIndex`) settles. */
+function periodEndTick(contract: ActiveContract): number {
+  return contract.startTick + (contract.periodIndex + 1) * contract.periodDays * TICKS_PER_DAY;
 }
 
 export interface ContractOffer {
@@ -206,4 +235,120 @@ export function refreshContractOffers(
   }
 
   return result;
+}
+
+/** Applies one contract's settlement outcome (met or missed) to `world`,
+ *  returning the mutated world and the survivor (undefined on breach
+ *  termination). Guild points are read fresh from `world` each call so two
+ *  contracts of the same guild settling in the same boundary compound
+ *  correctly, in `company.contracts` array order (deterministic, no RNG). */
+function settleOne(world: World, contract: ActiveContract): [World, ActiveContract | undefined] {
+  const met = contract.deliveredThisPeriod >= contract.quotaPerPeriod;
+  const points = world.company.guilds[contract.guildId]?.points ?? 0;
+
+  if (met) {
+    const nextPoints = Math.max(0, points + POINTS_SETTLED);
+    let w: World = {
+      ...world,
+      company: {
+        ...world.company,
+        thalers: world.company.thalers + contract.feePerPeriod,
+        guilds: { ...world.company.guilds, [contract.guildId]: { points: nextPoints } },
+      },
+    };
+    w = appendLedgerEvent(w, {
+      kind: "contractFee",
+      tick: w.tick,
+      guildId: contract.guildId,
+      contractId: contract.id,
+      thalers: contract.feePerPeriod,
+    });
+    w = appendLedgerEvent(w, {
+      kind: "settlement",
+      tick: w.tick,
+      contractId: contract.id,
+      guildId: contract.guildId,
+      outcome: "met",
+      pointsDelta: POINTS_SETTLED,
+    });
+    return [
+      w,
+      { ...contract, periodIndex: contract.periodIndex + 1, deliveredThisPeriod: 0, consecutiveMisses: 0 },
+    ];
+  }
+
+  const consecutiveMisses = contract.consecutiveMisses + 1;
+  if (consecutiveMisses >= 2) {
+    // Breach: the guild terminates the contract (CONTEXT.md — Settlement
+    // period, "large rank hit"). The breach penalty REPLACES this period's
+    // miss penalty (owner decision — parity with resignContract's same -3
+    // cost, not additive): exactly one `settlement` event, outcome
+    // "breached", for the full POINTS_BREACH_OR_RESIGN delta — never a
+    // "missed" event plus a second silent hit.
+    const breachPoints = Math.max(0, points + POINTS_BREACH_OR_RESIGN);
+    let w: World = {
+      ...world,
+      company: {
+        ...world.company,
+        guilds: { ...world.company.guilds, [contract.guildId]: { points: breachPoints } },
+      },
+    };
+    w = appendLedgerEvent(w, {
+      kind: "settlement",
+      tick: w.tick,
+      contractId: contract.id,
+      guildId: contract.guildId,
+      outcome: "breached",
+      pointsDelta: POINTS_BREACH_OR_RESIGN,
+    });
+    return [w, undefined];
+  }
+
+  const missedPoints = Math.max(0, points + POINTS_MISSED);
+  let w: World = {
+    ...world,
+    company: {
+      ...world.company,
+      guilds: { ...world.company.guilds, [contract.guildId]: { points: missedPoints } },
+    },
+  };
+  w = appendLedgerEvent(w, {
+    kind: "settlement",
+    tick: w.tick,
+    contractId: contract.id,
+    guildId: contract.guildId,
+    outcome: "missed",
+    pointsDelta: POINTS_MISSED,
+  });
+
+  return [
+    w,
+    { ...contract, periodIndex: contract.periodIndex + 1, deliveredThisPeriod: 0, consecutiveMisses },
+  ];
+}
+
+/**
+ * Contract settlement phase (#94, docs/specs/E3-contracts-and-guilds.md —
+ * Fulfilment and settlement; Tick day-boundary order): every active contract
+ * whose current period has reached its end tick is settled — quota met pays
+ * `feePerPeriod` and +1 rank point (Ledger `contractFee` + `settlement`);
+ * missed pays nothing and −1 point (`settlement` only, so a missed period
+ * still leaves an audit trace). A second *consecutive* miss breaches the
+ * contract (guild-terminated, an additional −3) and it drops out of
+ * `company.contracts`. Runs in `company.contracts` array order — deterministic,
+ * no RNG (ADR-0003). A no-op contract (period not yet due) survives untouched.
+ */
+export function settleContracts(world: World): World {
+  let w = world;
+  const survivors: ActiveContract[] = [];
+  for (const contract of world.company.contracts) {
+    if (w.tick < periodEndTick(contract)) {
+      survivors.push(contract);
+      continue;
+    }
+    const [next, survivor] = settleOne(w, contract);
+    w = next;
+    if (survivor) survivors.push(survivor);
+  }
+  return { ...w, company: { ...w.company, contracts: survivors } };
 }

@@ -8,8 +8,9 @@ import {
   launchIfComplete,
   type Headquarters,
 } from "./building";
+import type { ActiveContract } from "./contract";
 import type { GoodId } from "./goods";
-import { ENROLLMENT_FEE, type GuildId } from "./guild";
+import { ENROLLMENT_FEE, POINTS_BREACH_OR_RESIGN, rankOf, type GuildId } from "./guild";
 import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { shortestCourse } from "./pathfinding";
@@ -57,7 +58,11 @@ export type Command =
   // are generator-suggested (building.ts); this is the ShipPanel rename affordance.
   | { readonly kind: "renameShip"; readonly shipId: ShipId; readonly name: string }
   // E3 (#92): guild enrollment — paperwork, no ship presence (founding precedent).
-  | { readonly kind: "enroll"; readonly guildId: GuildId };
+  | { readonly kind: "enroll"; readonly guildId: GuildId }
+  // E3 (#94): accept a board offer into an active Contract (rank-gated on the
+  // accept side); resign an active Contract at any time (−3, same as breach).
+  | { readonly kind: "acceptContract"; readonly offerId: string }
+  | { readonly kind: "resignContract"; readonly contractId: string };
 
 /** Longest display name a rename accepts; longer input is trimmed then
  *  truncated (never rejected outright — the field just keeps what fits). */
@@ -335,6 +340,59 @@ export function applyCommand(world: World, command: Command): World {
         guildId: command.guildId,
       });
     }
+    case "acceptContract": {
+      // Rank-gating is accept-side (docs/specs/E3-contracts-and-guilds.md —
+      // Tech: Contracts): enrollment + rank checked here, never at generation.
+      const offer = world.contractOffers.find((o) => o.id === command.offerId);
+      if (!offer) return world;
+      const guildState = world.company.guilds[offer.guildId];
+      if (!guildState) return world;
+      if (rankOf(guildState.points) < offer.tier) return world;
+      // Guards a stale-board race: the same (guild,port,good) id could in
+      // principle reappear on the board while a same-id contract is already
+      // active — never duplicate it.
+      if (world.company.contracts.some((c) => c.id === offer.id)) return world;
+      const active: ActiveContract = {
+        ...offer,
+        startTick: world.tick,
+        periodIndex: 0,
+        deliveredThisPeriod: 0,
+        consecutiveMisses: 0,
+      };
+      return {
+        ...world,
+        contractOffers: world.contractOffers.filter((o) => o.id !== offer.id),
+        company: { ...world.company, contracts: [...world.company.contracts, active] },
+      };
+    }
+    case "resignContract": {
+      // Allowed any time, same cost as a guild-side breach (docs/specs/E3 —
+      // Fulfilment and settlement). Emits a `settlement` event (outcome
+      // "resigned") — the wave-check finding that summing settlement.pointsDelta
+      // must reproduce a guild's actual points; a silent exit would undercount it.
+      const contract = world.company.contracts.find((c) => c.id === command.contractId);
+      if (!contract) return world;
+      const points = world.company.guilds[contract.guildId]?.points ?? 0;
+      const resigned: World = {
+        ...world,
+        company: {
+          ...world.company,
+          contracts: world.company.contracts.filter((c) => c.id !== command.contractId),
+          guilds: {
+            ...world.company.guilds,
+            [contract.guildId]: { points: Math.max(0, points + POINTS_BREACH_OR_RESIGN) },
+          },
+        },
+      };
+      return appendLedgerEvent(resigned, {
+        kind: "settlement",
+        tick: world.tick,
+        contractId: contract.id,
+        guildId: contract.guildId,
+        outcome: "resigned",
+        pointsDelta: POINTS_BREACH_OR_RESIGN,
+      });
+    }
     case "renameShip": {
       // Cosmetic, player-editable (#54); no RNG, no other field touched.
       // Empty/whitespace-only input is rejected outright — a ship's name is
@@ -376,9 +434,21 @@ function applyTrade(
     },
   };
   const withShip = replaceShip(world, tradedShip);
+  // Sale attribution (#94 — E9 equivalence): a sell of the contract good at
+  // the contract port counts identically whether dispatched manually or by a
+  // Route's sell order — both paths land here as the same `applyTrade` call,
+  // so there is no second math to keep in sync. Buys never attribute.
+  const contracts =
+    stockDelta > 0
+      ? withShip.company.contracts.map((c) =>
+          c.portId === port.id && c.good === good
+            ? { ...c, deliveredThisPeriod: c.deliveredThisPeriod + stockDelta }
+            : c,
+        )
+      : withShip.company.contracts;
   const traded: World = {
     ...withShip,
-    company: { ...withShip.company, thalers: withShip.company.thalers + thalerDelta },
+    company: { ...withShip.company, thalers: withShip.company.thalers + thalerDelta, contracts },
     region: {
       ...withShip.region,
       ports: withShip.region.ports.map((p) => (p.id === port.id ? tradedPort : p)),

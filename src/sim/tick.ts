@@ -1,6 +1,6 @@
 import { CONSTRUCTION_RESERVE, runBuildSiteAutoDraw } from "./building";
 import { applyCommand, type Command } from "./commands";
-import { refreshContractOffers } from "./contract";
+import { refreshContractOffers, settleContracts } from "./contract";
 import { GOOD_IDS, type GoodId } from "./goods";
 import { UPKEEP_PER_DAY } from "./guild";
 import { appendLedgerEvent, computeNetWorth } from "./ledger";
@@ -221,14 +221,14 @@ function chargeUpkeep(world: World): World {
 /**
  * Day-boundary phase (#168 — extracted, behavior-preserving, from the inline
  * block this replaces; docs/specs/E3-contracts-and-guilds.md — Tick
- * day-boundary order): drift step → price snapshots → upkeep → netWorth
- * snapshot. `world` is already advanced to the boundary tick (tick+1,
- * post-osmosis region/pulse folded in) by the caller — the same values the
- * inline block read before extraction. Runs unconditionally; the caller gates
- * on the boundary check (this function does none itself), so it must be
- * called at most once per tick. E3 phases still to come (contract
- * settlements, offer refresh) slot into this seam between upkeep and the
- * netWorth snapshot, which always stays last (docs/specs/E3 — Tick
+ * day-boundary order): drift step → price snapshots → upkeep → contract
+ * settlements (#94) → offer refresh (#93) → netWorth snapshot. `world` is
+ * already advanced to the boundary tick (tick+1, post-osmosis region/pulse
+ * folded in) by the caller — the same values the inline block read before
+ * extraction. Runs unconditionally; the caller gates on the boundary check
+ * (this function does none itself), so it must be called at most once per
+ * tick. The netWorth snapshot always stays last, so the day's fees, fines and
+ * settlements land inside the day's curve point (docs/specs/E3 — Tick
  * day-boundary order).
  */
 function dayBoundary(world: World): World {
@@ -255,11 +255,15 @@ function dayBoundary(world: World): World {
     flowDrift,
   };
   next = chargeUpkeep(next);
-  // Offer refresh (#93): generation + causal expiry, after upkeep and before
-  // (future) contract settlements/the netWorth snapshot, per the spec's
-  // day-boundary order. Sized against a fixed reference hold (STARTING_HOLD)
-  // rather than any real ship's hold — a guild's offer is a promise to the
-  // market, not tailored to the player's current fleet.
+  // Contract settlements (#94): after upkeep, before offer refresh, per the
+  // spec's day-boundary order — a settled period's fee/points land inside
+  // this same boundary before the board and the netWorth snapshot see it.
+  next = settleContracts(next);
+  // Offer refresh (#93): generation + causal expiry, after contract
+  // settlements and before the netWorth snapshot, per the spec's day-boundary
+  // order. Sized against a fixed reference hold (STARTING_HOLD) rather than
+  // any real ship's hold — a guild's offer is a promise to the market, not
+  // tailored to the player's current fleet.
   next = {
     ...next,
     contractOffers: refreshContractOffers(next.region, next.contractOffers, STARTING_HOLD),
