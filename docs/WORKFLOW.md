@@ -37,8 +37,11 @@ repo-level gates **once per wave** — not once per issue.
 
 1. Baseline green in the assigned worktree before the first change.
 2. Hard laws (SELFCHECK §4) + own green: tests/typecheck/lint observed, TDD for `src/sim`.
-3. Affected Playwright specs if UI changed (grep the diff's selectors/routes across
-   `e2e/*.spec.ts`; doubt resolves toward "include the spec").
+3. Affected Playwright specs keyed on the **whole diff**, not just UI paths: UI
+   changes, but also anything e2e artifacts depend on — `src/store/persistence.ts`,
+   save/`World` shape changes, `e2e/fixtures/*` (grep the diff's selectors/routes
+   *and* fixture fields across `e2e/`; doubt resolves toward "include the spec";
+   incident 0009).
 4. Evidence report mapping each acceptance criterion to its deliverable.
 
 No repo read-set, no SELFCHECK §5 stop-and-wait, no §6 gates — those move up.
