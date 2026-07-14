@@ -1,4 +1,4 @@
-import { useState, type ComponentType, type CSSProperties, type ReactNode, type SVGProps } from "react";
+import { useEffect, useState, type ComponentType, type CSSProperties, type SVGProps } from "react";
 import { shortestCourse, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import {
@@ -12,6 +12,7 @@ import {
 } from "./icons";
 import { projectToViewBox } from "./mapProjection";
 import { shipPosition } from "./shipPosition";
+import { skiffGlyphs } from "./skiffPosition";
 
 const VIEW_SIZE = 100;
 const PADDING = 10;
@@ -23,29 +24,18 @@ const PORT_DISC_RADIUS = 3;
 const SCALE = VIEW_SIZE - 2 * PADDING;
 const CENTER = { x: 0.5, y: 0.5 };
 
-/** Ambient osmosis layer (docs/specs/E8-living-economy.md — Ambient ships):
- *  lanes whose |osmosisPulse| stays at or below this display threshold read
- *  as quiet — the "quieter lanes" calm of PR #55. Threshold is in the same
- *  value-weighted units as `osmosisPulse` (thalers moved this tick);
- *  tuning is not spec drift. */
-const PULSE_DISPLAY_THRESHOLD = 1;
-/** Pulse dot radius (viewBox units) — clearly smaller than SHIP_ICON_SIZE
- *  (4): signal moving through the network, not a vessel. */
-const PULSE_RADIUS = 0.5;
-/** Dot count and speed both grow with magnitude, one extra dot (and a
- *  proportionally shorter travel duration) per this many units of flow,
- *  capped so a very hot lane doesn't turn into clutter. */
-const PULSE_INTENSITY_SCALE = 4;
-const PULSE_MAX_COUNT = 4;
-/** Travel duration (seconds) for a barely-active lane; speed scales up
- *  (duration shrinks) with magnitude down to this floor. */
-const PULSE_DURATION_BASE = 2.4;
-const PULSE_DURATION_MIN = 0.7;
-/** prefers-reduced-motion (owner call, 2026-07-08): dots freeze in place
- *  instead of animating, so opacity carries the intensity signal instead —
- *  bounds below. */
-const PULSE_STATIC_OPACITY_MIN = 0.45;
-const PULSE_STATIC_OPACITY_MAX = 1;
+/** Osmosis skiff silhouette (#161, CONTEXT.md: Osmosis skiff — replaces the
+ *  ambient osmosis pulses, #63): a small original hull shape (bow at local
+ *  +x), *not* the vendored `ShipIcon` — this is the cosmetic ambient layer
+ *  the pulses occupied (plain `<circle>`s pre-#161), not a "game-world
+ *  entity" under ADR-0006's vendored-icon boundary. Deliberately distinct
+ *  from both `ShipIcon` (a galleon) and the course-arrow marker (a plain
+ *  triangle) so a fresh player never mistakes it for their own ship
+ *  (ADR-0006, incident 0002 — no gold; tinted via `.osmosis-skiff` in
+ *  index.css, a cool blue, never the Controlled Ship's gold). Bounding
+ *  length ~1.8 viewBox units — clearly smaller than SHIP_ICON_SIZE (4):
+ *  scale, not just color, sets the Controlled Ship apart. */
+const SKIFF_HULL_POINTS = "0.9,0 0.27,-0.36 -0.81,-0.32 -0.9,0 -0.81,0.32 0.27,0.36";
 
 /** Archetype → vendored SVG icon (#34, docs/adr/0006-svg-icon-strategy.md). */
 const ARCHETYPE_ICONS: Record<PortArchetype, ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -101,57 +91,23 @@ function laneLabelPosition(a: { x: number; y: number }, b: { x: number; y: numbe
   };
 }
 
-/** Ambient pulse dots for one lane, travelling from the flow's source to its
- *  destination (sign convention: positive `osmosisPulse` = lane's `a` sent
- *  goods to `b`, src/sim/osmosis.ts). Density and speed both scale with
- *  |magnitude|; count/duration formulas are tuning, not contract. Returns
- *  null when the lane is at or below the display threshold — a quiet lane
- *  renders nothing (PR #55 calm). */
-function osmosisDots(
-  magnitude: number,
-  from: { x: number; y: number },
-  to: { x: number; y: number },
-): ReactNode {
-  if (Math.abs(magnitude) <= PULSE_DISPLAY_THRESHOLD) return null;
-
-  const intensity = Math.abs(magnitude) / PULSE_INTENSITY_SCALE;
-  const count = Math.min(PULSE_MAX_COUNT, Math.max(1, Math.floor(1 + intensity)));
-  const duration = Math.max(PULSE_DURATION_MIN, PULSE_DURATION_BASE / (1 + intensity));
-  const staticOpacity = Math.min(
-    PULSE_STATIC_OPACITY_MAX,
-    PULSE_STATIC_OPACITY_MIN + intensity * 0.2,
+/** True while the user's OS/browser requests reduced motion. Read once at
+ *  mount plus a live listener (Playwright's `emulateMedia` sets this before
+ *  `page.goto`, so the initial `matchMedia` read already reflects it in
+ *  E2E). Skiffs freeze at their spawn phase under this instead of animating
+ *  — still visible, no motion (#69 review precedent, carried over from the
+ *  ambient pulses this glyph replaces). */
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
-  // Positive pulse = a -> b already reflected by the caller's from/to.
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-
-  return Array.from({ length: count }, (_, i) => (
-    <circle
-      key={i}
-      className="osmosis-pulse"
-      cx={from.x}
-      cy={from.y}
-      r={PULSE_RADIUS}
-      style={
-        {
-          "--pulse-dx": `${dx}px`,
-          "--pulse-dy": `${dy}px`,
-          // Reduced-motion fallback (owner call, 2026-07-08): each dot
-          // freezes at its phase along the lane instead of animating, so
-          // the lane still reads as busy without motion.
-          "--pulse-phase": String(i / count),
-          "--pulse-static-opacity": String(staticOpacity),
-          animationDuration: `${duration}s`,
-          // Negative delay: the animation starts already mid-cycle, so
-          // dots 2..n are immediately phased along the lane instead of
-          // sitting static (at full opacity) at the source for up to a
-          // full duration whenever the lane activates or the keyframe
-          // restarts (duration/direction can change as magnitude shifts).
-          animationDelay: `${(-i * duration) / count}s`,
-        } as CSSProperties
-      }
-    />
-  ));
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = () => setReduced(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
 }
 
 /**
@@ -163,11 +119,16 @@ export function RegionMap({
   region,
   ship,
   osmosisPulse,
+  tick,
 }: {
   region: Region;
   ship: Ship;
   osmosisPulse: Record<LaneId, number>;
+  /** World.tick (CONTEXT.md: Tick) — the only clock osmosis skiffs read
+   *  (#161): sim-time anchored, not wall-clock. */
+  tick: number;
 }) {
+  const reducedMotion = usePrefersReducedMotion();
   const selection = useGameStore((s) => s.selection);
   const select = useGameStore((s) => s.select);
   const openShip = useGameStore((s) => s.openShip);
@@ -306,11 +267,13 @@ export function RegionMap({
           );
         })}
       </g>
-      {/* Ambient osmosis layer (docs/specs/E8-living-economy.md — Ambient
-          ships): small pulses travelling along lanes with an active flow —
-          signal moving through a network, not vessels. Drawn above lanes but
-          below ports/the Controlled Ship so it stays clearly subordinate.
-          Purely derived from `osmosisPulse`; no sim entities. */}
+      {/* Ambient osmosis layer (CONTEXT.md: Osmosis skiff, #161 — replaces
+          the ambient pulses, #63): small NPC trader ships sailing lanes with
+          an active flow, one glyph = one meaning. Drawn above lanes but below
+          ports/the Controlled Ship so it stays clearly subordinate. Purely
+          derived from `osmosisPulse` at the current sim `tick`; no sim
+          entities — the map never lies about the economy (pillar 4): a lane
+          with no flow shows no skiffs. */}
       <g className="region-map__osmosis" aria-hidden="true">
         {region.lanes.map((lane) => {
           const magnitude = osmosisPulse[lane.id] ?? 0;
@@ -320,11 +283,18 @@ export function RegionMap({
             magnitude >= 0 ? lane.a : lane.b,
             magnitude >= 0 ? lane.b : lane.a,
           );
-          const dots = osmosisDots(magnitude, from, to);
-          if (!dots) return null;
+          const glyphs = skiffGlyphs(tick, magnitude, from, to, reducedMotion);
+          if (glyphs.length === 0) return null;
           return (
             <g key={lane.id} className="osmosis-lane" data-lane-id={lane.id}>
-              {dots}
+              {glyphs.map((glyph, i) => (
+                <polygon
+                  key={i}
+                  className="osmosis-skiff"
+                  points={SKIFF_HULL_POINTS}
+                  transform={`translate(${glyph.x}, ${glyph.y}) rotate(${glyph.angleDeg})`}
+                />
+              ))}
             </g>
           );
         })}

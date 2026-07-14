@@ -696,54 +696,22 @@ body {
   pointer-events: none;
 }
 
-/* Ambient osmosis layer (docs/specs/E8-living-economy.md — Ambient ships):
-   small dots travelling along an active lane, clearly subordinate to the
-   Controlled Ship glyph — a cool aether-blue distinct from the gold ship/
-   course accents so the two signals never get confused. */
+/* Ambient osmosis layer (CONTEXT.md: Osmosis skiff, #161 — replaces the
+   ambient pulses, #63): small NPC trader ships sailing an active lane,
+   clearly subordinate to the Controlled Ship glyph — a cool aether-blue
+   distinct from the gold ship/course accents so the two signals never get
+   confused (ADR-0006, incident 0002: gold is reserved for the Controlled
+   Ship). Position is computed in JS from the sim tick (src/ui/skiffPosition.ts)
+   — no CSS animation, so pause/speed changes affect it for free; nothing
+   here needs a prefers-reduced-motion override (the frozen-frac branch lives
+   in the position math, not the stylesheet). */
 .region-map__osmosis {
   pointer-events: none;
 }
 
-.osmosis-pulse {
+.osmosis-skiff {
   fill: #7fb4e0;
   filter: drop-shadow(0 0 0.6px #7fb4e0);
-  transform-box: fill-box;
-  animation-name: osmosis-travel;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-
-@keyframes osmosis-travel {
-  0% {
-    transform: translate(0, 0);
-    opacity: 0;
-  }
-  12% {
-    opacity: 0.8;
-  }
-  88% {
-    opacity: 0.8;
-  }
-  100% {
-    transform: translate(var(--pulse-dx), var(--pulse-dy));
-    opacity: 0;
-  }
-}
-
-/* Reduced motion (owner call, 2026-07-08; E10 precedent, lines ~512/574):
-   dots freeze at their phase along the lane (--pulse-phase, set per dot)
-   instead of animating — still a diagnostic ("this lane is busy") but no
-   motion. Opacity substitutes for the animated fade, scaled by intensity
-   (--pulse-static-opacity) so a hotter lane still reads brighter. */
-@media (prefers-reduced-motion: reduce) {
-  .osmosis-pulse {
-    animation: none;
-    opacity: var(--pulse-static-opacity);
-    transform: translate(
-      calc(var(--pulse-dx) * var(--pulse-phase)),
-      calc(var(--pulse-dy) * var(--pulse-phase))
-    );
-  }
 }
 
 .port {

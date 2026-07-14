@@ -150,11 +150,27 @@ _Avoid_: randomness, noise (in identifiers)
 **Trade osmosis** (PL: osmoza handlowa):
 Background goods flow along Lanes from cheaper ports to more expensive ones, proportional
 to the price gap beyond a deadband, attenuated by lane length and capped per tick; rendered
-as small ambient pulses on lanes, but it is a flow — no simulated NPC agents.
+as Osmosis skiffs on lanes, but it is a flow — no simulated NPC agents.
 _Implementation_: shipped in #59/#60 ([spec](docs/specs/E8-living-economy.md)) — `osmosisTick`
 wired into the tick each world hour, `World.osmosisPulse` carries the per-lane signal; #63
-renders it as ambient pulses on the map (static, opacity-scaled under `prefers-reduced-motion`).
+first rendered it as ambient pulses on the map, replaced by Osmosis skiffs in #161 (below).
 _Avoid_: NPC trade, AI traders (as sim terms)
+
+**Osmosis skiff** (PL: skif osmozy):
+The display glyph for Trade osmosis (above): small NPC trader ships sailing a Lane in the
+flow's direction, one per unit of flow intensity up to a cap. A view-local, cosmetic reading
+of `World.osmosisPulse` — no sim entities, no state of their own, so it carries the same
+"no simulated NPC agents" law Trade osmosis does; a quiet Lane shows no skiffs. Sim-time
+anchored: motion is a function of the world Tick, not wall-clock, so pausing freezes skiffs
+and Speed scales them. Distinct from the Controlled Ship by scale and silhouette, and never
+gold (ADR-0006) — a fresh player must never mistake one for their own ship.
+_Implementation_: shipped in #161 ([grill](docs/design-notes/route-events-2026-07-14.md)),
+replacing the ambient pulses of #63 — `src/ui/skiffPosition.ts` (tick-driven placement,
+unit-tested), rendered in `RegionMap.tsx` as an inline hull silhouette (not the vendored
+`ShipIcon` — this is the same cosmetic ambient layer the pulses occupied, not a "game-world
+entity" under ADR-0006's vendored-icon boundary). `prefers-reduced-motion` freezes each
+skiff at its spawn phase instead of animating (carried over from #63/#69).
+_Avoid_: NPC ship, trader ship (as sim terms — this is a UI rendering, not a sim entity)
 
 **Price board** (PL: tablica cen):
 The region-wide economic overlay: all Ports × all Goods in one table with bid/ask and

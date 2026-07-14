@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { createWorld, type Ship, type World } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
 
@@ -615,8 +615,8 @@ test.describe('trading interactions (when docked)', () => {
   });
 });
 
-test.describe('ambient osmosis pulses on the map (#63)', () => {
-  test('active flow renders pulses; quiet lanes render none (seeded)', async ({ page }) => {
+test.describe('ambient osmosis skiffs on the map (#161, replaces the pulses #63)', () => {
+  async function startAtSeed66(page: Page) {
     await page.goto('/');
     // Seed "66" (createWorld hashes the string, src/sim/world.ts): worldgen's
     // stock jitter (± 25% of equilibrium, src/sim/worldgen.ts) leaves one
@@ -626,16 +626,34 @@ test.describe('ambient osmosis pulses on the map (#63)', () => {
     // by running the sim standalone for this PR; not asserted elsewhere).
     await page.getByLabel(/seed/i).fill('66');
     await page.getByRole('button', { name: /new game/i }).click();
+  }
+
+  /** Locates the first skiff of whichever lane is currently active, pinned by
+   *  `data-lane-id` so repeated reads over time track the *same* physical
+   *  skiff — an unpinned "first `.osmosis-skiff`" read can silently swap to a
+   *  different lane's skiff between reads as osmosis magnitudes shift (a
+   *  different lane's group can become first in DOM order), producing a
+   *  spurious "it moved" false positive unrelated to the freeze/motion
+   *  behavior under test. Index 0 of a lane's skiffs sits at phase 0 (the
+   *  lane's `from` endpoint) whenever motion is frozen — src/ui/skiffPosition.ts
+   *  `skiffFrac` — so it stays put even if that lane's skiff *count* shifts. */
+  async function firstActiveSkiff(map: Locator): Promise<Locator> {
+    const laneId = await map.locator('.osmosis-lane').first().getAttribute('data-lane-id');
+    return map.locator(`.osmosis-lane[data-lane-id="${laneId}"] .osmosis-skiff`).first();
+  }
+
+  test('active flow renders skiffs; quiet lanes render none (seeded)', async ({ page }) => {
+    await startAtSeed66(page);
 
     const map = page.locator('svg.region-map');
     await expect(map).toBeVisible();
 
     // Fresh world: osmosisPulse starts at 0 on every lane (World.osmosisPulse,
-    // src/sim/world.ts) — no pulses before the sim has ticked.
-    await expect(map.locator('.osmosis-pulse')).toHaveCount(0);
+    // src/sim/world.ts) — no skiffs before the sim has ticked.
+    await expect(map.locator('.osmosis-skiff')).toHaveCount(0);
 
     await page.getByRole('button', { name: '100x' }).click();
-    await expect(map.locator('.osmosis-pulse').first()).toBeVisible();
+    await expect(map.locator('.osmosis-skiff').first()).toBeVisible();
     await page.getByRole('button', { name: '⏸' }).click();
 
     const activeLaneCount = await map.locator('.osmosis-lane').count();
@@ -644,22 +662,72 @@ test.describe('ambient osmosis pulses on the map (#63)', () => {
     expect(activeLaneCount).toBeLessThan(totalLaneCount);
   });
 
-  test('prefers-reduced-motion: pulses stay visible but freeze in place (#69 review)', async ({
+  test('frozen under pause: sim-time anchoring, not wall-clock (#72)', async ({ page }) => {
+    await startAtSeed66(page);
+    const map = page.locator('svg.region-map');
+
+    await page.getByRole('button', { name: '100x' }).click();
+    await expect(map.locator('.osmosis-skiff').first()).toBeVisible();
+    const skiff = await firstActiveSkiff(map);
+
+    await page.getByRole('button', { name: '⏸' }).click();
+    const frozenAt = await skiff.getAttribute('transform');
+    // A real-time wait while paused: a wall-clock-driven glyph (like the old
+    // CSS-animated pulses) would keep moving here — the #72 misreading this
+    // glyph is meant to resolve. Sim ticks don't advance while paused, so a
+    // tick-derived position must not move either.
+    await page.waitForTimeout(700);
+    await expect(skiff).toHaveAttribute('transform', frozenAt!);
+  });
+
+  test('speed scales skiff motion: running (not paused) visibly advances position', async ({
+    page,
+  }) => {
+    // Positive control for the pause/reduced-motion freeze assertions above
+    // and below: proves the position genuinely tracks ticks instead of being
+    // a static value that would trivially pass a "stays the same" check
+    // (a test that can't fail is not a test).
+    await startAtSeed66(page);
+    const map = page.locator('svg.region-map');
+
+    await page.getByRole('button', { name: '100x' }).click();
+    await expect(map.locator('.osmosis-skiff').first()).toBeVisible();
+    const skiff = await firstActiveSkiff(map);
+
+    const at1 = await skiff.getAttribute('transform');
+    await page.waitForTimeout(700); // hundreds of ticks at 100x — well over one skiff cycle
+    const at2 = await skiff.getAttribute('transform');
+    expect(at2).not.toBe(at1);
+  });
+
+  test('prefers-reduced-motion: skiffs stay visible but freeze in place (#69 review precedent)', async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/');
-    await page.getByLabel(/seed/i).fill('66'); // see rationale in the test above
-    await page.getByRole('button', { name: /new game/i }).click();
-
+    await startAtSeed66(page);
     const map = page.locator('svg.region-map');
-    await page.getByRole('button', { name: '100x' }).click();
 
-    const pulse = map.locator('.osmosis-pulse').first();
-    await expect(pulse).toBeVisible();
-    // No animation under reduced motion (src/index.css); the diagnostic
-    // (a busy lane) still shows through opacity, not motion.
-    await expect(pulse).toHaveCSS('animation-name', 'none');
+    await page.getByRole('button', { name: '100x' }).click();
+    await expect(map.locator('.osmosis-skiff').first()).toBeVisible();
+    const skiff = await firstActiveSkiff(map);
+    const dateLabel = page.locator('.top-bar__date');
+    const dateAt1 = await dateLabel.innerText();
+
+    // Unlike the pause test, the sim keeps ticking here — only the *display*
+    // freezes (src/ui/skiffPosition.ts skiffFrac: reduced motion pins the
+    // fraction at the skiff's spawn phase). Switch down to 1x for the actual
+    // observation window: at 100x, hundreds of ticks pass in under a second
+    // and this seed's active lane can (correctly, per the live economy) flip
+    // its flow direction within that span — a real position jump that would
+    // masquerade as a broken freeze. At 1x for ~1 tick, that risk is
+    // negligible while the world-date readout still proves ticks genuinely
+    // advanced (not just "nothing happened").
+    await page.getByRole('button', { name: '1x' }).click();
+    const at1 = await skiff.getAttribute('transform');
+    await page.waitForTimeout(1_200);
+    const at2 = await skiff.getAttribute('transform');
+    await expect(dateLabel).not.toHaveText(dateAt1); // proves real ticks elapsed
+    expect(at2).toBe(at1);
   });
 });
 
