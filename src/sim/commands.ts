@@ -9,6 +9,7 @@ import {
   type Headquarters,
 } from "./building";
 import type { GoodId } from "./goods";
+import { ENROLLMENT_FEE, type GuildId } from "./guild";
 import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { shortestCourse } from "./pathfinding";
@@ -54,7 +55,9 @@ export type Command =
   | { readonly kind: "deliver"; readonly shipId: ShipId; readonly good: GoodId }
   // #54 (folded into E9/#83): player-editable ship display name. Launch names
   // are generator-suggested (building.ts); this is the ShipPanel rename affordance.
-  | { readonly kind: "renameShip"; readonly shipId: ShipId; readonly name: string };
+  | { readonly kind: "renameShip"; readonly shipId: ShipId; readonly name: string }
+  // E3 (#92): guild enrollment — paperwork, no ship presence (founding precedent).
+  | { readonly kind: "enroll"; readonly guildId: GuildId };
 
 /** Longest display name a rename accepts; longer input is trimmed then
  *  truncated (never rejected outright — the field just keeps what fits). */
@@ -310,6 +313,27 @@ export function applyCommand(world: World, command: Command): World {
         },
       };
       return replaceShip(world, underway);
+    }
+    case "enroll": {
+      // Paperwork — no ship presence required (founding precedent). Deliberately
+      // NOT Reserve-gated: the Reserve covers construction spend and standing
+      // costs only (docs/specs/E3-contracts-and-guilds.md — Upkeep).
+      if (!world.company.headquarters) return world;
+      if (world.company.guilds[command.guildId]) return world;
+      if (world.company.thalers < ENROLLMENT_FEE) return world;
+      const enrolled: World = {
+        ...world,
+        company: {
+          ...world.company,
+          thalers: world.company.thalers - ENROLLMENT_FEE,
+          guilds: { ...world.company.guilds, [command.guildId]: { points: 0 } },
+        },
+      };
+      return appendLedgerEvent(enrolled, {
+        kind: "enrollmentFee",
+        tick: world.tick,
+        guildId: command.guildId,
+      });
     }
     case "renameShip": {
       // Cosmetic, player-editable (#54); no RNG, no other field touched.
