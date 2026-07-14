@@ -1334,10 +1334,65 @@ body {
   color: #e6e6e6;
 }
 
-/* Kontrakty tab (#96, docs/specs/E3-contracts-and-guilds.md — UX skeleton).
-   Guild badge: the existing archetype icon tinted with the archetype hue
-   (--guild-color, set inline from --archetype-*) — guilds are 1:1 with
-   economic archetypes, no second color axis, never gold (ADR-0006). */
+/* Notice strip (#97, 2026-07-14 UI grill lock 1): persistent, not a
+   flash-and-gone toast — the badge disappears once nothing new sits past
+   lastSeenTick, but the strip itself always renders. */
+.notice-strip {
+  position: relative;
+  padding: 0.35rem 0.7rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #a8b2c2;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.notice-strip:hover {
+  background: #1a202b;
+}
+
+/* Deliberately not gold (ADR-0006 — reserved for the Controlled Ship) and
+   not an archetype hue (a notice count is neither) — the same active-control
+   blue used for an active tab/chip (ADR-0006: reuse an existing meaning
+   rather than open a new color axis for "there's something new"). */
+.notice-strip__badge {
+  margin-left: 0.4rem;
+  padding: 0 0.4rem;
+  background: #4c7bab;
+  border-radius: 999px;
+  color: #e6e6e6;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Guildhouse section (#97, docs/specs/E3-contracts-and-guilds.md — UX
+   skeleton: "PortPanel gains a guildhouse section"). */
+.guildhouse-section {
+  margin: 0.75rem 0;
+  padding: 0.6rem 0.5rem;
+  border: 1px solid #20263180;
+  border-radius: 4px;
+}
+
+.guildhouse-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.guildhouse-name {
+  flex: 1;
+  color: #e6e6e6;
+  font-weight: 600;
+}
+
+/* Guild badge (#96 Kontrakty tab + #97 Guildhouse section — src/ui/guildDisplay.ts
+   is its one shared component home): the existing archetype icon tinted with
+   the archetype hue (--guild-color, set inline from --archetype-*) — guilds
+   are 1:1 with economic archetypes, no second color axis, never gold
+   (ADR-0006). */
 .guild-badge {
   display: inline-flex;
   align-items: center;
@@ -1415,4 +1470,61 @@ body {
 .kontrakty-contract__confirm-text {
   font-size: 0.8rem;
   color: #d9705f;
+}
+
+.guildhouse-enroll-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Rank badge: a neutral shape/number ramp — NOT the archetype hue (that
+   would overload the guild badge's own axis) and NEVER gold (ADR-0006,
+   reserved for the Controlled Ship). Darker → lighter neutral grey-blue as
+   rank rises, distinctness carried by the number, not color alone. */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 3px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #e6e6e6;
+}
+
+.rank-badge--1 {
+  background: #3a4050;
+}
+
+.rank-badge--2 {
+  background: #4a5266;
+}
+
+.rank-badge--3 {
+  background: #5a637c;
+}
+
+.rank-badge--4 {
+  background: #6b7592;
+}
+
+.rank-progress__bar {
+  height: 0.4rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.rank-progress__fill {
+  height: 100%;
+  background: #4c7bab;
+}
+
+.rank-progress__count {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  color: #a8b2c2;
+  font-variant-numeric: tabular-nums;
 }

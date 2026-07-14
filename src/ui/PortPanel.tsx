@@ -1,15 +1,19 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import {
   cargoUsed,
   CONSTRUCTION_RESERVE,
   effectiveBase,
+  ENROLLMENT_FEE,
   GOOD_IDS,
   GOODS,
   HEADQUARTERS_COST,
   price,
   quoteBuy,
   quoteSell,
+  RANK_THRESHOLDS,
+  rankOf,
   type GoodId,
+  type GuildId,
   type MarketGood,
   type Port,
   type PortId,
@@ -22,7 +26,14 @@ import { useGameStore } from "../store/gameStore";
 import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
 import { FOUNDING_GOAL, foundingProgress, foundingSavings } from "./foundingProgress";
-import { ShipIcon } from "./icons";
+import {
+  AgrarianIcon,
+  IndustrialIcon,
+  MiningIcon,
+  ShipIcon,
+  UrbanIcon,
+  VerdantIcon,
+} from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
 import { previewCourseTicks } from "./coursePreview";
@@ -387,6 +398,127 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
   );
 }
 
+/** Polish working names from the spec's guild table (Design: Guilds) —
+ *  display-only. `GUILDS[id].name` (guild.ts) stays the English flavor name
+ *  owned by #92/#170's scope wall; untouched here. */
+const GUILD_NAME_PL: Record<GuildId, string> = {
+  agrarian: "Gildia Spichlerzy",
+  urban: "Zgromadzenie Tkaczy",
+  mining: "Bractwo Solowarów",
+  industrial: "Liga Odlewników",
+  verdant: "Konsorcjum Żywodrzewu",
+};
+
+/** Guild badge = the EXISTING archetype icon (ADR-0006 — no new icon set,
+ *  guilds are 1:1 with economic archetypes, no second color axis). */
+const GUILD_ICON: Record<GuildId, typeof AgrarianIcon> = {
+  agrarian: AgrarianIcon,
+  urban: UrbanIcon,
+  mining: MiningIcon,
+  industrial: IndustrialIcon,
+  verdant: VerdantIcon,
+};
+
+/** The next rank's point threshold, or null once already at the top rank
+ *  (spec: Ranks — four steps). `RANK_THRESHOLDS[rank]` is the next
+ *  threshold because `rankOf` returns `i + 1` when floored points clear
+ *  `RANK_THRESHOLDS[i]` (guild.ts) — rank `r`'s own floor is
+ *  `RANK_THRESHOLDS[r - 1]`, so its ceiling is one index further. */
+function nextRankThreshold(rank: number): number | null {
+  return rank < RANK_THRESHOLDS.length ? RANK_THRESHOLDS[rank] : null;
+}
+
+/**
+ * Guildhouse section (#97, docs/specs/E3-contracts-and-guilds.md — UX
+ * skeleton: "PortPanel gains a guildhouse section"): every non-freeport
+ * port hosts its archetype's guild (CONTEXT.md — Guildhouse). Pre-enrollment:
+ * the guild's badge, Polish working name, and an enroll button stating the
+ * fee, disabled pre-Headquarters or when unaffordable with a Polish reason
+ * (never a silent no-op). Post-enrollment: a neutral rank badge (never gold,
+ * never the archetype hue — ADR-0006, its own visual axis) plus a points
+ * progress bar toward the next rank threshold.
+ */
+function GuildhouseSection({ world, portId }: { world: World; portId: PortId }) {
+  const dispatch = useGameStore((s) => s.dispatch);
+  const port = world.region.ports.find((p) => p.id === portId);
+  if (!port || port.archetype === "freeport") return null;
+
+  const guildId: GuildId = port.archetype;
+  const Icon = GUILD_ICON[guildId];
+  const enrollment = world.company.guilds[guildId];
+
+  if (enrollment) {
+    const rank = rankOf(enrollment.points);
+    const ceiling = nextRankThreshold(rank);
+    const points = Math.max(0, enrollment.points);
+    const rankFloor = RANK_THRESHOLDS[rank - 1];
+    const progress = ceiling === null ? 1 : (points - rankFloor) / (ceiling - rankFloor);
+
+    return (
+      <div className="guildhouse-section">
+        <h3 className="side-panel__heading">Dom gildii</h3>
+        <div className="guildhouse-header">
+          <span
+            className="guild-badge"
+            style={{ "--guild-color": `var(--archetype-${guildId})` } as CSSProperties}
+          >
+            <Icon className="guild-badge__icon" />
+          </span>
+          <span className="guildhouse-name">{GUILD_NAME_PL[guildId]}</span>
+          <span className={`rank-badge rank-badge--${rank}`} title={`Ranga ${rank}`}>
+            {rank}
+          </span>
+        </div>
+        <div
+          className="rank-progress__bar"
+          role="progressbar"
+          aria-label={`${GUILD_NAME_PL[guildId]} rank progress`}
+          aria-valuenow={points}
+          aria-valuemin={rankFloor}
+          aria-valuemax={ceiling ?? points}
+        >
+          <div className="rank-progress__fill" style={{ width: `${progress * 100}%` }} />
+        </div>
+        <span className="rank-progress__count">
+          {ceiling === null ? `${points} pkt (ranga maksymalna)` : `${points} / ${ceiling} pkt`}
+        </span>
+      </div>
+    );
+  }
+
+  const headquarters = world.company.headquarters;
+  const thalers = world.company.thalers;
+  const disabledReason = !headquarters
+    ? "Wymaga założonej siedziby"
+    : thalers < ENROLLMENT_FEE
+      ? `Za mało thalerów (₸${ENROLLMENT_FEE})`
+      : null;
+
+  return (
+    <div className="guildhouse-section">
+      <h3 className="side-panel__heading">Dom gildii</h3>
+      <div className="guildhouse-header">
+        <span
+          className="guild-badge"
+          style={{ "--guild-color": `var(--archetype-${guildId})` } as CSSProperties}
+        >
+          <Icon className="guild-badge__icon" />
+        </span>
+        <span className="guildhouse-name">{GUILD_NAME_PL[guildId]}</span>
+      </div>
+      <button
+        type="button"
+        className="guildhouse-enroll-btn"
+        disabled={disabledReason !== null}
+        title={disabledReason ?? undefined}
+        onClick={() => dispatch({ kind: "enroll", guildId })}
+      >
+        Wstąp do gildii — ₸{ENROLLMENT_FEE}
+      </button>
+    </div>
+  );
+}
+
 /**
  * Contextual panel for a selected port (docs/specs/E2-trade-loop.md — UI
  * layout): the live market table, trading when the ship is docked here,
@@ -418,6 +550,8 @@ export function PortPanel({ portId }: { portId: PortId }) {
       <SailControl ship={ship} portId={port.id} region={world.region} />
 
       <HeadquartersSection world={world} portId={port.id} />
+
+      <GuildhouseSection world={world} portId={port.id} />
 
       <div className="market" role="table" aria-label={`${port.name} market`}>
         <div className="market__header" role="row">

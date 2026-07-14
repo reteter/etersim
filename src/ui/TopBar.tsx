@@ -31,6 +31,7 @@ const DIGIT_SPEEDS: Record<string, Speed> = { "1": 1, "2": 10, "3": 100 };
 export function TopBar() {
   const thalers = useGameStore((s) => s.world?.company.thalers ?? 0);
   const tick = useGameStore((s) => s.world?.tick ?? 0);
+  const ledger = useGameStore((s) => s.world?.ledger ?? []);
   const speed = useGameStore((s) => s.speed);
   const pauseCause = useGameStore((s) => s.pauseCause);
   const setSpeed = useGameStore((s) => s.setSpeed);
@@ -39,6 +40,18 @@ export function TopBar() {
   const [priceBoardOpen, setPriceBoardOpen] = useState(false);
   const [ledgerOpen, setLedgerOpen] = useState(false);
   const [headquartersOpen, setHeadquartersOpen] = useState(false);
+  // Notice strip (#97, 2026-07-14 UI grill lock 1 — replaces the spec's
+  // phantom "toast pattern"): UI-side only, never the save shape. Notices are
+  // derived from Ledger `settlement` events appended since `lastSeenTick` —
+  // immune to tick-folding at 10x/100x by construction, since every settled
+  // period appends its own event regardless of how many ticks one `advance`
+  // call folds together.
+  const [lastSeenTick, setLastSeenTick] = useState(0);
+  const noticeCount = ledger.filter((e) => e.kind === "settlement" && e.tick > lastSeenTick).length;
+  const openNotices = () => {
+    setPriceBoardOpen(true);
+    setLastSeenTick(tick);
+  };
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -93,6 +106,14 @@ export function TopBar() {
           </p>
         )}
       </div>
+      {/* Persistent compact strip (grill lock 1): click opens the board —
+          today the price-tab overlay (this branch cut before #96's Kontrakty
+          tab landed); once merged, this call site takes an `initialTab="kontrakty"`
+          prop so the click lands straight on the settlement audit trail. */}
+      <button type="button" className="notice-strip" onClick={openNotices}>
+        Powiadomienia
+        {noticeCount > 0 && <span className="notice-strip__badge">{noticeCount}</span>}
+      </button>
       <button type="button" className="menu-btn" onClick={() => setPriceBoardOpen(true)}>
         Price Board
       </button>
