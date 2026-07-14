@@ -1,6 +1,7 @@
 import { generateShipName, type Headquarters } from "./building";
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
+import type { GuildId, GuildStanding } from "./guild";
 import type { LedgerEvent } from "./ledger";
 import { effectiveBase, price } from "./market";
 import type { LaneId, PortId, Region } from "./region";
@@ -22,6 +23,9 @@ export interface Company {
   /** Headquarters (E9): one per Company, unlocks routes and construction.
    *  `buildOrder` present iff an active build is in progress. */
   readonly headquarters?: Headquarters;
+  /** Guild enrollment + progress (E3, guild.ts): enrolled iff the guild's key
+   *  is present. Rank is always derived via `rankOf`, never stored here. */
+  readonly guilds: Partial<Record<GuildId, GuildStanding>>;
 }
 
 /**
@@ -84,7 +88,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     tick: 0,
     rng: rng2,
     region,
-    company: { thalers: STARTING_THALERS, ships: [ship], routes: [] },
+    company: { thalers: STARTING_THALERS, ships: [ship], routes: [], guilds: {} },
     priceSnapshots: snapshotPrices(region),
     flowDrift: initialFlowDrift(region),
     osmosisPulse: initialOsmosisPulse(region),

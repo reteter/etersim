@@ -53,6 +53,11 @@ function transactionDelta(event: TransactionEvent): number | null {
       return -event.thalers;
     case "delivery":
     case "launch":
+    // enrollmentFee (E3, #92): the event carries no thalers field per the
+    // acceptance criteria — a fuller UI treatment (delta, description) is
+    // out of this issue's scope wall (no UI/store changes); flagged in the
+    // completion report.
+    case "enrollmentFee":
       return null;
   }
 }
@@ -85,6 +90,12 @@ function describeTransaction(event: TransactionEvent, world: World): string {
       return `Founded Headquarters at ${portName(world, event.portId)}`;
     case "launch":
       return `Launched ${shipName(world, event.shipId)} at ${portName(world, event.portId)}`;
+    // enrollmentFee (E3, #92): minimal, mechanical exhaustiveness fix so this
+    // shared UI file keeps typechecking after the LedgerEvent union extension
+    // in src/sim/ledger.ts — no dedicated guild UI treatment, out of this
+    // issue's scope wall; flagged in the completion report.
+    case "enrollmentFee":
+      return `Enrolled in a guild (guildId: ${event.guildId})`;
   }
 }
 

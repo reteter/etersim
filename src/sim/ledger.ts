@@ -1,4 +1,5 @@
 import { GOOD_IDS, type GoodId } from "./goods";
+import type { GuildId } from "./guild";
 import { effectiveBase, price } from "./market";
 import type { PortId, Region } from "./region";
 import type { RouteId } from "./route";
@@ -81,6 +82,11 @@ export type LedgerEvent =
       readonly cargoValue: number;
       readonly siteStoreValue: number;
       readonly total: number;
+    }
+  | {
+      readonly kind: "enrollmentFee";
+      readonly tick: number;
+      readonly guildId: GuildId;
     };
 
 /** Appends one event to the Ledger. The single seam every mutation point
