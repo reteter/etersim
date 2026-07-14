@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { nextFloat, nextInt, nextShuffle, nextUint32, seedRng, type RngState } from "./rng";
+import {
+  deriveSubstream,
+  nextFloat,
+  nextInt,
+  nextShuffle,
+  nextUint32,
+  seedRng,
+  type RngState,
+} from "./rng";
 
 describe("seeded RNG", () => {
   it("produces an identical sequence for an identical seed", () => {
@@ -78,5 +86,45 @@ describe("seeded RNG", () => {
     const state = seedRng(2026);
     expect(typeof state).toBe("number");
     expect(JSON.parse(JSON.stringify(state))).toBe(state);
+  });
+});
+
+describe("deriveSubstream (#168 — isolated day-boundary consumer streams)", () => {
+  it("is deterministic: same state + same tag => same derived state", () => {
+    const state = seedRng(42);
+    expect(deriveSubstream(state, "drift")).toBe(deriveSubstream(state, "drift"));
+  });
+
+  it("returns a plain, JSON-serializable number", () => {
+    const derived = deriveSubstream(seedRng(1), "offers");
+    expect(typeof derived).toBe("number");
+    expect(JSON.parse(JSON.stringify(derived))).toBe(derived);
+  });
+
+  it("distinct tags decorrelate: different tags on the same state draw different, unrelated sequences", () => {
+    const base = seedRng(7);
+    const drawSequence = (tag: string): number[] => {
+      let state = deriveSubstream(base, tag);
+      const values: number[] = [];
+      for (let i = 0; i < 5; i++) {
+        const [value, next] = nextUint32(state);
+        values.push(value);
+        state = next;
+      }
+      return values;
+    };
+
+    const drift = drawSequence("drift");
+    const offers = drawSequence("offers");
+    expect(drift).not.toEqual(offers);
+    // Decorrelated, not merely different: no shared prefix or trivial offset.
+    expect(drift[0]).not.toBe(offers[0]);
+    expect(deriveSubstream(base, "drift")).not.toBe(deriveSubstream(base, "offers"));
+  });
+
+  it("the same tag on different base states derives different substreams", () => {
+    const a = deriveSubstream(seedRng(1), "drift");
+    const b = deriveSubstream(seedRng(2), "drift");
+    expect(a).not.toBe(b);
   });
 });
