@@ -1333,3 +1333,86 @@ body {
   border-color: #4c7bab;
   color: #e6e6e6;
 }
+
+/* Kontrakty tab (#96, docs/specs/E3-contracts-and-guilds.md — UX skeleton).
+   Guild badge: the existing archetype icon tinted with the archetype hue
+   (--guild-color, set inline from --archetype-*) — guilds are 1:1 with
+   economic archetypes, no second color axis, never gold (ADR-0006). */
+.guild-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--guild-color);
+}
+
+.guild-badge__icon {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.kontrakty-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.kontrakty-offer,
+.kontrakty-contract {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid #20263180;
+}
+
+.kontrakty-offer__body,
+.kontrakty-contract__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.kontrakty-offer__route,
+.kontrakty-contract__route {
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
+.kontrakty-offer__terms,
+.kontrakty-offer__basis,
+.kontrakty-contract__progress {
+  font-size: 0.8rem;
+  color: #a8b2c2;
+}
+
+/* Locked (rank-gated) offers stay visible, dimmed — the board is where the
+   player learns what rank buys (#96 AC3), never a hidden row. */
+.kontrakty-offer--locked {
+  opacity: 0.65;
+}
+
+.kontrakty-offer__lock {
+  font-size: 0.8rem;
+  color: #d9705f;
+}
+
+.kontrakty-contract__warn {
+  font-size: 0.8rem;
+  color: #d9a05f;
+}
+
+.kontrakty-contract__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-start;
+}
+
+.kontrakty-contract__confirm-text {
+  font-size: 0.8rem;
+  color: #d9705f;
+}
