@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { CONSTRUCTION_RESERVE } from "./building";
+import { UPKEEP_PER_DAY } from "./guild";
 import { TICKS_PER_DAY } from "./region";
+import { emptyCargo, type Ship } from "./ship";
 import { tick } from "./tick";
-import { createWorld } from "./world";
+import { createWorld, type World } from "./world";
 
 /**
  * Behavior contracts for the #168 `dayBoundary(world)` extraction
@@ -68,4 +71,117 @@ describe("dayBoundary behavior contracts (#168)", () => {
       }
     });
   }
+});
+
+/** A second ship at the same home port, for the multi-ship sequential-clamp
+ *  test — cargo/location don't matter for upkeep, only fleet-array order. */
+function shipAt(id: string, portId: string): Ship {
+  return { id, name: id, hold: 50, cargo: emptyCargo(), location: { kind: "docked", portId } };
+}
+
+/** World with an arbitrary purse and fleet, one day (24 ticks) away from its
+ *  first boundary — upkeep has no Headquarters precondition (spec: a ship
+ *  costs thalers even when idle, HQ or not). */
+function worldWith(thalers: number, ships: readonly Ship[]): World {
+  const w = createWorld("upkeep-fixture");
+  return { ...w, company: { ...w.company, thalers, ships } };
+}
+
+describe("ship upkeep (#95 — daily per-ship charge, Reserve floor)", () => {
+  const homePort = createWorld("upkeep-fixture").region.ports[0].id;
+
+  it("charges UPKEEP_PER_DAY per ship when the purse sits comfortably above the Reserve", () => {
+    let world = worldWith(10_000, [shipAt("s0", homePort)]);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+    expect(world.company.thalers).toBe(10_000 - UPKEEP_PER_DAY);
+    const upkeepEvents = world.ledger.filter((e) => e.kind === "upkeep");
+    expect(upkeepEvents).toEqual([
+      { kind: "upkeep", tick: world.tick, shipId: "s0", thalers: UPKEEP_PER_DAY },
+    ]);
+  });
+
+  it("purse at the Reserve exactly: no charge, no Ledger event", () => {
+    let world = worldWith(CONSTRUCTION_RESERVE, [shipAt("s0", homePort)]);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+    expect(world.company.thalers).toBe(CONSTRUCTION_RESERVE);
+    expect(world.ledger.filter((e) => e.kind === "upkeep")).toEqual([]);
+  });
+
+  it("purse below the Reserve: no charge, no Ledger event", () => {
+    let world = worldWith(CONSTRUCTION_RESERVE - 50, [shipAt("s0", homePort)]);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+    expect(world.company.thalers).toBe(CONSTRUCTION_RESERVE - 50);
+    expect(world.ledger.filter((e) => e.kind === "upkeep")).toEqual([]);
+  });
+
+  it("partial charge lands exactly at the Reserve when the full fee would cross it", () => {
+    let world = worldWith(CONSTRUCTION_RESERVE + 5, [shipAt("s0", homePort)]);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+    expect(world.company.thalers).toBe(CONSTRUCTION_RESERVE);
+    expect(world.ledger.filter((e) => e.kind === "upkeep")).toEqual([
+      { kind: "upkeep", tick: world.tick, shipId: "s0", thalers: 5 },
+    ]);
+  });
+
+  it("multi-ship sequential clamp: fleet-array order, one ship's charge limits the next's", () => {
+    // purse = RESERVE + 15: s0 charged min(10, 15) = 10 (purse -> RESERVE+5),
+    // s1 charged min(10, 5) = 5 (purse -> RESERVE exactly). Deterministic on
+    // fleet-array order, not ship id.
+    let world = worldWith(CONSTRUCTION_RESERVE + 15, [
+      shipAt("s0", homePort),
+      shipAt("s1", homePort),
+    ]);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+    expect(world.company.thalers).toBe(CONSTRUCTION_RESERVE);
+    expect(world.ledger.filter((e) => e.kind === "upkeep")).toEqual([
+      { kind: "upkeep", tick: world.tick, shipId: "s0", thalers: 10 },
+      { kind: "upkeep", tick: world.tick, shipId: "s1", thalers: 5 },
+    ]);
+  });
+
+  it("a zero-per-ship charge never emits a Ledger event, even mid-fleet", () => {
+    // purse = RESERVE exactly + one ship's headroom fully consumed by s0:
+    // s0 charged 10 (purse -> RESERVE), s1 charged 0 (no headroom) -> no event.
+    let world = worldWith(CONSTRUCTION_RESERVE + 10, [
+      shipAt("s0", homePort),
+      shipAt("s1", homePort),
+    ]);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+    expect(world.company.thalers).toBe(CONSTRUCTION_RESERVE);
+    expect(world.ledger.filter((e) => e.kind === "upkeep")).toEqual([
+      { kind: "upkeep", tick: world.tick, shipId: "s0", thalers: 10 },
+    ]);
+  });
+
+  it("upkeep lands inside the same day's netWorth curve point", () => {
+    let world = worldWith(10_000, [shipAt("s0", homePort)]);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+    const netWorth = world.ledger.filter((e) => e.kind === "netWorth");
+    expect(netWorth.length).toBe(1);
+    expect(netWorth[0]).toMatchObject({ thalers: 10_000 - UPKEEP_PER_DAY });
+  });
+
+  it("charged before contract settlements/offer refresh, after price snapshots (order asserted via netWorth total)", () => {
+    // With no HQ (no cargo value) and one ship, netWorth.total must equal the
+    // post-upkeep purse exactly — proving upkeep already landed before the
+    // snapshot, not after.
+    let world = worldWith(10_000, [shipAt("s0", homePort)]);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+    const netWorth = world.ledger.filter((e) => e.kind === "netWorth")[0] as {
+      total: number;
+    };
+    expect(netWorth.total).toBe(10_000 - UPKEEP_PER_DAY);
+  });
+
+  it("determinism: two fresh runs with the same seed/fleet/purse are byte-equal", () => {
+    const run = () => {
+      let world = worldWith(CONSTRUCTION_RESERVE + 15, [
+        shipAt("s0", homePort),
+        shipAt("s1", homePort),
+      ]);
+      for (let i = 0; i < 5 * TICKS_PER_DAY; i++) world = tick(world, []);
+      return world;
+    };
+    expect(JSON.stringify(run())).toBe(JSON.stringify(run()));
+  });
 });

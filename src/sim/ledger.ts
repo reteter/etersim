@@ -87,6 +87,12 @@ export type LedgerEvent =
       readonly kind: "enrollmentFee";
       readonly tick: number;
       readonly guildId: GuildId;
+    }
+  | {
+      readonly kind: "upkeep";
+      readonly tick: number;
+      readonly shipId: ShipId;
+      readonly thalers: number;
     };
 
 /** Appends one event to the Ledger. The single seam every mutation point

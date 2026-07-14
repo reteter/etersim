@@ -193,6 +193,7 @@ describe("Ledger wiring — exactly one event per mutation (scripted manual run)
         case "founding":
         case "autoDraw":
         case "rush":
+        case "upkeep":
           return sum - e.thalers;
         default:
           return sum;
