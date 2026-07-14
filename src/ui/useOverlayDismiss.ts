@@ -8,11 +8,13 @@ import type { MouseEvent } from "react";
  * starts inside the panel never has the backdrop `<div>` as its event
  * target, so nothing here needs `stopPropagation` to protect it.
  *
- * Shared because every current overlay (PriceBoardOverlay, LedgerOverlay,
- * HeadquartersPanel) renders the same `.overlay` > `.overlay__panel` shape;
- * wire `onBackdropClick` onto that outer `<div>`. CreditsOverlay and
- * OptionsOverlay share the shape too but are deliberately left untouched —
- * out of scope for #126.
+ * Shared because every current overlay built on `OverlayShell`
+ * (PriceBoardOverlay, LedgerOverlay, HeadquartersPanel; #181) renders the
+ * same `.overlay` > `.overlay__panel` shape — `OverlayShell` wires
+ * `onBackdropClick` onto that outer `<div>` once, so individual overlays no
+ * longer call this hook directly. CreditsOverlay and OptionsOverlay share
+ * the shape too but are deliberately left untouched — out of scope for
+ * #126/#181.
  */
 export function useOverlayDismiss(onClose: () => void) {
   useEffect(() => {
