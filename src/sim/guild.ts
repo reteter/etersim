@@ -43,13 +43,6 @@ export const POINTS_BREACH_OR_RESIGN = -3;
  *  always derived from points via `rankOf`, never stored. */
 export const RANK_THRESHOLDS: readonly [number, number, number, number] = [0, 4, 10, 18];
 
-/** A company's enrollment + progress in one guild. Enrolled iff the guild's
- *  key is present in `Company.guilds` (world.ts). Rank is derived, never
- *  stored, so it can never drift from points. */
-export interface GuildStanding {
-  readonly points: number;
-}
-
 /** Derives rank 1-4 from (floored-at-0) progress points, per
  *  `RANK_THRESHOLDS`. Points below 0 clamp to rank 1 — `rankOf` never
  *  assumes its caller already floored. */

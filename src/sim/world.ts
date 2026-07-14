@@ -1,7 +1,7 @@
 import { generateShipName, type Headquarters } from "./building";
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
-import type { GuildId, GuildStanding } from "./guild";
+import type { GuildId } from "./guild";
 import type { LedgerEvent } from "./ledger";
 import { effectiveBase, price } from "./market";
 import type { LaneId, PortId, Region } from "./region";
@@ -25,7 +25,7 @@ export interface Company {
   readonly headquarters?: Headquarters;
   /** Guild enrollment + progress (E3, guild.ts): enrolled iff the guild's key
    *  is present. Rank is always derived via `rankOf`, never stored here. */
-  readonly guilds: Partial<Record<GuildId, GuildStanding>>;
+  readonly guilds: Partial<Record<GuildId, { points: number }>>;
 }
 
 /**
