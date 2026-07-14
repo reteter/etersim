@@ -1101,6 +1101,38 @@ body {
   cursor: not-allowed;
 }
 
+/* Founding savings bar (#157) — same green as .headquarters-progress__fill:
+   both mean "progress toward a construction goal" (ADR-0006). */
+.founding-goal {
+  margin: 0.75rem 0;
+}
+
+.founding-goal .headquarters-found-btn {
+  margin: 0 0 0.5rem;
+}
+
+.founding-goal__bar {
+  position: relative;
+  height: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.founding-goal__fill {
+  height: 100%;
+  background: #5fbf7f;
+}
+
+.founding-goal__count {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #a8b2c2;
+}
+
 .headquarters-section {
   margin: 0.75rem 0;
 }

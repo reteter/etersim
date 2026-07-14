@@ -112,6 +112,38 @@ test.describe('save-injection harness smoke test', () => {
   });
 });
 
+test.describe('Founding progress bar (#157)', () => {
+  test('pre-founding the bar reflects the purse against the ₸3,000 gate at every port', async ({
+    page,
+  }) => {
+    await continueWithWorld(page, fundedWorld('founding-bar', 1_500));
+    await page.locator('g.port').first().click({ force: true });
+
+    const bar = page.getByRole('progressbar', { name: 'Founding savings progress' });
+    await expect(bar).toBeVisible();
+    await expect(bar).toHaveAttribute('aria-valuenow', '1500');
+    await expect(bar).toHaveAttribute('aria-valuemax', '3000'); // the real gate, never ₸2,500
+    await expect(page.locator('.founding-goal__count')).toContainText('₸1500 / ₸3000');
+    await expect(page.getByRole('button', { name: /Załóż siedzibę/ })).toBeDisabled();
+
+    // Same purse, same bar at any other port (one company-wide goal).
+    await page.locator('g.port').nth(1).click({ force: true });
+    await expect(bar).toHaveAttribute('aria-valuenow', '1500');
+  });
+
+  test('a purse above the gate clamps the bar at 100%; founding removes it', async ({ page }) => {
+    await continueWithWorld(page, fundedWorld('founding-bar-full'));
+    await page.locator('g.port').first().click({ force: true });
+
+    const bar = page.getByRole('progressbar', { name: 'Founding savings progress' });
+    await expect(bar).toHaveAttribute('aria-valuenow', '3000'); // clamped at the gate
+    await expect(page.locator('.founding-goal__count')).toContainText('₸3000 / ₸3000');
+
+    await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
+    await expect(bar).toHaveCount(0); // pre-founding branch gone once founded
+  });
+});
+
 test.describe('Headquarters — Budowa tab (#84)', () => {
   test('found from PortPanel → TopBar shortcut appears; place order → progress renders; rush shows quote and executes', async ({
     page,
