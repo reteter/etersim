@@ -277,6 +277,33 @@ function settleOne(world: World, contract: ActiveContract): [World, ActiveContra
     ];
   }
 
+  const consecutiveMisses = contract.consecutiveMisses + 1;
+  if (consecutiveMisses >= 2) {
+    // Breach: the guild terminates the contract (CONTEXT.md — Settlement
+    // period, "large rank hit"). The breach penalty REPLACES this period's
+    // miss penalty (owner decision — parity with resignContract's same -3
+    // cost, not additive): exactly one `settlement` event, outcome
+    // "breached", for the full POINTS_BREACH_OR_RESIGN delta — never a
+    // "missed" event plus a second silent hit.
+    const breachPoints = Math.max(0, points + POINTS_BREACH_OR_RESIGN);
+    let w: World = {
+      ...world,
+      company: {
+        ...world.company,
+        guilds: { ...world.company.guilds, [contract.guildId]: { points: breachPoints } },
+      },
+    };
+    w = appendLedgerEvent(w, {
+      kind: "settlement",
+      tick: w.tick,
+      contractId: contract.id,
+      guildId: contract.guildId,
+      outcome: "breached",
+      pointsDelta: POINTS_BREACH_OR_RESIGN,
+    });
+    return [w, undefined];
+  }
+
   const missedPoints = Math.max(0, points + POINTS_MISSED);
   let w: World = {
     ...world,
@@ -293,20 +320,6 @@ function settleOne(world: World, contract: ActiveContract): [World, ActiveContra
     outcome: "missed",
     pointsDelta: POINTS_MISSED,
   });
-
-  const consecutiveMisses = contract.consecutiveMisses + 1;
-  if (consecutiveMisses >= 2) {
-    // Breach: the guild terminates the contract (CONTEXT.md — Settlement
-    // period, "large rank hit"). No new Ledger kind for this — the miss just
-    // recorded already carries the audit trail for the period; breach is a
-    // silent additional points hit, same shape as a player resignation.
-    const breachPoints = Math.max(0, missedPoints + POINTS_BREACH_OR_RESIGN);
-    w = {
-      ...w,
-      company: { ...w.company, guilds: { ...w.company.guilds, [contract.guildId]: { points: breachPoints } } },
-    };
-    return [w, undefined];
-  }
 
   return [
     w,

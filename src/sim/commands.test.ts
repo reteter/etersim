@@ -384,14 +384,21 @@ describe("resignContract command (#94)", () => {
     expect(resigned.company.guilds.agrarian).toEqual({ points: 0 });
   });
 
-  it("no Ledger event on resignation (only the state mutation)", () => {
+  it("emits a settlement(resigned, -3) Ledger event — the audit trail must carry termination too", () => {
     const offer = sampleOffer({ tier: 1 });
-    let w = contractWorld("resign-no-ledger", 5000, "agrarian", 5);
+    let w = contractWorld("resign-ledger", 5000, "agrarian", 5);
     w = { ...w, contractOffers: [offer] };
     const accepted = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
     const contractId = accepted.company.contracts[0].id;
     const resigned = applyCommand(accepted, { kind: "resignContract", contractId });
-    expect(resigned.ledger).toEqual(accepted.ledger);
+    expect(resigned.ledger.length).toBe(accepted.ledger.length + 1);
+    expect(resigned.ledger[resigned.ledger.length - 1]).toMatchObject({
+      kind: "settlement",
+      contractId,
+      guildId: "agrarian",
+      outcome: "resigned",
+      pointsDelta: -3,
+    });
   });
 });
 
@@ -611,13 +618,16 @@ describe("contract settlement at the day boundary (#94)", () => {
     let world = accepted;
     for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // miss 1: 5-1=4
     expect(world.company.contracts).toHaveLength(1);
-    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // miss 2 -> breach: 4-1-3=0
+    // miss 2 -> breach: the breach penalty REPLACES this period's miss
+    // penalty (owner decision — parity with resignContract's same -3 cost,
+    // not additive): 4 + POINTS_BREACH_OR_RESIGN(-3) = 1, not 4-1-3=0.
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
 
     expect(world.company.contracts).toEqual([]);
-    expect(world.company.guilds.agrarian).toEqual({ points: 0 });
+    expect(world.company.guilds.agrarian).toEqual({ points: 1 });
     const settlementEvents = world.ledger.filter((e) => e.kind === "settlement");
     expect(settlementEvents).toHaveLength(2);
-    expect(settlementEvents[1]).toMatchObject({ outcome: "missed", pointsDelta: -1 });
+    expect(settlementEvents[1]).toMatchObject({ outcome: "breached", pointsDelta: -3 });
   });
 
   it("settlement math is recomputable from trade events alone (audit trail)", () => {
@@ -713,6 +723,70 @@ describe("contract settlement at the day boundary (#94)", () => {
     expect(JSON.stringify(a.ledger)).toBe(JSON.stringify(b.ledger));
     expect(a.ledger.some((e) => e.kind === "contractFee")).toBe(true);
     expect(a.ledger.some((e) => e.kind === "settlement")).toBe(true);
+  });
+
+  it("invariant: summing settlement.pointsDelta over a script (met, missed, breach, resign) reproduces the guild's actual points (wave-check finding — the undercount bug)", () => {
+    // First contract: run to breach (miss, miss -> breached, replacing the
+    // second miss's own -1, per the owner's parity decision).
+    let w = contractWorld("points-invariant", 5000, "agrarian", 0);
+    const offerA = sampleOffer({
+      id: "agrarian:a:grain",
+      portId: w.region.ports[0].id,
+      good: "grain",
+      tier: 1,
+      quotaPerPeriod: 10,
+      periodDays: 1,
+      feePerPeriod: 200,
+    });
+    w = { ...w, contractOffers: [offerA] };
+    let world = applyCommand(w, { kind: "acceptContract", offerId: offerA.id });
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // miss -> -1
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // miss -> breached -3
+
+    // Second contract, same guild: met once (+1), then resigned (-3).
+    const portId = world.region.ports[0].id;
+    const offerB = sampleOffer({
+      id: "agrarian:b:grain",
+      portId,
+      good: "grain",
+      tier: 1,
+      quotaPerPeriod: 10,
+      periodDays: 1,
+      feePerPeriod: 200,
+    });
+    world = { ...world, contractOffers: [offerB] };
+    world = applyCommand(world, { kind: "acceptContract", offerId: offerB.id });
+    const shipId = world.company.ships[0].id;
+    world = {
+      ...world,
+      company: {
+        ...world.company,
+        ships: world.company.ships.map((s) =>
+          s.id === shipId
+            ? { ...s, cargo: { ...s.cargo, grain: 10 }, location: { kind: "docked", portId } }
+            : s,
+        ),
+      },
+    };
+    world = applyCommand(world, { kind: "sell", shipId, good: "grain", qty: 10 });
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // met -> +1
+    const contractIdB = world.company.contracts[0].id;
+    world = applyCommand(world, { kind: "resignContract", contractId: contractIdB }); // -3
+
+    const summedDelta = world.ledger
+      .filter((e) => e.kind === "settlement" && e.guildId === "agrarian")
+      .reduce((sum, e) => sum + (e as { pointsDelta: number }).pointsDelta, 0);
+    // Raw sum (unfloored): -1 -3 +1 -3 = -6; actual stored points floor at 0
+    // after each individual delta (guild.ts — "floor at 0"), so the two can
+    // only be compared once the same floor-at-0-per-step folding is applied.
+    let folded = 0;
+    for (const e of world.ledger) {
+      if (e.kind === "settlement" && e.guildId === "agrarian") {
+        folded = Math.max(0, folded + e.pointsDelta);
+      }
+    }
+    expect(folded).toBe(world.company.guilds.agrarian!.points);
+    expect(summedDelta).toBe(-6); // sanity: the raw sum this invariant is folding
   });
 });
 

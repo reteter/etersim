@@ -112,9 +112,12 @@ function describeTransaction(event: TransactionEvent, world: World): string {
     // issue's scope wall (sim-only task); flagged in the completion report.
     case "upkeep":
       return `Upkeep fee (${shipName(world, event.shipId)})`;
-    // contractFee/settlement (E3, #94): same minimal-exhaustiveness precedent
-    // as enrollmentFee/upkeep above — no dedicated Kontrakty-tab UI treatment;
-    // out of this sim-only issue's scope wall, flagged in the completion report.
+    // contractFee/settlement (E3, #94/#94-fix): same minimal-exhaustiveness
+    // precedent as enrollmentFee/upkeep above — no dedicated Kontrakty-tab UI
+    // treatment; out of this sim-only issue's scope wall, flagged in the
+    // completion report. `settlement.outcome` now widens to "met" | "missed" |
+    // "breached" | "resigned" (owner decision — termination is part of the
+    // audit stream) — this generic interpolation covers all four unchanged.
     case "contractFee":
       return `Contract fee (contract ${event.contractId})`;
     case "settlement":

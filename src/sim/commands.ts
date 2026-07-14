@@ -367,12 +367,13 @@ export function applyCommand(world: World, command: Command): World {
     }
     case "resignContract": {
       // Allowed any time, same cost as a guild-side breach (docs/specs/E3 —
-      // Fulfilment and settlement). No Ledger event: the settlement kind
-      // audits met/missed periods, not this player-initiated exit.
+      // Fulfilment and settlement). Emits a `settlement` event (outcome
+      // "resigned") — the wave-check finding that summing settlement.pointsDelta
+      // must reproduce a guild's actual points; a silent exit would undercount it.
       const contract = world.company.contracts.find((c) => c.id === command.contractId);
       if (!contract) return world;
       const points = world.company.guilds[contract.guildId]?.points ?? 0;
-      return {
+      const resigned: World = {
         ...world,
         company: {
           ...world.company,
@@ -383,6 +384,14 @@ export function applyCommand(world: World, command: Command): World {
           },
         },
       };
+      return appendLedgerEvent(resigned, {
+        kind: "settlement",
+        tick: world.tick,
+        contractId: contract.id,
+        guildId: contract.guildId,
+        outcome: "resigned",
+        pointsDelta: POINTS_BREACH_OR_RESIGN,
+      });
     }
     case "renameShip": {
       // Cosmetic, player-editable (#54); no RNG, no other field touched.

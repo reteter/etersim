@@ -106,7 +106,12 @@ export type LedgerEvent =
       readonly tick: number;
       readonly contractId: string;
       readonly guildId: GuildId;
-      readonly outcome: "met" | "missed";
+      /** "breached" (two consecutive misses; the guild terminates) and
+       *  "resigned" (the player exits, same -3 cost) both carry the contract's
+       *  termination in the audit trail — summing `pointsDelta` over every
+       *  settlement event for a guild must reproduce its actual points
+       *  (docs/specs/E3-contracts-and-guilds.md — Ledger). */
+      readonly outcome: "met" | "missed" | "breached" | "resigned";
       readonly pointsDelta: number;
     };
 
