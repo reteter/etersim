@@ -82,7 +82,11 @@ sit in a coder worktree (incident 0008).
 
 **Batching.** 2–4 small same-area issues per coder package; separate branch + PR per
 issue, each cut from `main` (disjoint files → no stacks); the wave check reads them
-all in one pass.
+all in one pass. When a stack is unavoidable (hard dependency), the child's PR opens
+only **after** its base has merged, already retargeted to `main` — a child PR based
+on a feature branch invites the batch-merge trap of incident 0010. After any merge
+batch, verify each PR's content is reachable from `origin/main` before deleting
+branches.
 
 **PR timing.** Coders push branches and report; **PRs open only after the wave check
 closes** (Orchestrator opens them, or explicitly instructs the coder to). An open PR
