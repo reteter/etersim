@@ -13,7 +13,7 @@ import {
   type PortId,
   type Region,
 } from "./region";
-import { nextFloat, type RngState } from "./rng";
+import { deriveSubstream, nextFloat, nextUint32, type RngState } from "./rng";
 import type { Route, RouteId } from "./route";
 import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
 import { replaceShip, snapshotPrices, type World } from "./world";
@@ -231,7 +231,15 @@ function chargeUpkeep(world: World): World {
  * day-boundary order).
  */
 function dayBoundary(world: World): World {
-  const [flowDrift, rng] = driftStep(world.region, world.flowDrift, world.rng);
+  // Every day-boundary consumer (drift, offer generation — #93) draws from
+  // its own isolated substream derived from `world.rng` *before* this boundary
+  // advances it (deriveSubstream, rng.ts) — so no consumer's draw count can
+  // perturb another's. The main stream itself advances exactly once,
+  // unconditionally, regardless of how many (if any) draws a substream makes
+  // internally; that advanced state is the only one ever threaded back into
+  // `World.rng` (docs/specs/E3-contracts-and-guilds.md — Contracts).
+  const [flowDrift] = driftStep(world.region, world.flowDrift, deriveSubstream(world.rng, "drift"));
+  const [, rng] = nextUint32(world.rng);
 
   let next: World = {
     ...world,
