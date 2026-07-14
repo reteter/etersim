@@ -21,6 +21,7 @@ import {
 import { useGameStore } from "../store/gameStore";
 import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
+import { FOUNDING_GOAL, foundingProgress } from "./foundingProgress";
 import { ShipIcon } from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
@@ -332,21 +333,40 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
 
   if (!headquarters) {
     // Founding may not dip into the Reserve (#122 — E9 spec §The Reserve).
-    const canAfford = world.company.thalers >= HEADQUARTERS_COST + CONSTRUCTION_RESERVE;
+    const thalers = world.company.thalers;
+    const canAfford = thalers >= FOUNDING_GOAL;
     return (
-      <button
-        type="button"
-        className="headquarters-found-btn"
-        disabled={!canAfford}
-        title={
-          canAfford
-            ? undefined
-            : `wymaga ₸${HEADQUARTERS_COST + CONSTRUCTION_RESERVE} — koszt ₸${HEADQUARTERS_COST} + nienaruszalna rezerwa ₸${CONSTRUCTION_RESERVE}`
-        }
-        onClick={() => dispatch({ kind: "foundHeadquarters", portId })}
-      >
-        Załóż siedzibę — ₸{HEADQUARTERS_COST}
-      </button>
+      <div className="founding-goal">
+        <button
+          type="button"
+          className="headquarters-found-btn"
+          disabled={!canAfford}
+          title={
+            canAfford
+              ? undefined
+              : `wymaga ₸${FOUNDING_GOAL} — koszt ₸${HEADQUARTERS_COST} + nienaruszalna rezerwa ₸${CONSTRUCTION_RESERVE}`
+          }
+          onClick={() => dispatch({ kind: "foundHeadquarters", portId })}
+        >
+          Załóż siedzibę — ₸{HEADQUARTERS_COST}
+        </button>
+        <div
+          className="founding-goal__bar"
+          role="progressbar"
+          aria-label="Founding savings progress"
+          aria-valuenow={Math.min(Math.max(thalers, 0), FOUNDING_GOAL)}
+          aria-valuemin={0}
+          aria-valuemax={FOUNDING_GOAL}
+        >
+          <div
+            className="founding-goal__fill"
+            style={{ width: `${foundingProgress(thalers) * 100}%` }}
+          />
+        </div>
+        <span className="founding-goal__count">
+          ₸{thalers} / ₸{FOUNDING_GOAL}
+        </span>
+      </div>
     );
   }
 

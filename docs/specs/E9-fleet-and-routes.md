@@ -113,6 +113,9 @@ Rules, all locked:
   `HEADQUARTERS_COST + CONSTRUCTION_RESERVE` in the purse — see §The Reserve below.
   Below the threshold the founding button is disabled with the honest label:
   "requires ₸3,000 — founding may not touch the ₸500 reserve".
+- **Founding progress bar (added 2026-07-14, #157)**: the pre-founding branch also
+  shows a static savings bar `₸X / ₸3,000` targeting the same gate — see
+  `docs/design-notes/founding-progress-bar-2026-07-14.md`.
 
 ### Ship construction: the market builds your fleet
 
