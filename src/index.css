@@ -46,10 +46,25 @@ body {
   border-bottom: 1px solid #2a3040;
 }
 
+.top-bar__speed-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  margin-left: auto;
+}
+
 .top-bar__speed {
   display: flex;
   gap: 0.25rem;
-  margin-left: auto;
+}
+
+/* Pause-cause note (#130): transient, sits directly under the speed
+   controls it explains. */
+.top-bar__pause-note {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #a8b2c2;
 }
 
 .top-bar__menu {

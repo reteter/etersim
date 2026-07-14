@@ -142,6 +142,55 @@ describe("gameStore", () => {
   });
 });
 
+describe("gameStore pauseCause (#130)", () => {
+  it("starts with no pause cause", () => {
+    expect(store().pauseCause).toBeNull();
+  });
+
+  it("setSpeed('paused') without a cause defaults to manual", () => {
+    store().newGame(7);
+    store().setSpeed("paused");
+    expect(store().pauseCause).toBe("manual");
+  });
+
+  it("togglePause (button/hotkey) marks the pause manual", () => {
+    store().newGame(7);
+    store().togglePause();
+    expect(store().speed).toBe("paused");
+    expect(store().pauseCause).toBe("manual");
+  });
+
+  it("setSpeed('paused', 'autoArrival') marks the pause automatic", () => {
+    store().newGame(7);
+    store().setSpeed("paused", "autoArrival");
+    expect(store().pauseCause).toBe("autoArrival");
+  });
+
+  it("resuming (any non-paused setSpeed) clears the pause cause", () => {
+    store().newGame(7);
+    store().setSpeed("paused", "autoArrival");
+    expect(store().pauseCause).toBe("autoArrival");
+    store().setSpeed(1);
+    expect(store().pauseCause).toBeNull();
+  });
+
+  it("togglePause resuming from an auto-pause clears the cause", () => {
+    store().newGame(7);
+    store().setSpeed(10);
+    store().setSpeed("paused", "autoArrival");
+    store().togglePause();
+    expect(store().speed).toBe(10);
+    expect(store().pauseCause).toBeNull();
+  });
+
+  it("reset/newGame/loadWorld clear the pause cause", () => {
+    store().newGame(7);
+    store().setSpeed("paused", "autoArrival");
+    store().reset();
+    expect(store().pauseCause).toBeNull();
+  });
+});
+
 describe("gameStore Controlled Ship", () => {
   it("newGame designates the first ship as Controlled and clears on reset", () => {
     store().newGame("etersim");
@@ -204,6 +253,7 @@ describe("gameStore auto-pause on arrival", () => {
       portId: target.id,
     });
     expect(store().speed).toBe("paused");
+    expect(store().pauseCause).toBe("autoArrival"); // #130: distinct from a manual pause
   });
 
   it("stays running on arrival when the setting is off", () => {

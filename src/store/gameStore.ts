@@ -26,6 +26,12 @@ export type Selection =
   | { readonly kind: "ship"; readonly id: ShipId }
   | null;
 
+/** Why the game is currently paused (#130 — pause-cause note): a UI-only
+ *  readout, never a domain concept (docs/design-notes/pause-cause-note-2026-07-14.md).
+ *  "manual" covers the pause button and its hotkey; "autoArrival" is the
+ *  arrival auto-pause (see `advance` below). */
+export type PauseCause = "manual" | "autoArrival";
+
 interface GameState {
   readonly world: World | null;
   readonly speed: Speed;
@@ -58,11 +64,20 @@ interface GameState {
    * `selection` (port/ship panel focus).
    */
   readonly selectedRouteId: RouteId | null;
+  /**
+   * Ephemeral pause-cause readout (#130), meaningful only while
+   * `speed === "paused"`: null otherwise. Never serialized (not the save,
+   * not settings) — a UI state readout, not a domain concept.
+   */
+  readonly pauseCause: PauseCause | null;
 
   newGame(seed: number | string): void;
   loadWorld(world: World): void;
   reset(): void;
-  setSpeed(speed: Speed): void;
+  /** `cause` defaults to "manual" — every caller except the arrival
+   *  auto-pause path (below) is a player-initiated pause. Ignored (and the
+   *  cause cleared to null) when `speed !== "paused"`. */
+  setSpeed(speed: Speed, cause?: PauseCause): void;
   /** Pauses at the current speed (remembered in `lastActiveSpeed`) if
    *  running, or resumes to `lastActiveSpeed` if already paused (#123). The
    *  TopBar's pause button uses this instead of `setSpeed("paused")` so
@@ -88,6 +103,7 @@ const INITIAL = {
   selection: null,
   controlledShipId: null,
   selectedRouteId: null,
+  pauseCause: null,
 };
 
 /** The Controlled Ship a fresh world starts with — the company's first ship. */
@@ -145,12 +161,15 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
   // Pause-drops-carry is owned by elapsedToTicks; the next frame applies it.
   // Pausing is also an autosave point (spec: autosave on pause).
-  setSpeed: (speed) => {
+  setSpeed: (speed, cause = "manual") => {
     set((state) => ({
       speed,
       // A pause (any Speed === "paused") never overwrites lastActiveSpeed —
       // it keeps remembering the rate the player had running (#123).
       lastActiveSpeed: speed === "paused" ? state.lastActiveSpeed : speed,
+      // #130: cause is only meaningful while paused; resuming (any non-paused
+      // speed) always clears it, regardless of what set it.
+      pauseCause: speed === "paused" ? cause : null,
     }));
     if (speed === "paused") {
       const { world } = get();
@@ -211,7 +230,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
         !underActiveRoute(shipAfter) &&
         arrivedAtCourseDestination(shipBefore, shipAfter)
       ) {
-        get().setSpeed("paused");
+        get().setSpeed("paused", "autoArrival");
       }
     }
   },

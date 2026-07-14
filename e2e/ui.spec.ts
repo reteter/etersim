@@ -1,4 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
+import { createWorld, type Ship, type World } from '../src/sim';
+import { SAVE_VERSION } from '../src/store/persistence';
 
 async function startNewGame(page: Page) {
   await page.goto('/');
@@ -658,5 +660,69 @@ test.describe('ambient osmosis pulses on the map (#63)', () => {
     // No animation under reduced motion (src/index.css); the diagnostic
     // (a busy lane) still shows through opacity, not motion.
     await expect(pulse).toHaveCSS('animation-name', 'none');
+  });
+});
+
+test.describe('pause-cause note (#130)', () => {
+  const AUTOSAVE_KEY = 'etersim.autosave';
+  const PAUSE_NOTE_TEXT = /auto-pauza: statek zacumował \(wyłączalna w Opcjach\)/;
+
+  /** s0 one tick away from docking at the far end of its shortest lane — lets
+   *  the test trigger arrival auto-pause without waiting out a full voyage.
+   *  autoPauseOnArrival defaults to on (src/store/settings.ts), so no
+   *  settings slot needs seeding. */
+  function almostArrivedWorld(seed: string): World {
+    const w0 = createWorld(seed);
+    const lane = [...w0.region.lanes].sort((x, y) => x.voyageTicks - y.voyageTicks)[0];
+    const ship: Ship = {
+      ...w0.company.ships[0],
+      location: {
+        kind: 'underway',
+        course: [{ laneId: lane.id, to: lane.b }],
+        voyageIndex: 0,
+        voyageProgressTicks: lane.voyageTicks - 1,
+        destination: lane.b,
+      },
+    };
+    return { ...w0, company: { ...w0.company, ships: [ship] } };
+  }
+
+  async function continueWithAlmostArrivedWorld(page: Page, seed: string) {
+    const json = JSON.stringify({ version: SAVE_VERSION, world: almostArrivedWorld(seed) });
+    await page.addInitScript(
+      ({ key, json }) => window.localStorage.setItem(key, json),
+      { key: AUTOSAVE_KEY, json },
+    );
+    await page.goto('/');
+    await page.getByRole('button', { name: /continue/i }).click();
+    await expect(page.locator('svg.region-map')).toBeVisible();
+  }
+
+  test('note appears on arrival auto-pause, absent on manual pause, gone on resume', async ({
+    page,
+  }) => {
+    await continueWithAlmostArrivedWorld(page, 'pause-cause');
+    const note = page.getByRole('status').filter({ hasText: PAUSE_NOTE_TEXT });
+
+    // loadWorld always starts paused (no cause yet) — the note must not
+    // appear just because the game happens to be stopped.
+    await expect(note).not.toBeVisible();
+
+    // Run at 1x: one tick (1000ms sim-time) later the ship docks and
+    // arrival auto-pause fires.
+    await page.getByRole('button', { name: '1x' }).click();
+    await expect(page.getByRole('button', { name: '⏸' })).toHaveAttribute('aria-pressed', 'true', {
+      timeout: 5_000,
+    });
+    await expect(note).toBeVisible();
+
+    // Resume (space): the note is cleared along with the pause cause.
+    await page.keyboard.press('Space');
+    await expect(note).not.toBeVisible();
+
+    // Manual pause (button): never shows the note.
+    await page.getByRole('button', { name: '⏸' }).click();
+    await expect(page.getByRole('button', { name: '⏸' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(note).not.toBeVisible();
   });
 });
