@@ -338,8 +338,9 @@ _Avoid_: port tax, harbor dues, toll
 ### Guilds & contracts
 
 Terms locked at the M3 grill (2026-07-09). Axis: the region gains faces — institutions
-with addresses and demands; reputation is the long-term currency. None of these exist in
-the build yet (M3: E12/E3/E13).
+with addresses and demands; reputation is the long-term currency. E3 wave 1–2 shipped the
+sim model for Guilds, Enrollment, Ranks and Upkeep (see per-term notes); Contracts,
+Settlement periods, the Contract board and Building permits are not in the build yet.
 
 **Guild** (PL: gildia):
 An NPC institution, one per non-freeport Port archetype — five in a region (working
@@ -348,6 +349,8 @@ mining, Foundry League / industrial, Livingwood Consortium / verdant; names are 
 tunable). A Guild expresses needs as Contracts and tracks the Company's Rank. Not an
 agent: guilds own no ships and make no trades — they read the same living economy the
 player reads.
+_Implementation_: shipped in #168/#170 — `guild.ts`: `GuildId = EconomicArchetype`,
+`GUILDS` (five defs, one per Economic archetype). Contracts not yet.
 _Avoid_: faction, NPC company
 
 **Guildhouse** (PL: dom gildii):
@@ -361,12 +364,18 @@ The one-time act (plus thaler fee) of joining a Guild — requires a founded Hea
 (companies deal with guilds, lone shippers don't) and grants Rank 1. Like founding, it
 is paperwork: no ship presence required. Which guilds to join first is a strategic
 choice, not a checklist.
+_Implementation_: shipped in #92/#170 — `enroll` command (`commands.ts`), gated on a
+founded Headquarters and `ENROLLMENT_FEE` (₸400, `guild.ts`); pays via the
+`enrollmentFee` Ledger event kind.
 _Avoid_: membership (as identifier), subscription
 
 **Rank** (PL: ranga):
 The Company's discrete standing with one Guild: four steps, a facade over hidden
 progress points (settled period +, missed period −, breach −−; ranks can fall). Rank
 gates which Contract tiers the guild offers and which Building permits it grants.
+_Implementation_: model shipped in #168/#170 — `rankOf(points)`, `RANK_THRESHOLDS`
+and the `POINTS_*` constants (`guild.ts`); nothing moves the points yet — that arrives
+with Contract settlement.
 _Avoid_: level, reputation score (as identifiers)
 
 **Reputation** (PL: reputacja):
@@ -422,6 +431,10 @@ below ₸500 upkeep goes unpaid with no consequence — no debt, no arrears; a s
 cost may slow the game down, never kill it. Calibration principle: a lone starter ship
 stays comfortably viable (upkeep must never feel like an unexplained penalty — it ships
 only now because the Ledger makes it legible).
+_Implementation_: shipped in #95/#172 — `UPKEEP_PER_DAY` (₸10, `guild.ts`), charged
+per ship at the day boundary in `tick.ts` as
+`min(UPKEEP_PER_DAY, max(0, purse − CONSTRUCTION_RESERVE))`; its own `upkeep` Ledger
+event kind.
 _Avoid_: maintenance, wages (crew wages remain a parked, separate idea)
 
 ### Harness & evaluation
@@ -471,8 +484,9 @@ performance board (`LedgerOverlay.tsx`) shipped in #86 — Transakcje (transacti
 per-ship filter) and Wartość firmy (SVG company-value chart, no library). A **transaction**
 (UI-only term, not a distinct sim type) is any Ledger event except a netWorth snapshot —
 the Transakcje tab's row unit. The E11 Harness consumer is still pending. M3 extends the
-kind union (contract fees, enrollment fees, upkeep, store/withdraw) and adds a third
-consumer: contract settlement reads fulfilment from the same stream.
+kind union — `enrollmentFee` (#92) and `upkeep` (#95) are in; contract fees and
+store/withdraw follow — and adds a third consumer: contract settlement reads fulfilment
+from the same stream.
 _Avoid_: log, history (as identifiers)
 
 **Direct play** (PL: gra bezpośrednia):
