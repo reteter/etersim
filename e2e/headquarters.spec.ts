@@ -349,6 +349,53 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
   });
 });
 
+test.describe('Headquarters overlay scroll (#176, via OverlayShell #181)', () => {
+  test('a many-stop route editor stays within the viewport; Save/Cancel are reachable by scrolling', async ({
+    page,
+  }) => {
+    const { world, a, b } = routeReadyWorld('hq-many-stops');
+    await continueWithWorld(page, world);
+
+    await page.locator('g.port').first().click({ force: true });
+    await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
+    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await dialog.getByRole('tab', { name: 'Trasy' }).click();
+
+    await dialog.getByRole('button', { name: /^New route$/ }).click();
+    // 12 Stops — far more than fits in the viewport at once. Two of them get
+    // distinct ports so Save clears isValid (>=2 Stops, >=2 distinct ports).
+    for (let i = 0; i < 12; i++) {
+      await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+    }
+    const stopRows = dialog.locator('.stop-row');
+    await expect(stopRows).toHaveCount(12);
+    await stopRows.nth(0).locator('select').selectOption(a);
+    await stopRows.nth(1).locator('select').selectOption(b);
+
+    // The panel is bounded to the viewport (OverlayShell's `.overlay__panel`
+    // max-height), never grows past it the way it did pre-fix (#176) — that
+    // unbounded growth, centered by `.overlay` flex layout, clipped both
+    // ends and made Save/Cancel unreachable. A plain `.click()` on Save
+    // would pass even pre-fix (Playwright auto-scrolls to the target), so
+    // the real assertion is the panel's own bounding box, not click success.
+    const viewport = page.viewportSize()!;
+    const panelBox = await dialog.locator('.overlay__panel').boundingBox();
+    expect(panelBox).not.toBeNull();
+    expect(panelBox!.height).toBeLessThanOrEqual(viewport.height + 1);
+
+    // Save is reachable by scrolling the body (`.overlay__body`, the shell's
+    // single scroll region) — not just present somewhere off-screen.
+    const saveBtn = dialog.getByRole('button', { name: /^Save route$/ });
+    await saveBtn.scrollIntoViewIfNeeded();
+    await expect(saveBtn).toBeInViewport();
+    await expect(saveBtn).toBeEnabled();
+    await saveBtn.click();
+
+    await expect(dialog.locator('.route-row')).toHaveCount(1);
+  });
+});
+
 test.describe('Headquarters overlay dismissal (#126)', () => {
   test('clicking the backdrop closes the overlay; clicking inside the panel does not', async ({
     page,

@@ -21,7 +21,8 @@ import { useGameStore } from "../store/gameStore";
 import { deriveStallReason } from "../store/headquartersStall";
 import { computeLoopMetrics } from "../store/routeMetrics";
 import { BuildProgress } from "./BuildProgress";
-import { useOverlayDismiss } from "./useOverlayDismiss";
+import { OverlayShell } from "./OverlayShell";
+import { Tabs } from "./Tabs";
 
 type Tab = "construction" | "routes";
 
@@ -448,45 +449,27 @@ function RoutesTab({ world }: { world: World }) {
 export function HeadquartersPanel({ onClose }: { onClose: () => void }) {
   const world = useGameStore((s) => s.world);
   const [tab, setTab] = useState<Tab>("construction");
-  const { onBackdropClick } = useOverlayDismiss(onClose);
 
   if (!world || !world.company.headquarters) return null;
 
   return (
-    <div
-      className="overlay"
-      role="dialog"
-      aria-label="Headquarters"
-      aria-modal="true"
-      onClick={onBackdropClick}
+    <OverlayShell
+      ariaLabel="Headquarters"
+      title="Headquarters"
+      onClose={onClose}
+      wide
+      tabs={
+        <Tabs
+          active={tab}
+          onChange={setTab}
+          tabs={[
+            { id: "construction", label: "Budowa" },
+            { id: "routes", label: "Trasy" },
+          ]}
+        />
+      }
     >
-      <div className="overlay__panel overlay__panel--wide">
-        <h2 className="overlay__title">Headquarters</h2>
-        <div className="headquarters-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "construction"}
-            className={tab === "construction" ? "headquarters-tab headquarters-tab--active" : "headquarters-tab"}
-            onClick={() => setTab("construction")}
-          >
-            Budowa
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "routes"}
-            className={tab === "routes" ? "headquarters-tab headquarters-tab--active" : "headquarters-tab"}
-            onClick={() => setTab("routes")}
-          >
-            Trasy
-          </button>
-        </div>
-        {tab === "construction" ? <ConstructionTab world={world} /> : <RoutesTab world={world} />}
-        <button type="button" className="menu-btn" onClick={onClose}>
-          Close
-        </button>
-      </div>
-    </div>
+      {tab === "construction" ? <ConstructionTab world={world} /> : <RoutesTab world={world} />}
+    </OverlayShell>
   );
 }

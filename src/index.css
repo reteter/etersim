@@ -108,15 +108,57 @@ body {
 
 .overlay__panel {
   max-width: 26rem;
+  max-height: 90vh;
   padding: 1.25rem 1.5rem;
   background: #161b24;
   border: 1px solid #2a3040;
   border-radius: 8px;
   color: #e6e6e6;
+  display: flex;
+  flex-direction: column;
 }
 
 .overlay__title {
   margin: 0 0 0.75rem;
+}
+
+/* The shell's single scroll region (#181, #176): title/tabs/Close stay
+   pinned outside it, so action rows (e.g. Save/Cancel below a long Trasy
+   Stop list) never clip off-screen. Per-overlay bolt-ons (`.price-board`,
+   `.ledger-list`) used to scroll individually with no bound on the panel
+   itself — this replaces both with one owner. */
+.overlay__body {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Shared tab strip (#181): replaces `.ledger__tabs`/`.headquarters-tabs`. */
+.overlay__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid #2a3040;
+}
+
+.overlay__tab {
+  background: none;
+  border: none;
+  color: #8891a3;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 2px solid transparent;
+}
+
+.overlay__tab:hover {
+  color: #e6e6e6;
+}
+
+/* Active tab underline (#4c7bab = "active control in a group", ADR-0006);
+   cyan stays exclusive to the selected Route. */
+.overlay__tab--active {
+  color: #e6e6e6;
+  border-bottom-color: #4c7bab;
 }
 
 .overlay__text {
@@ -793,8 +835,6 @@ body {
   display: flex;
   flex-direction: column;
   margin-bottom: 1rem;
-  max-height: 60vh;
-  overflow-y: auto;
 }
 
 .price-board__row {
@@ -887,35 +927,6 @@ body {
   color: #8891a3;
 }
 
-/* Ledger overlay (#86, PriceBoardOverlay pattern): the performance board —
-   Transakcje (transaction list, ship filter) and Wartość firmy (company
-   value chart) tabs. Reuses .overlay/.overlay__panel--wide. */
-.ledger__tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  border-bottom: 1px solid #2a3040;
-}
-
-.ledger__tab {
-  background: none;
-  border: none;
-  color: #8891a3;
-  padding: 0.4rem 0.6rem;
-  cursor: pointer;
-  font-size: 0.9rem;
-  border-bottom: 2px solid transparent;
-}
-
-.ledger__tab:hover {
-  color: #e6e6e6;
-}
-
-.ledger__tab--active {
-  color: #e6e6e6;
-  border-bottom-color: #4c7bab;
-}
-
 /* Options overlay tabs (#56): Ogólne (settings) + Keybinds (read-only key
    list). Mirrors the Ledger tab shell; active blue is the shared "active
    control in a group" hue (#4c7bab, ADR-0006). */
@@ -992,8 +1003,6 @@ body {
   display: flex;
   flex-direction: column;
   margin-bottom: 1rem;
-  max-height: 50vh;
-  overflow-y: auto;
 }
 
 .ledger-list__row {
@@ -1179,30 +1188,6 @@ body {
 .build-confirm__actions {
   display: flex;
   gap: 0.5rem;
-}
-
-.headquarters-tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.headquarters-tab {
-  padding: 0.4rem 0.9rem;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: #a8b2c2;
-  cursor: pointer;
-}
-
-/* Active tab reuses the Ledger tabs' blue (#4c7bab = "active control in a
-   group" — one color, one meaning, ADR-0006); cyan stays exclusive to the
-   selected Route. */
-.headquarters-tab--active {
-  color: #e6e6e6;
-  border-bottom-color: #4c7bab;
 }
 
 .route-list {

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { GOODS, type LedgerEvent, type PortId, type Ship, type ShipId, type World } from "../sim";
 import { useGameStore } from "../store/gameStore";
-import { useOverlayDismiss } from "./useOverlayDismiss";
+import { OverlayShell } from "./OverlayShell";
+import { Tabs } from "./Tabs";
 import { formatWorldDate } from "./worldDate";
 
 type Tab = "transactions" | "value";
@@ -245,45 +246,28 @@ function ValueTab({ world }: { world: World }) {
 export function LedgerOverlay({ onClose }: { onClose: () => void }) {
   const world = useGameStore((s) => s.world);
   const [tab, setTab] = useState<Tab>("transactions");
-  const { onBackdropClick } = useOverlayDismiss(onClose);
 
   if (!world) return null;
 
   return (
-    <div
-      className="overlay"
-      role="dialog"
-      aria-label="Ledger"
-      aria-modal="true"
-      onClick={onBackdropClick}
+    <OverlayShell
+      ariaLabel="Ledger"
+      title="Ledger"
+      onClose={onClose}
+      wide
+      tabs={
+        <Tabs
+          ariaLabel="Ledger tabs"
+          active={tab}
+          onChange={setTab}
+          tabs={[
+            { id: "transactions", label: "Transakcje" },
+            { id: "value", label: "Wartość firmy" },
+          ]}
+        />
+      }
     >
-      <div className="overlay__panel overlay__panel--wide">
-        <h2 className="overlay__title">Ledger</h2>
-        <div className="ledger__tabs" role="tablist" aria-label="Ledger tabs">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "transactions"}
-            className={tab === "transactions" ? "ledger__tab ledger__tab--active" : "ledger__tab"}
-            onClick={() => setTab("transactions")}
-          >
-            Transakcje
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "value"}
-            className={tab === "value" ? "ledger__tab ledger__tab--active" : "ledger__tab"}
-            onClick={() => setTab("value")}
-          >
-            Wartość firmy
-          </button>
-        </div>
-        {tab === "transactions" ? <TransactionsTab world={world} /> : <ValueTab world={world} />}
-        <button type="button" className="menu-btn" onClick={onClose}>
-          Close
-        </button>
-      </div>
-    </div>
+      {tab === "transactions" ? <TransactionsTab world={world} /> : <ValueTab world={world} />}
+    </OverlayShell>
   );
 }

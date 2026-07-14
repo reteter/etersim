@@ -11,9 +11,9 @@ import {
   type PortId,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { OverlayShell } from "./OverlayShell";
 import { priceTrend, TREND_GLYPH, type Trend } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
-import { useOverlayDismiss } from "./useOverlayDismiss";
 
 /** One port×good cell's two-sided quote plus the mid-price trend (E8). */
 interface Cell {
@@ -70,7 +70,6 @@ export function PriceBoardOverlay({ onClose }: { onClose: () => void }) {
   const world = useGameStore((s) => s.world);
   const controlledShipId = useGameStore((s) => s.controlledShipId);
   const select = useGameStore((s) => s.select);
-  const { onBackdropClick } = useOverlayDismiss(onClose);
 
   if (!world) return null;
 
@@ -91,87 +90,69 @@ export function PriceBoardOverlay({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div
-      className="overlay"
-      role="dialog"
-      aria-label="Price board"
-      aria-modal="true"
-      onClick={onBackdropClick}
-    >
-      <div className="overlay__panel overlay__panel--wide">
-        <h2 className="overlay__title">Price Board</h2>
-        <div className="price-board" role="table" aria-label="Region price board">
-          <div className="price-board__row price-board__row--header" role="row">
-            <span className="price-board__port-header">Port</span>
-            {GOOD_IDS.map((good) => (
-              <span key={good} className="price-board__good-header">
-                {GOODS[good].name}
-              </span>
-            ))}
-          </div>
-          {ports.map((port) => {
-            const docked = port.id === dockedPortId;
-            return (
-              <div
-                key={port.id}
-                className={
-                  docked ? "price-board__row price-board__row--docked" : "price-board__row"
-                }
-                data-archetype={port.archetype}
-                style={{ "--port-color": `var(--archetype-${port.archetype})` } as CSSProperties}
-                role="row"
-                tabIndex={0}
-                onClick={() => openPort(port.id)}
-                onKeyDown={(e) => {
-                  // Enter/Space activate the row, matching native button
-                  // behavior (Harbor.tsx uses real <button>s for its rows;
-                  // here role="row" must stay valid grid semantics, so
-                  // keyboard activation is wired explicitly instead).
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    openPort(port.id);
-                  }
-                }}
-              >
-                <span className="price-board__port-name">{port.name}</span>
-                {GOOD_IDS.map((good) => {
-                  const cell = cellsByPort[port.id][good];
-                  const isBestAsk = cell.ask !== null && cell.ask === bestAsk[good];
-                  const isBestBid = cell.bid !== null && cell.bid === bestBid[good];
-                  return (
-                    <span key={good} className="price-board__cell" role="cell">
-                      <span
-                        className={
-                          isBestBid
-                            ? "price-board__bid price-board__bid--best"
-                            : "price-board__bid"
-                        }
-                      >
-                        {quoteLabel(cell.bid)}
-                      </span>
-                      <span className={`price-board__trend price-board__trend--${cell.trend}`}>
-                        {TREND_GLYPH[cell.trend]}
-                      </span>
-                      <span
-                        className={
-                          isBestAsk
-                            ? "price-board__ask price-board__ask--best"
-                            : "price-board__ask"
-                        }
-                      >
-                        {quoteLabel(cell.ask)}
-                      </span>
-                    </span>
-                  );
-                })}
-              </div>
-            );
-          })}
+    <OverlayShell ariaLabel="Price board" title="Price Board" onClose={onClose} wide>
+      <div className="price-board" role="table" aria-label="Region price board">
+        <div className="price-board__row price-board__row--header" role="row">
+          <span className="price-board__port-header">Port</span>
+          {GOOD_IDS.map((good) => (
+            <span key={good} className="price-board__good-header">
+              {GOODS[good].name}
+            </span>
+          ))}
         </div>
-        <button type="button" className="menu-btn" onClick={onClose}>
-          Close
-        </button>
+        {ports.map((port) => {
+          const docked = port.id === dockedPortId;
+          return (
+            <div
+              key={port.id}
+              className={docked ? "price-board__row price-board__row--docked" : "price-board__row"}
+              data-archetype={port.archetype}
+              style={{ "--port-color": `var(--archetype-${port.archetype})` } as CSSProperties}
+              role="row"
+              tabIndex={0}
+              onClick={() => openPort(port.id)}
+              onKeyDown={(e) => {
+                // Enter/Space activate the row, matching native button
+                // behavior (Harbor.tsx uses real <button>s for its rows;
+                // here role="row" must stay valid grid semantics, so
+                // keyboard activation is wired explicitly instead).
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openPort(port.id);
+                }
+              }}
+            >
+              <span className="price-board__port-name">{port.name}</span>
+              {GOOD_IDS.map((good) => {
+                const cell = cellsByPort[port.id][good];
+                const isBestAsk = cell.ask !== null && cell.ask === bestAsk[good];
+                const isBestBid = cell.bid !== null && cell.bid === bestBid[good];
+                return (
+                  <span key={good} className="price-board__cell" role="cell">
+                    <span
+                      className={
+                        isBestBid ? "price-board__bid price-board__bid--best" : "price-board__bid"
+                      }
+                    >
+                      {quoteLabel(cell.bid)}
+                    </span>
+                    <span className={`price-board__trend price-board__trend--${cell.trend}`}>
+                      {TREND_GLYPH[cell.trend]}
+                    </span>
+                    <span
+                      className={
+                        isBestAsk ? "price-board__ask price-board__ask--best" : "price-board__ask"
+                      }
+                    >
+                      {quoteLabel(cell.ask)}
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </OverlayShell>
   );
 }
