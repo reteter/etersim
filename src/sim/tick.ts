@@ -5,7 +5,13 @@ import { appendLedgerEvent, computeNetWorth } from "./ledger";
 import { effectiveBase, marketTick, maxAffordableQty, NEUTRAL_MODIFIERS } from "./market";
 import { osmosisTick } from "./osmosis";
 import { shortestCourse } from "./pathfinding";
-import { ARCHETYPE_PROFILES, DOCKING_FEE, TICKS_PER_DAY, type PortId, type Region } from "./region";
+import {
+  ARCHETYPE_PROFILES,
+  DOCKING_FEE,
+  TICKS_PER_DAY,
+  type PortId,
+  type Region,
+} from "./region";
 import { nextFloat, type RngState } from "./rng";
 import type { Route, RouteId } from "./route";
 import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
@@ -190,6 +196,34 @@ function runDockingPhase(world: World, before: readonly Ship[], advanced: readon
 }
 
 /**
+ * Day-boundary phase (#168 — extracted, behavior-preserving, from the inline
+ * block this replaces; docs/specs/E3-contracts-and-guilds.md — Tick
+ * day-boundary order): drift step → price snapshots → netWorth snapshot.
+ * `world` is already advanced to the boundary tick (tick+1, post-osmosis
+ * region/pulse folded in) by the caller — the same values the inline block
+ * read before extraction. Runs unconditionally; the caller gates on the
+ * boundary check (this function does none itself), so it must be called at
+ * most once per tick. E3 phases (upkeep, contract settlements, offer
+ * refresh) slot into this seam between price snapshots and the netWorth
+ * snapshot, which always stays last (docs/specs/E3 — Tick day-boundary order).
+ */
+function dayBoundary(world: World): World {
+  const [flowDrift, rng] = driftStep(world.region, world.flowDrift, world.rng);
+
+  const next: World = {
+    ...world,
+    rng,
+    priceSnapshots: snapshotPrices(world.region),
+    flowDrift,
+  };
+  // Daily net-worth snapshot (docs/specs/E9 — Ledger): thalers + fleet cargo +
+  // build-site store, at region-average mid price; ships/buildings carry no
+  // book value. Tagged with the boundary tick, same cadence as the price
+  // snapshot above.
+  return appendLedgerEvent(next, { kind: "netWorth", tick: world.tick, ...computeNetWorth(next) });
+}
+
+/**
  * Advances the World by exactly one tick (ADR-0003). Pure: never mutates its
  * input. Phase order per docs/specs/E9-fleet-and-routes.md (extends E8):
  * apply commands → advance ships → docking phase (#80) → build-site auto-draw
@@ -217,26 +251,8 @@ export function tick(world: World, commands: readonly Command[]): World {
   const { region, pulse } = osmosisTick({ ...w.region, ports });
 
   const nextTick = w.tick + 1;
-  const isDayBoundary = nextTick % TICKS_PER_DAY === 0;
-  let flowDrift = w.flowDrift;
-  let rng = w.rng;
-  if (isDayBoundary) [flowDrift, rng] = driftStep(region, w.flowDrift, w.rng);
+  const stepped: World = { ...w, tick: nextTick, region, osmosisPulse: pulse };
+  if (nextTick % TICKS_PER_DAY === 0) return dayBoundary(stepped);
 
-  const next: World = {
-    ...w,
-    tick: nextTick,
-    rng,
-    region,
-    priceSnapshots: isDayBoundary ? snapshotPrices(region) : w.priceSnapshots,
-    flowDrift,
-    osmosisPulse: pulse,
-  };
-  // Daily net-worth snapshot (docs/specs/E9 — Ledger): thalers + fleet cargo +
-  // build-site store, at region-average mid price; ships/buildings carry no
-  // book value. Tagged with the boundary tick (nextTick), same cadence as the
-  // price snapshot above.
-  if (isDayBoundary) {
-    return appendLedgerEvent(next, { kind: "netWorth", tick: nextTick, ...computeNetWorth(next) });
-  }
-  return next;
+  return stepped;
 }

@@ -41,6 +41,28 @@ export function nextInt(state: RngState, min: number, max: number): [number, Rng
   return [min + Math.floor(fraction * (max - min + 1)), next];
 }
 
+/**
+ * Derives an isolated substream state from a base RNG state and a per-consumer
+ * `tag` (docs/specs/E3-contracts-and-guilds.md — Tick day-boundary order,
+ * Professor finding B): folds the tag's chars into the state with the same
+ * imul-based mixing style as `seedRng`, so day-boundary consumers (drift,
+ * offer generation, …) never perturb one another's draws even though they
+ * all read the same world RNG state. Pure and deterministic: same
+ * (state, tag) always derives the same substream state; distinct tags (or
+ * distinct base states) decorrelate. The result is a plain uint32, so it
+ * serializes exactly like any other `RngState` (ADR-0004).
+ */
+export function deriveSubstream(state: RngState, tag: string): RngState {
+  let h = state >>> 0;
+  for (let i = 0; i < tag.length; i++) {
+    h ^= tag.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+    h = Math.imul(h ^ (h >>> 15), 0x21f0aaad);
+  }
+  h = Math.imul(h ^ (h >>> 15), 0x735a2d97);
+  return (h ^ (h >>> 15)) >>> 0;
+}
+
 /** Returns a Fisher–Yates-shuffled copy; the input is left untouched. */
 export function nextShuffle<T>(state: RngState, items: readonly T[]): [T[], RngState] {
   const shuffled = [...items];
