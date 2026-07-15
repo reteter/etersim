@@ -55,11 +55,11 @@ Work, M6 zoom-out) wait for an **owner-led grill** — do not start them from th
 
 ## Gotchas (this machine / this repo)
 
-- **Certify AFTER worktree cleanup, never concurrently** (new, 2026-07-15): a cert
+- **Certify AFTER worktree cleanup, never concurrently** (incident 0011): a cert
   launched while `.claude/worktrees/agent-*` still existed had `eslint .` over-scan the
   worktree `src/` copies (**326 spurious lint errors**) and Playwright flake **4
-  fleet.spec tests** under resource contention — a false RED that nearly got reported.
-  Remove worktrees first, THEN run the certification. Candidate for an incident report.
+  fleet.spec tests** under resource contention — a false RED. Remove worktrees first
+  (clean `git worktree list` is the go-signal), THEN run the certification.
 - PowerShell + `gh`: UTF-8 bodies ONLY via `--body-file`; `gh api repos/{owner}/{repo}/...`
   placeholder syntax fails under PowerShell — use the explicit `owner/repo` path.
 - Playwright: dedicated port via `PLAYWRIGHT_PORT` (5173 may be squatted).
