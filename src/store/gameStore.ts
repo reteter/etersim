@@ -82,6 +82,16 @@ interface GameState {
    * settings).
    */
   readonly lastSeenTick: number;
+  /**
+   * The human-readable seed name the current world was created from (#221),
+   * kept only in the store — `createWorld` hashes it into the RNG state and
+   * discards it, so `World` itself carries no seed. Powers the export
+   * filename (GameMenu.tsx). `newGame` sets it; `loadWorld` (JSON import, or
+   * the autosave-continue path in StartScreen.tsx) nulls it — an imported or
+   * resumed-from-autosave world has no seed name to offer. Not part of the
+   * save shape.
+   */
+  readonly seed: string | null;
 
   newGame(seed: number | string): void;
   loadWorld(world: World): void;
@@ -120,6 +130,7 @@ const INITIAL = {
   selectedRouteId: null,
   pauseCause: null,
   lastSeenTick: 0,
+  seed: null,
 };
 
 /** The Controlled Ship a fresh world starts with — the company's first ship. */
@@ -173,6 +184,7 @@ export const useGameStore = create<GameState>()((set, get) => ({
       speed: 1,
       controlledShipId: initialControlledShip(world),
       lastSeenTick: world.tick,
+      seed: String(seed),
     });
   },
 
