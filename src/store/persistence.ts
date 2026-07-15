@@ -1,4 +1,4 @@
-import { ENROLLMENT_FEE } from "../sim/guild";
+import { ENROLLMENT_FEE } from "../sim";
 import type { World } from "../sim";
 
 /**
