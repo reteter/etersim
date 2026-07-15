@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Port, Region } from "./region";
-import { emptyCargo, etaTicks, courseTicks, type Ship } from "./ship";
+import { emptyCargo, etaTicks, courseTicks, isRouteActive, type Ship } from "./ship";
 
 function port(id: string): Port {
   return {
@@ -22,8 +22,8 @@ const region: Region = {
   ],
 };
 
-function ship(location: Ship["location"]): Ship {
-  return { id: "s0", name: "s0", hold: 50, cargo: emptyCargo(), location };
+function ship(location: Ship["location"], assignment?: Ship["assignment"]): Ship {
+  return { id: "s0", name: "s0", hold: 50, cargo: emptyCargo(), location, assignment };
 }
 
 describe("courseTicks", () => {
@@ -71,5 +71,21 @@ describe("etaTicks", () => {
       destination: "c",
     });
     expect(etaTicks(s, region)).toBe(4 - 1);
+  });
+});
+
+describe("isRouteActive", () => {
+  it("is false when the ship has no assignment", () => {
+    expect(isRouteActive(ship({ kind: "docked", portId: "a" }))).toBe(false);
+  });
+
+  it("is true when assigned and not suspended", () => {
+    const s = ship({ kind: "docked", portId: "a" }, { routeId: "r1", nextStopIndex: 0, suspended: false });
+    expect(isRouteActive(s)).toBe(true);
+  });
+
+  it("is false when assigned but suspended", () => {
+    const s = ship({ kind: "docked", portId: "a" }, { routeId: "r1", nextStopIndex: 0, suspended: true });
+    expect(isRouteActive(s)).toBe(false);
   });
 });

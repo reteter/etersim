@@ -22,6 +22,7 @@ export {
   emptyCargo,
   etaTicks,
   courseTicks,
+  isRouteActive,
   type Ship,
   type ShipAssignment,
   type ShipId,

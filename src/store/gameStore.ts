@@ -3,6 +3,7 @@ import {
   applyCommand,
   createWorld,
   elapsedToTicks,
+  isRouteActive,
   tick,
   type Command,
   type PortId,
@@ -166,7 +167,7 @@ function arrivedAtCourseDestination(before: Ship, after: Ship): boolean {
  * arrival pauses as it did before the ship was ever routed.
  */
 function underActiveRoute(ship: Ship): boolean {
-  return ship.assignment !== undefined && !ship.assignment.suspended;
+  return isRouteActive(ship);
 }
 
 export const useGameStore = create<GameState>()((set, get) => ({

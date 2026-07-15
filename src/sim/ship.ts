@@ -31,6 +31,16 @@ export interface ShipAssignment {
   readonly suspended: boolean;
 }
 
+/** True when the ship is running a Route on autopilot: assigned and not
+ *  suspended. The single home for this predicate (issue #154) — was
+ *  duplicated across gameStore.underActiveRoute and commands.ts sailTo.
+ *  tick.ts's runRouteForShip intentionally stays on its own inverse guard
+ *  (it already has the destructured assignment in hand; routing it through
+ *  a ship-shaped selector would re-fetch what it just pulled out). */
+export function isRouteActive(ship: Ship): boolean {
+  return ship.assignment !== undefined && !ship.assignment.suspended;
+}
+
 export interface Ship {
   readonly id: ShipId;
   /** Display name (E9 #54): given at launch, player-editable. Always present. */
