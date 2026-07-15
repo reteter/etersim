@@ -44,7 +44,7 @@ function App() {
       <div className="app__body">
         <RegionMap
           region={world.region}
-          ship={world.company.ships[0]}
+          ships={world.company.ships}
           osmosisPulse={world.osmosisPulse}
           tick={world.tick}
         />
