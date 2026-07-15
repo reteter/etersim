@@ -1336,25 +1336,39 @@ body {
   font-size: 0.8rem;
 }
 
+/* Goods × buy/sell/deliver table (#220): rows = goods, columns = order
+ *  kinds — replaces the old repeated chip-per-good strip so a Stop's whole
+ *  order set scans in one glance instead of hunting through N good groups.
+ *  Reusable shape (borderless table, one row per line item, a chip per
+ *  action cell) that #73's PortPanel tightening can lift if it falls out
+ *  naturally there too — not shared code yet, just a matching pattern. */
 .stop-row__goods {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-
-.stop-row__good {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  width: 100%;
+  border-collapse: collapse;
   font-size: 0.8rem;
 }
 
-.stop-row__good-name {
+.stop-row__goods-header {
+  padding: 0.15rem 0.45rem;
   color: #a8b2c2;
-  margin-right: 0.15rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.stop-row__good-name {
+  padding: 0.15rem 0.45rem;
+  color: #a8b2c2;
+  font-weight: 400;
+  text-align: left;
+}
+
+.stop-row__good-cell {
+  padding: 0.1rem 0.3rem;
+  text-align: center;
 }
 
 .chip {
+  min-width: 1.6rem;
   padding: 0.15rem 0.45rem;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.15);

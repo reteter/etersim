@@ -129,10 +129,25 @@ function ConstructionTab({ world }: { world: World }) {
   );
 }
 
-/** One Stop row: a port dropdown + buy/sell/deliver chips per good — each
- *  chip is a toggle, and selecting a different chip for the same good
- *  replaces (never adds to) its order, enforcing "a good in at most one
- *  order per Stop" in the editor itself. */
+/** Column headers for the per-good order table (Polish, 2026-07-14 UI grill:
+ *  new visible labels ship Polish). The chip buttons underneath keep their
+ *  existing English aria-label/accessible-name — only the *visible* button
+ *  text moves to a checkmark now that the column header already names the
+ *  action, so e2e's aria-label-based selectors stay untouched (#184 is the
+ *  broader English→Polish sweep, out of scope here). */
+const ORDER_KINDS = ["buy", "sell", "deliver"] as const;
+const ORDER_KIND_LABEL: Record<(typeof ORDER_KINDS)[number], string> = {
+  buy: "Kup",
+  sell: "Sprzedaj",
+  deliver: "Dostarcz",
+};
+
+/** One Stop row: a port dropdown + a goods × buy/sell/deliver table — one
+ *  row per good, one column per order kind (#220: was a repeated chip strip
+ *  per good, hard to scan). Each cell is a toggle, and selecting a
+ *  different cell in the same row replaces (never adds to) that good's
+ *  order, enforcing "a good in at most one order per Stop" in the editor
+ *  itself. */
 function StopRow({
   stop,
   index,
@@ -169,25 +184,40 @@ function StopRow({
           </option>
         ))}
       </select>
-      <div className="stop-row__goods">
-        {GOOD_IDS.map((good) => (
-          <div key={good} className="stop-row__good">
-            <span className="stop-row__good-name">{GOODS[good].name}</span>
-            {(["buy", "sell", "deliver"] as const).map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                aria-pressed={kindOf(good) === kind}
-                aria-label={`${GOODS[good].name} ${kind} at Stop ${index + 1}`}
-                className={kindOf(good) === kind ? "chip chip--active" : "chip"}
-                onClick={() => setOrder(good, kind)}
-              >
-                {kind}
-              </button>
+      <table className="stop-row__goods">
+        <thead>
+          <tr>
+            <th className="stop-row__goods-header" />
+            {ORDER_KINDS.map((kind) => (
+              <th key={kind} className="stop-row__goods-header">
+                {ORDER_KIND_LABEL[kind]}
+              </th>
             ))}
-          </div>
-        ))}
-      </div>
+          </tr>
+        </thead>
+        <tbody>
+          {GOOD_IDS.map((good) => (
+            <tr key={good}>
+              <th scope="row" className="stop-row__good-name">
+                {GOODS[good].name}
+              </th>
+              {ORDER_KINDS.map((kind) => (
+                <td key={kind} className="stop-row__good-cell">
+                  <button
+                    type="button"
+                    aria-pressed={kindOf(good) === kind}
+                    aria-label={`${GOODS[good].name} ${kind} at Stop ${index + 1}`}
+                    className={kindOf(good) === kind ? "chip chip--active" : "chip"}
+                    onClick={() => setOrder(good, kind)}
+                  >
+                    {kindOf(good) === kind ? "✓" : ""}
+                  </button>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <button type="button" className="stop-row__remove" onClick={onRemove}>
         Remove stop
       </button>
