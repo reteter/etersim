@@ -286,6 +286,8 @@ function refreshOffers(world: World): World {
  *  and settlements land inside the day's curve point (docs/specs/E3 — Tick
  *  day-boundary order). */
 function snapshotNetWorth(world: World): World {
+  // `tick` is read from the world accumulated through the phase reduce: no
+  // prior phase may mutate `tick`, or this event mistags to the wrong day.
   return appendLedgerEvent(world, { kind: "netWorth", tick: world.tick, ...computeNetWorth(world) });
 }
 
