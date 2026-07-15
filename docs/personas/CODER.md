@@ -45,6 +45,13 @@ All of SELFCHECK.md §4 applies. The ones coders have actually broken or nearly 
 
 - **Never act on `main`; never `cd` to an absolute repo path.** Address git as
   `git -C <your-worktree>` (incident 0001).
+- **If your Edit/Write tools are locked to a worktree other than the one your package
+  names, stop and flag it before improvising (incident 0012).** The dispatch may have
+  double-provisioned; the harness-sandboxed path is usually a real worktree at the
+  right base SHA, so producing your diff there and pushing `HEAD:<target-branch>` is the
+  clean recovery — but a Bash-write workaround into the "forbidden" path (Bash sits
+  outside the sandbox) is a last resort, and either way the mismatch is a prominent
+  report item, not a footnote.
 - **TDD for `src/sim`** — failing test first, and tests must be able to fail:
   exact-value assertions, adversarial paths. Weak self-authored assertions once hid
   real bugs behind "247 green" (incident 0005).
