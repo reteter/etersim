@@ -130,6 +130,17 @@ zero-fix-loop wave.
 | 07-15 | #223 | #216 | 2 | 0 | 0 | pass | Enroll button base style + visible disabled reason. Assertions strengthened, not weakened. Advisor catch pre-commit: affected-e2e widened to every PortPanel consumer (headquarters+market collateral run) — incident-0009 discipline applied unprompted. |
 | 07-15 | #224 | #219 | 2 | 1 (note) | 0 | pass | Offers/contracts as cards, two-column grid. Test-honesty highlight: kontrakty.spec.ts has ZERO diff — restructure built to keep selectors valid instead of rewriting tests to survive (incident-0005 clear). Note: rank-badge ramp now on two semantic axes (required tier vs achieved rank) — judged defensible, self-reported by the coder. |
 
+## Playtest wave 2 (#226 — desperation clause, deadlock fix)
+
+One Sonnet coder, the day's heaviest package (sim + persistence migration +
+UI + spec/CONTEXT sync in one task). Reviewer independently reproduced the
+gates in an isolated worktree — first wave where the check re-ran the suite
+rather than trusting coder-attested numbers.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-15 | #229 | #226 | 3 | 3 (note) | 0 | pass | requiredRank decoupled from tier + stamp pass + SAVE_VERSION 9→10 + "Pilne" label + spec/CONTEXT sync. Red-evidence adapted to a type-forced field (stamp bypass → 8 red; gate revert → 2 red) — judged genuinely discriminating. Advisor corrected the invariant wording pre-review (min===1, not exactly-one). Owner-accepted tradeoff flagged prominently: v8 saves unreadable. Full e2e 80/80 run unprompted (whole-diff heuristic). |
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
