@@ -73,6 +73,19 @@ Coder advisor usage this wave: 3a consulted twice (caught two AC6 gaps pre-revie
 3b twice (design + test-must-fail trap) — zero overlap with review findings, so the
 advisor/review layers are complementary so far, not duplicative.
 
+## Post-E3 chore wave 1 (#200 + #174)
+
+Two Sonnet coders in parallel worktrees (sim + UI, disjoint files), one two-axis
+Opus reviewer over both diffs in one context. First wave with zero fix loops.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-15 | #205 | #200 | 3 | 1 (note) | 0 | pass | Offer-gen exclusion of active contracts. Coder self-reported a TDD-order violation (impl before tests; advisor-prompted) and compensated empirically — all 3 tests verified red without the fix; reviewer judged them discriminating. Note: guild-agnostic heldKeys safe only via the port.archetype partition — comment suggested. |
+| 07-15 | #206 | #174 | 3 | 1 (note) | 0 | pass | Fleet rendering on RegionMap. Advisor caught a dishonest `dispatchEvent` test masking a real hit-testing bug; coder fixed the component (hit-target circle preserving #28 click-through) and restored a real `.click()`. Full local Playwright 76/76. Note: pre-existing cosmetic cursor on docked ships. |
+
+Advisor layer again complementary: two coder-side catches (TDD-order gap, buried
+AC failure), zero overlap with the reviewer's findings.
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
