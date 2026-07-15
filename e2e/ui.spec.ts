@@ -288,6 +288,27 @@ test.describe('main game UI after start', () => {
     await expect(page.getByText(/Hold \d+\/\d+/)).toBeVisible();
   });
 
+  test('ship panel: the docked port name is a keyboard-operable link that opens that port\'s panel (#196)', async ({
+    page,
+  }) => {
+    await openControlledShip(page);
+
+    const subtitle = page.locator('.side-panel__subtitle');
+    const portLink = subtitle.locator('.port-link');
+    await expect(portLink).toBeVisible();
+    const dockedPortName = await portLink.innerText();
+
+    // Real button semantics: focusable, Enter activates (not just clickable).
+    await portLink.focus();
+    await expect(portLink).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    // Opens the same port panel a map click would — the market table, headed
+    // by the docked port's own name.
+    await expect(page.locator('.market')).toBeVisible();
+    await expect(page.locator('.side-panel__title')).toHaveText(dockedPortName);
+  });
+
   test('port view shows the Harbor with the docked ship', async ({ page }) => {
     // Open the docked port's market (via port selection, #33).
     await openDockedPortMarket(page);
@@ -588,6 +609,14 @@ test.describe('trading interactions (when docked)', () => {
 
     await page.locator('.fleet-list__item--controlled').click();
     await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
+
+    // The destination port name is a link too (#196): opens that port's
+    // panel, same as the docked case above.
+    const destLink = page.locator('.side-panel__subtitle .port-link');
+    const destName = await destLink.innerText();
+    await destLink.click();
+    await expect(page.locator('.market')).toBeVisible();
+    await expect(page.locator('.side-panel__title')).toHaveText(destName);
   });
 
   test('underway Controlled Ship shows an accented, directional course with a tick label (#45)', async ({
