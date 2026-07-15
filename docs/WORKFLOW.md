@@ -186,5 +186,9 @@ The Anchor is lightweight and hands off quickly once the session has direction (
 4. **End of Session**
    - Mini-retro (2–3 sentences): what worked well, what to improve.
    - Forward pointer: "What are we taking to the next session?" or "Next focus: ..."
+   - **Write the forward pointer into `docs/HANDOFF.md`** (overwrite — git keeps
+     history). That file is the canonical session state for any model in any
+     harness; per-machine auto-memory is a mirror of it, never the source
+     (owner lock, 2026-07-15).
 
 These rituals are meant to be lightweight. The goal is predictability and a shared vocabulary so both sides know what to expect and how to respond.

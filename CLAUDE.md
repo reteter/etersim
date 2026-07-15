@@ -11,6 +11,8 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - `docs/specs/` — one feature spec per epic (Design + Tech sections).
 - `docs/personas/` — Designer/Engineer/Analyst hats, the Orchestrator role, the Coder subagent contract (harness def: `.claude/agents/coder.md`), and the Professor architecture reviewer (harness def: `.claude/agents/professor.md`).
 - `docs/design-notes/` — parking lot for playtest observations and deferred ideas. Items may be grilled and locked before implementation; `trade-loop-followups.md` tracks E2 post-playtest follow-ups (all shipped as of 2026-07-08).
+- `docs/HANDOFF.md` — canonical session-state note (queue, watch items, gotchas), written for any model in any harness; per-machine auto-memory mirrors it, never the reverse. Updated at every session close.
+- `docs/agent-memory.md` — durable, machine-independent lessons exported from per-machine memory.
 
 ## Rules
 
@@ -20,7 +22,7 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - Feature branches + PR (`Closes #n`), conventional commits. Before merge: tests, typecheck, lint, and the tiered wave check (review depth scales with the diff's risk surface — `docs/WORKFLOW.md` §Verification gates).
 - Spec drift: updating the spec is part of the task.
 - Determinism is sacred: all sim randomness flows from the seeded RNG; no `Math.random`, no `Date.now` inside `src/sim`.
-- Session start: check open work with `gh issue list`. Before starting any task, run the pre-work checklist in `docs/SELFCHECK.md` and post its report.
+- Session start: read `docs/HANDOFF.md`, then check open work with `gh issue list`. Before starting any task, run the pre-work checklist in `docs/SELFCHECK.md` and post its report. Session close: update `docs/HANDOFF.md` (overwrite; history lives in git).
 
 ## Git & worktrees
 
