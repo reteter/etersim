@@ -1452,34 +1452,55 @@ body {
 .kontrakty-tab {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
+}
+
+/* #219 (playtest 2026-07-15 obs. 6): offers/contracts read as tiles in a
+   dense grid instead of a tall, separator-only list — one column on a
+   narrow panel, two+ once the (wide) Price Board overlay has the room. */
+.kontrakty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+  gap: 0.5rem;
 }
 
 .kontrakty-offer,
 .kontrakty-contract {
   display: flex;
-  gap: 0.75rem;
-  padding: 0.6rem 0.5rem;
-  border-bottom: 1px solid #20263180;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #20263180;
+  border-radius: 4px;
+}
+
+.kontrakty-offer__header,
+.kontrakty-contract__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .kontrakty-offer__body,
 .kontrakty-contract__body {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.15rem;
 }
 
 .kontrakty-offer__route,
 .kontrakty-contract__route {
   font-weight: 600;
   color: #e6e6e6;
+  line-height: 1.2;
 }
 
 .kontrakty-offer__terms,
 .kontrakty-offer__basis,
 .kontrakty-contract__progress {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  line-height: 1.3;
   color: #a8b2c2;
 }
 
@@ -1489,25 +1510,36 @@ body {
   opacity: 0.65;
 }
 
+/* Rank requirement as a badge (#219 AC1): reuses the neutral rank-badge
+   ramp (same one the Guildhouse's own-rank pill uses) rather than a bespoke
+   color — the archetype hue stays exclusive to the guild badge, and this
+   stays off the gold axis entirely (ADR-0006). */
 .kontrakty-offer__lock {
-  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+}
+
+.kontrakty-offer__lock-text {
+  font-size: 0.78rem;
   color: #d9705f;
 }
 
 .kontrakty-contract__warn {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #d9a05f;
 }
 
 .kontrakty-contract__confirm {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
   align-items: flex-start;
 }
 
 .kontrakty-contract__confirm-text {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #d9705f;
 }
 

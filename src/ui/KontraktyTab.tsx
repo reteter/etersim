@@ -49,11 +49,13 @@ function OfferRow({ world, offer, rank }: { world: World; offer: ContractOffer; 
       className={locked ? "kontrakty-offer kontrakty-offer--locked" : "kontrakty-offer"}
       data-testid="kontrakty-offer"
     >
-      <GuildBadge guildId={offer.guildId} />
-      <div className="kontrakty-offer__body">
+      <div className="kontrakty-offer__header">
+        <GuildBadge guildId={offer.guildId} />
         <p className="kontrakty-offer__route">
           {GOODS[offer.good].name} → {portName(world, offer.portId)}
         </p>
+      </div>
+      <div className="kontrakty-offer__body">
         <p className="kontrakty-offer__terms">
           Norma {offer.quotaPerPeriod}/okres ({offer.periodDays} dni), min. {offer.minPeriods} okr.,
           opłata ₸{offer.feePerPeriod}
@@ -64,7 +66,12 @@ function OfferRow({ world, offer, rank }: { world: World; offer: ContractOffer; 
           {portName(world, offer.basis.sourcePortId)}
         </p>
         {locked ? (
-          <p className="kontrakty-offer__lock">Wymaga rangi {offer.tier} w tej gildii</p>
+          <div className="kontrakty-offer__lock">
+            <span className={`rank-badge rank-badge--${offer.tier}`}>{offer.tier}</span>
+            <span className="kontrakty-offer__lock-text">
+              Wymaga rangi {offer.tier} w tej gildii
+            </span>
+          </div>
         ) : (
           <button
             type="button"
@@ -94,11 +101,13 @@ function ContractRow({ world, contract }: { world: World; contract: ActiveContra
 
   return (
     <div className="kontrakty-contract" data-testid="kontrakty-contract">
-      <GuildBadge guildId={contract.guildId} />
-      <div className="kontrakty-contract__body">
+      <div className="kontrakty-contract__header">
+        <GuildBadge guildId={contract.guildId} />
         <p className="kontrakty-contract__route">
           {GOODS[contract.good].name} → {portName(world, contract.portId)}
         </p>
+      </div>
+      <div className="kontrakty-contract__body">
         <p className="kontrakty-contract__progress">
           {contract.deliveredThisPeriod}/{contract.quotaPerPeriod} — rozliczenie za {daysLeft} d
         </p>
@@ -148,14 +157,16 @@ export function KontraktyTab({ world }: { world: World }) {
         {offers.length === 0 ? (
           <p className="overlay__text">Brak ofert od gildii, do których należy firma.</p>
         ) : (
-          offers.map((offer) => (
-            <OfferRow
-              key={offer.id}
-              world={world}
-              offer={offer}
-              rank={rankOf(world.company.guilds[offer.guildId]!.points)}
-            />
-          ))
+          <div className="kontrakty-grid">
+            {offers.map((offer) => (
+              <OfferRow
+                key={offer.id}
+                world={world}
+                offer={offer}
+                rank={rankOf(world.company.guilds[offer.guildId]!.points)}
+              />
+            ))}
+          </div>
         )}
       </section>
       <section>
@@ -163,9 +174,11 @@ export function KontraktyTab({ world }: { world: World }) {
         {world.company.contracts.length === 0 ? (
           <p className="overlay__text">Brak aktywnych kontraktów.</p>
         ) : (
-          world.company.contracts.map((contract) => (
-            <ContractRow key={contract.id} world={world} contract={contract} />
-          ))
+          <div className="kontrakty-grid">
+            {world.company.contracts.map((contract) => (
+              <ContractRow key={contract.id} world={world} contract={contract} />
+            ))}
+          </div>
         )}
       </section>
     </div>
