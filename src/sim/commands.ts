@@ -16,7 +16,7 @@ import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { shortestCourse } from "./pathfinding";
 import type { Port, PortId } from "./region";
 import type { Route, RouteId } from "./route";
-import { cargoUsed, type Ship, type ShipId } from "./ship";
+import { cargoUsed, isRouteActive, type Ship, type ShipId } from "./ship";
 import { replaceShip, type World } from "./world";
 
 /**
@@ -302,10 +302,9 @@ export function applyCommand(world: World, command: Command): World {
       if (course === null || course.length === 0) return world;
       // A manual sailTo auto-suspends an active Route — the plan stays assigned,
       // resume picks it up (never destroyed, never a confirmation dialog).
-      const assignment =
-        ship.assignment && !ship.assignment.suspended
-          ? { ...ship.assignment, suspended: true }
-          : ship.assignment;
+      const assignment = isRouteActive(ship)
+        ? { ...ship.assignment!, suspended: true }
+        : ship.assignment;
       const underway: Ship = {
         ...ship,
         assignment,
