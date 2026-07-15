@@ -510,7 +510,14 @@ the Transakcje tab's row unit. The E11 Harness consumer is still pending. M3 ext
 kind union — `enrollmentFee` (#92), `upkeep` (#95), and `contractFee` + the
 four-outcome `settlement` (#94) are in; store/withdraw follows (E13) — and adds a
 third consumer: contract settlement reads fulfilment from the same stream (shipped
-in #94: sale attribution + the settlement fold invariant).
+in #94: sale attribution + the settlement fold invariant). **Grammar law**
+(issue #203): every thaler-moving kind carries `thalers`; every rank-moving
+kind carries `pointsDelta` — a kind never moves money silently or through a
+side channel. `enrollmentFee` was the one violator (moved ₸400 with no
+field) and was retrofit to carry `thalers`, with a SAVE_VERSION 8→9
+migration backfilling it onto existing saves; the law is enforced by an
+exhaustive kind classification in `ledger.test.ts` — a new kind left
+unclassified fails to typecheck.
 _Avoid_: log, history (as identifiers)
 
 **Direct play** (PL: gra bezpośrednia):

@@ -13,6 +13,11 @@ import type { World } from "./world";
  * schema, two consumers (the E9 performance board, the E11 Harness). Full
  * retention: events are appended, never pruned or rewritten.
  *
+ * Grammar law (issue #203, CONTEXT.md — Ledger): every thaler-moving kind
+ * carries `thalers`; every rank-moving kind carries `pointsDelta`. Enforced
+ * by `ledger.test.ts`'s exhaustive classification — a new `LedgerEvent` kind
+ * left unclassified fails to typecheck.
+ *
  * `routeId` is carried only on `trade` events (the Tech union in the spec,
  * matching issue #82's acceptance criteria verbatim) — a route-driven trade
  * is dispatched through the exact same `buy`/`sell` command a manual trade
@@ -87,6 +92,7 @@ export type LedgerEvent =
       readonly kind: "enrollmentFee";
       readonly tick: number;
       readonly guildId: GuildId;
+      readonly thalers: number;
     }
   | {
       readonly kind: "upkeep";

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createWorld, tick, type World } from "../sim";
+import {
+  applyCommand,
+  CONSTRUCTION_RESERVE,
+  createWorld,
+  ENROLLMENT_FEE,
+  HEADQUARTERS_COST,
+  tick,
+  type World,
+} from "../sim";
 import {
   AUTOSAVE_KEY,
   clearAutosave,
@@ -65,6 +73,31 @@ function e9World(): World {
   world = tick(world, [{ kind: "placeBuildOrder" }]);
   for (let i = 0; i < 60; i++) world = tick(world, []); // auto-draw fills the site, ship loops
   return world;
+}
+
+/** A world carrying one real `enrollmentFee` event, then de-shaped back to
+ *  the pre-#203 v8 wire format (no `thalers` field) — the exact shape a v8
+ *  save on disk actually had, not a hand-invented literal. */
+function v8SaveWithEnrollmentFee(): { version: 8; world: World } {
+  const base = createWorld("v8-migration");
+  const funded: World = {
+    ...base,
+    company: { ...base.company, thalers: HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 10_000 },
+  };
+  const founded = applyCommand(funded, {
+    kind: "foundHeadquarters",
+    portId: base.region.ports[0].id,
+  });
+  const enrolled = applyCommand(founded, { kind: "enroll", guildId: "agrarian" });
+  expect(enrolled.ledger.at(-1)).toMatchObject({ kind: "enrollmentFee", thalers: ENROLLMENT_FEE });
+
+  const v8Ledger = enrolled.ledger.map((event) => {
+    if (event.kind !== "enrollmentFee") return event;
+    const withoutThalers: Record<string, unknown> = { ...event };
+    delete withoutThalers.thalers;
+    return withoutThalers;
+  });
+  return { version: 8, world: { ...enrolled, ledger: v8Ledger } as unknown as World };
 }
 
 describe("persistence", () => {
@@ -149,5 +182,44 @@ describe("persistence", () => {
   it("exportWorldJson stamps the current save version", () => {
     const parsed = JSON.parse(exportWorldJson(midSessionWorld()));
     expect(parsed.version).toBe(SAVE_VERSION);
+  });
+
+  describe("v8 -> v9 migration (issue #203 — enrollmentFee gains thalers)", () => {
+    it("parseWorldJson backfills thalers: ENROLLMENT_FEE onto a v8 enrollmentFee event, otherwise unchanged", () => {
+      const v8Save = v8SaveWithEnrollmentFee();
+      const text = JSON.stringify(v8Save);
+
+      const migrated = parseWorldJson(text);
+
+      const enrollmentEvents = migrated.ledger.filter((e) => e.kind === "enrollmentFee");
+      expect(enrollmentEvents).toHaveLength(1);
+      expect(enrollmentEvents[0]).toEqual({
+        kind: "enrollmentFee",
+        tick: v8Save.world.ledger.find((e) => e.kind === "enrollmentFee")!.tick,
+        guildId: "agrarian",
+        thalers: ENROLLMENT_FEE,
+      });
+      // Nothing else in the world was touched by the migration.
+      expect(migrated).toEqual({ ...v8Save.world, ledger: migrated.ledger });
+    });
+
+    it("loadAutosave transparently migrates a v8 slot, so an old save keeps loading (incident 0009 concern)", () => {
+      const storage = fakeStorage();
+      const v8Save = v8SaveWithEnrollmentFee();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify(v8Save));
+
+      const restored = loadAutosave(storage);
+      expect(restored).not.toBeNull();
+      expect(hasAutosave(storage)).toBe(true);
+      const enrollmentEvent = restored!.ledger.find((e) => e.kind === "enrollmentFee");
+      expect(enrollmentEvent).toMatchObject({ thalers: ENROLLMENT_FEE });
+    });
+
+    it("a save older than v8 is still rejected — migration is one step, not open-ended", () => {
+      const storage = fakeStorage();
+      const world = midSessionWorld();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 7, world }));
+      expect(loadAutosave(storage)).toBeNull();
+    });
   });
 });
