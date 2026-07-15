@@ -141,6 +141,25 @@ rather than trusting coder-attested numbers.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 07-15 | #229 | #226 | 3 | 3 (note) | 0 | pass | requiredRank decoupled from tier + stamp pass + SAVE_VERSION 9→10 + "Pilne" label + spec/CONTEXT sync. Red-evidence adapted to a type-forced field (stamp bypass → 8 red; gate revert → 2 red) — judged genuinely discriminating. Advisor corrected the invariant wording pre-review (min===1, not exactly-one). Owner-accepted tradeoff flagged prominently: v8 saves unreadable. Full e2e 80/80 run unprompted (whole-diff heuristic). |
 
+## Drobiazgi wave — first under the Opus Orchestrator (#217 + #221)
+
+Two Sonnet coders in parallel worktrees (fully disjoint file sets — TopBar/PortBar/
+OptionsOverlay/new sailability.ts vs gameStore/GameMenu/worldDate), one two-axis Opus
+reviewer over both diffs. First wave orchestrated by Opus 4.8 (not Fable), so the
+Orchestrator had advisor() available — used pre-dispatch on the #217 plan.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-15 | #244 | #217 | 2 | 0 | 0 | pass | Keybind `<g>` sails Controlled Ship to selected port. **Advisor caught the load-bearing trap pre-dispatch** (Orchestrator's plan review): reading reactive selectors inside the once-registered keydown listener would freeze on first-render `controlledShipId: null`; fix pinned to `getState()` inside the handler, dep array untouched — reviewer verified honored. `sailability` lifted to `sailability.ts` byte-for-byte (react-refresh). Honest TDD flag: 3 of 4 e2e are no-op regression guards (green at red), only the positive is true fail-first — stated plainly; positive test asserts arrival at the *selected* port, real key press (no dispatchEvent). |
+| 07-15 | #245 | #221 | 2 | 0 | 0 | pass | Seed name in export filename, store-only. **Premise correction caught pre-dispatch** (Orchestrator premise-check): issue claimed "seed lives in the world" — it does not (`createWorld` hashes+discards); routed to owner → store-only decision, no save migration. Robust sanitizer (all-hostile → seedless fallback). Blank-seed timestamp gap surfaced honestly and correctly NOT re-scoped → follow-up #243. No `src/sim`/`SAVE_VERSION` change. |
+
+Advisor layer, this wave: available to the Opus Orchestrator (correction 2026-07-15 — it
+does work from a non-Fable main agent; the harness "check your network" retry message is
+misleading, not a failure). Two pre-dispatch catches this time land at the Orchestrator's
+planning altitude (stale-closure trap, wrong-premise scope) rather than inside a coder —
+a new column of value from having advisor at the orchestration seat. Reviewer found zero
+blocking issues on either branch; one optional cosmetic (worldDate.ts naming) left as-is.
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
