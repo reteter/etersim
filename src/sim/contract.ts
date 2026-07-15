@@ -162,15 +162,31 @@ function pickSource(region: Region, targetPortId: PortId, good: GoodId): SourceC
  * at `OFFERS_PER_GUILD_MAX` per guild and selected by largest shortfall first
  * (canonical port/good order breaks ties) — deterministic by construction,
  * never the RNG (docs/specs/E3-contracts-and-guilds.md — Contracts). Pure
- * function of `(region, existingOffers, referenceHold)`: same inputs always
- * produce the same offer set (ADR-0003).
+ * function of `(region, existingOffers, referenceHold, activeContracts)`:
+ * same inputs always produce the same offer set (ADR-0003).
+ *
+ * `activeContracts` — the Company's contracts still active *after* this
+ * boundary's settlement phase (docs/design-notes/professor-review-sim-guilds-contracts-2026-07-14.md
+ * finding 1): a (port, good) already under an active contract is excluded
+ * from generation, full stop, regardless of whether the underlying shortage
+ * persists. Without this the generator was structurally blind to
+ * `company.contracts` and would regenerate an identical-id ghost offer for a
+ * still-short (port, good) every boundary, uselessly consuming a
+ * `OFFERS_PER_GUILD_MAX` slot the player could never accept (the id is
+ * already held). The accept-side guard (commands.ts `acceptContract`) stays
+ * as defense-in-depth against a stale-board race, but this is where the
+ * exclusion actually belongs.
  */
 export function refreshContractOffers(
   region: Region,
   existingOffers: readonly ContractOffer[],
   referenceHold: number,
+  activeContracts: readonly ActiveContract[],
 ): readonly ContractOffer[] {
+  const heldKeys = new Set(activeContracts.map((c) => `${c.portId}:${c.good}`));
+
   const survivors = existingOffers.filter((offer) => {
+    if (heldKeys.has(`${offer.portId}:${offer.good}`)) return false;
     const port = region.ports.find((p) => p.id === offer.portId);
     if (!port) return false;
     const entry = port.market[offer.good];
@@ -195,6 +211,7 @@ export function refreshContractOffers(
         const shortageLine = SHORTAGE_THRESHOLD * entry.equilibrium;
         if (entry.stock >= shortageLine) continue;
         if (result.some((o) => o.portId === port.id && o.good === good)) continue;
+        if (heldKeys.has(`${port.id}:${good}`)) continue; // already under an active contract
 
         const source = pickSource(region, port.id, good);
         if (source === null) continue; // no reachable source: not feasible

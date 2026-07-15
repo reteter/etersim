@@ -348,9 +348,13 @@ export function applyCommand(world: World, command: Command): World {
       const guildState = world.company.guilds[offer.guildId];
       if (!guildState) return world;
       if (rankOf(guildState.points) < offer.tier) return world;
-      // Guards a stale-board race: the same (guild,port,good) id could in
-      // principle reappear on the board while a same-id contract is already
-      // active — never duplicate it.
+      // Defense-in-depth against a stale-board race: the same (guild,port,good)
+      // id could in principle reappear on the board while a same-id contract
+      // is already active — never duplicate it. The generator (contract.ts
+      // `refreshContractOffers`, #200) now owns the real exclusion — it never
+      // emits an offer for a (port, good) already under an active contract —
+      // so this guard should be unreachable in practice; kept as a second
+      // line against a stale/imported board.
       if (world.company.contracts.some((c) => c.id === offer.id)) return world;
       const active: ActiveContract = {
         ...offer,
