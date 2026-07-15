@@ -34,19 +34,25 @@ function contractWorld(
   };
 }
 
-const sampleOffer = (overrides: Partial<ContractOffer> = {}): ContractOffer => ({
-  id: "agrarian:agrarian-port:textiles",
-  guildId: "agrarian",
-  portId: "agrarian-port",
-  good: "textiles",
-  quotaPerPeriod: 50,
-  periodDays: 7,
-  minPeriods: 3,
-  feePerPeriod: 200,
-  tier: 1,
-  basis: { sourcePortId: "urban-port", roundTripTicks: 40, expectedTrips: 2 },
-  ...overrides,
-});
+// `requiredRank` defaults to `tier` (the pre-#226, non-clause shape) unless
+// an override explicitly diverges them (the desperation-clause tests below).
+const sampleOffer = (overrides: Partial<ContractOffer> = {}): ContractOffer => {
+  const tier = overrides.tier ?? 1;
+  return {
+    id: "agrarian:agrarian-port:textiles",
+    guildId: "agrarian",
+    portId: "agrarian-port",
+    good: "textiles",
+    quotaPerPeriod: 50,
+    periodDays: 7,
+    minPeriods: 3,
+    feePerPeriod: 200,
+    tier,
+    requiredRank: tier,
+    basis: { sourcePortId: "urban-port", roundTripTicks: 40, expectedTrips: 2 },
+    ...overrides,
+  };
+};
 
 const world0 = createWorld("test-seed");
 const ship = (w: World): Ship => w.company.ships[0];
@@ -308,12 +314,22 @@ describe("acceptContract command (#94)", () => {
     expect(next).toEqual(w);
   });
 
-  it("rejects when enrolled but below the offer's tier, leaving the world unchanged", () => {
-    const offer = sampleOffer({ tier: 2 });
+  it("rejects when enrolled but below the offer's requiredRank, leaving the world unchanged", () => {
+    const offer = sampleOffer({ tier: 2 }); // requiredRank defaults to tier: 2
     let w = contractWorld("low-rank", 5000, "agrarian", 0); // rank 1
     w = { ...w, contractOffers: [offer] };
     const next = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
     expect(next).toEqual(w);
+  });
+
+  it("#226 desperation clause: a rank-1 company accepts a tier-3 offer stamped requiredRank 1 (gate reads requiredRank, not tier)", () => {
+    const offer = sampleOffer({ tier: 3, requiredRank: 1 });
+    let w = contractWorld("desperation-clause", 5000, "agrarian", 0); // rank 1
+    w = { ...w, contractOffers: [offer] };
+    const next = applyCommand(w, { kind: "acceptContract", offerId: offer.id });
+    expect(next.contractOffers).toEqual([]);
+    expect(next.company.contracts).toHaveLength(1);
+    expect(next.company.contracts[0]).toMatchObject({ tier: 3, requiredRank: 1 });
   });
 
   it("accepts when enrolled and rank meets the tier: contract added, offer removed from the board, no Ledger event", () => {

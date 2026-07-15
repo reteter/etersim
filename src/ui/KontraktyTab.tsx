@@ -13,10 +13,11 @@ import { GuildBadge } from "./guildDisplay";
 /**
  * Kontrakty tab (#96, docs/specs/E3-contracts-and-guilds.md — UX skeleton,
  * Store & UI): the PriceBoardOverlay's second tab. Open offers of enrolled
- * guilds (rank-gated tiers render locked, never hidden — #94's accept-side
- * rule made visible here) plus active contracts with period progress and a
- * resign affordance that states its −3 rank cost before executing. All
- * strings Polish (2026-07-14 UI grill, lock 2).
+ * guilds (rank-gated on `requiredRank`, never `tier` directly since #226 —
+ * render locked, never hidden — #94's accept-side rule made visible here)
+ * plus active contracts with period progress and a resign affordance that
+ * states its −3 rank cost before executing. All strings Polish (2026-07-14
+ * UI grill, lock 2).
  */
 
 function portName(world: World, portId: string): string {
@@ -36,13 +37,20 @@ function pluralPl(n: number, singular: string, few: string, many: string): strin
 }
 
 /** One open offer: guild badge, good → port, quota/period, min periods, fee,
- *  the basis line (#93's `ContractOffer.basis`), and either an Accept button
- *  or — above the company's rank with that guild — a Polish lock label
- *  (#96 AC3: board-side gating consistent with #94's accept-side rule, never
- *  hidden). */
+ *  the basis line (#93's `ContractOffer.basis`), a "Pilne" desperation-clause
+ *  label when this is the guild's guaranteed rank-1 entry offer at a tier
+ *  above 1 (#226), and either an Accept button or — above the company's
+ *  rank with that guild — a Polish lock label gated on `requiredRank`, not
+ *  `tier` (#96 AC3: board-side gating consistent with #94's accept-side
+ *  rule, never hidden). */
 function OfferRow({ world, offer, rank }: { world: World; offer: ContractOffer; rank: number }) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const locked = rank < offer.tier;
+  const locked = rank < offer.requiredRank;
+  // Desperation clause (#226): the guild's guaranteed rank-1 entry offer,
+  // when its honest tier says otherwise — a story label, never a rank
+  // number (a naturally rank-1 tier-1 offer isn't "desperate", it needs no
+  // label at all).
+  const isDesperate = offer.requiredRank === 1 && offer.tier > 1;
 
   return (
     <div
@@ -65,11 +73,14 @@ function OfferRow({ world, offer, rank }: { world: World; offer: ContractOffer; 
           {pluralPl(offer.basis.expectedTrips, "kurs", "kursy", "kursów")}/okres, najbliższe źródło:{" "}
           {portName(world, offer.basis.sourcePortId)}
         </p>
+        {isDesperate && (
+          <p className="kontrakty-offer__label">Pilne — gildia przyjmie każdego</p>
+        )}
         {locked ? (
           <div className="kontrakty-offer__lock">
-            <span className={`rank-badge rank-badge--${offer.tier}`}>{offer.tier}</span>
+            <span className={`rank-badge rank-badge--${offer.requiredRank}`}>{offer.requiredRank}</span>
             <span className="kontrakty-offer__lock-text">
-              Wymaga rangi {offer.tier} w tej gildii
+              Wymaga rangi {offer.requiredRank} w tej gildii
             </span>
           </div>
         ) : (

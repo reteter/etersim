@@ -65,8 +65,17 @@ export interface ContractOffer {
   readonly minPeriods: number;
   readonly feePerPeriod: number;
   /** 1 (nearest/shortest) – 4 (furthest/longest), banded from
-   *  `basis.roundTripTicks` (`bandTier`). */
+   *  `basis.roundTripTicks` (`bandTier`). The honest job description (fee,
+   *  minPeriods) — never gates access on its own (issue #226). */
   readonly tier: number;
+  /** The rank actually required to accept this offer (issue #226 —
+   *  desperation clause, docs/design-notes/playtest-2026-07-15-contractor.md).
+   *  Decoupled from `tier`: every refresh, each guild's lowest-tier open
+   *  offer (tie-break: deepest shortfall, `stampRequiredRanks` below) is
+   *  stamped `requiredRank = 1` regardless of its `tier`, guaranteeing every
+   *  guild with an open offer has at least one a rank-1 member can accept.
+   *  All other offers get `requiredRank = tier`, same as before the clause. */
+  readonly requiredRank: number;
   readonly basis: ContractOfferBasis;
 }
 
@@ -102,6 +111,55 @@ function minPeriodsForTier(tier: number): number {
 interface SourceCandidate {
   readonly portId: PortId;
   readonly roundTripTicks: number;
+}
+
+/** How far below its shortage line an offer's own (port, good) currently
+ *  sits — the same metric `refreshContractOffers`'s candidate sort uses, so
+ *  the desperation-clause tie-break (`stampRequiredRanks`) stays consistent
+ *  with it for offers generated this boundary, and recomputes it fresh for
+ *  survivors (whose original shortfall at generation time isn't carried on
+ *  the offer). Reads live `region` state, never RNG (ADR-0003). */
+function currentShortfall(region: Region, offer: ContractOffer): number {
+  const port = region.ports.find((p) => p.id === offer.portId);
+  if (!port) return 0;
+  const entry = port.market[offer.good];
+  return SHORTAGE_THRESHOLD * entry.equilibrium - entry.stock;
+}
+
+/**
+ * Desperation clause (issue #226, grill locks 2026-07-15 — owner-approved):
+ * recomputed idempotently over the FULL offer set (survivors + newly
+ * generated) every refresh, so the clause migrates with the board rather
+ * than sticking to whichever offer happened to win it last time. Per guild,
+ * the lowest-`tier` open offer is stamped `requiredRank = 1` — deepest
+ * `currentShortfall` breaks a tie, then first-seen order in `offers` (itself
+ * deterministic: survivors first, then per-guild candidates already sorted
+ * by shortfall) as the final, never-RNG tie-break. Every other offer of that
+ * guild gets `requiredRank = tier`, unchanged from pre-clause behavior. A
+ * guild with zero open offers stamps nothing (no offer to guarantee access
+ * to).
+ */
+function stampRequiredRanks(
+  region: Region,
+  offers: readonly ContractOffer[],
+): readonly ContractOffer[] {
+  const clauseWinnerByGuild = new Map<GuildId, { id: string; tier: number; shortfall: number }>();
+  for (const offer of offers) {
+    const shortfall = currentShortfall(region, offer);
+    const current = clauseWinnerByGuild.get(offer.guildId);
+    if (
+      current === undefined ||
+      offer.tier < current.tier ||
+      (offer.tier === current.tier && shortfall > current.shortfall)
+    ) {
+      clauseWinnerByGuild.set(offer.guildId, { id: offer.id, tier: offer.tier, shortfall });
+    }
+  }
+
+  return offers.map((offer) => ({
+    ...offer,
+    requiredRank: clauseWinnerByGuild.get(offer.guildId)?.id === offer.id ? 1 : offer.tier,
+  }));
 }
 
 /**
@@ -234,6 +292,10 @@ export function refreshContractOffers(
             minPeriods: minPeriodsForTier(tier),
             feePerPeriod,
             tier,
+            // Placeholder — `stampRequiredRanks` recomputes this for the
+            // FULL result (survivors + new) below, the only place it's
+            // decided (issue #226).
+            requiredRank: tier,
             basis: { sourcePortId: source.portId, roundTripTicks: source.roundTripTicks, expectedTrips },
           },
           shortfall: shortageLine - entry.stock,
@@ -251,7 +313,9 @@ export function refreshContractOffers(
     }
   }
 
-  return result;
+  // Desperation clause (#226): recomputed over the full survivors+new
+  // result every refresh, so it migrates with the board.
+  return stampRequiredRanks(region, result);
 }
 
 /** Applies one contract's settlement outcome (met, missed, or breached — a

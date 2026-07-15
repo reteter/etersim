@@ -1526,6 +1526,17 @@ body {
   color: #d9705f;
 }
 
+/* Desperation-clause label (#226 — "Pilne"): a generic story-label slot on
+   the card, not a rank number — the guaranteed rank-1 entry offer at a
+   tier above 1 shows this instead of a badge; no gold (ADR-0006), same
+   neutral-warm register as the lock text rather than the archetype hue. */
+.kontrakty-offer__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #d9a05f;
+  margin: 0.1rem 0 0;
+}
+
 .kontrakty-contract__warn {
   font-size: 0.78rem;
   color: #d9a05f;

@@ -123,6 +123,9 @@ describe("refreshContractOffers (#93 — generation)", () => {
     expect(offer.feePerPeriod).toBeGreaterThan(0);
     expect(offer.minPeriods).toBeGreaterThanOrEqual(1);
     expect(offer.id).toBe("agrarian:agrarian-port:textiles");
+    // #226: the guild's only open offer is, trivially, its lowest-tier one —
+    // the desperation clause stamps requiredRank 1 on it regardless of tier.
+    expect(offer.requiredRank).toBe(1);
   });
 
   it("generates no offer when no good is short (stock at or above threshold)", () => {
@@ -178,6 +181,7 @@ describe("refreshContractOffers (#93 — generation)", () => {
       minPeriods: 3,
       feePerPeriod: 100,
       tier: 1,
+      requiredRank: 1,
       basis: { sourcePortId: "urban-port", roundTripTicks: 80, expectedTrips: 2 },
       startTick: 0,
       periodIndex: 0,
@@ -206,6 +210,7 @@ describe("refreshContractOffers (#93 — generation)", () => {
       minPeriods: 3,
       feePerPeriod: 100,
       tier: 1,
+      requiredRank: 1,
       basis: { sourcePortId: "source-port", roundTripTicks: 60, expectedTrips: 2 },
       startTick: 0,
       periodIndex: 0,
@@ -405,5 +410,256 @@ describe("#200: an accepted offer's (port, good) never regenerates a ghost offer
     expect(postOffers.length).toBeLessThanOrEqual(OFFERS_PER_GUILD_MAX);
     expect(postOffers.length).toBeGreaterThanOrEqual(preAcceptCount - 1);
     for (const o of postOffers) expect(o.id).not.toBe(offer!.id);
+  });
+});
+
+/** Two agrarian ports short of textiles, sourced from the same producer at
+ *  different distances — tier 2 (near) and tier 3 (far) — so, by
+ *  construction, no tier-1 candidate exists for this guild. Pins the
+ *  desperation clause's tier decoupling (issue #226): even with nothing at
+ *  tier 1, the guild's lowest-tier offer is still guaranteed requiredRank 1. */
+function twoTierAgrarianRegion(): Region {
+  const priceBias = { grain: 1, textiles: 1, aetherSalt: 1, electronics: 1, timber: 1 };
+  const goodEntry = (stock: number, equilibrium: number): MarketGood => ({ stock, equilibrium });
+
+  const near: Port = {
+    id: "agrarian-near",
+    name: "Agrarian Near",
+    archetype: "agrarian",
+    x: 0,
+    y: 0,
+    priceBias,
+    market: {
+      grain: goodEntry(400, 400),
+      textiles: goodEntry(10, 100), // shortfall 40
+      aetherSalt: goodEntry(100, 100),
+      electronics: goodEntry(100, 100),
+      timber: goodEntry(100, 100),
+    },
+  };
+  const far: Port = {
+    id: "agrarian-far",
+    name: "Agrarian Far",
+    archetype: "agrarian",
+    x: 2,
+    y: 0,
+    priceBias,
+    market: {
+      grain: goodEntry(400, 400),
+      textiles: goodEntry(10, 100), // same shortfall depth — tier is the only difference
+      aetherSalt: goodEntry(100, 100),
+      electronics: goodEntry(100, 100),
+      timber: goodEntry(100, 100),
+    },
+  };
+  const producer: Port = {
+    id: "urban-port",
+    name: "Urban Port",
+    archetype: "urban",
+    x: 1,
+    y: 0,
+    priceBias,
+    market: {
+      grain: goodEntry(100, 100),
+      textiles: goodEntry(300, 100),
+      aetherSalt: goodEntry(100, 100),
+      electronics: goodEntry(100, 100),
+      timber: goodEntry(100, 100),
+    },
+  };
+  return {
+    ports: [near, far, producer],
+    lanes: [
+      { id: "lane-near", a: near.id, b: producer.id, voyageTicks: 50 }, // round trip 100 -> tier 2
+      { id: "lane-far", a: far.id, b: producer.id, voyageTicks: 70 }, // round trip 140 -> tier 3
+    ],
+  };
+}
+
+/** Two same-tier agrarian ports (identical distance to the shared producer)
+ *  with different shortfall depth — isolates the clause's tie-break from
+ *  the tier axis (issue #226: "tie-break deepest shortfall, matching the
+ *  existing candidate sort"). */
+function sameTierDifferentShortfallRegion(): Region {
+  const priceBias = { grain: 1, textiles: 1, aetherSalt: 1, electronics: 1, timber: 1 };
+  const goodEntry = (stock: number, equilibrium: number): MarketGood => ({ stock, equilibrium });
+
+  const shallow: Port = {
+    id: "agrarian-shallow",
+    name: "Agrarian Shallow",
+    archetype: "agrarian",
+    x: 0,
+    y: 0,
+    priceBias,
+    market: {
+      grain: goodEntry(400, 400),
+      textiles: goodEntry(40, 100), // shortfall 10
+      aetherSalt: goodEntry(100, 100),
+      electronics: goodEntry(100, 100),
+      timber: goodEntry(100, 100),
+    },
+  };
+  const deep: Port = {
+    id: "agrarian-deep",
+    name: "Agrarian Deep",
+    archetype: "agrarian",
+    x: 2,
+    y: 0,
+    priceBias,
+    market: {
+      grain: goodEntry(400, 400),
+      textiles: goodEntry(5, 100), // shortfall 45 — deeper than shallow
+      aetherSalt: goodEntry(100, 100),
+      electronics: goodEntry(100, 100),
+      timber: goodEntry(100, 100),
+    },
+  };
+  const producer: Port = {
+    id: "urban-port",
+    name: "Urban Port",
+    archetype: "urban",
+    x: 1,
+    y: 0,
+    priceBias,
+    market: {
+      grain: goodEntry(100, 100),
+      textiles: goodEntry(300, 100),
+      aetherSalt: goodEntry(100, 100),
+      electronics: goodEntry(100, 100),
+      timber: goodEntry(100, 100),
+    },
+  };
+  return {
+    ports: [shallow, deep, producer],
+    lanes: [
+      { id: "lane-shallow", a: shallow.id, b: producer.id, voyageTicks: 50 }, // tier 2
+      { id: "lane-deep", a: deep.id, b: producer.id, voyageTicks: 50 }, // same tier 2
+    ],
+  };
+}
+
+describe("#226 desperation clause — requiredRank stamping (refreshContractOffers)", () => {
+  it("with no tier-1 candidate, the guild's lowest-tier offer (tier 2) still gets requiredRank 1 — decoupled from tier", () => {
+    const region = twoTierAgrarianRegion();
+    const offers = refreshContractOffers(region, [], REFERENCE_HOLD, []);
+    expect(offers).toHaveLength(2);
+
+    const near = offers.find((o) => o.portId === "agrarian-near")!;
+    const far = offers.find((o) => o.portId === "agrarian-far")!;
+    expect(near.tier).toBe(2);
+    expect(far.tier).toBe(3);
+    expect(near.requiredRank).toBe(1); // clause winner: lowest tier in the guild
+    expect(far.requiredRank).toBe(3); // unchanged: requiredRank === tier
+  });
+
+  it("tie-break within the same tier goes to the deepest shortfall (matches the existing candidate sort)", () => {
+    const region = sameTierDifferentShortfallRegion();
+    const offers = refreshContractOffers(region, [], REFERENCE_HOLD, []);
+    expect(offers).toHaveLength(2);
+
+    const shallow = offers.find((o) => o.portId === "agrarian-shallow")!;
+    const deep = offers.find((o) => o.portId === "agrarian-deep")!;
+    expect(shallow.tier).toBe(deep.tier); // same tier — confirms it's the tie-break under test
+    expect(deep.requiredRank).toBe(1);
+    expect(shallow.requiredRank).toBe(shallow.tier);
+  });
+
+  it("the clause migrates with the board: a shifted shortfall between refreshes moves requiredRank 1 to the new deepest offer", () => {
+    const region = sameTierDifferentShortfallRegion();
+    const first = refreshContractOffers(region, [], REFERENCE_HOLD, []);
+    expect(first.find((o) => o.requiredRank === 1)!.portId).toBe("agrarian-deep");
+
+    // Both offers survive (still short), same tier — but "shallow" is now the
+    // deeper shortage. The stamp pass recomputes idempotently over the full
+    // (survivor) result, so the clause must follow it.
+    const deepenedRegion: Region = {
+      ...region,
+      ports: region.ports.map((p) =>
+        p.id === "agrarian-shallow"
+          ? { ...p, market: { ...p.market, textiles: { ...p.market.textiles, stock: 0 } } }
+          : p,
+      ),
+    };
+    const second = refreshContractOffers(deepenedRegion, first, REFERENCE_HOLD, []);
+    expect(second).toHaveLength(2);
+    expect(second.find((o) => o.requiredRank === 1)!.portId).toBe("agrarian-shallow");
+  });
+});
+
+describe("#226 desperation clause — invariant across real worldgen seeds", () => {
+  // Acceptance criterion (issue #226): "for every guild with >=1 open offer,
+  // at least one is acceptable at rank 1" — i.e. min(requiredRank) === 1 per
+  // guild, never "exactly one requiredRank === 1" (a guild with two natural
+  // tier-1 offers legitimately has two offers at requiredRank 1).
+  const SEEDS = [1, 7, 42, 99, 123];
+
+  for (const seed of SEEDS) {
+    it(`seed ${seed}: every guild with an open offer has at least one acceptable at rank 1`, () => {
+      let world = createWorld(seed);
+      for (let i = 0; i < 90 * TICKS_PER_DAY; i++) world = tick(world, []);
+
+      const requiredRanksByGuild = new Map<string, number[]>();
+      for (const offer of world.contractOffers) {
+        const arr = requiredRanksByGuild.get(offer.guildId) ?? [];
+        arr.push(offer.requiredRank);
+        requiredRanksByGuild.set(offer.guildId, arr);
+      }
+      expect(requiredRanksByGuild.size).toBeGreaterThan(0); // precondition: offers actually exist
+
+      for (const [, requiredRanks] of requiredRanksByGuild) {
+        expect(Math.min(...requiredRanks)).toBe(1);
+      }
+    });
+  }
+});
+
+describe("#226: inverted deadlock — a rank-1 company accepts and settles a tier>1 desperation-clause offer", () => {
+  it("accept -> settle -> +1 point, end-to-end (the deadlock this issue fixes, inverted)", () => {
+    let world = createWorld("deadlock-inverted");
+    world = {
+      ...world,
+      company: { ...world.company, thalers: HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 100_000 },
+    };
+    world = applyCommand(world, { kind: "foundHeadquarters", portId: world.region.ports[0].id });
+    world = applyCommand(world, { kind: "enroll", guildId: "agrarian" }); // rank 1, 0 points
+
+    const homePortId = world.region.ports[0].id;
+    // An honest tier-3 job description — under the OLD gate
+    // (rankOf(0) === 1 < tier 3) this acceptance would have been rejected,
+    // reproducing the playtest deadlock (docs/design-notes/
+    // playtest-2026-07-15-contractor.md). The clause guarantees requiredRank
+    // 1 on the guild's lowest-tier offer regardless of tier.
+    const offer: ContractOffer = {
+      id: "agrarian:desperation-offer",
+      guildId: "agrarian",
+      portId: homePortId,
+      good: "textiles",
+      quotaPerPeriod: 1,
+      periodDays: 1,
+      minPeriods: 3,
+      feePerPeriod: 50,
+      tier: 3,
+      requiredRank: 1,
+      basis: { sourcePortId: homePortId, roundTripTicks: 10, expectedTrips: 1 },
+    };
+    world = { ...world, contractOffers: [offer] };
+
+    world = applyCommand(world, { kind: "acceptContract", offerId: offer.id });
+    expect(world.company.contracts).toHaveLength(1);
+
+    // Quota met, then cross the (1-day) period's day boundary.
+    world = {
+      ...world,
+      company: {
+        ...world.company,
+        contracts: world.company.contracts.map((c) => ({
+          ...c,
+          deliveredThisPeriod: c.quotaPerPeriod,
+        })),
+      },
+    };
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+
+    expect(world.company.guilds.agrarian?.points).toBe(1);
   });
 });

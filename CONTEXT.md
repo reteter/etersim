@@ -378,7 +378,8 @@ _Avoid_: membership (as identifier), subscription
 **Rank** (PL: ranga):
 The Company's discrete standing with one Guild: four steps, a facade over hidden
 progress points (settled period +, missed period −, breach −−; ranks can fall). Rank
-gates which Contract tiers the guild offers and which Building permits it grants.
+gates Contract access (via `requiredRank` — see Desperation clause, #226: decoupled
+from `tier` so access is never fully closed) and which Building permits it grants.
 _Implementation_: model shipped in #168/#170 — `rankOf(points)`, `RANK_THRESHOLDS`
 and the `POINTS_*` constants (`guild.ts`); since #94 the points move — Contract
 settlements, breach and resignation are the only mutations (floor at 0).
@@ -401,11 +402,33 @@ period — the market pays for goods, the guild pays for reliability. Contracts 
 waiting mechanics: fulfilment is read from the Ledger after the fact.
 _Implementation_: offers shipped in #93 — `contract.ts` (`refreshContractOffers`,
 causal expiry at the day boundary, feasibility-by-construction basis); lifecycle in
-#94 — `acceptContract` (enrollment + accept-side rank gating) / `resignContract`
-commands, sale attribution on the shared `applyTrade` seam (manual == routed by
-construction), settlements in `dayBoundary`. Guardrail suite: `e3-guardrails.test.ts`
-(#98).
+#94 — `acceptContract` (enrollment + accept-side rank gating on `requiredRank`, see
+Desperation clause) / `resignContract` commands, sale attribution on the shared
+`applyTrade` seam (manual == routed by construction), settlements in `dayBoundary`.
+Guardrail suite: `e3-guardrails.test.ts` (#98).
 _Avoid_: quest, mission, order (collides with Stop orders)
+
+**Desperation clause** (PL: klauzula desperacji):
+The rule that keeps Rank gating access without ever locking a Guild's board shut:
+`ContractOffer.requiredRank` is a separate field from `tier`. Tier stays the honest
+job description (distance band → fee, minPeriods); `requiredRank` is what accept
+actually checks. At every board refresh each guild's lowest-tier open offer (ties broken
+by deepest shortfall, same metric the generator's own candidate sort uses) is stamped
+`requiredRank = 1`; every other offer keeps `requiredRank = tier`. Recomputed
+idempotently over the full open-offer set (survivors included) every refresh, so the
+clause migrates with the board rather than sticking to one offer. Guarantees every
+guild with at least one open offer has at least one a rank-1 member can accept — the
+rank/tier progression deadlock (docs/design-notes/playtest-2026-07-15-contractor.md)
+this fixes. Presented as a "Pilne" story label on the offer card, never a rank badge,
+and never on a tier-1 offer that is already naturally rank-1 (that offer isn't
+desperate).
+_Implementation_: shipped in #226 — `contract.ts`'s `stampRequiredRanks` (the stamp
+pass, end of `refreshContractOffers`); `commands.ts`'s `acceptContract` gates on
+`requiredRank`; `KontraktyTab.tsx`'s `.kontrakty-offer__label` slot renders "Pilne —
+gildia przyjmie każdego" when `requiredRank === 1 && tier > 1`. SAVE_VERSION 9→10
+backfills `requiredRank: tier` onto saved offers/active contracts (self-heals to the
+clause at the next refresh).
+_Avoid_: rank discount, apprentice contract (a different, parked idea)
 
 **Settlement period** (PL: okres rozliczeniowy):
 A Contract's repeating window of L world days, settled at its final day boundary: quota
@@ -428,9 +451,9 @@ an offer dies causally when its shortage heals. The board is a barometer of the 
 not a quest log.
 _Implementation_: shipped in #96 — the Kontrakty tab of `PriceBoardOverlay` on the
 shared Tabs component (#181): offers of enrolled guilds with guild badge
-(`guildDisplay.tsx`), basis line and board-side tier locks ("Wymaga rangi N"); active
-contracts with period progress and two-step resign stating −3. The notice strip (#97)
-opens it via `initialTab="kontrakty"`.
+(`guildDisplay.tsx`), basis line and board-side locks ("Wymaga rangi N", gated on
+`requiredRank` since #226); active contracts with period progress and two-step resign
+stating −3. The notice strip (#97) opens it via `initialTab="kontrakty"`.
 _Avoid_: quest log, job board
 
 **Building permit** (PL: pozwolenie budowlane):

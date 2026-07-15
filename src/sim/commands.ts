@@ -344,11 +344,14 @@ export function applyCommand(world: World, command: Command): World {
     case "acceptContract": {
       // Rank-gating is accept-side (docs/specs/E3-contracts-and-guilds.md —
       // Tech: Contracts): enrollment + rank checked here, never at generation.
+      // Gates on `requiredRank`, not `tier` (issue #226 — desperation clause:
+      // tier stays the honest job description, requiredRank is the actually
+      // enforced access rule, guaranteed 1 for at least one offer per guild).
       const offer = world.contractOffers.find((o) => o.id === command.offerId);
       if (!offer) return world;
       const guildState = world.company.guilds[offer.guildId];
       if (!guildState) return world;
-      if (rankOf(guildState.points) < offer.tier) return world;
+      if (rankOf(guildState.points) < offer.requiredRank) return world;
       // Defense-in-depth against a stale-board race: the same (guild,port,good)
       // id could in principle reappear on the board while a same-id contract
       // is already active — never duplicate it. The generator (contract.ts

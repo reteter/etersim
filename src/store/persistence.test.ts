@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyCommand,
-  CONSTRUCTION_RESERVE,
   createWorld,
-  ENROLLMENT_FEE,
-  HEADQUARTERS_COST,
   tick,
+  type ContractOffer,
   type World,
 } from "../sim";
 import {
@@ -75,29 +72,39 @@ function e9World(): World {
   return world;
 }
 
-/** A world carrying one real `enrollmentFee` event, then de-shaped back to
- *  the pre-#203 v8 wire format (no `thalers` field) — the exact shape a v8
- *  save on disk actually had, not a hand-invented literal. */
-function v8SaveWithEnrollmentFee(): { version: 8; world: World } {
-  const base = createWorld("v8-migration");
-  const funded: World = {
-    ...base,
-    company: { ...base.company, thalers: HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 10_000 },
-  };
-  const founded = applyCommand(funded, {
-    kind: "foundHeadquarters",
-    portId: base.region.ports[0].id,
-  });
-  const enrolled = applyCommand(founded, { kind: "enroll", guildId: "agrarian" });
-  expect(enrolled.ledger.at(-1)).toMatchObject({ kind: "enrollmentFee", thalers: ENROLLMENT_FEE });
+/** A world carrying one open offer and one active contract, then de-shaped
+ *  back to the pre-#226 v9 wire format (no `requiredRank` on either) — the
+ *  exact shape a v9 save on disk actually had, not a hand-invented literal. */
+function v9SaveWithContractOffer(): { version: 9; world: World } {
+  const base = createWorld("v9-migration");
+  const homePortId = base.region.ports[0].id;
+  const sourcePortId = base.region.ports[1].id;
 
-  const v8Ledger = enrolled.ledger.map((event) => {
-    if (event.kind !== "enrollmentFee") return event;
-    const withoutThalers: Record<string, unknown> = { ...event };
-    delete withoutThalers.thalers;
-    return withoutThalers;
-  });
-  return { version: 8, world: { ...enrolled, ledger: v8Ledger } as unknown as World };
+  const offer: ContractOffer = {
+    id: "agrarian:offer-tier2",
+    guildId: "agrarian",
+    portId: homePortId,
+    good: "aetherSalt",
+    quotaPerPeriod: 40,
+    periodDays: 10,
+    minPeriods: 4,
+    feePerPeriod: 200,
+    tier: 2,
+    requiredRank: 2,
+    basis: { sourcePortId, roundTripTicks: 120, expectedTrips: 2 },
+  };
+  const withOffer: World = {
+    ...base,
+    company: { ...base.company, guilds: { agrarian: { points: 0 } } },
+    contractOffers: [offer],
+  };
+
+  const v9Offer: Record<string, unknown> = { ...offer };
+  delete v9Offer.requiredRank;
+  return {
+    version: 9,
+    world: { ...withOffer, contractOffers: [v9Offer] } as unknown as World,
+  };
 }
 
 describe("persistence", () => {
@@ -184,41 +191,37 @@ describe("persistence", () => {
     expect(parsed.version).toBe(SAVE_VERSION);
   });
 
-  describe("v8 -> v9 migration (issue #203 — enrollmentFee gains thalers)", () => {
-    it("parseWorldJson backfills thalers: ENROLLMENT_FEE onto a v8 enrollmentFee event, otherwise unchanged", () => {
-      const v8Save = v8SaveWithEnrollmentFee();
-      const text = JSON.stringify(v8Save);
+  describe("v9 -> v10 migration (issue #226 — desperation clause adds requiredRank)", () => {
+    it("parseWorldJson backfills requiredRank: tier onto a v9 contract offer, otherwise unchanged", () => {
+      const v9Save = v9SaveWithContractOffer();
+      const text = JSON.stringify(v9Save);
 
       const migrated = parseWorldJson(text);
 
-      const enrollmentEvents = migrated.ledger.filter((e) => e.kind === "enrollmentFee");
-      expect(enrollmentEvents).toHaveLength(1);
-      expect(enrollmentEvents[0]).toEqual({
-        kind: "enrollmentFee",
-        tick: v8Save.world.ledger.find((e) => e.kind === "enrollmentFee")!.tick,
-        guildId: "agrarian",
-        thalers: ENROLLMENT_FEE,
+      expect(migrated.contractOffers).toHaveLength(1);
+      expect(migrated.contractOffers[0]).toEqual({
+        ...(v9Save.world.contractOffers[0] as ContractOffer),
+        requiredRank: (v9Save.world.contractOffers[0] as ContractOffer).tier,
       });
       // Nothing else in the world was touched by the migration.
-      expect(migrated).toEqual({ ...v8Save.world, ledger: migrated.ledger });
+      expect(migrated).toEqual({ ...v9Save.world, contractOffers: migrated.contractOffers });
     });
 
-    it("loadAutosave transparently migrates a v8 slot, so an old save keeps loading (incident 0009 concern)", () => {
+    it("loadAutosave transparently migrates a v9 slot, so an old save keeps loading (incident 0009 concern)", () => {
       const storage = fakeStorage();
-      const v8Save = v8SaveWithEnrollmentFee();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify(v8Save));
+      const v9Save = v9SaveWithContractOffer();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify(v9Save));
 
       const restored = loadAutosave(storage);
       expect(restored).not.toBeNull();
       expect(hasAutosave(storage)).toBe(true);
-      const enrollmentEvent = restored!.ledger.find((e) => e.kind === "enrollmentFee");
-      expect(enrollmentEvent).toMatchObject({ thalers: ENROLLMENT_FEE });
+      expect(restored!.contractOffers[0]).toMatchObject({ requiredRank: 2 });
     });
 
-    it("a save older than v8 is still rejected — migration is one step, not open-ended", () => {
+    it("a save older than v9 is still rejected — migration is one step, not open-ended", () => {
       const storage = fakeStorage();
       const world = midSessionWorld();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 7, world }));
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 8, world }));
       expect(loadAutosave(storage)).toBeNull();
     });
   });
