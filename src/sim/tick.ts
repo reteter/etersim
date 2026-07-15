@@ -263,10 +263,18 @@ function dayBoundary(world: World): World {
   // settlements and before the netWorth snapshot, per the spec's day-boundary
   // order. Sized against a fixed reference hold (STARTING_HOLD) rather than
   // any real ship's hold — a guild's offer is a promise to the market, not
-  // tailored to the player's current fleet.
+  // tailored to the player's current fleet. `next.company.contracts` here is
+  // already post-settlement (settleContracts ran above), so a contract that
+  // terminated at this same boundary is correctly no longer excluded (#200 —
+  // exclusion keys on contracts still active *after* settlement).
   next = {
     ...next,
-    contractOffers: refreshContractOffers(next.region, next.contractOffers, STARTING_HOLD),
+    contractOffers: refreshContractOffers(
+      next.region,
+      next.contractOffers,
+      STARTING_HOLD,
+      next.company.contracts,
+    ),
   };
   // Daily net-worth snapshot (docs/specs/E9 — Ledger): thalers + fleet cargo +
   // build-site store, at region-average mid price; ships/buildings carry no

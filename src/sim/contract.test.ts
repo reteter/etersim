@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { CONSTRUCTION_RESERVE, HEADQUARTERS_COST } from "./building";
+import { applyCommand } from "./commands";
 import { GOOD_IDS, type GoodId } from "./goods";
 import { OFFERS_PER_GUILD_MAX, SHORTAGE_THRESHOLD } from "./guild";
 import { shortestCourse } from "./pathfinding";
-import { refreshContractOffers, type ContractOffer } from "./contract";
+import { refreshContractOffers, type ActiveContract, type ContractOffer } from "./contract";
 import { ARCHETYPE_PROFILES, TICKS_PER_DAY, type MarketGood, type Port, type Region } from "./region";
 import { tick } from "./tick";
-import { createWorld } from "./world";
+import { createWorld, type World } from "./world";
 
 const REFERENCE_HOLD = 50;
 
@@ -54,10 +56,54 @@ function twoPortRegion(voyageTicks: number, agrarianTextilesStock: number): Regi
   };
 }
 
+/** Agrarian port short on FOUR non-grain goods (grain is its own domain,
+ *  always in surplus here) — more shortages than `OFFERS_PER_GUILD_MAX` — all
+ *  sourced feasibly from one producer port. Shared by the cap test and the
+ *  #200 held-slot test below. */
+function fourShortageRegion(): Region {
+  const priceBias = { grain: 1, textiles: 1, aetherSalt: 1, electronics: 1, timber: 1 };
+  const goodEntry = (stock: number, equilibrium: number): MarketGood => ({ stock, equilibrium });
+
+  const agrarian: Port = {
+    id: "agrarian-port",
+    name: "Agrarian Port",
+    archetype: "agrarian",
+    x: 0,
+    y: 0,
+    priceBias,
+    market: {
+      grain: goodEntry(400, 400),
+      textiles: goodEntry(40, 100), // shortfall 10
+      aetherSalt: goodEntry(10, 100), // shortfall 40 (largest)
+      electronics: goodEntry(30, 100), // shortfall 20
+      timber: goodEntry(20, 100), // shortfall 30
+    },
+  };
+  const source: Port = {
+    id: "source-port",
+    name: "Source Port",
+    archetype: "urban",
+    x: 1,
+    y: 0,
+    priceBias,
+    market: {
+      grain: goodEntry(100, 100),
+      textiles: goodEntry(300, 100),
+      aetherSalt: goodEntry(300, 100),
+      electronics: goodEntry(300, 100),
+      timber: goodEntry(300, 100),
+    },
+  };
+  return {
+    ports: [agrarian, source],
+    lanes: [{ id: "lane", a: agrarian.id, b: source.id, voyageTicks: 30 }],
+  };
+}
+
 describe("refreshContractOffers (#93 — generation)", () => {
   it("generates an offer for a real shortage, sourced from the nearest net-producer, with a feasible basis", () => {
     const region = twoPortRegion(40, 10); // stock 10 < 0.5*100 threshold
-    const offers = refreshContractOffers(region, [], REFERENCE_HOLD);
+    const offers = refreshContractOffers(region, [], REFERENCE_HOLD, []);
 
     expect(offers).toHaveLength(1);
     const offer = offers[0];
@@ -81,88 +127,104 @@ describe("refreshContractOffers (#93 — generation)", () => {
 
   it("generates no offer when no good is short (stock at or above threshold)", () => {
     const region = twoPortRegion(40, 50); // exactly at 0.5 * 100 — not short
-    const offers = refreshContractOffers(region, [], REFERENCE_HOLD);
+    const offers = refreshContractOffers(region, [], REFERENCE_HOLD, []);
     expect(offers).toEqual([]);
   });
 
   it("generates no offer when the shortage is real but no source is reachable (no lanes)", () => {
     const region = twoPortRegion(40, 10);
     const isolated: Region = { ports: region.ports, lanes: [] };
-    const offers = refreshContractOffers(isolated, [], REFERENCE_HOLD);
+    const offers = refreshContractOffers(isolated, [], REFERENCE_HOLD, []);
     expect(offers).toEqual([]);
   });
 
   it("is idempotent: refreshing again with the same world state yields the same single offer (no duplicate for the same good/port)", () => {
     const region = twoPortRegion(40, 10);
-    const first = refreshContractOffers(region, [], REFERENCE_HOLD);
-    const second = refreshContractOffers(region, first, REFERENCE_HOLD);
+    const first = refreshContractOffers(region, [], REFERENCE_HOLD, []);
+    const second = refreshContractOffers(region, first, REFERENCE_HOLD, []);
     expect(second).toEqual(first);
   });
 
   it("causal expiry: a healed shortage drops its offer at the next refresh", () => {
     const shortRegion = twoPortRegion(40, 10);
-    const offers = refreshContractOffers(shortRegion, [], REFERENCE_HOLD);
+    const offers = refreshContractOffers(shortRegion, [], REFERENCE_HOLD, []);
     expect(offers).toHaveLength(1);
 
     const healedRegion = twoPortRegion(40, 80); // recovered above threshold
-    const refreshed = refreshContractOffers(healedRegion, offers, REFERENCE_HOLD);
+    const refreshed = refreshContractOffers(healedRegion, offers, REFERENCE_HOLD, []);
     expect(refreshed).toEqual([]);
   });
 
   it("caps at OFFERS_PER_GUILD_MAX open offers per guild, keeping the largest shortfalls first", () => {
     expect(OFFERS_PER_GUILD_MAX).toBe(3);
 
-    const priceBias = { grain: 1, textiles: 1, aetherSalt: 1, electronics: 1, timber: 1 };
-    const goodEntry = (stock: number, equilibrium: number): MarketGood => ({ stock, equilibrium });
-
-    // agrarian port short on FOUR non-grain goods (grain is its own domain,
-    // always in surplus here) — more shortages than OFFERS_PER_GUILD_MAX.
-    const agrarian: Port = {
-      id: "agrarian-port",
-      name: "Agrarian Port",
-      archetype: "agrarian",
-      x: 0,
-      y: 0,
-      priceBias,
-      market: {
-        grain: goodEntry(400, 400),
-        textiles: goodEntry(40, 100), // shortfall 10
-        aetherSalt: goodEntry(10, 100), // shortfall 40 (largest)
-        electronics: goodEntry(30, 100), // shortfall 20
-        timber: goodEntry(20, 100), // shortfall 30
-      },
-    };
-    // A source port producing every good, so every candidate is feasible.
-    const source: Port = {
-      id: "source-port",
-      name: "Source Port",
-      archetype: "urban",
-      x: 1,
-      y: 0,
-      priceBias,
-      market: {
-        grain: goodEntry(100, 100),
-        textiles: goodEntry(300, 100),
-        aetherSalt: goodEntry(300, 100),
-        electronics: goodEntry(300, 100),
-        timber: goodEntry(300, 100),
-      },
-    };
-    const region: Region = {
-      ports: [agrarian, source],
-      lanes: [{ id: "lane", a: agrarian.id, b: source.id, voyageTicks: 30 }],
-    };
-
-    const offers = refreshContractOffers(region, [], REFERENCE_HOLD);
+    const region = fourShortageRegion();
+    const offers = refreshContractOffers(region, [], REFERENCE_HOLD, []);
     expect(offers).toHaveLength(OFFERS_PER_GUILD_MAX);
     const goods = offers.map((o) => o.good).sort();
     // aetherSalt (40), timber (30), electronics (20) win over textiles (10).
     expect(goods).toEqual(["aetherSalt", "electronics", "timber"].sort());
   });
 
+  it("#200: excludes a (port, good) already under an active contract from generation, even though the shortage persists", () => {
+    const region = twoPortRegion(40, 10); // stock 10 < 0.5*100 threshold — still short
+    const activeContract: ActiveContract = {
+      id: "agrarian:agrarian-port:textiles",
+      guildId: "agrarian",
+      portId: "agrarian-port",
+      good: "textiles",
+      quotaPerPeriod: 10,
+      periodDays: 7,
+      minPeriods: 3,
+      feePerPeriod: 100,
+      tier: 1,
+      basis: { sourcePortId: "urban-port", roundTripTicks: 80, expectedTrips: 2 },
+      startTick: 0,
+      periodIndex: 0,
+      deliveredThisPeriod: 0,
+      consecutiveMisses: 0,
+    };
+    // No existing offer on the board (accepting removes it, per commands.ts),
+    // yet the generator must not regenerate a ghost for the held (port, good).
+    const offers = refreshContractOffers(region, [], REFERENCE_HOLD, [activeContract]);
+    expect(offers).toEqual([]);
+  });
+
+  it("#200: a held (port, good) does not consume a slot of OFFERS_PER_GUILD_MAX — the other real shortages still fill it", () => {
+    expect(OFFERS_PER_GUILD_MAX).toBe(3);
+    const region = fourShortageRegion();
+
+    // aetherSalt is the largest shortfall (40) and already under an active
+    // contract — held, not on the board, and must not eat a cap slot.
+    const activeContract: ActiveContract = {
+      id: "agrarian:agrarian-port:aetherSalt",
+      guildId: "agrarian",
+      portId: "agrarian-port",
+      good: "aetherSalt",
+      quotaPerPeriod: 10,
+      periodDays: 7,
+      minPeriods: 3,
+      feePerPeriod: 100,
+      tier: 1,
+      basis: { sourcePortId: "source-port", roundTripTicks: 60, expectedTrips: 2 },
+      startTick: 0,
+      periodIndex: 0,
+      deliveredThisPeriod: 0,
+      consecutiveMisses: 0,
+    };
+
+    const offers = refreshContractOffers(region, [], REFERENCE_HOLD, [activeContract]);
+    // All three remaining real shortages (timber 30, electronics 20,
+    // textiles 10) fill the cap — the held aetherSalt never appears and never
+    // starves a slot from the others.
+    expect(offers).toHaveLength(OFFERS_PER_GUILD_MAX);
+    const goods = offers.map((o) => o.good).sort();
+    expect(goods).toEqual(["electronics", "textiles", "timber"].sort());
+  });
+
   it("never emits two open offers for the same (good, port)", () => {
     const region = twoPortRegion(40, 10);
-    const offers = refreshContractOffers(region, [], REFERENCE_HOLD);
+    const offers = refreshContractOffers(region, [], REFERENCE_HOLD, []);
     const keys = offers.map((o) => `${o.portId}:${o.good}`);
     expect(new Set(keys).size).toBe(keys.length);
   });
@@ -201,7 +263,7 @@ describe("refreshContractOffers — feasibility property (sample of real worldge
         })),
       };
 
-      const offers = refreshContractOffers(region, [], REFERENCE_HOLD);
+      const offers = refreshContractOffers(region, [], REFERENCE_HOLD, []);
 
       for (const offer of offers) {
         const course = shortestCourse(region, offer.basis.sourcePortId, offer.portId);
@@ -234,8 +296,8 @@ describe("refreshContractOffers — feasibility property (sample of real worldge
 
   it("determinism: same region state ⇒ identical offer sets, regardless of call count", () => {
     const world = createWorld(7);
-    const offersA = refreshContractOffers(world.region, [], REFERENCE_HOLD);
-    const offersB = refreshContractOffers(world.region, [], REFERENCE_HOLD);
+    const offersA = refreshContractOffers(world.region, [], REFERENCE_HOLD, []);
+    const offersB = refreshContractOffers(world.region, [], REFERENCE_HOLD, []);
     expect(offersA).toEqual(offersB);
   });
 });
@@ -269,5 +331,79 @@ describe("World.contractOffers wiring through tick()/dayBoundary (#93)", () => {
     for (let i = 0; i < 90 * TICKS_PER_DAY; i++) world = tick(world, []);
     expect(world.contractOffers.length).toBeGreaterThan(0);
     expect(JSON.parse(JSON.stringify(world)).contractOffers).toEqual(world.contractOffers);
+  });
+});
+
+describe("#200: an accepted offer's (port, good) never regenerates a ghost offer across a day boundary", () => {
+  /** Craters every non-domain good at every port — same forcing device as
+   *  e3-guardrails.test.ts's `withCrateredImports` — so real shortages exist
+   *  to accept a contract against and to keep persisting (no player
+   *  deliveries here) across the boundaries under test. */
+  function withCrateredImports(world: World): World {
+    const region: Region = {
+      ...world.region,
+      ports: world.region.ports.map((port) => ({
+        ...port,
+        market: Object.fromEntries(
+          GOOD_IDS.map((good: GoodId) => [
+            good,
+            {
+              ...port.market[good],
+              stock:
+                (ARCHETYPE_PROFILES[port.archetype].productionPerDay[good] ?? 0) > 0
+                  ? port.market[good].stock
+                  : 0,
+            },
+          ]),
+        ) as Region["ports"][number]["market"],
+      })),
+    };
+    return { ...world, region };
+  }
+
+  it("seed 1: accept an offer, cross a day boundary with the shortage persisting — no duplicate id, and the held (port,good) never eats a cap slot from real shortages", () => {
+    let world = createWorld(1);
+    world = {
+      ...world,
+      company: { ...world.company, thalers: HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 100_000 },
+    };
+    world = applyCommand(world, { kind: "foundHeadquarters", portId: world.region.ports[0].id });
+    world = withCrateredImports(world);
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+
+    expect(world.contractOffers.length).toBeGreaterThan(0);
+    const guildWithOffers = world.contractOffers[0].guildId;
+    const preAcceptCount = world.contractOffers.filter((o) => o.guildId === guildWithOffers).length;
+
+    // A freshly enrolled Company is rank 1 — pick a tier-1 offer of that guild
+    // so acceptance isn't blocked by the accept-side rank gate.
+    const offer = world.contractOffers.find((o) => o.guildId === guildWithOffers && o.tier === 1);
+    expect(offer).toBeDefined();
+    world = applyCommand(world, { kind: "enroll", guildId: offer!.guildId });
+    world = applyCommand(world, { kind: "acceptContract", offerId: offer!.id });
+    expect(world.company.contracts).toHaveLength(1);
+    expect(world.contractOffers.some((o) => o.id === offer!.id)).toBe(false);
+
+    // Cross several day boundaries with the shortage left untouched (no
+    // fulfilment commands) — the accepted contract's (port, good) is still
+    // genuinely short every time.
+    for (let i = 0; i < 5 * TICKS_PER_DAY; i++) world = tick(world, []);
+
+    // No ghost: the accepted contract's structural id never reappears as an
+    // offer.
+    expect(world.contractOffers.some((o) => o.id === offer!.id)).toBe(false);
+    expect(
+      world.contractOffers.some((o) => o.portId === offer!.portId && o.good === offer!.good),
+    ).toBe(false);
+
+    // The cap isn't starved by the held (port, good): the guild's board still
+    // carries as many real offers as it did before accepting (the accepted
+    // slot backfills with another real shortage, if any existed, rather than
+    // permanently losing a slot to a ghost) — never fewer than
+    // preAcceptCount - 1 real offers stuck behind a phantom.
+    const postOffers = world.contractOffers.filter((o) => o.guildId === guildWithOffers);
+    expect(postOffers.length).toBeLessThanOrEqual(OFFERS_PER_GUILD_MAX);
+    expect(postOffers.length).toBeGreaterThanOrEqual(preAcceptCount - 1);
+    for (const o of postOffers) expect(o.id).not.toBe(offer!.id);
   });
 });
