@@ -160,6 +160,27 @@ planning altitude (stale-closure trap, wrong-premise scope) rather than inside a
 a new column of value from having advisor at the orchestration seat. Reviewer found zero
 blocking issues on either branch; one optional cosmetic (worldDate.ts naming) left as-is.
 
+## Drobiazgi wave 2 — #218 + #154 (under the Opus Orchestrator)
+
+Two Sonnet coders in parallel worktrees (disjoint file sets — `src/ui/Tabs.tsx` +
+`OptionsOverlay` + e2e vs `src/sim/ship.ts`/`index.ts`/`commands.ts` + `gameStore`).
+Second wave orchestrated by Opus 4.8. Both diffs reviewed two-axis by the Orchestrator
+(clean, in-scope). **The wave is memorialized by incident 0012** — a dispatch defect
+(double-provisioned worktrees) forced both coders to work around a sandbox lock; work
+recovered intact on both branches after Orchestrator verification.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-15 | #249 | #218 | 2 | 0 | 0 | pass | `,`/`.` cycle overlay tabs, document-level `keydown` in the shared `Tabs.tsx` seam; typing-guard (`isTypingTarget`) verified by an e2e that asserts the route-name field receives `,`/`.` literally. 66/66 Playwright incl. 2 new. No double-fire (overlays modal, one `Tabs` at a time). **Delivered under sandbox lock (incident 0012)** — committed in the harness worktree, pushed by refspec. Advisor consulted once at the sandbox-conflict point → "relocate-and-flag over stop-and-report"; also flagged the harmless per-render `useEffect` re-subscribe. |
+| 07-15 | #248 | #154 | 3 | 0 | 0 | pass | Pure refactor: `isRouteActive` unifies the route-active predicate (gameStore + commands.ts `sailTo`); `tick.ts` intentionally untouched. TDD honored (3 cases red→green). 474 unit. **Delivered under sandbox lock (incident 0012)** — Edit/Write locked to the harness worktree, so files written via **Bash `node -e`/heredocs** into the correct worktree; Orchestrator diff-audited all 5 files for escaping corruption (none). Advisor consulted once near completion (equivalence reasoning + prominent worktree-mismatch flag). |
+
+Advisor layer, this wave: one coder-side consult each, both **process/dispatch-facing**
+rather than code-defect catches (relocate-vs-stop under the sandbox lock; equivalence +
+flag). New negative data point on resume mechanics: **#154's in-flight advisor call was
+dropped by a mid-response API crash and NOT re-issued on resume** — not a conscious skip,
+a silent gate loss (incident 0012 bonus lesson). Reviewer (Orchestrator two-axis) found
+zero blocking issues on either branch.
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
