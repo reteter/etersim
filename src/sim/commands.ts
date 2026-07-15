@@ -338,6 +338,7 @@ export function applyCommand(world: World, command: Command): World {
         kind: "enrollmentFee",
         tick: world.tick,
         guildId: command.guildId,
+        thalers: ENROLLMENT_FEE,
       });
     }
     case "acceptContract": {

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computeNetWorth, regionAverageMid } from "./ledger";
+import { CONSTRUCTION_RESERVE, HEADQUARTERS_COST } from "./building";
+import { applyCommand } from "./commands";
+import type { ActiveContract } from "./contract";
+import { settleContracts } from "./contract";
+import { computeNetWorth, regionAverageMid, type LedgerEvent } from "./ledger";
 import { effectiveBase, price } from "./market";
 import { shortestCourse } from "./pathfinding";
 import { TICKS_PER_DAY, type MarketGood, type Port, type Region } from "./region";
@@ -391,5 +395,154 @@ describe("Economics guardrail (docs/specs/E9-fleet-and-routes.md — Testing)", 
     // (b) but at a compressed per-unit margin — the trades move the price
     //     against themselves (Market impact).
     expect(two.margin).toBeLessThan(one.margin);
+  });
+});
+
+/**
+ * Ledger grammar law (issue #203, CONTEXT.md — Ledger; ledger.ts module
+ * comment): every thaler-moving kind carries `thalers`; every rank-moving
+ * kind carries `pointsDelta`. `netWorth` is a daily *snapshot*, not a
+ * movement — it carries `thalers` as part of its payload (the issue #203
+ * audit's "9 kinds carry thalers" count includes it), so it is classified
+ * with the thalers-carrying group for the field-presence assertion below;
+ * the CONTEXT.md law itself is a one-way implication ("moving ⇒ carries")
+ * that a snapshot doesn't violate.
+ *
+ * `KIND_CATEGORY` is a `Record` keyed by the full `LedgerEvent["kind"]`
+ * union — TypeScript rejects the object literal if a key is missing, so a
+ * new `LedgerEvent` kind added without updating this table fails to
+ * typecheck (readable message: tsc's own "Property '<kind>' is missing").
+ * The runtime test below is a secondary, belt-and-braces check that a
+ * scripted run's actually emitted events match the table — not the source
+ * of exhaustiveness itself.
+ */
+type LedgerGrammarCategory = "thalers" | "pointsDelta" | "neither";
+
+const KIND_CATEGORY: Record<LedgerEvent["kind"], LedgerGrammarCategory> = {
+  trade: "thalers",
+  dockingFee: "thalers",
+  autoDraw: "thalers",
+  rush: "thalers",
+  delivery: "neither",
+  laborFee: "thalers",
+  founding: "thalers",
+  launch: "neither",
+  netWorth: "thalers",
+  enrollmentFee: "thalers",
+  upkeep: "thalers",
+  contractFee: "thalers",
+  settlement: "pointsDelta",
+};
+
+/** Drives a world through every LedgerEvent kind via real Commands and tick
+ *  phases — not hand-written literals (incident-0005 discipline: a
+ *  guardrail that only inspects its own fixtures can't fail). `settlement`
+ *  and `contractFee` are the one exception: reaching a "met" settlement
+ *  through the full shortage/fulfilment economy would need a much larger
+ *  script, so an already-due, quota-met `ActiveContract` is rigged directly
+ *  and run through the real `settleContracts` — the exact seam the day
+ *  boundary calls — rather than through a hand-written Ledger literal. */
+function scriptedAllKindsWorld(): World {
+  const base = createWorld("ledger-grammar-203");
+  const portA = base.region.ports[0].id;
+  const portB = base.region.ports.find((p) => p.id !== portA)!.id;
+  const shipId = base.company.ships[0].id;
+
+  let w: World = {
+    ...base,
+    company: {
+      ...base.company,
+      thalers: HEADQUARTERS_COST + CONSTRUCTION_RESERVE + 100_000,
+      ships: [{ ...base.company.ships[0], location: { kind: "docked", portId: portA } }],
+    },
+  };
+
+  // trade (buy) — grain aboard s0, spent later on `deliver` (hold is 50 —
+  // stay under it).
+  w = applyCommand(w, { kind: "buy", shipId, good: "grain", qty: 40 });
+
+  // dockingFee — sail to B and back, driving ticks until each arrival.
+  w = applyCommand(w, { kind: "sailTo", shipId, portId: portB });
+  let guard = 0;
+  while (w.company.ships[0].location.kind !== "docked" && guard++ < 2000) w = tick(w, []);
+  w = applyCommand(w, { kind: "sailTo", shipId, portId: portA });
+  guard = 0;
+  while (w.company.ships[0].location.kind !== "docked" && guard++ < 2000) w = tick(w, []);
+
+  w = applyCommand(w, { kind: "foundHeadquarters", portId: portA }); // founding
+  w = applyCommand(w, { kind: "placeBuildOrder" }); // laborFee
+  w = applyCommand(w, { kind: "deliver", shipId, good: "grain" }); // delivery
+
+  // rush — a deliberately small budget buys only a partial line, leaving the
+  // rest of the recipe for auto-draw (both kinds must fire from one build).
+  const fundedThalers = w.company.thalers;
+  w = { ...w, company: { ...w.company, thalers: CONSTRUCTION_RESERVE + 50 } };
+  w = applyCommand(w, { kind: "rushBuild" }); // rush
+  w = { ...w, company: { ...w.company, thalers: fundedThalers } };
+
+  // autoDraw + launch — tick until the recipe completes.
+  guard = 0;
+  while (w.company.headquarters?.buildOrder && guard++ < 5000) w = tick(w, []);
+  expect(w.company.ships.length).toBeGreaterThan(1); // precondition: actually launched
+
+  // netWorth + upkeep — a few more day boundaries.
+  for (let i = 0; i < 3 * TICKS_PER_DAY; i++) w = tick(w, []);
+
+  w = applyCommand(w, { kind: "enroll", guildId: "agrarian" }); // enrollmentFee
+
+  const activeContract: ActiveContract = {
+    id: "grammar-test-contract",
+    guildId: "agrarian",
+    portId: portA,
+    good: "grain",
+    quotaPerPeriod: 1,
+    periodDays: 1,
+    minPeriods: 1,
+    feePerPeriod: 50,
+    tier: 1,
+    basis: { sourcePortId: portA, roundTripTicks: 10, expectedTrips: 1 },
+    startTick: 0,
+    periodIndex: 0,
+    deliveredThisPeriod: 1, // meets quota
+    consecutiveMisses: 0,
+  };
+  w = { ...w, company: { ...w.company, contracts: [activeContract] } };
+  w = settleContracts(w); // settlement (met) + contractFee
+
+  return w;
+}
+
+describe("Ledger grammar law (issue #203)", () => {
+  it("classifies every LedgerEvent kind — an unclassified new kind fails to typecheck (Record<LedgerEvent['kind'], Category>)", () => {
+    const kinds = Object.keys(KIND_CATEGORY);
+    expect(new Set(kinds).size).toBe(kinds.length); // no accidental duplicate keys
+  });
+
+  it("a scripted run touching every kind carries thalers/pointsDelta exactly per its classification, and hits every kind at least once", () => {
+    const world = scriptedAllKindsWorld();
+    const seenKinds = new Set<string>();
+
+    for (const event of world.ledger) {
+      seenKinds.add(event.kind);
+      const category = KIND_CATEGORY[event.kind];
+      const record = event as unknown as Record<string, unknown>;
+      if (category === "thalers") {
+        expect(typeof record.thalers, `${event.kind} must carry a numeric thalers`).toBe("number");
+        expect(record.pointsDelta, `${event.kind} must not carry pointsDelta`).toBeUndefined();
+      } else if (category === "pointsDelta") {
+        expect(typeof record.pointsDelta, `${event.kind} must carry a numeric pointsDelta`).toBe(
+          "number",
+        );
+        expect(record.thalers, `${event.kind} must not carry thalers`).toBeUndefined();
+      } else {
+        expect(record.thalers, `${event.kind} must not carry thalers`).toBeUndefined();
+        expect(record.pointsDelta, `${event.kind} must not carry pointsDelta`).toBeUndefined();
+      }
+    }
+
+    // Vacuous-truth guard (incident-0005): the scripted run must have
+    // actually produced every classified kind, not merely never contradicted
+    // an empty or partial ledger.
+    expect(seenKinds).toEqual(new Set(Object.keys(KIND_CATEGORY)));
   });
 });

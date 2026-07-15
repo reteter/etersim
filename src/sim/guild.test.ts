@@ -109,6 +109,7 @@ describe("enroll command (#92)", () => {
       kind: "enrollmentFee",
       tick: w.tick,
       guildId,
+      thalers: ENROLLMENT_FEE,
     });
   });
 
