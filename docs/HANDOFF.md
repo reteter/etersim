@@ -6,59 +6,62 @@ reads only the repo must lose nothing. Update at every session close (WORKFLOW
 §Session Opening Rituals →  End of Session) — overwrite, don't append; history
 lives in git. Keep it one screen: state → queue → watch → gotchas.
 
-_Last update: 2026-07-15, end of the Fable farewell session._
+_Last update: 2026-07-15, end of the first Opus-Orchestrator drobiazgi wave._
 
 ## State
 
-- **main @ a695594** — clean, no open PRs, no stray branches/worktrees. Code last
-  fully certified at bc921bd (457 unit, typecheck, lint, Playwright 80/80); every
-  commit since is docs-only (#231, #235, #240).
-- **AGENTS.md** is the vendor-neutral entry point (any harness: "Read AGENTS.md and
-  follow it"). The Engineer persona has a figure now — "Carl" (Sagan),
-  `docs/personas/ENGINEER.md`; planned maiden voyage: standalone cross-vendor test
-  (critique the E13 spec's Tech section against current `contract.ts`/`building.ts`
-  — which is also this queue's item 2 prerequisite).
-- **Backup mirror**: remote `codeberg` (https://codeberg.org/reteter/etersim).
-  Refresh = snapshot issues to `backup/` (gh json export), commit, then
-  `git push --mirror codeberg` (prunes deleted branches). GitHub stays the default
-  remote (`origin`); `gh` is GitHub-only.
-- Farewell roadmap is IN: PRD §Long-term fantasy (Lens ladder, 1.0 = mature region +
-  first zoom-out), §Roadmap labels (`procedural`/`design-frontier`), milestone
-  playtest law; WORKFLOW §Casting is model-agnostic. Grill record:
-  `docs/design-notes/farewell-roadmap-grill-2026-07-15.md`.
-- E11 v1 approved and cut: **#232 → #233 → #234** (milestone "E11 — Proving grounds
-  (v1)"); #202 closed into them; #115 retires via #234.
+- **main @ f82850e** — clean, no open PRs, no stray branches/worktrees. Certified
+  green this session in a clean environment: 471 unit, typecheck, lint, Playwright
+  **84/84**.
+- This session shipped the first **drobiazgi wave under an Opus 4.8 Orchestrator**
+  (not Fable): **#217** (keybind `<g>` → sail Controlled Ship to the selected port,
+  live `getState()` read, `sailability` lifted to `src/ui/sailability.ts`) and
+  **#221** (seed name in export filename, **store-only** per owner decision — the
+  seed does NOT live in the world; `createWorld` hashes+discards it). PRs #244/#245
+  plus docs #242/#246 merged.
+- **Souvenirs convention**: `docs/souvenirs/` is gitignored — a per-machine home for
+  session keepsakes (raw transcripts). The Fable farewell transcript lives there now.
+- **advisor() works from a non-Fable main/Orchestrator agent** (Opus 4.8 confirmed).
+  The harness `Waiting for API response · check your network · retry` message is
+  MISLEADING — the call is in flight, just wait. Only **Fable-as-executor** lacks it
+  (pairing rule). This wave, advisor at the orchestration seat caught two issues
+  **pre-dispatch**: the stale-closure trap in #217's keydown listener, and #221's
+  false "seed lives in the world" premise (routed to the owner → store-only).
+- Backup mirror `codeberg` still holds a stale `docs/handoff-close-fable` branch —
+  prunes on the next `git push --mirror codeberg`.
 
 ## Queue (owner-agreed order; all `procedural`)
 
-1. **Drobiazgi waves**: #217, #218, #220, #221, #184, #187, #154; older UI when
-   convenient: #173, #175, #177, #125, #127, #128, #73, #74.
+1. **Drobiazgi waves**: **#218** (now unblocked — #217 freed `OptionsOverlay`; `<,>`/`<.>`
+   cycle overlay tabs), then #220, #184, #187, #154; older UI when convenient:
+   #173/#175/#177/#125/#127/#128/#73/#74. Parked follow-up **#243** (blank-seed export
+   filename shows a raw `Date.now()` timestamp — a design call, options in the issue).
 2. **E13 Guild buildings** (#99–#102, spec approved 2026-07-09) — before cutting the
-   wave, skim the spec against current `contract.ts`/`building.ts` (it predates E3's
-   shipping and three playtests; expected: no drift).
+   wave, skim the spec against current `contract.ts`/`building.ts` (Engineer "Carl"'s
+   planned maiden voyage).
 3. **E11 v1** (#232 → #233 → #234).
 
-`design-frontier` items (M4 clusters A/B, economic events, first arcane good, M5
-Great Work, M6 zoom-out) wait for an **owner-led grill** — do not start them from a
-task queue, whatever your tier.
+`design-frontier` items (M4 clusters, economic events, first arcane good, M5 Great
+Work, M6 zoom-out) wait for an **owner-led grill** — do not start them from the queue.
 
 ## Watch items
 
-- Coders: 2× self-reported TDD-order deviation (honestly compensated). A third ⇒
+- Coders: 2× self-reported TDD-order deviation to date (none this wave). A third ⇒
   grill a coder-contract line.
-- Recurring coder smell: `dispatchEvent(...)` standing in for real interaction in
-  e2e (twice rejected as dishonest — incident 0005 discipline; honest pattern:
-  `focus()` + `toBeFocused()` + real key).
-- Scorecard row per coder PR is part of closing every wave check
-  (`docs/design-notes/coder-scorecard.md`).
+- Recurring coder smell: `dispatchEvent(...)` standing in for real interaction in e2e
+  (honest pattern: `focus()`/`.click()` + real key + `toBeFocused()`).
+- Scorecard row per coder PR at wave close (`docs/design-notes/coder-scorecard.md`) —
+  now 11 tier-comparable rows, nearing the ~12 threshold for the Opus-vs-Sonnet A/B.
 
 ## Gotchas (this machine / this repo)
 
-- PowerShell + `gh`: UTF-8 bodies ONLY via `--body-file` (incident 0007);
-  `gh api repos/{owner}/{repo}/...` placeholder syntax fails under PowerShell
-  ("command parameter was already specified") — use the explicit `owner/repo` path.
-- Playwright: dedicated port via `PLAYWRIGHT_PORT` (5173 may be squatted — CLAUDE.md
-  §Commands).
-- Certification runs start by printing `pwd` + branch (incident 0008); after merge
-  batches verify content reachable from `origin/main` before deleting branches
-  (incident 0010).
+- **Certify AFTER worktree cleanup, never concurrently** (new, 2026-07-15): a cert
+  launched while `.claude/worktrees/agent-*` still existed had `eslint .` over-scan the
+  worktree `src/` copies (**326 spurious lint errors**) and Playwright flake **4
+  fleet.spec tests** under resource contention — a false RED that nearly got reported.
+  Remove worktrees first, THEN run the certification. Candidate for an incident report.
+- PowerShell + `gh`: UTF-8 bodies ONLY via `--body-file`; `gh api repos/{owner}/{repo}/...`
+  placeholder syntax fails under PowerShell — use the explicit `owner/repo` path.
+- Playwright: dedicated port via `PLAYWRIGHT_PORT` (5173 may be squatted).
+- Certification runs start by printing pwd + branch + SHA (incident 0008); after merge
+  batches verify content reachable from `origin/main` before deleting branches (0010).
