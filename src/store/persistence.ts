@@ -1,4 +1,3 @@
-import { ENROLLMENT_FEE } from "../sim";
 import type { World } from "../sim";
 
 /**
@@ -38,30 +37,54 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  ₸400 with no field. Unlike every prior bump, this one migrates: a v8
  *  save's `enrollmentFee` events are a flat, deterministic fee
  *  (`ENROLLMENT_FEE`), so `migrateV8ToV9` backfills `thalers: ENROLLMENT_FEE`
- *  onto them rather than rejecting the save outright. */
-export const SAVE_VERSION = 9;
+ *  onto them rather than rejecting the save outright.
+ *  v10: issue #226 — the desperation clause adds `ContractOffer.requiredRank`,
+ *  decoupled from `tier`. A v9 save's offers/active contracts have no
+ *  `requiredRank` at all, so `migrateV9ToV10` backfills `requiredRank: tier`
+ *  onto every `World.contractOffers` and `Company.contracts` entry — the
+ *  same pre-clause behavior (access gated on tier) until the next day
+ *  boundary's `refreshContractOffers` stamps the clause proper, so the save
+ *  self-heals rather than needing its own clause computation here. Per the
+ *  one-step-migration precedent (every prior bump but #203 rejected the
+ *  version before it outright), v8 is no longer readable — only v9 carries
+ *  forward now. */
+export const SAVE_VERSION = 10;
 
 /** Save envelope versions this adapter can still read, migrating forward to
- *  `SAVE_VERSION` on load (issue #203) — currently just the immediately
+ *  `SAVE_VERSION` on load (issue #226) — currently just the immediately
  *  preceding version; a save older than that is unreadable, same as every
- *  prior bump. */
-const READABLE_VERSIONS: ReadonlySet<number> = new Set([8, SAVE_VERSION]);
+ *  prior bump (v8 dropped here, matching that precedent — #203's chain
+ *  never carried v8 through a second hop, and this bump doesn't start one). */
+const READABLE_VERSIONS: ReadonlySet<number> = new Set([9, SAVE_VERSION]);
 
-/** v8 -> v9 (issue #203): `enrollmentFee` Ledger events gained a required
- *  `thalers` field. The fee was always the flat `ENROLLMENT_FEE`, so the
- *  backfill is exact — never a guess. Operates on the raw, untyped parsed
- *  JSON (a v8 `enrollmentFee` event has no `thalers` at all, so treating it
- *  as `World`/`LedgerEvent` before this pass would be a type lie) and
- *  returns a `World` only once every event carries what the current
- *  `LedgerEvent` union requires. */
-function migrateV8ToV9(rawWorld: { ledger?: unknown }): World {
-  const ledger = Array.isArray(rawWorld.ledger) ? rawWorld.ledger : [];
-  const migratedLedger = ledger.map((event: Record<string, unknown>) =>
-    event.kind === "enrollmentFee" && event.thalers === undefined
-      ? { ...event, thalers: ENROLLMENT_FEE }
-      : event,
-  );
-  return { ...rawWorld, ledger: migratedLedger } as unknown as World;
+/** v9 -> v10 (issue #226): `ContractOffer`/`ActiveContract` gained a required
+ *  `requiredRank` field (the desperation clause). A v9 offer's access rule
+ *  was always "rank >= tier", so the backfill `requiredRank: tier` is exact,
+ *  never a guess — it reproduces the old gate until the board's next refresh
+ *  applies the clause. Operates on the raw, untyped parsed JSON (a v9 offer
+ *  has no `requiredRank` at all, so treating it as `ContractOffer` before
+ *  this pass would be a type lie) and returns a `World` only once every
+ *  offer/active contract carries what the current `ContractOffer` shape
+ *  requires. */
+function migrateV9ToV10(rawWorld: {
+  contractOffers?: unknown;
+  company?: { contracts?: unknown };
+}): World {
+  const backfillRequiredRank = (offer: Record<string, unknown>) =>
+    offer.requiredRank === undefined ? { ...offer, requiredRank: offer.tier } : offer;
+
+  const contractOffers = Array.isArray(rawWorld.contractOffers)
+    ? rawWorld.contractOffers.map((o: Record<string, unknown>) => backfillRequiredRank(o))
+    : [];
+  const contracts = Array.isArray(rawWorld.company?.contracts)
+    ? (rawWorld.company.contracts as Record<string, unknown>[]).map((c) => backfillRequiredRank(c))
+    : [];
+
+  return {
+    ...rawWorld,
+    contractOffers,
+    company: { ...rawWorld.company, contracts },
+  } as unknown as World;
 }
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
@@ -125,7 +148,7 @@ function deserialize(text: string | null): World | null {
   }
   if (!isReadableEnvelopeShape(parsed)) return null;
   if (parsed.version === SAVE_VERSION) return parsed.world as unknown as World;
-  return migrateV8ToV9(parsed.world); // the only older readable version (v8)
+  return migrateV9ToV10(parsed.world); // the only older readable version (v9)
 }
 
 /**

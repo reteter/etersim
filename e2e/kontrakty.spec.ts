@@ -64,6 +64,7 @@ function boardWorld(seed: string): { world: World; homePortId: string; sourcePor
     minPeriods: 3,
     feePerPeriod: 105,
     tier: 1,
+    requiredRank: 1, // naturally rank-1: no desperation-clause label
     basis: { sourcePortId, roundTripTicks: 80, expectedTrips: 2 },
   };
   const tier2Offer: ContractOffer = {
@@ -76,6 +77,7 @@ function boardWorld(seed: string): { world: World; homePortId: string; sourcePor
     minPeriods: 4,
     feePerPeriod: 200,
     tier: 2,
+    requiredRank: 2, // not the guild's clause winner here — locked at rank 1
     basis: { sourcePortId, roundTripTicks: 120, expectedTrips: 2 },
   };
 
@@ -158,6 +160,7 @@ test.describe('Kontrakty tab (#96)', () => {
       minPeriods: 3,
       feePerPeriod: 105,
       tier: 1,
+      requiredRank: 1,
       basis: { sourcePortId: world.region.ports[1].id, roundTripTicks: 80, expectedTrips: 2 },
       startTick: 0,
       periodIndex: 0,
@@ -179,5 +182,45 @@ test.describe('Kontrakty tab (#96)', () => {
     await row.getByRole('button', { name: 'Potwierdź rezygnację' }).click();
     await expect(page.locator('.kontrakty-contract')).toHaveCount(0);
     await expect(page.locator('.overlay__text').filter({ hasText: 'Brak aktywnych kontraktów.' })).toBeVisible();
+  });
+
+  test('#226 desperation clause: a tier-3 offer stamped requiredRank 1 shows "Pilne" instead of a lock, and a rank-1 company can accept it', async ({
+    page,
+  }) => {
+    const { world, homePortId, sourcePortId } = boardWorld('kontrakty-desperation');
+    const desperateOffer: ContractOffer = {
+      id: 'agrarian:offer-desperate',
+      guildId: 'agrarian',
+      portId: homePortId,
+      good: 'timber',
+      quotaPerPeriod: 20,
+      periodDays: 14,
+      minPeriods: 5,
+      feePerPeriod: 300,
+      tier: 3, // honest job description...
+      requiredRank: 1, // ...but the guild's guaranteed rank-1 entry offer
+      basis: { sourcePortId, roundTripTicks: 160, expectedTrips: 2 },
+    };
+    const withDesperateOffer: World = {
+      ...world,
+      contractOffers: [...world.contractOffers, desperateOffer],
+    };
+    await continueWithWorld(page, withDesperateOffer);
+    await openKontrakty(page);
+
+    const desperateRow = page.locator('.kontrakty-offer').filter({ hasText: 'Timber' });
+    await expect(desperateRow).not.toHaveClass(/kontrakty-offer--locked/);
+    await expect(desperateRow.locator('.kontrakty-offer__label')).toHaveText(
+      'Pilne — gildia przyjmie każdego',
+    );
+    await expect(desperateRow.locator('.rank-badge')).toHaveCount(0);
+
+    // A naturally rank-1 tier-1 offer stays label-free (it isn't desperate).
+    const tier1Row = page.locator('.kontrakty-offer').filter({ hasText: 'Textiles' });
+    await expect(tier1Row.locator('.kontrakty-offer__label')).toHaveCount(0);
+
+    await desperateRow.getByRole('button', { name: 'Przyjmij kontrakt' }).click();
+    await expect(page.locator('.kontrakty-offer').filter({ hasText: 'Timber' })).toHaveCount(0);
+    await expect(page.locator('.kontrakty-contract').filter({ hasText: 'Timber' })).toBeVisible();
   });
 });

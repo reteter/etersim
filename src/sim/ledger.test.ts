@@ -500,6 +500,7 @@ function scriptedAllKindsWorld(): World {
     minPeriods: 1,
     feePerPeriod: 50,
     tier: 1,
+    requiredRank: 1,
     basis: { sourcePortId: portA, roundTripTicks: 10, expectedTrips: 1 },
     startTick: 0,
     periodIndex: 0,

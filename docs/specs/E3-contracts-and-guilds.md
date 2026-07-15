@@ -64,9 +64,21 @@ periods and E9's ranks-not-curves precedent: discrete thresholds are *visible*):
   **−3**; floor at 0.
 - `RANK_THRESHOLDS = [0, 4, 10, 18]` → rank 1–4 derived from points (never stored —
   derived state can't drift). Ranks fall when points fall.
-- Rank gates **contract tiers** (higher tiers: bigger quotas, longer terms, better
-  fees) and — consumed in E13 — **building permits**.
+- Rank gates **contract access** via `requiredRank` (issue #226 — the desperation
+  clause, decoupled from `tier`: higher tiers still mean bigger quotas, longer terms,
+  better fees, but never on their own block acceptance) and — consumed in E13 —
+  **building permits**.
 - Rank-up/down is announced in the UI (a beat, not a silent stat).
+- **Desperation clause** (#226, 2026-07-15 grill — fixes the rank/tier progression
+  deadlock found in docs/design-notes/playtest-2026-07-15-contractor.md): tier stays
+  the honest job description; `ContractOffer.requiredRank` is the field access actually
+  checks. Every board refresh, each guild's lowest-tier open offer (ties broken by
+  deepest shortfall, same metric the generator's candidate sort uses) is stamped
+  `requiredRank = 1`; every other offer keeps `requiredRank = tier`. Recomputed
+  idempotently over survivors + newly generated offers each refresh, so the clause
+  migrates with the board. Guarantees every guild with ≥1 open offer has at least one
+  offer a rank-1 member can accept. Presented as a "Pilne" story label, never a rank
+  badge, and never on an offer that's already naturally rank-1 at tier 1.
 
 ### Contracts: continuous obligations read from real shortages
 
@@ -164,13 +176,19 @@ and Upkeep entries carry the clause.
 ### Contracts (`src/sim/contract.ts`, new)
 
 - `ContractOffer = { id, guildId, portId, good, quotaPerPeriod, periodDays, minPeriods,
-  feePerPeriod, tier, basis: { sourcePortId, roundTripTicks, expectedTrips } }`;
-  `World.contractOffers: readonly ContractOffer[]`.
+  feePerPeriod, tier, requiredRank, basis: { sourcePortId, roundTripTicks, expectedTrips
+  } }`; `World.contractOffers: readonly ContractOffer[]`. `requiredRank` (issue #226 —
+  desperation clause) is stamped by `stampRequiredRanks`, called at the end of
+  `refreshContractOffers` over the full survivors+new result: per guild, the
+  lowest-`tier` offer gets `requiredRank = 1` (tie-break: deepest shortfall, matching
+  the existing candidate sort, then first-seen order as the final tie-break — never
+  RNG); every other offer of that guild gets `requiredRank = tier`.
 - `ActiveContract = offer fields + { startTick, periodIndex, deliveredThisPeriod,
   consecutiveMisses }`; `Company.contracts: readonly ActiveContract[]`.
 - New Commands (all player mutations stay Commands — determinism + E11 replay):
   `enroll(guildId)` (rejected without Headquarters / already enrolled / unaffordable),
-  `acceptContract(offerId)` (rejected unless enrolled at rank ≥ tier),
+  `acceptContract(offerId)` (rejected unless enrolled at rank ≥ `requiredRank` — issue
+  #226 changed this gate from `tier`),
   `resignContract(contractId)`. Invalid commands drop unchanged.
 - Sale attribution: the sell paths (manual command + docking-phase route sell — both
   already share one code path per E9) increment `deliveredThisPeriod` of matching
@@ -225,7 +243,11 @@ stays last, so the day's fees and fines are inside the day's curve point).
 ### Store & UI (`src/store/gameStore.ts`, `src/ui/`)
 
 - `PriceBoardOverlay.tsx` gains the tab shell (Ceny/Kontrakty; the E9 LedgerOverlay tab
-  pattern); Kontrakty tab renders offers + active contracts from selectors.
+  pattern); Kontrakty tab renders offers + active contracts from selectors. The lock
+  label ("Wymaga rangi N") and the Accept button both gate on `requiredRank`, not
+  `tier` (issue #226). A generic `.kontrakty-offer__label` slot shows "Pilne — gildia
+  przyjmie każdego" when `requiredRank === 1 && tier > 1` — the desperation clause's
+  story label, never a rank badge, and never on an offer already naturally rank-1.
 - `PortPanel.tsx` gains the guildhouse section (enroll action dispatches the Command;
   rank badge from `rankOf`).
 - Transient notices for settlement results and rank changes (existing toast pattern).
@@ -249,7 +271,12 @@ stays last, so the day's fees and fines are inside the day's curve point).
     extension); sales at other ports/goods never count; settlement recomputable from
     `trade` events.
   - **Offers**: causal expiry when stock recovers; ≤ max per guild; no duplicate
-    (good, port) offers; tier gating on accept.
+    (good, port) offers; `requiredRank` gating on accept (issue #226).
+  - **Desperation clause invariant** (#226): for every guild with ≥1 open offer, at
+    least one has `requiredRank === 1` (checked as `min(requiredRank)` per guild, not
+    "exactly one" — a guild with two naturally tier-1 offers legitimately has two);
+    tie-break pinned with a same-tier, different-shortfall fixture; the clause's
+    idempotent recompute over survivors pinned by a two-refresh migration fixture.
   - **Upkeep**: per ship per day, `min(fee, max(0, purse − RESERVE))` — never crosses
     the Reserve, unpaid remainder evaporates; own Ledger kind; charged before
     settlements (order asserted via netWorth).

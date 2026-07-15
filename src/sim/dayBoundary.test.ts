@@ -225,6 +225,7 @@ describe("day-boundary ordering (#204 — settleContracts lands inside the same 
       minPeriods: 1,
       feePerPeriod,
       tier: 1,
+      requiredRank: 1,
       basis: { sourcePortId: homePort, roundTripTicks: 10, expectedTrips: 1 },
       startTick: 0,
       periodIndex: 0,
