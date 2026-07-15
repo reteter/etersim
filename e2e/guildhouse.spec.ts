@@ -184,4 +184,68 @@ test.describe('Notice strip (#97, 2026-07-14 UI grill lock 1)', () => {
     await expect(page.locator('.kontrakty-contract')).toBeVisible();
     await expect(page.locator('.notice-strip__badge')).toHaveCount(0);
   });
+
+  test('keyboard: Tab + Enter on Powiadomienia while the board is already open on Ceny still switches to Kontrakty and marks seen (#195 rider 1)', async ({
+    page,
+  }) => {
+    const w = fundedWorld('guildhouse-notice-retab', HEADQUARTERS_COST + 10_000);
+    const port = guildSeatPort(w);
+    const guildId = port.archetype as 'agrarian';
+    const contract: ActiveContract = {
+      id: `${guildId}:notice-contract`,
+      guildId,
+      portId: port.id,
+      good: 'grain',
+      quotaPerPeriod: 10,
+      periodDays: 1,
+      minPeriods: 1,
+      feePerPeriod: 20,
+      tier: 1,
+      basis: { sourcePortId: port.id, roundTripTicks: 10, expectedTrips: 1 },
+      startTick: 0,
+      periodIndex: 0,
+      deliveredThisPeriod: 10,
+      consecutiveMisses: 0,
+    };
+    const company: Company = {
+      ...w.company,
+      headquarters: { portId: port.id },
+      guilds: { [guildId]: { points: 0 } },
+      contracts: [contract],
+    };
+    const world: World = { ...w, company };
+    await continueWithWorld(page, world);
+
+    await page.getByRole('button', { name: '100x' }).click();
+    await page.waitForTimeout(300); // crosses the first day boundary, same as above
+    await expect(page.locator('.notice-strip__badge')).toBeVisible();
+    await page.getByRole('button', { name: '⏸' }).click();
+
+    // Open the board on its default Ceny tab first (the "Price Board"
+    // button, unrelated entry point) — this is the state the rider fixes:
+    // the board is already open, on the wrong tab, when the notice is clicked.
+    await page.getByRole('button', { name: 'Price Board' }).click();
+    await expect(page.getByRole('tab', { name: 'Ceny' })).toHaveAttribute('aria-selected', 'true');
+
+    // Keyboard, not a mouse click: OverlayShell's backdrop (`.overlay
+    // { position: fixed; inset: 0 }`, aria-modal="true") visually covers the
+    // TopBar behind it, so a real pointer can't click Powiadomienia while the
+    // board is open — but there is no focus trap and no `inert` anywhere in
+    // src/ui/ (`useOverlayDismiss` wires only Escape + backdrop-click), and
+    // `aria-modal` is an ARIA hint, not a browser mechanism that removes
+    // background elements from the tab order. `.notice-strip` is a native
+    // <button>, so a real user CAN Tab to it while the board is open and
+    // press Enter — that's the genuinely reachable path this test exercises.
+    const noticeStrip = page.getByRole('button', { name: 'Powiadomienia' });
+    await noticeStrip.focus();
+    await expect(noticeStrip).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByRole('tab', { name: 'Kontrakty' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.locator('.kontrakty-contract')).toBeVisible();
+    await expect(page.locator('.notice-strip__badge')).toHaveCount(0);
+  });
 });

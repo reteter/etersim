@@ -822,4 +822,24 @@ test.describe('pause-cause note (#130)', () => {
     await expect(page.getByRole('button', { name: '⏸' })).toHaveAttribute('aria-pressed', 'true');
     await expect(note).not.toBeVisible();
   });
+
+  test('the note appearing/disappearing never changes .top-bar height (#195)', async ({ page }) => {
+    await continueWithAlmostArrivedWorld(page, 'pause-cause-height');
+    const topBar = page.locator('.top-bar');
+    const note = page.getByRole('status').filter({ hasText: PAUSE_NOTE_TEXT });
+
+    const heightBefore = (await topBar.boundingBox())!.height;
+    await expect(note).not.toBeVisible();
+
+    await page.getByRole('button', { name: '1x' }).click();
+    await expect(note).toBeVisible();
+    const heightWithNote = (await topBar.boundingBox())!.height;
+
+    await page.keyboard.press('Space'); // resume clears the note
+    await expect(note).not.toBeVisible();
+    const heightAfter = (await topBar.boundingBox())!.height;
+
+    expect(heightWithNote).toBe(heightBefore);
+    expect(heightAfter).toBe(heightBefore);
+  });
 });

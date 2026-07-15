@@ -70,10 +70,25 @@ interface GameState {
    * not settings) — a UI state readout, not a domain concept.
    */
   readonly pauseCause: PauseCause | null;
+  /**
+   * Notice strip watermark (#97, moved to the store 2026-07-15 — issue #195
+   * rider 2): the last world tick the player has seen settlement notices up
+   * to. Seeded to the just-loaded world's tick by both `newGame` and
+   * `loadWorld` — including a mid-session JSON import, which also calls
+   * `loadWorld` (GameMenu.tsx) — so importing a save re-seeds this the same
+   * way the initial mount does (owner decision, wave-check finding 3: seed =
+   * current tick, never 0, to avoid flooding the badge with a save's entire
+   * settlement history). UI-only: never serialized (not the save, not
+   * settings).
+   */
+  readonly lastSeenTick: number;
 
   newGame(seed: number | string): void;
   loadWorld(world: World): void;
   reset(): void;
+  /** Watermarks `lastSeenTick` to the current world tick (TopBar's notice
+   *  strip, #97) — a no-op with no world loaded. */
+  markNoticesSeen(): void;
   /** `cause` defaults to "manual" — every caller except the arrival
    *  auto-pause path (below) is a player-initiated pause. Ignored (and the
    *  cause cleared to null) when `speed !== "paused"`. */
@@ -104,6 +119,7 @@ const INITIAL = {
   controlledShipId: null,
   selectedRouteId: null,
   pauseCause: null,
+  lastSeenTick: 0,
 };
 
 /** The Controlled Ship a fresh world starts with — the company's first ship. */
@@ -151,13 +167,29 @@ export const useGameStore = create<GameState>()((set, get) => ({
 
   newGame: (seed) => {
     const world = createWorld(seed);
-    set({ ...INITIAL, world, speed: 1, controlledShipId: initialControlledShip(world) });
+    set({
+      ...INITIAL,
+      world,
+      speed: 1,
+      controlledShipId: initialControlledShip(world),
+      lastSeenTick: world.tick,
+    });
   },
 
   loadWorld: (world) =>
-    set({ ...INITIAL, world, controlledShipId: initialControlledShip(world) }),
+    set({
+      ...INITIAL,
+      world,
+      controlledShipId: initialControlledShip(world),
+      lastSeenTick: world.tick,
+    }),
 
   reset: () => set(INITIAL),
+
+  markNoticesSeen: () => {
+    const { world } = get();
+    if (world) set({ lastSeenTick: world.tick });
+  },
 
   // Pause-drops-carry is owned by elapsedToTicks; the next frame applies it.
   // Pausing is also an autosave point (spec: autosave on pause).

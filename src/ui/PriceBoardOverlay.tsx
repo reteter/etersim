@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import {
   effectiveBase,
   GOOD_IDS,
@@ -75,18 +75,19 @@ function columnExtremes(
  */
 export function PriceBoardOverlay({
   onClose,
-  initialTab = "ceny",
+  tab,
+  onTabChange,
 }: {
   onClose: () => void;
-  /** #97's notice strip opens straight to Kontrakty; every other caller
-   *  keeps today's default (docs/specs/E3 — UX skeleton: "same overlay, same
-   *  B hotkey"). */
-  initialTab?: Tab;
+  /** Controlled, not mount-once (#195 rider 1): the caller (TopBar) owns the
+   *  tab so a notice-strip click can retarget an already-open board straight
+   *  to Kontrakty, not just pick its *initial* tab. */
+  tab: Tab;
+  onTabChange: (tab: Tab) => void;
 }) {
   const world = useGameStore((s) => s.world);
   const controlledShipId = useGameStore((s) => s.controlledShipId);
   const select = useGameStore((s) => s.select);
-  const [tab, setTab] = useState<Tab>(initialTab);
 
   if (!world) return null;
 
@@ -116,7 +117,7 @@ export function PriceBoardOverlay({
         <Tabs
           ariaLabel="Price board tabs"
           active={tab}
-          onChange={setTab}
+          onChange={onTabChange}
           tabs={[
             { id: "ceny", label: "Ceny" },
             { id: "kontrakty", label: "Kontrakty" },
