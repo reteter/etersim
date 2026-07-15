@@ -6,13 +6,22 @@ reads only the repo must lose nothing. Update at every session close (WORKFLOW
 §Session Opening Rituals →  End of Session) — overwrite, don't append; history
 lives in git. Keep it one screen: state → queue → watch → gotchas.
 
-_Last update: 2026-07-15 night (farewell-roadmap session, frontier orchestrator)._
+_Last update: 2026-07-15, end of the Fable farewell session._
 
 ## State
 
-- **main @ 5a26694** — clean, no open PRs, no stray branches/worktrees. Code last
-  fully certified at bc921bd (457 unit, typecheck, lint, Playwright 80/80); commits
-  since are docs-only (#231).
+- **main @ a695594** — clean, no open PRs, no stray branches/worktrees. Code last
+  fully certified at bc921bd (457 unit, typecheck, lint, Playwright 80/80); every
+  commit since is docs-only (#231, #235, #240).
+- **AGENTS.md** is the vendor-neutral entry point (any harness: "Read AGENTS.md and
+  follow it"). The Engineer persona has a figure now — "Carl" (Sagan),
+  `docs/personas/ENGINEER.md`; planned maiden voyage: standalone cross-vendor test
+  (critique the E13 spec's Tech section against current `contract.ts`/`building.ts`
+  — which is also this queue's item 2 prerequisite).
+- **Backup mirror**: remote `codeberg` (https://codeberg.org/reteter/etersim).
+  Refresh = snapshot issues to `backup/` (gh json export), commit, then
+  `git push --mirror codeberg` (prunes deleted branches). GitHub stays the default
+  remote (`origin`); `gh` is GitHub-only.
 - Farewell roadmap is IN: PRD §Long-term fantasy (Lens ladder, 1.0 = mature region +
   first zoom-out), §Roadmap labels (`procedural`/`design-frontier`), milestone
   playtest law; WORKFLOW §Casting is model-agnostic. Grill record:
