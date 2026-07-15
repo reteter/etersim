@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { CONSTRUCTION_RESERVE } from "./building";
-import { UPKEEP_PER_DAY } from "./guild";
+import type { ActiveContract } from "./contract";
+import { GOOD_IDS } from "./goods";
+import { type GuildId, UPKEEP_PER_DAY } from "./guild";
 import { TICKS_PER_DAY } from "./region";
 import { nextUint32 } from "./rng";
 import { emptyCargo, type Ship } from "./ship";
-import { tick } from "./tick";
+import { DAY_BOUNDARY_PHASES, tick } from "./tick";
 import { createWorld, type World } from "./world";
 
 /**
@@ -198,5 +200,79 @@ describe("ship upkeep (#95 — daily per-ship charge, Reserve floor)", () => {
       return world;
     };
     expect(JSON.stringify(run())).toBe(JSON.stringify(run()));
+  });
+});
+
+describe("day-boundary ordering (#204 — settleContracts lands inside the same day's netWorth)", () => {
+  const homePort = createWorld("dayboundary-ordering-fixture").region.ports[0].id;
+  // GuildId (EconomicArchetype) is a strict subset of PortArchetype
+  // ("freeport" has no guild) — pick a fixed economic archetype rather than
+  // the home port's own archetype, which may land on "freeport".
+  const guildId: GuildId = "agrarian";
+
+  /** A contract already at quota, whose single-day period ends exactly at the
+   *  first day boundary (startTick 0, periodDays 1 -> periodEndTick ==
+   *  TICKS_PER_DAY) — so it settles `met` on the very first `tick()` call that
+   *  crosses a day boundary. */
+  function metContractFixture(feePerPeriod: number): ActiveContract {
+    return {
+      id: "guild:port:good",
+      guildId,
+      portId: homePort,
+      good: GOOD_IDS[0],
+      quotaPerPeriod: 1,
+      periodDays: 1,
+      minPeriods: 1,
+      feePerPeriod,
+      tier: 1,
+      basis: { sourcePortId: homePort, roundTripTicks: 10, expectedTrips: 1 },
+      startTick: 0,
+      periodIndex: 0,
+      deliveredThisPeriod: 1,
+      consecutiveMisses: 0,
+    };
+  }
+
+  it("a contract settling met at the boundary has its feePerPeriod payout inside THAT day's netWorth ledger point", () => {
+    const feePerPeriod = 777;
+    let world = createWorld("dayboundary-ordering-fixture");
+    world = {
+      ...world,
+      company: { ...world.company, thalers: 10_000, contracts: [metContractFixture(feePerPeriod)] },
+    };
+
+    for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+
+    const contractFeeEvents = world.ledger.filter((e) => e.kind === "contractFee");
+    expect(contractFeeEvents).toEqual([
+      { kind: "contractFee", tick: world.tick, guildId, contractId: "guild:port:good", thalers: feePerPeriod },
+    ]);
+
+    const netWorthEvents = world.ledger.filter((e) => e.kind === "netWorth");
+    expect(netWorthEvents.length).toBe(1);
+    // No cargo/build-site value in this fixture, and the purse is well clear
+    // of the upkeep Reserve (docs/specs/E3 — Upkeep, #95) so the default
+    // ship's daily charge also lands the same boundary: netWorth.total must
+    // equal thalers exactly, proving the settlement fee already landed before
+    // the snapshot rather than in some later day.
+    expect(world.company.thalers).toBe(10_000 - UPKEEP_PER_DAY + feePerPeriod);
+    expect((netWorthEvents[0] as { total: number }).total).toBe(world.company.thalers);
+  });
+});
+
+describe("DAY_BOUNDARY_PHASES structural order (#204)", () => {
+  it("pins the exact phase order, so a new phase must slot in consciously", () => {
+    expect(DAY_BOUNDARY_PHASES.map((p) => p.name)).toEqual([
+      "drift",
+      "priceSnapshot",
+      "upkeep",
+      "settleContracts",
+      "refreshOffers",
+      "netWorth",
+    ]);
+  });
+
+  it("netWorth is always last", () => {
+    expect(DAY_BOUNDARY_PHASES[DAY_BOUNDARY_PHASES.length - 1].name).toBe("netWorth");
   });
 });

@@ -218,69 +218,106 @@ function chargeUpkeep(world: World): World {
   return w;
 }
 
+/** One named step of the day-boundary sequence (#204 — refactored from a
+ *  call-sequence into explicit data so the order is pinned by a structural
+ *  test rather than prose; docs/specs/E3-contracts-and-guilds.md — Tick
+ *  day-boundary order). Pure: `apply` never mutates its input. */
+export interface DayBoundaryPhase {
+  readonly name: string;
+  readonly apply: (world: World) => World;
+}
+
 /**
- * Day-boundary phase (#168 — extracted, behavior-preserving, from the inline
- * block this replaces; docs/specs/E3-contracts-and-guilds.md — Tick
- * day-boundary order): drift step → price snapshots → upkeep → contract
- * settlements (#94) → offer refresh (#93) → netWorth snapshot. `world` is
- * already advanced to the boundary tick (tick+1, post-osmosis region/pulse
- * folded in) by the caller — the same values the inline block read before
- * extraction. Runs unconditionally; the caller gates on the boundary check
- * (this function does none itself), so it must be called at most once per
- * tick. The netWorth snapshot always stays last, so the day's fees, fines and
- * settlements land inside the day's curve point (docs/specs/E3 — Tick
- * day-boundary order).
+ * Mean-reverting drift step (docs/specs/E8 — Stochastic flow drift;
+ * docs/specs/E3 — Tick day-boundary order, step 1 of 6: "drift step"): every
+ * day-boundary consumer (drift, offer generation — #93) draws from its own
+ * isolated substream derived from `world.rng` *before* this boundary advances
+ * it (deriveSubstream, rng.ts) — so no consumer's draw count can perturb
+ * another's. The main stream itself advances exactly once, unconditionally,
+ * regardless of how many (if any) draws a substream makes internally; that
+ * advanced state is the only one ever threaded back into `World.rng`
+ * (docs/specs/E3-contracts-and-guilds.md — Contracts). Offer generation
+ * (contract.ts) turned out to need no randomness at all — candidates are
+ * picked by largest shortfall with a canonical tie-break, never the RNG — so
+ * no "offers" substream is derived anywhere in this sequence; flagged in the
+ * #93 completion report as a deliberate deviation from the spec's literal
+ * `deriveSubstream(state, "offers")` wording (nothing would ever consume it).
+ * The main stream's single unconditional advance here still holds.
  */
-function dayBoundary(world: World): World {
-  // Every day-boundary consumer (drift, offer generation — #93) draws from
-  // its own isolated substream derived from `world.rng` *before* this boundary
-  // advances it (deriveSubstream, rng.ts) — so no consumer's draw count can
-  // perturb another's. The main stream itself advances exactly once,
-  // unconditionally, regardless of how many (if any) draws a substream makes
-  // internally; that advanced state is the only one ever threaded back into
-  // `World.rng` (docs/specs/E3-contracts-and-guilds.md — Contracts).
-  // Offer generation (contract.ts) turned out to need no randomness at all —
-  // candidates are picked by largest shortfall with a canonical tie-break,
-  // never the RNG — so no "offers" substream is derived here; flagged in the
-  // #93 completion report as a deliberate deviation from the spec's literal
-  // `deriveSubstream(state, "offers")` wording (nothing would ever consume
-  // it). The main stream's single unconditional advance below still holds.
+function driftPhase(world: World): World {
   const [flowDrift] = driftStep(world.region, world.flowDrift, deriveSubstream(world.rng, "drift"));
   const [, rng] = nextUint32(world.rng);
+  return { ...world, rng, flowDrift };
+}
 
-  let next: World = {
+/** Price snapshot (docs/specs/E3 — Tick day-boundary order, step 2 of 6:
+ *  "price snapshots"), a distinct step from the drift step per the spec's
+ *  own enumeration even though nothing here reads `flowDrift` — the market's
+ *  own tick (already applied earlier in `tick()`) is what the snapshot
+ *  captures. */
+function snapshotPricesPhase(world: World): World {
+  return { ...world, priceSnapshots: snapshotPrices(world.region) };
+}
+
+/** Offer refresh (#93): generation + causal expiry. Sized against a fixed
+ *  reference hold (STARTING_HOLD) rather than any real ship's hold — a
+ *  guild's offer is a promise to the market, not tailored to the player's
+ *  current fleet. Must run after `settleContracts` in the phase list:
+ *  `world.company.contracts` here needs to already be post-settlement, so a
+ *  contract that terminated at this same boundary is correctly no longer
+ *  excluded (#200 — exclusion keys on contracts still active *after*
+ *  settlement). */
+function refreshOffers(world: World): World {
+  return {
     ...world,
-    rng,
-    priceSnapshots: snapshotPrices(world.region),
-    flowDrift,
-  };
-  next = chargeUpkeep(next);
-  // Contract settlements (#94): after upkeep, before offer refresh, per the
-  // spec's day-boundary order — a settled period's fee/points land inside
-  // this same boundary before the board and the netWorth snapshot see it.
-  next = settleContracts(next);
-  // Offer refresh (#93): generation + causal expiry, after contract
-  // settlements and before the netWorth snapshot, per the spec's day-boundary
-  // order. Sized against a fixed reference hold (STARTING_HOLD) rather than
-  // any real ship's hold — a guild's offer is a promise to the market, not
-  // tailored to the player's current fleet. `next.company.contracts` here is
-  // already post-settlement (settleContracts ran above), so a contract that
-  // terminated at this same boundary is correctly no longer excluded (#200 —
-  // exclusion keys on contracts still active *after* settlement).
-  next = {
-    ...next,
     contractOffers: refreshContractOffers(
-      next.region,
-      next.contractOffers,
+      world.region,
+      world.contractOffers,
       STARTING_HOLD,
-      next.company.contracts,
+      world.company.contracts,
     ),
   };
-  // Daily net-worth snapshot (docs/specs/E9 — Ledger): thalers + fleet cargo +
-  // build-site store, at region-average mid price; ships/buildings carry no
-  // book value. Tagged with the boundary tick, same cadence as the price
-  // snapshot above.
-  return appendLedgerEvent(next, { kind: "netWorth", tick: world.tick, ...computeNetWorth(next) });
+}
+
+/** Daily net-worth snapshot (docs/specs/E9 — Ledger): thalers + fleet cargo +
+ *  build-site store, at region-average mid price; ships/buildings carry no
+ *  book value. Tagged with the boundary tick, same cadence as the price
+ *  snapshot phase. Must stay last in the phase list, so the day's fees, fines
+ *  and settlements land inside the day's curve point (docs/specs/E3 — Tick
+ *  day-boundary order). */
+function snapshotNetWorth(world: World): World {
+  return appendLedgerEvent(world, { kind: "netWorth", tick: world.tick, ...computeNetWorth(world) });
+}
+
+/**
+ * The day-boundary sequence (#168 — originally extracted as a call sequence
+ * from the inline block this replaces; #204 — refactored into this explicit
+ * ordered list): drift step + price snapshots → upkeep → contract settlements
+ * (#94) → offer refresh (#93) → netWorth snapshot. The order here is the
+ * spec's Tick day-boundary order verbatim (docs/specs/E3-contracts-and-guilds.md
+ * — Tick day-boundary order) — a new boundary phase (E13 Storehouses and
+ * beyond) slots into this array, consciously choosing where it sits relative
+ * to the others, rather than being appended to a call-sequence a reader has
+ * to trace through prose.
+ */
+export const DAY_BOUNDARY_PHASES: readonly DayBoundaryPhase[] = [
+  { name: "drift", apply: driftPhase },
+  { name: "priceSnapshot", apply: snapshotPricesPhase },
+  { name: "upkeep", apply: chargeUpkeep },
+  { name: "settleContracts", apply: settleContracts },
+  { name: "refreshOffers", apply: refreshOffers },
+  { name: "netWorth", apply: snapshotNetWorth },
+];
+
+/**
+ * Runs the day-boundary phase list in order (#204). `world` is already
+ * advanced to the boundary tick (tick+1, post-osmosis region/pulse folded in)
+ * by the caller. Runs unconditionally; the caller gates on the boundary check
+ * (this function does none itself), so it must be called at most once per
+ * tick.
+ */
+function dayBoundary(world: World): World {
+  return DAY_BOUNDARY_PHASES.reduce((w, phase) => phase.apply(w), world);
 }
 
 /**
