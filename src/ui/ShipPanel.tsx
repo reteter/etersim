@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cargoUsed, etaTicks, GOOD_IDS, GOODS, MAX_SHIP_NAME_LENGTH, type Ship, type ShipId } from "../sim";
+import { cargoUsed, etaTicks, GOOD_IDS, GOODS, MAX_SHIP_NAME_LENGTH, type PortId, type Ship, type ShipId } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { portName } from "./portName";
 
@@ -52,25 +52,39 @@ function ShipNameField({ ship }: { ship: Ship }) {
  */
 export function ShipPanel({ shipId }: { shipId: ShipId }) {
   const world = useGameStore((s) => s.world);
+  const select = useGameStore((s) => s.select);
   if (!world) return null;
 
   const ship = world.company.ships.find((s) => s.id === shipId);
   if (!ship) return null;
 
-  const name = (id: string) => portName(world.region, id);
+  const name = (id: PortId) => portName(world.region, id);
   const used = cargoUsed(ship);
   const loaded = GOOD_IDS.filter((good) => ship.cargo[good] > 0);
   const location = ship.location;
+
+  // Opens the named Port's panel — the same `select` action the map's port
+  // nodes dispatch (RegionMap.tsx `onClick`) — so the "Docked at"/"Underway
+  // to" line doubles as a shortcut instead of a plain-text dead end (#196).
+  const portLink = (portId: PortId) => (
+    <button
+      type="button"
+      className="port-link"
+      onClick={() => select({ kind: "port", id: portId })}
+    >
+      {name(portId)}
+    </button>
+  );
 
   return (
     <>
       <h2 className="side-panel__title">Ship</h2>
       <ShipNameField key={ship.id} ship={ship} />
       {location.kind === "docked" ? (
-        <p className="side-panel__subtitle">Docked at {name(location.portId)}</p>
+        <p className="side-panel__subtitle">Docked at {portLink(location.portId)}</p>
       ) : (
         <p className="side-panel__subtitle">
-          Underway to {name(location.destination)} — ETA {etaTicks(ship, world.region)} ticks
+          Underway to {portLink(location.destination)} — ETA {etaTicks(ship, world.region)} ticks
         </p>
       )}
 

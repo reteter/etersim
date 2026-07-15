@@ -456,6 +456,29 @@ body {
   text-transform: capitalize;
 }
 
+/* Port name link inside ShipPanel's "Docked at"/"Underway to" line (#196):
+   reads as text until hovered/focused, but is a real <button> — keyboard-
+   operable, same target as clicking the port on the map. Inherits the
+   surrounding subtitle color/case instead of the browser's default link blue
+   so it doesn't visually clash with the muted subtitle line. */
+.port-link {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.port-link:hover,
+.port-link:focus-visible {
+  color: #e6e6e6;
+}
+
 .side-panel__heading {
   margin: 1rem 0 0.5rem;
   font-size: 0.95rem;
