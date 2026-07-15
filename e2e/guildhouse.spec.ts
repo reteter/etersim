@@ -184,4 +184,68 @@ test.describe('Notice strip (#97, 2026-07-14 UI grill lock 1)', () => {
     await expect(page.locator('.kontrakty-contract')).toBeVisible();
     await expect(page.locator('.notice-strip__badge')).toHaveCount(0);
   });
+
+  test('wiring guard: Powiadomienia while the board is already open on Ceny still switches to Kontrakty and marks seen (#195 rider 1) — see reviewer-attention item on real-world reachability', async ({
+    page,
+  }) => {
+    const w = fundedWorld('guildhouse-notice-retab', HEADQUARTERS_COST + 10_000);
+    const port = guildSeatPort(w);
+    const guildId = port.archetype as 'agrarian';
+    const contract: ActiveContract = {
+      id: `${guildId}:notice-contract`,
+      guildId,
+      portId: port.id,
+      good: 'grain',
+      quotaPerPeriod: 10,
+      periodDays: 1,
+      minPeriods: 1,
+      feePerPeriod: 20,
+      tier: 1,
+      basis: { sourcePortId: port.id, roundTripTicks: 10, expectedTrips: 1 },
+      startTick: 0,
+      periodIndex: 0,
+      deliveredThisPeriod: 10,
+      consecutiveMisses: 0,
+    };
+    const company: Company = {
+      ...w.company,
+      headquarters: { portId: port.id },
+      guilds: { [guildId]: { points: 0 } },
+      contracts: [contract],
+    };
+    const world: World = { ...w, company };
+    await continueWithWorld(page, world);
+
+    await page.getByRole('button', { name: '100x' }).click();
+    await page.waitForTimeout(300); // crosses the first day boundary, same as above
+    await expect(page.locator('.notice-strip__badge')).toBeVisible();
+    await page.getByRole('button', { name: '⏸' }).click();
+
+    // Open the board on its default Ceny tab first (the "Price Board"
+    // button, unrelated entry point) — this is the state the rider fixes:
+    // the board is already open, on the wrong tab, when the notice is clicked.
+    await page.getByRole('button', { name: 'Price Board' }).click();
+    await expect(page.getByRole('tab', { name: 'Ceny' })).toHaveAttribute('aria-selected', 'true');
+
+    // dispatchEvent, not click() (reviewer-attention item — see completion
+    // report): OverlayShell's backdrop (`.overlay { position: fixed; inset:
+    // 0 }`, aria-modal="true") fully covers the viewport including the
+    // TopBar behind it, so this exact mouse click is NOT reachable by a real
+    // pointer today — `page.click()` times out ("overlay intercepts pointer
+    // events") and even `{ force: true }` lands on the backdrop and closes
+    // the board instead (Playwright still hit-tests the click coordinates).
+    // dispatchEvent fires the click directly on the notice-strip element,
+    // bubbling through its real ancestors (the overlay is a DOM *sibling*,
+    // never reached) — a genuine regression guard on the controlled-tab
+    // wiring, not a stand-in for the literal user-facing repro, which is
+    // presently unreachable and flagged separately for the Orchestrator.
+    await page.getByRole('button', { name: 'Powiadomienia' }).dispatchEvent('click');
+
+    await expect(page.getByRole('tab', { name: 'Kontrakty' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.locator('.kontrakty-contract')).toBeVisible();
+    await expect(page.locator('.notice-strip__badge')).toHaveCount(0);
+  });
 });

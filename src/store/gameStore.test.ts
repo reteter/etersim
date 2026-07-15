@@ -191,6 +191,53 @@ describe("gameStore pauseCause (#130)", () => {
   });
 });
 
+describe("gameStore lastSeenTick (#195 rider 2)", () => {
+  it("starts at 0 with no world", () => {
+    expect(store().lastSeenTick).toBe(0);
+  });
+
+  it("newGame seeds lastSeenTick to the fresh world's tick", () => {
+    store().newGame(7);
+    expect(store().lastSeenTick).toBe(store().world!.tick);
+  });
+
+  it("loadWorld (e.g. continue-from-autosave) seeds lastSeenTick to the loaded world's tick", () => {
+    store().newGame("origin");
+    store().advance(5 * MS_PER_TICK_AT_1X);
+    const snapshot = store().world!;
+    store().reset();
+    store().loadWorld(snapshot);
+    expect(store().lastSeenTick).toBe(snapshot.tick);
+  });
+
+  it("a mid-session JSON import (loadWorld) re-seeds lastSeenTick to the imported world's tick, not the previous session's watermark", () => {
+    store().newGame("origin");
+    store().advance(3 * MS_PER_TICK_AT_1X);
+    store().markNoticesSeen();
+    expect(store().lastSeenTick).toBe(3);
+
+    // GameMenu.tsx's onImportFile calls loadWorld directly with the parsed
+    // save — simulate importing a save further along in time.
+    store().newGame("imported");
+    store().advance(20 * MS_PER_TICK_AT_1X);
+    const imported = store().world!;
+    store().loadWorld(imported);
+
+    expect(store().lastSeenTick).toBe(20);
+  });
+
+  it("markNoticesSeen watermarks to the current tick and is a no-op with no world", () => {
+    store().reset();
+    store().markNoticesSeen();
+    expect(store().lastSeenTick).toBe(0);
+
+    store().newGame(7);
+    store().advance(4 * MS_PER_TICK_AT_1X);
+    store().markNoticesSeen();
+    expect(store().lastSeenTick).toBe(4);
+  });
+});
+
 describe("gameStore Controlled Ship", () => {
   it("newGame designates the first ship as Controlled and clears on reset", () => {
     store().newGame("etersim");
