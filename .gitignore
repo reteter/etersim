@@ -17,3 +17,6 @@ test-results/
 tmp/
 # Local per-machine Claude Code launch config (not shared)
 .claude/launch.json
+
+# Session keepsakes (raw transcripts, per-machine mementos) — kept locally, never tracked
+docs/souvenirs/
