@@ -181,6 +181,27 @@ dropped by a mid-response API crash and NOT re-issued on resume** — not a cons
 a silent gate loss (incident 0012 bonus lesson). Reviewer (Orchestrator two-axis) found
 zero blocking issues on either branch.
 
+## Drobiazgi wave 3 — #220 + #187 (first under the corrected dispatch convention)
+
+Two Sonnet coders in parallel worktrees (disjoint: `HeadquartersPanel.tsx` + `index.css`
+vs `vite.config.ts` + `package.json` + new test files). **First wave dispatched under the
+incident-0012 fix** (PR #251): `isolation: "worktree"` only, no manual `git worktree add`,
+prompt says "work in your assigned worktree" + push `HEAD:<target-branch>`. **Both coders
+delivered with zero sandbox lock** — the fix is validated. Two-axis review by the
+Orchestrator; owner routed both #220 flags to follow-ups.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-15 | #252 | #220 | 2 | 2 (note) | 0 | pass | Route editor → goods × Kup/Sprzedaj/Dostarcz table; aria-labels byte-identical (e2e selectors untouched, no spec edits), `.chip--active` blue (ADR-0006, no gold). Two flags, both owner-routed to follow-ups: **issue↔model gap — #220 said "with qty" but `StopOrder` has no quantity** → grill issue #254; empty inactive cells lack a click affordance → mini-PR issue #255. Advisor consulted once in-flight (confirmed the qty read + the aria-label-vs-visible-text e2e risk before coding). HQ 12/12 + fleet 8/8. |
+| 07-15 | #253 | #187 | 2 | 3 (note) | 0 | pass | React component test infra: default env stays `node` (ADR-0002 sim purity), jsdom opt-in per-file via `// @vitest-environment jsdom`; `include` widened `*.test.ts`→`*.test.{ts,tsx}`; guarded global `afterEach(cleanup)`. Proving test on `Tabs`. Three in-scope flags: global `setupFiles` (RTL imported into all 34 node files, empirically inert), extra deps (`user-event`/`dom`), and **`environmentMatchGlobs` removed in vitest 4** (real finding — the recommended glob-split isn't available, pragma is the path). 477 unit. Advisor consulted once (tightened the "didn't slow node suite" evidence). |
+
+Advisor layer, this wave: one coder-side consult each, both **caught real risks pre-code**
+(the qty issue↔model gap for #220; the node-env evidence tightening for #187) — back to
+implementation-facing catches after the process-facing pair last wave. Cert caught its own
+false-red: post-merge `npm test`/`tsc` failed on stale `node_modules` (incident 0013),
+green after `npm install` (477 unit + 86/86 e2e). **Dispatch note: the incident-0012 fix
+held on its first live wave — no coder hit a worktree/tool mismatch.**
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
