@@ -102,6 +102,22 @@ Advisor layer: complementary again (spec-verbatim catch pre-review; zero overlap
 with reviewer findings). Running advisor tally across E3+post-E3: 7 coder-side
 catches, 0 overlaps with review.
 
+## Post-E3 chore wave 2 (#195 + #196 — TopBar nit-pass, ShipPanel links)
+
+Two Sonnet coders in parallel worktrees (both UI; TopBar vs ShipPanel disjoint,
+shared additive hunks in ui.spec/index.css only), one two-axis Opus reviewer.
+Wave straddled a session-limit reset: the #195 coder was killed mid-fix-loop and
+resumed cleanly next window (branch state was the durable evidence).
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-15 | #213 | #196 | 2 | 0 | 0 | pass | Port links in ShipPanel via existing `select` action; honest keyboard e2e (focus+Enter). Coder correctly overrode wrong issue prose ("Harbor list uses it") by the operative AC. |
+| 07-15 | #214 | #195 (+#198 riders) | 2 | 1 (major) | 1 | pass | Height fix (absolute positioning), controlled tab, lastSeenTick→store. **First major in the sample**: AC3 e2e used `dispatchEvent` on an "unreachable" claim the reviewer disproved for the keyboard path (no focus trap; aria-modal is a hint) — the honest focus+Enter pattern existed in-repo (sibling PR). Fixup verified in re-check; wiring itself was sound. Same dispatchEvent shape as the #174 wave catch — recurring smell, watch. |
+
+Advisor note: the #195 coder consulted the advisor twice and it did NOT catch the
+dispatchEvent issue this time (it had caught the same shape in the #174 wave) —
+first data point where the advisor layer missed something review caught.
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
