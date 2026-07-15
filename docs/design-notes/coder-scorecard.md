@@ -118,6 +118,18 @@ Advisor note: the #195 coder consulted the advisor twice and it did NOT catch th
 dispatchEvent issue this time (it had caught the same shape in the #174 wave) —
 first data point where the advisor layer missed something review caught.
 
+## Playtest wave 1 (#216 + #219 — enroll button, contract cards)
+
+Two Sonnet coders in parallel worktrees (PortPanel vs KontraktyTab; shared
+index.css additive-only, physically adjacent hunks — reviewer verified clean
+merge-tree between the branches), one two-axis Opus reviewer. Third
+zero-fix-loop wave.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-15 | #223 | #216 | 2 | 0 | 0 | pass | Enroll button base style + visible disabled reason. Assertions strengthened, not weakened. Advisor catch pre-commit: affected-e2e widened to every PortPanel consumer (headquarters+market collateral run) — incident-0009 discipline applied unprompted. |
+| 07-15 | #224 | #219 | 2 | 1 (note) | 0 | pass | Offers/contracts as cards, two-column grid. Test-honesty highlight: kontrakty.spec.ts has ZERO diff — restructure built to keep selectors valid instead of rewriting tests to survive (incident-0005 clear). Note: rank-badge ramp now on two semantic axes (required tier vs achieved rank) — judged defensible, self-reported by the coder. |
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
