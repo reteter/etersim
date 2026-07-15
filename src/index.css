@@ -1511,9 +1511,38 @@ body {
   color: #d9705f;
 }
 
+/* Enrollment CTA: base style was missing entirely (#216) — an enabled
+   button inherited the browser default, indistinguishable from :disabled
+   in the dark theme. Neutral/bright-border look matches
+   .headquarters-found-btn (another founding-adjacent CTA); no gold
+   (ADR-0006). */
+.guildhouse-enroll-btn {
+  display: block;
+  margin: 0.75rem 0 0;
+  padding: 0.5rem 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  color: #e6e6e6;
+  cursor: pointer;
+}
+
+.guildhouse-enroll-btn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 .guildhouse-enroll-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Disabled reason (#216): visible text, not tooltip-only — a `title` on a
+   disabled button is undiscoverable. Same hint style as
+   .market-row__cap-hint. */
+.guildhouse-enroll-reason {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: #8891a3;
 }
 
 /* Rank badge: a neutral shape/number ramp — NOT the archetype hue (that

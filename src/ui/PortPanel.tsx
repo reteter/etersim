@@ -477,6 +477,9 @@ function GuildhouseSection({ world, portId }: { world: World; portId: PortId }) 
       >
         Wstąp do gildii — ₸{ENROLLMENT_FEE}
       </button>
+      {disabledReason !== null && (
+        <p className="guildhouse-enroll-reason">{disabledReason}</p>
+      )}
     </div>
   );
 }

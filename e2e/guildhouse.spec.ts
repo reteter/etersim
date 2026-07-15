@@ -73,6 +73,10 @@ test.describe('Guildhouse section (#97)', () => {
     const enrollBtn = page.getByRole('button', { name: `Wstąp do gildii — ₸${ENROLLMENT_FEE}` });
     await expect(enrollBtn).toBeDisabled();
     await expect(enrollBtn).toHaveAttribute('title', 'Wymaga założonej siedziby');
+    // #216: the reason must be visible text, not tooltip-only.
+    await expect(page.locator('.guildhouse-enroll-reason')).toHaveText(
+      'Wymaga założonej siedziby',
+    );
   });
 
   test('enroll is disabled when unaffordable, with a Polish reason', async ({ page }) => {
@@ -90,6 +94,9 @@ test.describe('Guildhouse section (#97)', () => {
     const enrollBtn = page.getByRole('button', { name: `Wstąp do gildii — ₸${ENROLLMENT_FEE}` });
     await expect(enrollBtn).toBeDisabled();
     await expect(enrollBtn).toHaveAttribute('title', `Za mało thalerów (₸${ENROLLMENT_FEE})`);
+    await expect(page.locator('.guildhouse-enroll-reason')).toHaveText(
+      `Za mało thalerów (₸${ENROLLMENT_FEE})`,
+    );
   });
 
   test('founded and funded: enroll executes and shows the rank badge + points progress', async ({
@@ -102,7 +109,12 @@ test.describe('Guildhouse section (#97)', () => {
     await continueWithWorld(page, world);
     await openPort(page, port.name);
 
-    await page.getByRole('button', { name: `Wstąp do gildii — ₸${ENROLLMENT_FEE}` }).click();
+    const enrollBtn = page.getByRole('button', { name: `Wstąp do gildii — ₸${ENROLLMENT_FEE}` });
+    // #216: with HQ + funds present, the button must be genuinely enabled —
+    // not just styled to look so.
+    await expect(enrollBtn).toBeEnabled();
+    await expect(page.locator('.guildhouse-enroll-reason')).toHaveCount(0);
+    await enrollBtn.click();
 
     await expect(page.locator('.rank-badge')).toHaveText('1');
     await expect(page.locator('.rank-progress__count')).toHaveText('0 / 4 pkt');
