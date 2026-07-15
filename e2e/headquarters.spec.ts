@@ -433,4 +433,38 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.keyboard.press('Escape');
     await expect(dialog).not.toBeVisible();
   });
+
+  test('"," / "." cycle Budowa/Trasy, wrapping, and are ignored while typing in a text field (#218)', async ({
+    page,
+  }) => {
+    await continueWithWorld(page, fundedWorld('hq-tab-cycle'));
+    await page.locator('g.port').first().click({ force: true });
+    await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
+
+    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const budowa = dialog.getByRole('tab', { name: 'Budowa' });
+    const trasy = dialog.getByRole('tab', { name: 'Trasy' });
+
+    await expect(budowa).toHaveAttribute('aria-selected', 'true');
+
+    // "." advances Budowa -> Trasy, then wraps back to Budowa (only 2 tabs).
+    await page.keyboard.press('.');
+    await expect(trasy).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('.');
+    await expect(budowa).toHaveAttribute('aria-selected', 'true');
+
+    // "," retreats the other way, wrapping straight to Trasy.
+    await page.keyboard.press(',');
+    await expect(trasy).toHaveAttribute('aria-selected', 'true');
+
+    // Typing "," inside the Route name field (a real text input, RouteEditor)
+    // must reach the field, not cycle the tab back to Budowa.
+    await dialog.getByRole('button', { name: /^New route$/ }).click();
+    const nameInput = dialog.getByLabel('Route name');
+    await nameInput.fill('a');
+    await nameInput.pressSequentially(',.');
+    await expect(nameInput).toHaveValue('a,.');
+    await expect(trasy).toHaveAttribute('aria-selected', 'true');
+  });
 });

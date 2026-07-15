@@ -534,6 +534,30 @@ test.describe('region price board (#62)', () => {
     await page.keyboard.press('Escape');
     await expect(dialog).not.toBeVisible();
   });
+
+  test('"," / "." cycle the tabs, wrapping around (#218)', async ({ page }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    const ceny = page.getByRole('tab', { name: 'Ceny' });
+    const kontrakty = page.getByRole('tab', { name: 'Kontrakty' });
+
+    await expect(ceny).toHaveAttribute('aria-selected', 'true');
+    await expect(kontrakty).toHaveAttribute('aria-selected', 'false');
+
+    // "." advances Ceny -> Kontrakty, then wraps back to Ceny (only 2 tabs).
+    await page.keyboard.press('.');
+    await expect(kontrakty).toHaveAttribute('aria-selected', 'true');
+    await expect(ceny).toHaveAttribute('aria-selected', 'false');
+
+    await page.keyboard.press('.');
+    await expect(ceny).toHaveAttribute('aria-selected', 'true');
+
+    // "," retreats Ceny -> Kontrakty (wrapping the other way).
+    await page.keyboard.press(',');
+    await expect(kontrakty).toHaveAttribute('aria-selected', 'true');
+
+    await dialog.getByRole('button', { name: /close/i }).click();
+  });
 });
 
 test.describe('trading interactions (when docked)', () => {
