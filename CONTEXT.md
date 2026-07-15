@@ -14,6 +14,26 @@ _Avoid_: space, void, ether
 A bounded area of aether containing ports and lanes; the playable map. v1 has exactly one.
 _Avoid_: sector, galaxy, system
 
+**Lens ladder** (PL: drabina soczewki):
+The game's long-term macro-structure (owner grill, 2026-07-15): four self-similar
+levels — Region → Multiregion → Galaxy → the Unknown. At each step the lens recedes:
+the previous level's whole map becomes a single tradable node of the next one, the
+player's current job is taken over by a delegate mechanic (administrators, governors,
+policies — delegation is optional, manual play always remains), and the new level
+arrives with its own mechanics layer. 1.0 ends at the first recession of the lens.
+See PRD §Long-term fantasy.
+_Avoid_: endgame ladder, meta progression, prestige (as identifiers)
+
+**Great Work** (PL: Wielka Budowa):
+The finale mechanic of a Lens ladder level: a super-construction commissioned by that
+level's institutions (Region level: the Guilds, via Contracts) that consumes streams
+of many Goods at once, generalizing the E9 Build Order machinery. Completing it opens
+the next level of the ladder; the Region's Great Work (working name: the Expedition)
+is 1.0's ending. Fractal by design — each level re-instantiates it with that level's
+institutions as the commissioner.
+_Avoid_: megaproject, wonder, super-build (as identifiers; "Super Budowa" was the
+grill-session working name)
+
 **Port** (PL: port):
 Any dockable location with a market — a planet harbor, a station, a floating enclave.
 _Avoid_: city, planet, station (as gameplay terms)
@@ -66,7 +86,7 @@ _Avoid_: map config, preset
 **Orrery view** (PL: widok planetarium):
 The map presentation of a Region as a planetary system: ports on static orbit rings around
 a central star. Purely visual in M2 — positions do not change over world time (real orbital
-motion is a parked E5 candidate) and the star has no mechanics.
+motion is parked; long-crossings candidate, PRD §Long-term fantasy) and the star has no mechanics.
 _Implementation_: E10 ([spec](docs/specs/E10-orrery-view.md)) — positions from #43, rendering
 (star, rings, planet discs, glow) shipped in #44, lane accents + tick labels in #45. Epic
 complete (#43/#25/#34/#44/#45 all merged).
@@ -485,8 +505,10 @@ _Avoid_: maintenance, wages (crew wages remain a parked, separate idea)
 
 ### Harness & evaluation
 
-Terms for the agent-facing evaluation tooling (epic E11 — spec drafted 2026-07-09,
-approval deferred until after E9). None of these exist in the build yet.
+Terms for the agent-facing evaluation tooling (epic E11 — spec drafted 2026-07-09;
+re-reviewed against E9/E12/E3 and **v1 slice approved 2026-07-15**: Batch core +
+`harness run` CLI; Direct play and Replay-of-sessions deferred to v2). None of these
+exist in the build yet.
 
 **Harness** (PL: poligon):
 The headless consumer of the simulation for running games without the UI. Imports
@@ -547,6 +569,8 @@ _Avoid_: log, history (as identifiers)
 Harness mode where an agent issues Commands step by step (state JSON out, command JSON
 in). Every session is logged as a command script, so it becomes a deterministic,
 replayable Run.
+_Implementation_: deferred to Harness v2 (2026-07-15 v1 scope lock) — v1 Runs stay
+replayable by construction (Policy + seed), only the interactive protocol waits.
 _Avoid_: interactive mode
 
 **Replay** (PL: powtórka):

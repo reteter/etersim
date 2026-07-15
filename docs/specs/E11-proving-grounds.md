@@ -3,9 +3,14 @@
 Feature spec for epic E11 (tooling track, [PRD](../PRD.md)). Terms per
 [CONTEXT.md](../../CONTEXT.md) §Harness & evaluation. Grilled and decided with the owner
 on 2026-07-09.
-Status: **draft** — owner decision (2026-07-09): E9 ships first, then this spec is
-re-reviewed against E9's additions (routes, fleet, money sinks, performance-board data)
-before approval and issue cut.
+Status: **v1 approved (2026-07-15, farewell-roadmap grill)** — the re-review condition
+("E9 ships first") was satisfied with room to spare: E9, E12 *and* E3 shipped before
+this spec was picked back up. §Re-review below records the deltas. **v1 scope = the
+Batch core + the `run` CLI**; `play` and `replay` are deferred to v2 (owner lock —
+direct play is the most complex piece and the least needed for balance work; Runs stay
+replayable by construction, Policy + seed). This session also served as the grill that
+unparks #202 (its trigger named the cluster-B grill; the harness slice was grilled
+here, the UI slices of cluster B stay parked for M4).
 
 Grill inputs: session 2026-07-09 (seven-question grill, all decisions owner-confirmed);
 [playtest-2026-07-09-living.md](../design-notes/playtest-2026-07-09-living.md) §New owner
@@ -83,15 +88,17 @@ type Policy<M> = {
 Polled every tick (the sim is fast; "decide only when docked" is just returning `[]`
 underway). Full `World` in, player-visible reads by convention; `diagnostic` marks
 policies allowed super-player knowledge. A formal Observation layer is deliberately
-deferred until information fog (E6) gives it meaning.
+deferred until information fog gives it meaning (an Events-gradient candidate,
+post-1.0 — PRD §Long-term fantasy; formerly "E6").
 
 ### CLI (decision: direct sim import, no MCP, no browser)
 
 - `harness run --policy <name> [--params …] --seeds <n|list> --days <d> --out <dir>` —
   Batch: runs, Ledgers, aggregate report (JSON + Markdown summary).
 - `harness play --seed <s>` — Direct play: emits player-visible state JSON per step,
-  accepts command JSON; logs the session script.
+  accepts command JSON; logs the session script. **(v2 — deferred 2026-07-15.)**
 - `harness replay --script <file>` — deterministic re-execution of a Run / session.
+  **(v2 — deferred 2026-07-15; batch Runs reproduce from Policy + seed without it.)**
 
 An MCP adapter over the same core is a parked idea (portfolio demo), not first scope.
 
@@ -113,11 +120,48 @@ between them is spec drift.
   invariant checks and lands in the anomaly list with its seed.
 - CLI smoke: `run`/`play`/`replay` round-trip on a small Batch in CI time budget.
 
+## Re-review 2026-07-15 — the E9/E12/E3 delta
+
+What changed in the world since the 2026-07-09 draft, and what it means for v1:
+
+- **Policies get fleet, construction and guild play for free.** The policy contract
+  emits `Command[]`, and the command union now includes routes (create/assign/
+  suspend/resume), construction (found Headquarters, place Build Order, rush) and
+  guilds (enroll, acceptContract, resignContract). No interface change — the 2026-07-09
+  per-tick contract absorbed three epics without edits, which is the argument for it.
+- **Metrics must be net of the new money sinks.** Profit/day and the net-worth curve
+  already flow from the Ledger; per-kind aggregation is mechanical thanks to the
+  grammar law (#203: every thaler-moving kind carries `thalers`) — report docking
+  fees, upkeep, labor/enrollment fees and rush premiums as named cost lines.
+- **New metric columns (E3):** rank/points trajectory per guild, settlement outcome
+  counts (met/missed/breached/resigned), active-contract load over time. The
+  loss-leader question ("does reputation investment pay?") becomes a policy
+  comparison.
+- **Runtime assertions inherit the E3 guardrails**, and the Desperation-clause
+  invariant (every guild with open offers has a rank-1-acceptable one) is the
+  canonical example of the harness's value: the #226 deadlock shipped and was caught
+  only by human playtest, yet it is a one-line assertion over a seed sweep
+  (INTERVIEW-NOTES §4 tells this story).
+- **#202 folds in.** The `advanceDays(world, n)` / scenario-runner helper is the
+  shared seam: Vitest guardrail suites and the CLI runner both consume it (DRYing the
+  ad-hoc tick loops in `e3-guardrails.test.ts`). #115's seed-sensitive guardrail
+  becomes a distribution assertion over a sweep instead of a point assert.
+- **Fleet-aware reporting:** per-ship metric rows + company rollup; hold utilization
+  across the fleet.
+
+**v1 cut (approved):** `harness/` skeleton + policy contract + `advanceDays` seam,
+Batch runner + metrics + report (JSON + Markdown), runtime assertions + anomaly list,
+`docs/experiments/` convention. **Deferred to v2:** `harness play` (interactive
+protocol), `harness replay --script` (session replay — batch Runs need no script to
+reproduce), the MCP adapter (parked).
+
 ## Issue cut
 
-Deferred — after E9 ships, this spec is re-reviewed against E9's state (routes as
-commands policies can issue, fleet-aware metrics, money sinks in profit/day, the
-performance board's actual data needs), then approved and cut into issues per WORKFLOW.
+v1 approved 2026-07-15; issues are cut once the approving PR merges, per WORKFLOW.
+Suggested slices (each `procedural`): (1) skeleton + policy contract + `advanceDays`
+seam + do-nothing/gradient policies, with guardrail suites refactored onto the seam;
+(2) Batch runner + metrics + reports; (3) runtime assertions + anomaly list +
+`docs/experiments/` convention + closing #202/#115 into their new homes.
 
 ## Portfolio note
 

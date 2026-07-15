@@ -105,10 +105,11 @@ unprompted widened its affected-e2e net per incident 0009's lesson).
 **Claim:** tasks are explicitly routed by problem class to model class:
 frontier model does design/grills/orchestration; strong tier does two-axis
 review and architecture passes; cheap tier implements from self-contained
-task packages. Wave quality held across three consecutive zero-fix-loop
-waves under this ladder. Planned: labeling roadmap epics "strong-tier-safe"
-vs "frontier-worthy" so the team keeps velocity when frontier access
-lapses.
+task packages. Wave quality held across four consecutive zero-fix-loop
+waves under this ladder. Shipped 2026-07-15: roadmap items carry explicit
+`procedural` / `design-frontier` labels (PRD §Roadmap labels) so the team
+keeps velocity when frontier access lapses — and notices when it crosses
+into design.
 
 **Artifacts:** `docs/WORKFLOW.md` §Verification gates, scorecard trends,
 `docs/personas/`.
@@ -132,3 +133,22 @@ PR #224 ("zero-diff test suite through a restructure").
 
 **Hook:** "Self-authored green is the weakest signal in the pipeline —
 we made 'does this test have teeth' a named, per-PR review axis."
+
+## 9. Vendor-agnostic process: swap the model, keep the gates
+
+**Claim:** the workflow survives frontier-vendor churn by design. Roles are
+capability-tier contracts (process docs name *cheap/strong/frontier* tiers,
+never models — the current casting is one replaceable line), roadmap items
+carry `procedural` vs `design-frontier` labels (so an executor *notices*
+when work crosses from implementation into design), and every quality claim
+rests on evidence gates — tiered wave check, scorecard, red-evidence,
+harness assertions — rather than on any model's reputation. Swapping the
+frontier partner is a casting change, not a re-org. Designed under real
+conditions: intermittent frontier access with no guarantee of renewal.
+
+**Artifacts:** `docs/WORKFLOW.md` §Casting is model-agnostic, PRD §Roadmap
+labels, `docs/design-notes/farewell-roadmap-grill-2026-07-15.md`.
+
+**Hook:** "When the vendor landscape shifts under you, the process
+shouldn't notice. Evidence gates make models replaceable — trust in a
+specific model makes it load-bearing."

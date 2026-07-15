@@ -11,6 +11,25 @@ How an idea becomes shipped code in etersim. Written for the model first.
 - **Coder subagents** (docs/personas/CODER.md; harness def `.claude/agents/coder.md`) — implementation specialists dispatched by the Orchestrator with a self-contained task package; deliver PR-ready feature branches and evidence-based completion reports, never merge.
 - **The Professor** (docs/personas/PROFESSOR.md; harness def `.claude/agents/professor.md`) — read-only architecture reviewer of one named subsystem, invoked by the owner or proposed by the Orchestrator at epic/milestone boundaries; complements the diff-scoped wave check (§Verification gates), findings route to grill/issues/design-notes, never straight into code.
 
+### Casting is model-agnostic (owner lock, 2026-07-15)
+
+The roles above are **contracts defined by function and capability tier**, not by
+vendor or model name. Process docs name tiers — *cheap* (coders), *strong* (two-axis
+review, architecture passes, orchestration fallback), *frontier* (design/grill
+partner, orchestration) — never models; the advisor pairing rule is advisor tier ≥
+executor tier. The current casting lives in this one replaceable line and may change
+without touching anything else in the process:
+
+> **Current casting:** frontier = Claude Fable 5 (access intermittent); strong =
+> Claude Opus; cheap = Claude Sonnet. Any comparable model may fill a slot — the
+> gates below, not the vendor, carry the quality claim.
+
+When frontier access lapses: `procedural` roadmap items (PRD §Roadmap labels) keep
+full velocity under the standing gates; `design-frontier` items wait for an owner-led
+grill — running that grill with a strong-tier model is a deliberate, named choice,
+not a drift. The labels exist so an orchestrator *notices* the moment work crosses
+from execution into design.
+
 ## Pipeline
 
 ```
@@ -79,6 +98,11 @@ never "merged, fix later". Full run + baseline (tests, typecheck, lint) at
 epic/milestone close. Every certification run starts by printing `pwd` +
 `git branch --show-current` and stops on a mismatch — a persistent shell may still
 sit in a coder worktree (incident 0008).
+
+**Milestone playtest law (owner lock, 2026-07-15).** No milestone closes on green
+metrics alone: an owner playtest is part of every milestone's close. The harness
+(E11) screens balance and solvency so the playtest is spent judging *fun* — the one
+signal no model or metric replaces.
 
 **Batching.** 2–4 small same-area issues per coder package; separate branch + PR per
 issue, each cut from `main` (disjoint files → no stacks); the wave check reads them
