@@ -185,7 +185,7 @@ test.describe('Notice strip (#97, 2026-07-14 UI grill lock 1)', () => {
     await expect(page.locator('.notice-strip__badge')).toHaveCount(0);
   });
 
-  test('wiring guard: Powiadomienia while the board is already open on Ceny still switches to Kontrakty and marks seen (#195 rider 1) — see reviewer-attention item on real-world reachability', async ({
+  test('keyboard: Tab + Enter on Powiadomienia while the board is already open on Ceny still switches to Kontrakty and marks seen (#195 rider 1)', async ({
     page,
   }) => {
     const w = fundedWorld('guildhouse-notice-retab', HEADQUARTERS_COST + 10_000);
@@ -227,19 +227,19 @@ test.describe('Notice strip (#97, 2026-07-14 UI grill lock 1)', () => {
     await page.getByRole('button', { name: 'Price Board' }).click();
     await expect(page.getByRole('tab', { name: 'Ceny' })).toHaveAttribute('aria-selected', 'true');
 
-    // dispatchEvent, not click() (reviewer-attention item — see completion
-    // report): OverlayShell's backdrop (`.overlay { position: fixed; inset:
-    // 0 }`, aria-modal="true") fully covers the viewport including the
-    // TopBar behind it, so this exact mouse click is NOT reachable by a real
-    // pointer today — `page.click()` times out ("overlay intercepts pointer
-    // events") and even `{ force: true }` lands on the backdrop and closes
-    // the board instead (Playwright still hit-tests the click coordinates).
-    // dispatchEvent fires the click directly on the notice-strip element,
-    // bubbling through its real ancestors (the overlay is a DOM *sibling*,
-    // never reached) — a genuine regression guard on the controlled-tab
-    // wiring, not a stand-in for the literal user-facing repro, which is
-    // presently unreachable and flagged separately for the Orchestrator.
-    await page.getByRole('button', { name: 'Powiadomienia' }).dispatchEvent('click');
+    // Keyboard, not a mouse click: OverlayShell's backdrop (`.overlay
+    // { position: fixed; inset: 0 }`, aria-modal="true") visually covers the
+    // TopBar behind it, so a real pointer can't click Powiadomienia while the
+    // board is open — but there is no focus trap and no `inert` anywhere in
+    // src/ui/ (`useOverlayDismiss` wires only Escape + backdrop-click), and
+    // `aria-modal` is an ARIA hint, not a browser mechanism that removes
+    // background elements from the tab order. `.notice-strip` is a native
+    // <button>, so a real user CAN Tab to it while the board is open and
+    // press Enter — that's the genuinely reachable path this test exercises.
+    const noticeStrip = page.getByRole('button', { name: 'Powiadomienia' });
+    await noticeStrip.focus();
+    await expect(noticeStrip).toBeFocused();
+    await page.keyboard.press('Enter');
 
     await expect(page.getByRole('tab', { name: 'Kontrakty' })).toHaveAttribute(
       'aria-selected',
