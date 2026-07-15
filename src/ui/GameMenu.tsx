@@ -3,7 +3,7 @@ import { useGameStore } from "../store/gameStore";
 import { exportWorldJson, parseWorldJson } from "../store/persistence";
 import { CreditsOverlay } from "./CreditsOverlay";
 import { OptionsOverlay } from "./OptionsOverlay";
-import { worldDay } from "./worldDate";
+import { exportFilename } from "./worldDate";
 
 /**
  * Save/Options/Credits menu (docs/specs/E2-trade-loop.md — Save/load, Options
@@ -15,6 +15,7 @@ import { worldDay } from "./worldDate";
  */
 export function GameMenu() {
   const world = useGameStore((s) => s.world);
+  const seed = useGameStore((s) => s.seed);
   const loadWorld = useGameStore((s) => s.loadWorld);
   const fileInput = useRef<HTMLInputElement>(null);
   const [creditsOpen, setCreditsOpen] = useState(false);
@@ -26,7 +27,7 @@ export function GameMenu() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `etersim-day${worldDay(world.tick)}.json`;
+    anchor.download = exportFilename(seed, world.tick);
     anchor.click();
     URL.revokeObjectURL(url);
   };

@@ -238,6 +238,33 @@ describe("gameStore lastSeenTick (#195 rider 2)", () => {
   });
 });
 
+describe("gameStore seed (#221)", () => {
+  it("starts with no seed", () => {
+    expect(store().seed).toBeNull();
+  });
+
+  it("newGame records the seed as a string, even when given a number", () => {
+    store().newGame("etersim");
+    expect(store().seed).toBe("etersim");
+    store().newGame(7);
+    expect(store().seed).toBe("7");
+  });
+
+  it("loadWorld (JSON import) clears the seed — an imported save carries no seed name", () => {
+    store().newGame("origin");
+    expect(store().seed).toBe("origin");
+    const snapshot = store().world!;
+    store().loadWorld(snapshot);
+    expect(store().seed).toBeNull();
+  });
+
+  it("reset clears the seed", () => {
+    store().newGame("origin");
+    store().reset();
+    expect(store().seed).toBeNull();
+  });
+});
+
 describe("gameStore Controlled Ship", () => {
   it("newGame designates the first ship as Controlled and clears on reset", () => {
     store().newGame("etersim");
