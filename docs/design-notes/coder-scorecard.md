@@ -86,6 +86,22 @@ Opus reviewer over both diffs in one context. First wave with zero fix loops.
 Advisor layer again complementary: two coder-side catches (TDD-order gap, buried
 AC failure), zero overlap with the reviewer's findings.
 
+## Post-E3 grill wave (#203 + #204 — Ledger grammar, dayBoundary phases)
+
+Two Sonnet coders in parallel worktrees from the same base (disjoint-files
+agreement held — reviewer verified zero overlap), one two-axis Opus reviewer.
+Second consecutive zero-fix-loop wave; both minors/notes folded as Orchestrator
+micro-fixes on the branches (counted as findings per scorecard rules).
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-15 | #208 | #203 | 3 | 1 (minor) | 0 | pass | Ledger grammar law + first REAL save migration (v8→v9; v2–v8 all hard-rejected). Compile-time exhaustiveness + vacuous-truth-guarded runtime test judged honest. Minor: sim-subpath import, micro-fixed. Second self-reported TDD-order deviation in two waves (compensated revert-and-watch-red both times) — pattern to watch, maybe a coder-contract line. |
+| 07-15 | #209 | #204 | 3 | 1 (note) | 0 | pass | dayBoundary phase list + direct settle→netWorth test; discrimination proven by reorder experiment. Advisor forced drift/priceSnapshot split to match spec order verbatim (third advisor catch in three waves). Note: implicit tick-invariance, micro-fixed with a pinning comment. |
+
+Advisor layer: complementary again (spec-verbatim catch pre-review; zero overlap
+with reviewer findings). Running advisor tally across E3+post-E3: 7 coder-side
+catches, 0 overlaps with review.
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
