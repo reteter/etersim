@@ -153,6 +153,7 @@ test.describe('main game UI after start', () => {
     await expect(dialog.getByText('Pause / resume')).toBeVisible();
     await expect(dialog.getByText('Speed 1x / 10x / 100x')).toBeVisible();
     await expect(dialog.getByText('Price Board')).toBeVisible();
+    await expect(dialog.getByText('Sail to selected port')).toBeVisible(); // #217
   });
 
   test('orrery: star, orbit rings and planet discs render (#44)', async ({ page }) => {
@@ -641,6 +642,68 @@ test.describe('trading interactions (when docked)', () => {
     await expect(courseLanes).not.toHaveCount(0);
     await expect(courseLanes.first()).toHaveAttribute('marker-end', /course-arrow/);
     await expect(map.locator('.lane__label')).not.toHaveCount(0);
+  });
+});
+
+test.describe('keybind <g> sails the Controlled Ship to the selected port (#217)', () => {
+  test.beforeEach(async ({ page }) => {
+    await startNewGame(page);
+  });
+
+  test('no-op with no selection', async ({ page }) => {
+    await page.keyboard.press('g');
+    await openControlledShip(page);
+    await expect(page.locator('.side-panel__subtitle')).toContainText(/^Docked at/i);
+  });
+
+  test('no-op when a ship (not a port) is selected', async ({ page }) => {
+    await openControlledShip(page);
+    await page.keyboard.press('g');
+    await expect(page.locator('.side-panel__subtitle')).toContainText(/^Docked at/i);
+  });
+
+  test('no-op when the sailability gate is disabled (already docked here)', async ({ page }) => {
+    await openDockedPortMarket(page);
+    await page.keyboard.press('g');
+    await openControlledShip(page);
+    await expect(page.locator('.side-panel__subtitle')).toContainText(/^Docked at/i);
+  });
+
+  test('sails the Controlled Ship to the selected port, mirroring the Sail button (#33)', async ({
+    page,
+  }) => {
+    // Select a remote, reachable port the same way the Sail-button test does
+    // (ui.spec.ts "sail button (#33)"): probe ports until one shows the
+    // enabled Sail control.
+    const portGroups = page.locator('g.port');
+    const count = await portGroups.count();
+    const enabledSailBtn = page.getByRole('button', { name: /^Sail .+ here \(~\d+ ticks\)$/ });
+    let selected = false;
+    for (let i = 0; i < count; i++) {
+      await portGroups.nth(i).click({ force: true });
+      if (await enabledSailBtn.count()) {
+        selected = true;
+        break;
+      }
+    }
+    expect(selected).toBe(true);
+    const destinationName = await page.locator('.side-panel__title').innerText();
+
+    await page.keyboard.press('g');
+
+    // The gate flips to "Underway" — the same disabled state the Sail button
+    // shows after a manual click — proving the keydown actually dispatched
+    // sailTo, not just a visual no-op.
+    const disabledSailBtn = page.getByRole('button', { name: /^Sail .+ here$/ });
+    await expect(disabledSailBtn).toBeDisabled();
+    await expect(disabledSailBtn).toHaveAttribute('title', 'Underway — dock to sail elsewhere.');
+
+    await openControlledShip(page);
+    await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
+    // The course actually targets the port that was selected, not just any
+    // port (portId: selection.id — belt-and-suspenders on top of the
+    // disabled-Underway check above).
+    await expect(page.locator('.side-panel__subtitle .port-link')).toHaveText(destinationName);
   });
 });
 

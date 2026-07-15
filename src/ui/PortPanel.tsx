@@ -30,7 +30,7 @@ import { GUILD_NAME_PL, GuildBadge } from "./guildDisplay";
 import { ShipIcon } from "./icons";
 import { priceTrend, TREND_GLYPH } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
-import { previewCourseTicks } from "./coursePreview";
+import { sailability } from "./sailability";
 
 /** Archetype label text (CONTEXT.md: Port archetype). The other five render
  *  as their raw identifier — `.side-panel__subtitle`'s `text-transform:
@@ -271,28 +271,6 @@ function MarketRow({
       )}
     </div>
   );
-}
-
-/**
- * Why the Controlled Ship can't sail to a given port right now, or null when
- * it can — in which case `eta` carries the previewed voyage ticks. The
- * "no course" case is belt-and-suspenders: worldgen guarantees a connected
- * region, but a disabled button with a hint beats a vanishing one.
- */
-function sailability(
-  ship: Ship,
-  portId: PortId,
-  region: Region,
-): { disabledHint: string; eta: null } | { disabledHint: null; eta: number } {
-  if (ship.location.kind !== "docked") {
-    return { disabledHint: "Underway — dock to sail elsewhere.", eta: null };
-  }
-  if (ship.location.portId === portId) {
-    return { disabledHint: "Already docked here.", eta: null };
-  }
-  const eta = previewCourseTicks(region, ship.location.portId, portId);
-  if (eta === null) return { disabledHint: "No course to this port.", eta: null };
-  return { disabledHint: null, eta };
 }
 
 /**

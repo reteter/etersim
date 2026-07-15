@@ -5,6 +5,7 @@ import { GameMenu } from "./GameMenu";
 import { HeadquartersPanel } from "./HeadquartersPanel";
 import { LedgerOverlay } from "./LedgerOverlay";
 import { PriceBoardOverlay } from "./PriceBoardOverlay";
+import { sailability } from "./sailability";
 import { formatWorldDate } from "./worldDate";
 
 const SPEED_LABELS: Record<Speed, string> = {
@@ -26,8 +27,14 @@ const DIGIT_SPEEDS: Record<string, Speed> = { "1": 1, "2": 10, "3": 100 };
  *  speed controls wired to the store's speed ladder, plus the region price
  *  board entry (#62) — a button and a default "b" hotkey, both toggling the
  *  same overlay. Speed/pause hotkeys (#56): <space> toggles pause, 1/2/3 set
- *  the rate. All bindings are fixed (v1-lite) and listed in the Options →
- *  Keybinds tab; remappable bindings are deferred. */
+ *  the rate. "g" (#217, playtest 2026-07-15) sails the Controlled Ship to the
+ *  currently selected port, composing with "b" — a silent no-op (no alert,
+ *  matching "b") whenever there's no Controlled Ship, the selection isn't a
+ *  port, or `sailability` (sailability.ts, shared with PortPanel's Sail
+ *  button) disables the sail for the
+ *  same reason (underway / already docked / no course). All bindings are
+ *  fixed (v1-lite) and listed in the Options → Keybinds tab; remappable
+ *  bindings are deferred. */
 export function TopBar() {
   const thalers = useGameStore((s) => s.world?.company.thalers ?? 0);
   const tick = useGameStore((s) => s.world?.tick ?? 0);
@@ -89,6 +96,26 @@ export function TopBar() {
           if (!open) setPriceBoardTab("ceny");
           return !open;
         });
+        return;
+      }
+      // "g" (#217): sail the Controlled Ship to the selected port — same
+      // effect, same gate, as PortPanel's Sail button. Live state is read via
+      // getState() rather than closed-over selector values on purpose: the
+      // listener registers once on mount, so a closed-over value would freeze
+      // at its first-render snapshot (controlledShipId starts null), while
+      // adding world/selection/controlledShipId to the deps array below would
+      // re-register the listener every tick (world changes every tick at
+      // 100x) — a perf storm for no benefit, since the store already reads
+      // live state the same way internally.
+      if (e.key.toLowerCase() === "g") {
+        const { world, controlledShipId, selection, dispatch } = useGameStore.getState();
+        if (!world || !controlledShipId) return;
+        if (!selection || selection.kind !== "port") return;
+        const ship = world.company.ships.find((s) => s.id === controlledShipId);
+        if (!ship) return;
+        const { disabledHint } = sailability(ship, selection.id, world.region);
+        if (disabledHint !== null) return;
+        dispatch({ kind: "sailTo", shipId: ship.id, portId: selection.id });
       }
     };
     window.addEventListener("keydown", onKeyDown);

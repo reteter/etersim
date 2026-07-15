@@ -11,6 +11,7 @@ const KEYBINDS: ReadonlyArray<{ keys: string; action: string }> = [
   { keys: "Space", action: "Pause / resume" },
   { keys: "1 / 2 / 3", action: "Speed 1x / 10x / 100x" },
   { keys: "B", action: "Price Board" },
+  { keys: "G", action: "Sail to selected port" },
 ];
 
 /**
