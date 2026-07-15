@@ -111,18 +111,22 @@ function usePrefersReducedMotion(): boolean {
 }
 
 /**
- * SVG region map (docs/specs/E2-trade-loop.md — UI layout): ports as nodes,
- * lanes as edges, the ship positioned by shipPosition(). Clicking a port or
- * the ship updates the store's selection.
+ * SVG region map (docs/specs/E2-trade-loop.md — UI layout; #174 fixed the
+ * single-ship prop so the whole fleet renders): ports as nodes, lanes as
+ * edges, every Company ship positioned by shipPosition(). Clicking a port or
+ * a ship updates the store's selection; clicking a ship also designates it
+ * Controlled (CONTEXT.md — Controlled Ship), same as the Fleet list and
+ * Harbor.
  */
 export function RegionMap({
   region,
-  ship,
+  ships,
   osmosisPulse,
   tick,
 }: {
   region: Region;
-  ship: Ship;
+  /** Every Company ship (#174) — docked and underway alike, not just [0]. */
+  ships: readonly Ship[];
   osmosisPulse: Record<LaneId, number>;
   /** World.tick (CONTEXT.md: Tick) — the only clock osmosis skiffs read
    *  (#161): sim-time anchored, not wall-clock. */
@@ -145,8 +149,8 @@ export function RegionMap({
   );
 
   const portsById = new Map(region.ports.map((p) => [p.id, p]));
-  const shipPos = project(shipPosition(ship, region));
   const center = project(CENTER);
+  const controlledShip = ships.find((s) => s.id === controlledShipId) ?? null;
 
   // Controlled Ship's active course (docs/specs/E10-orrery-view.md — Lane
   // presentation): the remaining voyages of its course while underway. A
@@ -154,8 +158,8 @@ export function RegionMap({
   // "underway" in practice — selecting a docked Controlled Ship just yields
   // an empty course.
   const courseVoyages: readonly Voyage[] =
-    ship.id === controlledShipId && ship.location.kind === "underway"
-      ? ship.location.course.slice(ship.location.voyageIndex)
+    controlledShip && controlledShip.location.kind === "underway"
+      ? controlledShip.location.course.slice(controlledShip.location.voyageIndex)
       : [];
   const courseDestinationByLane = new Map<LaneId, PortId>(courseVoyages.map((v) => [v.laneId, v.to]));
 
@@ -164,7 +168,7 @@ export function RegionMap({
   // a hypothesis, visually weaker than a committed course. No preview while
   // underway (a course already owns the map).
   const dockedPortId =
-    ship.id === controlledShipId && ship.location.kind === "docked" ? ship.location.portId : null;
+    controlledShip && controlledShip.location.kind === "docked" ? controlledShip.location.portId : null;
   const previewLaneIds = new Set<LaneId>(
     dockedPortId && hoveredPortId && hoveredPortId !== dockedPortId
       ? (shortestCourse(region, dockedPortId, hoveredPortId) ?? []).map((v) => v.laneId)
@@ -337,26 +341,61 @@ export function RegionMap({
           );
         })}
       </g>
-      {/* Drawn last so it stays visible on top, but a docked ship is
-          click-through (pointer-events: none) so the port beneath wins the
-          hit test — port-click priority (#28). Underway it stays clickable to
-          designate it Controlled and open its ShipPanel. Gold marks the
+      {/* Every Company ship (#174), drawn last so ships stay visible on top
+          of ports/lanes. A docked ship is click-through (pointer-events:
+          none) so the port beneath wins the hit test — port-click priority
+          (#28); designating a docked ship instead goes through the Harbor or
+          Fleet list (CONTEXT.md — Controlled Ship), which already give each
+          docked ship its own unambiguous row — the precedent this map defers
+          to for ships stacked at the same port instead of fanning them out
+          spatially. Underway it stays clickable to designate it Controlled
+          and open its ShipPanel; two underway ships at the exact same point
+          (a rare coincidence) fall back to normal SVG stacking — the
+          topmost-painted (last in `ships`) wins the hit test, with the Fleet
+          list always available as an unambiguous alternative. Gold marks the
           Controlled Ship (#34) — a separate signal from UI panel selection;
           selection/course accents are #45. */}
-      <g
-        className={
-          (ship.id === controlledShipId ? "ship ship--controlled" : "ship") +
-          (ship.location.kind === "docked" ? " ship--docked" : "")
-        }
-        onClick={() => openShip(ship.id)}
-      >
-        <ShipIcon
-          className="ship__glyph"
-          x={shipPos.x - SHIP_ICON_SIZE / 2}
-          y={shipPos.y - SHIP_ICON_SIZE / 2}
-          width={SHIP_ICON_SIZE}
-          height={SHIP_ICON_SIZE}
-        />
+      <g className="region-map__ships">
+        {ships.map((ship) => {
+          const shipPos = project(shipPosition(ship, region));
+          return (
+            <g
+              key={ship.id}
+              className={
+                (ship.id === controlledShipId ? "ship ship--controlled" : "ship") +
+                (ship.location.kind === "docked" ? " ship--docked" : "")
+              }
+              onClick={() => openShip(ship.id)}
+            >
+              {/* Invisible hit-target circle, painted (transparent, not
+                  `fill="none"` — the latter isn't hit-testable) under the
+                  glyph: an underway ship sits exactly on its lane's stroke
+                  (shipPosition interpolates the same line the lane draws),
+                  and the galleon silhouette's own bounding-box center often
+                  lands on a transparent gap in the artwork, letting a real
+                  click fall through to the lane beneath even though the
+                  ship paints on top (#174 e2e discovered this: a real click
+                  on the glyph consistently missed). `pointer-events` isn't
+                  set here, so it inherits from the parent `<g>` — `none` on
+                  a docked ship (#28 click-through preserved), `auto` while
+                  underway. */}
+              <circle
+                className="ship__hit-target"
+                cx={shipPos.x}
+                cy={shipPos.y}
+                r={SHIP_ICON_SIZE / 2}
+                fill="transparent"
+              />
+              <ShipIcon
+                className="ship__glyph"
+                x={shipPos.x - SHIP_ICON_SIZE / 2}
+                y={shipPos.y - SHIP_ICON_SIZE / 2}
+                width={SHIP_ICON_SIZE}
+                height={SHIP_ICON_SIZE}
+              />
+            </g>
+          );
+        })}
       </g>
     </svg>
   );
