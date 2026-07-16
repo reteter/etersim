@@ -1,17 +1,20 @@
 import {
   applyDeliveryToSite,
+  applyRushQuoteToSite,
+  commissionBuilding,
   computeRushQuote,
   CONSTRUCTION_RESERVE,
-  emptySiteStore,
   HEADQUARTERS_COST,
   LABOR_FEE,
   launchIfComplete,
+  SHIP_RECIPE,
+  type ConstructionSite,
   type Headquarters,
 } from "./building";
 import type { ActiveContract } from "./contract";
 import type { GoodId } from "./goods";
 import { ENROLLMENT_FEE, POINTS_BREACH_OR_RESIGN, rankOf, type GuildId } from "./guild";
-import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
+import { appendLedgerEvent, appendLedgerEvents } from "./ledger";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { shortestCourse } from "./pathfinding";
 import type { Port, PortId } from "./region";
@@ -182,14 +185,16 @@ export function applyCommand(world: World, command: Command): World {
     case "placeBuildOrder": {
       const hq = world.company.headquarters;
       if (!hq || hq.buildOrder) return world;
-      // The labor fee may not dip into the Reserve (#122 — E9 spec §The Reserve).
-      if (world.company.thalers < LABOR_FEE + CONSTRUCTION_RESERVE) return world;
-      const nextHq: Headquarters = { portId: hq.portId, buildOrder: { siteStore: emptySiteStore() } };
+      // commissionBuilding (building.ts, #99): the generic "place a
+      // construction" step — this HQ command is its first caller.
+      const commissioned = commissionBuilding(world.company.thalers, LABOR_FEE);
+      if (!commissioned) return world; // the labor fee may not dip into the Reserve (#122)
+      const nextHq: Headquarters = { portId: hq.portId, buildOrder: { siteStore: commissioned.siteStore } };
       const placed: World = {
         ...world,
         company: {
           ...world.company,
-          thalers: world.company.thalers - LABOR_FEE,
+          thalers: commissioned.thalers,
           headquarters: nextHq,
         },
       };
@@ -207,41 +212,31 @@ export function applyCommand(world: World, command: Command): World {
       const quote = computeRushQuote(world);
       if (quote.lines.length === 0) return world;
 
-      let thalers = world.company.thalers;
-      let siteStore = { ...hq.buildOrder.siteStore };
+      const site: ConstructionSite = {
+        recipe: SHIP_RECIPE,
+        siteStore: hq.buildOrder.siteStore,
+        portId: hq.portId,
+      };
+      const result = applyRushQuoteToSite(
+        site,
+        world.region.ports[portIdx],
+        world.company.thalers,
+        quote,
+        world.tick,
+      );
       const ports = [...world.region.ports];
-      let port = ports[portIdx];
-      const events: LedgerEvent[] = [];
-
-      for (const line of quote.lines) {
-        const entry = port.market[line.good];
-        thalers -= line.thalers;
-        siteStore = { ...siteStore, [line.good]: (siteStore[line.good] ?? 0) + line.qty };
-        port = {
-          ...port,
-          market: { ...port.market, [line.good]: { ...entry, stock: entry.stock - line.qty } },
-        };
-        ports[portIdx] = port;
-        events.push({
-          kind: "rush",
-          tick: world.tick,
-          portId: hq.portId,
-          good: line.good,
-          qty: line.qty,
-          thalers: line.thalers,
-        });
-      }
+      ports[portIdx] = result.port;
 
       const rushed: World = {
         ...world,
         company: {
           ...world.company,
-          thalers,
-          headquarters: { portId: hq.portId, buildOrder: { siteStore } },
+          thalers: result.thalers,
+          headquarters: { portId: hq.portId, buildOrder: { siteStore: result.siteStore } },
         },
         region: { ...world.region, ports },
       };
-      return launchIfComplete(appendLedgerEvents(rushed, events));
+      return launchIfComplete(appendLedgerEvents(rushed, result.events));
     }
     case "deliver": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
