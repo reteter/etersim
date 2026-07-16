@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ComponentType, type SVGProps } from "react";
 import {
   cargoUsed,
   CONSTRUCTION_RESERVE,
@@ -16,6 +16,7 @@ import {
   type GuildId,
   type MarketGood,
   type Port,
+  type PortArchetype,
   type PortId,
   type Region,
   type Ship,
@@ -27,10 +28,46 @@ import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
 import { FOUNDING_GOAL, foundingProgress, foundingSavings } from "./foundingProgress";
 import { GUILD_NAME_PL, GuildBadge } from "./guildDisplay";
-import { ShipIcon } from "./icons";
-import { priceTrend, TREND_GLYPH } from "./priceTrend";
+import {
+  AetherSaltIcon,
+  AgrarianIcon,
+  ElectronicsIcon,
+  FreeportIcon,
+  GrainIcon,
+  IndustrialIcon,
+  MiningIcon,
+  ShipIcon,
+  TextilesIcon,
+  TimberIcon,
+  UrbanIcon,
+  VerdantIcon,
+} from "./icons";
+import { priceTrend, TREND_GLYPH, TREND_LEGEND } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
 import { sailability } from "./sailability";
+
+/** Archetype → vendored SVG icon, shown before the archetype label under the
+ *  port name (#74). Same icon set RegionMap/GuildBadge already use
+ *  (docs/adr/0006-svg-icon-strategy.md) — no second icon set for the same
+ *  five archetypes. */
+const ARCHETYPE_ICONS: Record<PortArchetype, ComponentType<SVGProps<SVGSVGElement>>> = {
+  agrarian: AgrarianIcon,
+  industrial: IndustrialIcon,
+  urban: UrbanIcon,
+  mining: MiningIcon,
+  verdant: VerdantIcon,
+  freeport: FreeportIcon,
+};
+
+/** Good → vendored SVG icon (#74), shown before the good name in market rows
+ *  and reused for the in-hold marker (#73) — one vocabulary, two uses. */
+const GOOD_ICONS: Record<GoodId, ComponentType<SVGProps<SVGSVGElement>>> = {
+  grain: GrainIcon,
+  textiles: TextilesIcon,
+  aetherSalt: AetherSaltIcon,
+  electronics: ElectronicsIcon,
+  timber: TimberIcon,
+};
 
 /** Archetype label text (CONTEXT.md: Port archetype). The other five render
  *  as their raw identifier — `.side-panel__subtitle`'s `text-transform:
@@ -162,7 +199,6 @@ function MarketRow({
   trading: boolean;
 }) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const [qty, setQty] = useState(1);
 
   const unitPrice = price(entry, base);
   const trend = priceTrend(unitPrice, snapshotPrice);
@@ -175,7 +211,7 @@ function MarketRow({
   const sellMax = trading ? computeSellMax(entry, base, ship, good) : 0;
   // Which constraint binds Buy max — hold space, port stock or thalers
   // (#124: a capped Buy gave no reason, so a fresh player with a full hold
-  // concluded the game was broken). Shown near the Buy control below.
+  // concluded the game was broken). Shown near the trade line below.
   const holdSpace = ship.hold - cargoUsed(ship);
   const stockMax = Math.floor(entry.stock);
   const capHint = trading ? buyCapHint(buyCapReason(holdSpace, stockMax, buyMax), holdSpace, stockMax) : null;
@@ -183,6 +219,12 @@ function MarketRow({
   // more — each button still disables independently via canBuy/canSell.
   const maxQty = Math.max(buyMax, sellMax);
   const clampQty = (n: number) => (maxQty <= 0 ? 0 : Math.min(Math.max(n, 1), maxQty));
+  // #73 (owner design call 2026-07-16): qty DEFAULTS to the current max — in
+  // practice buy/sell is almost always "max", so the player dials it *down*
+  // rather than up. Only the initial value changes (was 1); once mounted,
+  // clampQty keeps a manually-lowered qty stable across re-renders (price
+  // ticks, docking) the same way it always did.
+  const [qty, setQty] = useState(() => (maxQty > 0 ? maxQty : 1));
   const clampedQty = clampQty(qty);
 
   const buyTotal = trading ? quoteBuy(entry, base, clampedQty) : null;
@@ -197,11 +239,29 @@ function MarketRow({
     cargoUsed(ship) + clampedQty <= ship.hold;
   const canSell = clampedQty > 0 && sellTotal !== null && ship.cargo[good] >= clampedQty;
 
+  const GoodIcon = GOOD_ICONS[good];
+  const held = ship.cargo[good];
+
   return (
     <div className="market-row">
       <div className="market-row__head">
-        <span className="market-row__name">{GOODS[good].name}</span>
-        <span className={`market-row__trend market-row__trend--${trend}`}>
+        <span className="market-row__name">
+          <GoodIcon className="market-row__icon" />
+          {GOODS[good].name}
+          {held > 0 && (
+            // In-hold marker (#73, owner request 2026-07-16): the good's own
+            // icon vocabulary again, muted — no new color (ADR-0006) — so a
+            // glance at the market row shows what's already aboard.
+            <span className="market-row__held" title={`W ładowni: ${held}`}>
+              <GoodIcon className="market-row__held-icon" aria-hidden="true" />
+              {held}
+            </span>
+          )}
+        </span>
+        <span
+          className={`market-row__trend market-row__trend--${trend}`}
+          title={TREND_LEGEND}
+        >
           {TREND_GLYPH[trend]}
         </span>
         <span className="market-row__bid">{quoteLabel(bidUnit)}</span>
@@ -223,38 +283,11 @@ function MarketRow({
             />
             <button
               type="button"
-              disabled={buyMax <= 0}
-              aria-label={`Buy max ${GOODS[good].name}`}
-              onClick={() => setQty(buyMax)}
-            >
-              Buy max
-            </button>
-            <button
-              type="button"
-              disabled={sellMax <= 0}
-              aria-label={`Sell max ${GOODS[good].name}`}
-              onClick={() => setQty(sellMax)}
-            >
-              Sell max
-            </button>
-          </div>
-          {capHint && (
-            // Names the binding constraint on Buy max — hold space, port
-            // stock, or thalers (#124) — instead of leaving a capped Buy
-            // unexplained.
-            <p className="market-row__cap-hint">{capHint}</p>
-          )}
-          <div className="market-row__trade">
-            {/* Explicit aria-labels keep the action buttons' accessible names
-                distinct from the "Buy max"/"Sell max" buttons above (exact
-                names: e2e and assistive tech disambiguate on them). */}
-            <button
-              type="button"
               disabled={!canBuy}
               aria-label={`Buy ${GOODS[good].name}`}
               onClick={() => dispatch({ kind: "buy", shipId: ship.id, good, qty: clampedQty })}
             >
-              Buy {quoteLabel(buyTotal)}
+              Kup {quoteLabel(buyTotal)}
               {unitHint(nextBuyUnit)}
             </button>
             <button
@@ -263,10 +296,16 @@ function MarketRow({
               aria-label={`Sell ${GOODS[good].name}`}
               onClick={() => dispatch({ kind: "sell", shipId: ship.id, good, qty: clampedQty })}
             >
-              Sell {quoteLabel(sellTotal)}
+              Sprzedaj {quoteLabel(sellTotal)}
               {unitHint(nextSellUnit)}
             </button>
           </div>
+          {capHint && (
+            // Names the binding constraint on Buy max — hold space, port
+            // stock, or thalers (#124) — instead of leaving a capped Buy
+            // unexplained.
+            <p className="market-row__cap-hint">{capHint}</p>
+          )}
         </>
       )}
     </div>
@@ -482,11 +521,15 @@ export function PortPanel({ portId }: { portId: PortId }) {
   if (!ship) return null;
   const dockedHere = ship.location.kind === "docked" && ship.location.portId === port.id;
   const snapshot = world.priceSnapshots[port.id];
+  const ArchetypeIcon = ARCHETYPE_ICONS[port.archetype];
 
   return (
     <>
       <h2 className="side-panel__title">{port.name}</h2>
-      <p className="side-panel__subtitle">{archetypeLabel(port.archetype)}</p>
+      <p className="side-panel__subtitle">
+        <ArchetypeIcon className="side-panel__subtitle-icon" />
+        {archetypeLabel(port.archetype)}
+      </p>
 
       <Harbor port={port} ships={world.company.ships} controlledShipId={controlledShipId} />
 
@@ -499,7 +542,7 @@ export function PortPanel({ portId }: { portId: PortId }) {
       <div className="market" role="table" aria-label={`${port.name} market`}>
         <div className="market__header" role="row">
           <span>Good</span>
-          <span>Trend</span>
+          <span title={TREND_LEGEND}>Trend</span>
           <span>Bid</span>
           <span>Ask</span>
           <span>Stock</span>

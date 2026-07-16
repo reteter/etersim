@@ -15,3 +15,13 @@ export function priceTrend(current: number, snapshot: number): Trend {
 
 /** Shared trend glyphs (PortPanel.tsx, PriceBoardOverlay.tsx). */
 export const TREND_GLYPH: Record<Trend, string> = { up: "▲", down: "▼", flat: "=" };
+
+/**
+ * Trend legend text (#127): a fresh player read `▲/▼` as "vs the starting
+ * price" and found `=` opaque. States the real comparison (the last
+ * day-boundary snapshot, not the initial price), the window, and what `=`
+ * means. Shared by PortPanel.tsx and PriceBoardOverlay.tsx so both surfaces
+ * carry identical wording (Polish, 2026-07-14 UI grill).
+ */
+export const TREND_LEGEND =
+  "Trend: ▲ cena wzrosła, ▼ spadła, = bez zmian — względem ostatniej granicy dnia (nie ceny początkowej), zaokrąglone do pełnych thalerów.";

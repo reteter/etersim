@@ -102,7 +102,7 @@ function withFullHold(world: World, fillGood: GoodId): World {
 }
 
 test.describe('market: Buy cap reason (#124)', () => {
-  test('hold full: names "Hold full" near Buy max, which is disabled', async ({ page }) => {
+  test('hold full: names "Hold full" near the trade line, Buy disabled', async ({ page }) => {
     let world = fundedWorld('market-cap-hold');
     const { name } = homePort(world);
     // Fill the hold with textiles so grain's own stock/thalers stay
@@ -114,7 +114,6 @@ test.describe('market: Buy cap reason (#124)', () => {
 
     const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
     await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Hold full');
-    await expect(grainRow.getByRole('button', { name: /Buy max Grain/i })).toBeDisabled();
     await expect(grainRow.getByRole('button', { name: 'Buy Grain', exact: true })).toBeDisabled();
   });
 
@@ -133,7 +132,9 @@ test.describe('market: Buy cap reason (#124)', () => {
     await expect(grainRow.locator('.market-row__stock')).toHaveText('12');
   });
 
-  test('empty purse: names "Not enough thalers" near Buy max', async ({ page }) => {
+  test('empty purse: names "Not enough thalers" near the trade line, Buy disabled', async ({
+    page,
+  }) => {
     const world = fundedWorld('market-cap-thalers', 1);
     const { name } = homePort(world);
 
@@ -142,6 +143,89 @@ test.describe('market: Buy cap reason (#124)', () => {
 
     const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
     await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Not enough thalers');
-    await expect(grainRow.getByRole('button', { name: /Buy max Grain/i })).toBeDisabled();
+    await expect(grainRow.getByRole('button', { name: 'Buy Grain', exact: true })).toBeDisabled();
+  });
+});
+
+test.describe('market: per-good row refresh (#73/#74/#127)', () => {
+  test('qty defaults to the current max, and the player can dial it down', async ({ page }) => {
+    const world = fundedWorld('market-qty-default');
+    const { name } = homePort(world);
+
+    await continueWithWorld(page, world);
+    await openMarket(page, name);
+
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    const qtyInput = grainRow.getByRole('spinbutton', { name: /grain quantity/i });
+
+    // Flush purse (100k) and an empty hold: buyMax is the binding max, well
+    // above the old hardcoded default of 1.
+    const initialValue = Number(await qtyInput.inputValue());
+    expect(initialValue).toBeGreaterThan(1);
+
+    // Player dials it down — Kup then acts on the lowered qty, not the max.
+    await qtyInput.fill('4');
+    const buyButton = grainRow.getByRole('button', { name: 'Buy Grain', exact: true });
+    await expect(buyButton).toContainText('Kup');
+    await buyButton.click();
+
+    await page.locator('.fleet-list__item--controlled').click();
+    await expect(page.locator('.hold')).toContainText('Grain');
+    await expect(page.locator('.hold')).toContainText('4');
+  });
+
+  test('dedicated "Buy max"/"Sell max" buttons are gone from the trade line', async ({ page }) => {
+    const world = fundedWorld('market-no-max-buttons');
+    const { name } = homePort(world);
+
+    await continueWithWorld(page, world);
+    await openMarket(page, name);
+
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    await expect(grainRow.getByRole('button', { name: /buy max/i })).toHaveCount(0);
+    await expect(grainRow.getByRole('button', { name: /sell max/i })).toHaveCount(0);
+    // The Sell action's aria-label stays "Sell <good>" (existing selector
+    // contract); its visible text is the Polish "Sprzedaj" label.
+    await expect(grainRow.getByRole('button', { name: 'Sell Grain', exact: true })).toContainText(
+      'Sprzedaj',
+    );
+  });
+
+  test('in-hold marker shows the carried quantity for a good aboard the ship', async ({ page }) => {
+    const world = fundedWorld('market-in-hold-marker');
+    const { name } = homePort(world);
+
+    await continueWithWorld(page, world);
+    await openMarket(page, name);
+
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    // Nothing aboard yet — no marker.
+    await expect(grainRow.locator('.market-row__held')).toHaveCount(0);
+
+    const qtyInput = grainRow.getByRole('spinbutton', { name: /grain quantity/i });
+    await qtyInput.fill('7');
+    await grainRow.getByRole('button', { name: 'Buy Grain', exact: true }).click();
+
+    await expect(grainRow.locator('.market-row__held')).toContainText('7');
+  });
+
+  test('trend glyph carries a legend explaining the last-day-boundary comparison (#127)', async ({
+    page,
+  }) => {
+    const world = fundedWorld('market-trend-legend');
+    const { name } = homePort(world);
+
+    await continueWithWorld(page, world);
+    await openMarket(page, name);
+
+    // The Trend column header and every glyph carry the same tooltip; it
+    // must state the real comparison (last day boundary) and explicitly
+    // rule out the fresh-player misread ("initial price").
+    const headerTitle = await page.locator('.market__header span', { hasText: 'Trend' }).getAttribute('title');
+    expect(headerTitle).toContain('ostatniej granicy dnia');
+    expect(headerTitle).toContain('nie ceny początkowej');
+
+    const glyphTitle = await page.locator('.market-row__trend').first().getAttribute('title');
+    expect(glyphTitle).toBe(headerTitle);
   });
 });

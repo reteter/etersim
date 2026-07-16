@@ -472,6 +472,22 @@ body {
   text-transform: capitalize;
 }
 
+/* Archetype icon before the archetype label (#74), inline with the text —
+   deliberately *not* a flex layout on `.side-panel__subtitle` itself: that
+   class is shared with ShipPanel's plain-text "Docked at …" subtitle
+   (e2e/ui.spec.ts reads it via innerText), and a flex container there
+   introduced a stray line break other tests then choked on. `vertical-align`
+   keeps this icon on the text baseline without touching the parent's
+   display. Muted, same tint as the subtitle text — only the Controlled Ship
+   gets gold (ADR-0006). */
+.side-panel__subtitle-icon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.35rem;
+  vertical-align: -0.15em;
+  color: #8891a3;
+}
+
 /* Port name link inside ShipPanel's "Docked at"/"Underway to" line (#196):
    reads as text until hovered/focused, but is a real <button> — keyboard-
    operable, same target as clicking the port on the map. Inherits the
@@ -574,6 +590,39 @@ body {
   grid-template-columns: var(--market-columns);
   gap: 0.5rem;
   align-items: baseline;
+}
+
+.market-row__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Good icon before the name (#74) — muted, colorblind-safe alongside text;
+   no per-good hue (ADR-0006, gold stays reserved for the Controlled Ship). */
+.market-row__icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  color: #8891a3;
+}
+
+/* In-hold marker (#73, owner request 2026-07-16): the good's own icon again,
+   muted, plus the held quantity — no new color, reuses the #74 vocabulary. */
+.market-row__held {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-left: 0.15rem;
+  font-size: 0.75rem;
+  color: #a8b2c2;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-row__held-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex-shrink: 0;
 }
 
 .market-row__trend,
@@ -874,6 +923,15 @@ body {
   display: flex;
   flex-direction: column;
   margin-bottom: 1rem;
+}
+
+/* Trend legend (#127): always-visible caption above the grid — a hover-only
+   tooltip proved too easy to miss (a fresh player misread the glyphs as "vs
+   the starting price"). Same wording as the per-glyph `title` tooltips. */
+.price-board__legend {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  color: #8891a3;
 }
 
 .price-board__row {

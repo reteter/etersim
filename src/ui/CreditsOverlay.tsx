@@ -31,6 +31,45 @@ export function CreditsOverlay({ onClose }: { onClose: () => void }) {
           </a>
           .
         </p>
+        <p className="overlay__text">
+          Good icons: Grain (
+          <a href="https://game-icons.net/1x1/lorc/triple-corn.html" target="_blank" rel="noreferrer">
+            Triple corn
+          </a>
+          ) and Aether Salt (
+          <a
+            href="https://game-icons.net/1x1/lorc/crystal-cluster.html"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Crystal cluster
+          </a>
+          ) and Electronics (
+          <a href="https://game-icons.net/1x1/lorc/microchip.html" target="_blank" rel="noreferrer">
+            Microchip
+          </a>
+          ) by Lorc; Textiles (
+          <a href="https://game-icons.net/1x1/delapouite/wool.html" target="_blank" rel="noreferrer">
+            Wool
+          </a>
+          ) and Timber (
+          <a
+            href="https://game-icons.net/1x1/delapouite/wood-pile.html"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Wood pile
+          </a>
+          ) by Delapouite, from{" "}
+          <a href="https://game-icons.net" target="_blank" rel="noreferrer">
+            game-icons.net
+          </a>
+          , licensed under{" "}
+          <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">
+            CC BY 3.0
+          </a>
+          .
+        </p>
         <button type="button" className="menu-btn" onClick={onClose}>
           Close
         </button>
