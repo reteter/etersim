@@ -1,5 +1,5 @@
 {
-  "version": 11,
+  "version": 12,
   "world": {
     "tick": 273,
     "rng": 1528315252,
@@ -232,6 +232,7 @@
           "id": "s0",
           "name": "s0",
           "hold": 50,
+          "baseHold": 50,
           "cargo": {
             "grain": 0,
             "textiles": 0,
@@ -248,6 +249,7 @@
           "id": "s1",
           "name": "Lumen Trader",
           "hold": 50,
+          "baseHold": 50,
           "cargo": {
             "grain": 0,
             "textiles": 0,

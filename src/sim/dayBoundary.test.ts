@@ -93,7 +93,7 @@ describe("dayBoundary behavior contracts (#168)", () => {
 /** A second ship at the same home port, for the multi-ship sequential-clamp
  *  test — cargo/location don't matter for upkeep, only fleet-array order. */
 function shipAt(id: string, portId: string): Ship {
-  return { id, name: id, hold: 50, cargo: emptyCargo(), location: { kind: "docked", portId } };
+  return { id, name: id, hold: 50, baseHold: 50, cargo: emptyCargo(), location: { kind: "docked", portId } };
 }
 
 /** World with an arbitrary purse and fleet, one day (24 ticks) away from its

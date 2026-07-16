@@ -302,6 +302,9 @@ describe("Economics guardrail (docs/specs/E9-fleet-and-routes.md — Testing)", 
     }
     expect(w.company.headquarters?.buildOrder).toBeUndefined(); // launched
     expect(w.company.ships).toHaveLength(2);
+    // E14 (#274): a newly built ship launches with baseHold set explicitly,
+    // the ladder's starting rung.
+    expect(w.company.ships[1].baseHold).toBe(50);
 
     // The actual cost of the second hull, read straight from the Ledger:
     // labor fee + every autoDraw purchase (no rush was used).

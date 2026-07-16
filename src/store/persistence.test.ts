@@ -147,12 +147,35 @@ function v9SaveWithContractOffer(): { version: 9; world: World } {
   };
 }
 
-/** A v10 save (post-#226, pre-E9.1): a world whose routes/ships carry no
- *  `qty`/`minMargin`/`waiting` at all — the exact shape a v10 save on disk
- *  actually had. `migrateV10ToV11` must carry it forward unchanged. */
-function v10Save(): { version: 10; world: World } {
+/** A v11 save (post-E9.1, pre-E14): a world whose ships carry no `baseHold`
+ *  at all — the exact shape a v11 save on disk actually had.
+ *  `migrateV11ToV12` must backfill `baseHold: 50` on every ship. */
+function v11Save(): { version: 11; world: World } {
   const world = e9World();
-  return { version: 10, world };
+  const deshaped = {
+    ...world,
+    company: {
+      ...world.company,
+      ships: world.company.ships.map((ship) => {
+        const rest: Record<string, unknown> = { ...ship };
+        delete rest.baseHold;
+        return rest;
+      }),
+    },
+  } as unknown as World;
+  return { version: 11, world: deshaped };
+}
+
+/** The `baseHold`-backfilled counterpart of `v11Save().world`, i.e. what
+ *  `migrateV11ToV12` should produce: every ship regains `baseHold: 50`. */
+function v11SaveMigrated(save: { world: World }): World {
+  return {
+    ...save.world,
+    company: {
+      ...save.world.company,
+      ships: save.world.company.ships.map((ship) => ({ ...ship, baseHold: 50 })),
+    },
+  };
 }
 
 describe("persistence", () => {
@@ -248,38 +271,41 @@ describe("persistence", () => {
     expect(parsed.version).toBe(SAVE_VERSION);
   });
 
-  describe("v10 -> v11 migration (E9.1 — StopOrder.qty/minMargin, ShipAssignment.waiting)", () => {
-    it("parseWorldJson carries a v10 world forward unchanged (identity migration)", () => {
-      const save = v10Save();
+  describe("v11 -> v12 migration (E14 #274 — Ship.baseHold)", () => {
+    it("parseWorldJson backfills baseHold: 50 on every ship of a v11 world, lossless otherwise", () => {
+      const save = v11Save();
+      // Precondition: the deshaped fixture actually lacks baseHold.
+      expect(save.world.company.ships.every((s) => !("baseHold" in s))).toBe(true);
       const text = JSON.stringify(save);
 
       const migrated = parseWorldJson(text);
 
-      expect(migrated).toEqual(save.world);
+      expect(migrated).toEqual(v11SaveMigrated(save));
+      expect(migrated.company.ships.every((s) => s.baseHold === 50)).toBe(true);
     });
 
-    it("loadAutosave transparently migrates a v10 slot, so an old save keeps loading (incident 0009 concern)", () => {
+    it("loadAutosave transparently migrates a v11 slot, so an old save keeps loading (incident 0009 concern)", () => {
       const storage = fakeStorage();
-      const save = v10Save();
+      const save = v11Save();
       storage.setItem(AUTOSAVE_KEY, JSON.stringify(save));
 
       const restored = loadAutosave(storage);
       expect(restored).not.toBeNull();
       expect(hasAutosave(storage)).toBe(true);
-      expect(restored).toEqual(save.world);
+      expect(restored).toEqual(v11SaveMigrated(save));
     });
 
-    it("a save older than v10 (v9) is now rejected — migration is one step, not open-ended", () => {
+    it("a save older than v11 (v10) is now rejected — migration is one step, not open-ended", () => {
       const storage = fakeStorage();
-      const v9Save = v9SaveWithContractOffer();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify(v9Save));
+      const world = e9World();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 10, world }));
       expect(loadAutosave(storage)).toBeNull();
     });
 
-    it("a save older than v9 (v8) is still rejected", () => {
+    it("a save older than v10 (v9) is still rejected", () => {
       const storage = fakeStorage();
-      const world = midSessionWorld();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 8, world }));
+      const v9Save = v9SaveWithContractOffer();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify(v9Save));
       expect(loadAutosave(storage)).toBeNull();
     });
   });

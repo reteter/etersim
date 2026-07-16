@@ -72,6 +72,7 @@ describe("createWorld", () => {
     expect(world0.company.thalers).toBe(STARTING_THALERS);
     expect(world0.company.ships).toHaveLength(1);
     expect(ship(world0).hold).toBe(STARTING_HOLD);
+    expect(ship(world0).baseHold).toBe(STARTING_HOLD); // E14 (#274): ladder's starting rung
     expect(ship(world0).location.kind).toBe("docked");
     expect(cargoUsed(ship(world0))).toBe(0);
   });
