@@ -82,7 +82,9 @@ function migrateV11ToV12(rawWorld: unknown): World {
     ...world,
     company: {
       ...world.company,
-      ships: world.company.ships.map((ship) => ({ ...ship, baseHold: ship.baseHold ?? 50 })),
+      // Unconditional: a v11 ship never carries baseHold (the field ships at
+      // v12), so `?? 50` would only mask a mislabeled envelope.
+      ships: world.company.ships.map((ship) => ({ ...ship, baseHold: 50 })),
     },
   };
 }

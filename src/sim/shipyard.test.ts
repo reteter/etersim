@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { emptyCargo, type Ship } from "./ship";
-import { SHIP_RECIPE } from "./building";
 import {
   holdLadder,
   nextHoldStep,
@@ -75,10 +74,15 @@ describe("refitRecipe", () => {
   it("scales SHIP_RECIPE by the Hold gained relative to baseHold, rounding up per good", () => {
     // baseHold 50, hold 50 -> next 100: holdGained 50, ratio 50/50 = 1 ->
     // recipe == SHIP_RECIPE (ceil of an exact multiple).
-    const recipe = refitRecipe(ship(50));
-    for (const good of Object.keys(SHIP_RECIPE) as (keyof typeof SHIP_RECIPE)[]) {
-      expect(recipe[good]).toBe(Math.ceil(SHIP_RECIPE[good] * (50 / 50) * REFIT_MATERIAL_FACTOR));
-    }
+    // Hardcoded literals (independent oracle): 50 -> 100 gains a full baseHold,
+    // so the recipe is exactly SHIP_RECIPE at factor 1.0.
+    expect(refitRecipe(ship(50))).toEqual({
+      grain: 100,
+      textiles: 30,
+      aetherSalt: 20,
+      electronics: 5,
+      timber: 12,
+    });
   });
 
   it("scales down for the smaller last step (150 -> 188, holdGained 38): grain 76, textiles 23, aetherSalt 16, electronics 4, timber 10", () => {
