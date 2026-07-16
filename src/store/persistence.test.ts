@@ -166,6 +166,31 @@ function v11Save(): { version: 11; world: World } {
   return { version: 11, world: deshaped };
 }
 
+/** A world with an active Refit (E14 #275) — a Headquarters, a Shipyard, and
+ *  a partially-filled RefitOrder — driven a few ticks so the site actually
+ *  gathered some materials, not just a freshly-opened empty one. */
+function refitInProgressWorld(): World {
+  const base = createWorld("refit-save");
+  const hqPortId = base.region.ports[0].id;
+  const shipyardPortId = base.region.ports[1].id;
+  const homeShip = base.company.ships[0];
+  let world: World = {
+    ...base,
+    company: {
+      ...base.company,
+      thalers: 1_000_000,
+      ships: [{ ...homeShip, location: { kind: "docked", portId: shipyardPortId } }],
+    },
+  };
+  world = tick(world, [
+    { kind: "foundHeadquarters", portId: hqPortId },
+    { kind: "commissionShipyard", portId: shipyardPortId },
+  ]);
+  world = tick(world, [{ kind: "commissionRefit", shipId: homeShip.id }]);
+  for (let i = 0; i < 10; i++) world = tick(world, []); // let auto-draw gather some materials
+  return world;
+}
+
 /** The `baseHold`-backfilled counterpart of `v11Save().world`, i.e. what
  *  `migrateV11ToV12` should produce: every ship regains `baseHold: 50`. */
 function v11SaveMigrated(save: { world: World }): World {
@@ -196,6 +221,18 @@ describe("persistence", () => {
       world.company.headquarters!.buildOrder!.siteStore,
     );
     expect(restored.company.ships[0].assignment).toEqual(world.company.ships[0].assignment);
+  });
+
+  it("round-trips a mid-Refit world through the real persistence layer — Shipyard + RefitOrder identity (E14 #275)", () => {
+    const world = refitInProgressWorld();
+    // Preconditions: the fixture actually landed with an active Refit whose
+    // site has gathered something (not a freshly-opened empty one).
+    expect(world.company.shipyard?.refitOrder).toBeDefined();
+    const anyDrawn = Object.values(world.company.shipyard!.refitOrder!.siteStore).some((qty) => qty > 0);
+    expect(anyDrawn).toBe(true);
+    const restored = parseWorldJson(exportWorldJson(world));
+    expect(restored).toEqual(world);
+    expect(restored.company.shipyard).toEqual(world.company.shipyard);
   });
 
   it("round-trips a mid-wait Margin Gate ship through the real persistence layer (E9.1 — waiting is load-bearing state, ADR-0007)", () => {

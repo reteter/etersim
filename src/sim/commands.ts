@@ -1,4 +1,5 @@
 import {
+  applyDeliveryToConstructionSite,
   applyDeliveryToSite,
   applyRushQuoteToSite,
   commissionBuilding,
@@ -18,6 +19,17 @@ import { appendLedgerEvent, appendLedgerEvents } from "./ledger";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { shortestCourse } from "./pathfinding";
 import type { Port, PortId } from "./region";
+import {
+  completeRefitIfDone,
+  computeRefitRushQuote,
+  isUnderRefit,
+  nextHoldStep,
+  refitRecipe,
+  REFIT_LABOR_FEE,
+  SHIPYARD_COST,
+  type RefitOrder,
+  type Shipyard,
+} from "./shipyard";
 import type { Route, RouteId } from "./route";
 import { cargoUsed, isRouteActive, type Ship, type ShipId } from "./ship";
 import { replaceShip, type World } from "./world";
@@ -57,6 +69,13 @@ export type Command =
   | { readonly kind: "placeBuildOrder" }
   | { readonly kind: "rushBuild" }
   | { readonly kind: "deliver"; readonly shipId: ShipId; readonly good: GoodId }
+  // E14 (#275) Shipyard & Refit — the Shipyard's construction commands.
+  // commissionShipyard needs no ship (instant, flat cost — the
+  // foundHeadquarters analog); commissionRefit/rushRefit target the
+  // Shipyard's one active RefitOrder.
+  | { readonly kind: "commissionShipyard"; readonly portId: PortId }
+  | { readonly kind: "commissionRefit"; readonly shipId: ShipId }
+  | { readonly kind: "rushRefit" }
   // #54 (folded into E9/#83): player-editable ship display name. Launch names
   // are generator-suggested (building.ts); this is the ShipPanel rename affordance.
   | { readonly kind: "renameShip"; readonly shipId: ShipId; readonly name: string }
@@ -133,6 +152,9 @@ export function applyCommand(world: World, command: Command): World {
       // and Stop execution, so routes never introduce a second ordering regime.
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship) return world;
+      // Refit lock (E14 #275): a locked ship can't be put back on autopilot —
+      // it can't sail to fulfil the plan anyway.
+      if (isUnderRefit(world, command.shipId)) return world;
       const route = world.company.routes.find((r) => r.id === command.routeId);
       if (!route || route.stops.length < 2) return world;
       return replaceShip(world, {
@@ -151,6 +173,12 @@ export function applyCommand(world: World, command: Command): World {
       // (predictable, never "nearest").
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship || !ship.assignment) return world;
+      // Refit lock (E14 #275): resuming would clear `suspended` while still
+      // locked, and the route pass would silently pick the Route back up the
+      // moment the refit completes — "resume is manual after completion"
+      // (spec) means this command itself must stay blocked for the whole
+      // refit, not just movement.
+      if (isUnderRefit(world, command.shipId)) return world;
       const route = world.company.routes.find((r) => r.id === ship.assignment!.routeId);
       if (!route || route.stops.length < 2) return world;
       const idx =
@@ -241,42 +269,200 @@ export function applyCommand(world: World, command: Command): World {
     case "deliver": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship || ship.location.kind !== "docked") return world;
+      const dockedPortId = ship.location.portId;
+
       const hq = world.company.headquarters;
-      if (!hq || !hq.buildOrder || hq.portId !== ship.location.portId) return world;
+      if (hq && hq.buildOrder && hq.portId === dockedPortId) {
+        const { siteStore, moved } = applyDeliveryToSite(
+          hq.buildOrder.siteStore,
+          ship.cargo,
+          command.good,
+        );
+        if (moved <= 0) return launchIfComplete(world);
 
-      const { siteStore, moved } = applyDeliveryToSite(
-        hq.buildOrder.siteStore,
-        ship.cargo,
-        command.good,
-      );
-      if (moved <= 0) return launchIfComplete(world);
+        const delivered: Ship = {
+          ...ship,
+          cargo: { ...ship.cargo, [command.good]: ship.cargo[command.good] - moved },
+        };
+        const withShip = replaceShip(world, delivered);
+        const withDelivery: World = {
+          ...withShip,
+          company: {
+            ...withShip.company,
+            headquarters: { portId: hq.portId, buildOrder: { siteStore } },
+          },
+        };
+        return launchIfComplete(
+          appendLedgerEvent(withDelivery, {
+            kind: "delivery",
+            tick: world.tick,
+            shipId: ship.id,
+            portId: hq.portId,
+            good: command.good,
+            qty: moved,
+          }),
+        );
+      }
 
-      const delivered: Ship = {
-        ...ship,
-        cargo: { ...ship.cargo, [command.good]: ship.cargo[command.good] - moved },
+      // The Shipyard's active Refit site (E14 #275): any Company ship may
+      // deliver, not only the ship under refit — the target ship stays
+      // locked in port, but bringing materials is exactly how the site
+      // fills. Deliberately checked second: if both a Headquarters build and
+      // a Shipyard refit happen to sit at the same port, the build claims
+      // the delivery first (matches the pre-#275 tested behavior; a known,
+      // reported edge case rather than a resolved ambiguity).
+      const shipyard = world.company.shipyard;
+      if (shipyard && shipyard.refitOrder && shipyard.portId === dockedPortId) {
+        const targetShip = world.company.ships.find((s) => s.id === shipyard.refitOrder!.shipId);
+        if (!targetShip) return world; // defensive — shouldn't happen with a valid World
+        const site: ConstructionSite = {
+          recipe: refitRecipe(targetShip),
+          siteStore: shipyard.refitOrder.siteStore,
+          portId: shipyard.portId,
+        };
+        const { siteStore, moved } = applyDeliveryToConstructionSite(site, ship.cargo, command.good);
+        if (moved <= 0) return completeRefitIfDone(world);
+
+        const delivered: Ship = {
+          ...ship,
+          cargo: { ...ship.cargo, [command.good]: ship.cargo[command.good] - moved },
+        };
+        const withShip = replaceShip(world, delivered);
+        const withDelivery: World = {
+          ...withShip,
+          company: {
+            ...withShip.company,
+            shipyard: { portId: shipyard.portId, refitOrder: { ...shipyard.refitOrder, siteStore } },
+          },
+        };
+        return completeRefitIfDone(
+          appendLedgerEvent(withDelivery, {
+            kind: "delivery",
+            tick: world.tick,
+            shipId: ship.id,
+            portId: shipyard.portId,
+            good: command.good,
+            qty: moved,
+          }),
+        );
+      }
+
+      return world;
+    }
+    case "commissionShipyard": {
+      // The foundHeadquarters analog: instant, flat cost, Reserve-checked —
+      // `Shipyard` carries no siteStore of its own (only `refitOrder.siteStore`
+      // does), so `commissionBuilding` (building.ts, #99) is reused only for
+      // its reserve-gated fee charge, not for the site it hands back.
+      if (!world.company.headquarters) return world;
+      if (world.company.shipyard) return world; // one per Company
+      if (!world.region.ports.some((p) => p.id === command.portId)) return world;
+      const commissioned = commissionBuilding(world.company.thalers, SHIPYARD_COST);
+      if (!commissioned) return world; // the flat cost may not dip into the Reserve (#122)
+      const built: World = {
+        ...world,
+        company: {
+          ...world.company,
+          thalers: commissioned.thalers,
+          shipyard: { portId: command.portId },
+        },
       };
-      const withShip = replaceShip(world, delivered);
-      const withDelivery: World = {
+      return appendLedgerEvent(built, {
+        kind: "shipyardBuilt",
+        tick: world.tick,
+        portId: command.portId,
+        thalers: SHIPYARD_COST,
+      });
+    }
+    case "commissionRefit": {
+      const shipyard = world.company.shipyard;
+      if (!shipyard) return world;
+      if (shipyard.refitOrder) return world; // one active Refit at a time (v1)
+      const ship = world.company.ships.find((s) => s.id === command.shipId);
+      if (!ship) return world;
+      if (ship.location.kind !== "docked" || ship.location.portId !== shipyard.portId) return world;
+
+      // Loud guard (#274 wave-2 handoff note): a capped ship's refitRecipe is
+      // all zeros, which would otherwise open a RefitOrder that completes
+      // the instant it's created. Reject explicitly instead.
+      const targetHold = nextHoldStep(ship);
+      if (targetHold === null) return world;
+
+      // commissionBuilding (building.ts, #99): reused for the reserve-gated
+      // fee charge and the empty siteStore — commissionShipyard's sibling
+      // call, the second caller of this seam within #275.
+      const commissioned = commissionBuilding(world.company.thalers, REFIT_LABOR_FEE);
+      if (!commissioned) return world; // the labor fee may not dip into the Reserve (#122)
+
+      // Auto-suspend (existing manual-sailTo semantics, same as sailTo below):
+      // the plan stays assigned, resume is manual once the Refit completes.
+      const assignment = isRouteActive(ship)
+        ? { ...ship.assignment!, suspended: true }
+        : ship.assignment;
+      const withShip = replaceShip(world, { ...ship, assignment });
+
+      const nextRefitOrder: RefitOrder = { shipId: ship.id, targetHold, siteStore: commissioned.siteStore };
+      const nextShipyard: Shipyard = { portId: shipyard.portId, refitOrder: nextRefitOrder };
+      const started: World = {
         ...withShip,
         company: {
           ...withShip.company,
-          headquarters: { portId: hq.portId, buildOrder: { siteStore } },
+          thalers: commissioned.thalers,
+          shipyard: nextShipyard,
         },
       };
-      return launchIfComplete(
-        appendLedgerEvent(withDelivery, {
-          kind: "delivery",
-          tick: world.tick,
-          shipId: ship.id,
-          portId: hq.portId,
-          good: command.good,
-          qty: moved,
-        }),
+      return appendLedgerEvent(started, {
+        kind: "refitStart",
+        tick: world.tick,
+        shipId: ship.id,
+        portId: shipyard.portId,
+        thalers: REFIT_LABOR_FEE,
+      });
+    }
+    case "rushRefit": {
+      const shipyard = world.company.shipyard;
+      if (!shipyard || !shipyard.refitOrder) return world;
+      const portIdx = world.region.ports.findIndex((p) => p.id === shipyard.portId);
+      if (portIdx < 0) return world;
+
+      // computeRefitRushQuote (shipyard.ts) is the single source of "what
+      // would rushing buy right now" — the `computeRushQuote` pattern (#276
+      // previews the same quote before the player confirms).
+      const quote = computeRefitRushQuote(world);
+      if (quote.lines.length === 0) return world;
+
+      const targetShip = world.company.ships.find((s) => s.id === shipyard.refitOrder!.shipId);
+      if (!targetShip) return world; // defensive — shouldn't happen with a valid World
+      const site: ConstructionSite = {
+        recipe: refitRecipe(targetShip),
+        siteStore: shipyard.refitOrder.siteStore,
+        portId: shipyard.portId,
+      };
+      const result = applyRushQuoteToSite(
+        site,
+        world.region.ports[portIdx],
+        world.company.thalers,
+        quote,
+        world.tick,
       );
+      const ports = [...world.region.ports];
+      ports[portIdx] = result.port;
+
+      const rushed: World = {
+        ...world,
+        company: {
+          ...world.company,
+          thalers: result.thalers,
+          shipyard: { portId: shipyard.portId, refitOrder: { ...shipyard.refitOrder, siteStore: result.siteStore } },
+        },
+        region: { ...world.region, ports },
+      };
+      return completeRefitIfDone(appendLedgerEvents(rushed, result.events));
     }
     case "buy": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship || ship.location.kind !== "docked") return world;
+      if (isUnderRefit(world, command.shipId)) return world; // refit lock (E14 #275): no cargo trade
       const dockedAt = ship.location.portId;
       const port = world.region.ports.find((p) => p.id === dockedAt)!;
       const total = quoteBuy(port.market[command.good], effectiveBase(port, command.good), command.qty);
@@ -288,6 +474,7 @@ export function applyCommand(world: World, command: Command): World {
     case "sell": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship || ship.location.kind !== "docked") return world;
+      if (isUnderRefit(world, command.shipId)) return world; // refit lock (E14 #275): no cargo trade
       const dockedAt = ship.location.portId;
       const port = world.region.ports.find((p) => p.id === dockedAt)!;
       if (!Number.isInteger(command.qty) || command.qty <= 0) return world;
@@ -299,6 +486,7 @@ export function applyCommand(world: World, command: Command): World {
     case "sailTo": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship || ship.location.kind !== "docked") return world;
+      if (isUnderRefit(world, command.shipId)) return world; // refit lock (E14 #275): locked in port
       const fromPortId = ship.location.portId;
       if (command.portId === fromPortId) return world;
       const course = shortestCourse(world.region, fromPortId, command.portId);

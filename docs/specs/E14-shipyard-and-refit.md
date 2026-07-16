@@ -112,19 +112,35 @@ HOLD_LADDER: readonly number[] = [2, 1.5, 1.25]   // tuning
 holdLadder(baseHold): number[]      // cumulative, rounded once from base: [100, 150, 188] for 50
 nextHoldStep(ship): number | null   // null at cap
 refitRecipe(ship): Record<GoodId, number>   // ceil(SHIP_RECIPE[g] × holdGained / baseHold × REFIT_MATERIAL_FACTOR)
-REFIT_MATERIAL_FACTOR = 1.0, REFIT_LABOR_FEE = 500   // tuning
+REFIT_MATERIAL_FACTOR = 1.0, REFIT_LABOR_FEE = 500, SHIPYARD_COST = 3000   // tuning
 Shipyard { portId: PortId, refitOrder?: RefitOrder }
 RefitOrder { shipId: ShipId, targetHold: number, siteStore: Record<GoodId, number> }
+isUnderRefit(world, shipId): boolean   // derived lock predicate, no stored flag
+computeRefitRushQuote(world): RushQuote   // computeRushQuote's Refit counterpart
 ```
 
 `world.company.shipyard?: Shipyard` — absent until commissioned (same optional shape as
 `headquarters`). Commands: `commissionShipyard(portId)` (requires Headquarters, no
-existing Shipyard, flat cost + recipe per the generalized `commissionBuilding`);
-`commissionRefit(shipId)` (gates above; charges the labor fee up front, Reserve-checked;
-auto-suspends the assignment). The Shipyard site's auto-draw runs in the same tick phase
-as the HQ's, through the shared ConstructionSite engine. Completion applies
+existing Shipyard; instant and flat-cost, Reserve-checked — the `foundHeadquarters`
+analog, reusing `commissionBuilding` only for its reserve-gated fee check, since
+`Shipyard` carries no `siteStore` of its own — *erratum, #275 implementation: earlier
+drafted as "flat cost + recipe", corrected once the `Shipyard` type settled to
+`{ portId, refitOrder? }` with no site field*); `commissionRefit(shipId)` (gates above;
+charges the labor fee up front, Reserve-checked; auto-suspends the assignment — the
+recipe-bearing step, `placeBuildOrder`'s analog); `rushRefit()` (the Refit site's rush,
+`rushBuild`'s analog — not named explicitly in the original Tech draft, added here for
+completeness). The Shipyard site's auto-draw runs in the same tick phase as the HQ's,
+after it in `tick()`, through the shared ConstructionSite engine. Completion applies
 `hold = targetHold` and clears `refitOrder`. Ledger kinds: `shipyardBuilt`,
 `refitStart`, `refitComplete`.
+
+Refit lock (#275): `isUnderRefit` gates `sailTo`, `assignRoute`, `resumeRoute` (blocked
+for the whole refit so "resume is manual after completion" holds — the route pass never
+needs its own lock check as a result) and `buy`/`sell` (the locked ship's own cargo
+trades). `deliver` is deliberately NOT gated — any Company ship, including the locked
+target itself, may deliver into the refit site; that is one of its three fill sources.
+`unassignRoute` is also not gated (a decision, not an oversight — detaching a suspended
+assignment moves nothing and grants no escape from the lock).
 
 ### UI
 

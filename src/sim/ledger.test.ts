@@ -435,6 +435,9 @@ const KIND_CATEGORY: Record<LedgerEvent["kind"], LedgerGrammarCategory> = {
   upkeep: "thalers",
   contractFee: "thalers",
   settlement: "pointsDelta",
+  shipyardBuilt: "thalers",
+  refitStart: "thalers",
+  refitComplete: "neither",
 };
 
 /** Drives a world through every LedgerEvent kind via real Commands and tick
@@ -487,6 +490,31 @@ function scriptedAllKindsWorld(): World {
   guard = 0;
   while (w.company.headquarters?.buildOrder && guard++ < 5000) w = tick(w, []);
   expect(w.company.ships.length).toBeGreaterThan(1); // precondition: actually launched
+
+  // shipyardBuilt — commission the Shipyard at port B (E14 #275).
+  w = applyCommand(w, { kind: "commissionShipyard", portId: portB });
+
+  // refitStart — dock s0 at the Shipyard port and start a Refit.
+  w = {
+    ...w,
+    company: {
+      ...w.company,
+      ships: w.company.ships.map((s) =>
+        s.id === shipId ? { ...s, location: { kind: "docked" as const, portId: portB } } : s,
+      ),
+    },
+  };
+  w = applyCommand(w, { kind: "commissionRefit", shipId }); // refitStart
+
+  // autoDraw + rush + refitComplete — rush repeatedly, ticking between rushes
+  // so stock and the daily auto-draw cap replenish, until the RefitOrder
+  // completes (both fill sources must fire, same as the HQ build above).
+  guard = 0;
+  while (w.company.shipyard?.refitOrder && guard++ < 500) {
+    w = applyCommand(w, { kind: "rushRefit" });
+    if (w.company.shipyard?.refitOrder) w = tick(w, []);
+  }
+  expect(w.company.shipyard?.refitOrder).toBeUndefined(); // precondition: actually completed
 
   // netWorth + upkeep — a few more day boundaries.
   for (let i = 0; i < 3 * TICKS_PER_DAY; i++) w = tick(w, []);

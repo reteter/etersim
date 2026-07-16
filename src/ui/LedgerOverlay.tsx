@@ -33,11 +33,17 @@ function transactionShipId(event: TransactionEvent): ShipId | null {
     case "delivery":
     case "launch":
     case "upkeep":
+    // refitStart/refitComplete (E14, #275): minimal, mechanical exhaustiveness
+    // fix (same precedent as every prior LedgerEvent-union extension in this
+    // file) — both carry a shipId, no dedicated Shipyard UI treatment here
+    // (out of #275's sim-only scope wall; flagged in the completion report).
+    case "refitStart":
+    case "refitComplete":
       return event.shipId;
-    // contractFee/settlement (E3, #94): company-wide events, no single ship —
-    // same precedent as enrollmentFee below (minimal exhaustiveness fix,
-    // no dedicated Kontrakty-tab UI treatment; out of this sim-only issue's
-    // scope wall, flagged in the completion report).
+    // shipyardBuilt/contractFee/settlement: company-wide events, no single
+    // ship — same precedent as enrollmentFee below (minimal exhaustiveness
+    // fix, no dedicated Kontrakty-tab/Shipyard UI treatment; out of this
+    // sim-only issue's scope wall, flagged in the completion report).
     default:
       return null;
   }
@@ -60,6 +66,13 @@ function transactionDelta(event: TransactionEvent): number | null {
       return -event.thalers;
     case "contractFee":
       return event.thalers;
+    // shipyardBuilt/refitStart (E14, #275): flat costs paid up front — the
+    // Shipyard analogs of founding/laborFee above. Minimal exhaustiveness
+    // fix, no dedicated Shipyard UI treatment (out of #275's sim-only scope
+    // wall; flagged in the completion report).
+    case "shipyardBuilt":
+    case "refitStart":
+      return -event.thalers;
     case "delivery":
     case "launch":
     // enrollmentFee (E3, #92): the event carries no thalers field per the
@@ -70,6 +83,9 @@ function transactionDelta(event: TransactionEvent): number | null {
     // settlement (E3, #94): the audit record has no thalers field (points,
     // not purse movement) — same minimal-exhaustiveness precedent.
     case "settlement":
+    // refitComplete (E14, #275): moves no thalers (materials already logged
+    // by their own autoDraw/delivery/rush events) — same precedent.
+    case "refitComplete":
       return null;
   }
 }
@@ -123,6 +139,16 @@ function describeTransaction(event: TransactionEvent, world: World): string {
       return `Contract fee (contract ${event.contractId})`;
     case "settlement":
       return `Contract ${event.contractId} settlement: ${event.outcome} (${event.pointsDelta >= 0 ? "+" : ""}${event.pointsDelta} pts)`;
+    // shipyardBuilt/refitStart/refitComplete (E14, #275): minimal, mechanical
+    // exhaustiveness fix (same precedent as every prior LedgerEvent-union
+    // extension in this file) — no dedicated Shipyard UI treatment here
+    // (out of #275's sim-only scope wall; flagged in the completion report).
+    case "shipyardBuilt":
+      return `Commissioned Shipyard at ${portName(world, event.portId)}`;
+    case "refitStart":
+      return `Refit started for ${shipName(world, event.shipId)} at ${portName(world, event.portId)}`;
+    case "refitComplete":
+      return `Refit completed for ${shipName(world, event.shipId)}: Hold -> ${event.hold}`;
   }
 }
 
