@@ -388,10 +388,11 @@ body {
   white-space: nowrap;
 }
 
-/* "czeka na marżę" (E9.1, Margin Gate, ADR-0007): reuses the active-control
-   blue (chip--active / notice-strip badge), not gold (Controlled Ship,
-   ADR-0006) and not the suspended red (.route-row__suspended) — one more
-   meaning, no new color axis. */
+/* "czeka na marżę" (E9.1, Margin Gate, ADR-0007): a NEW status color for a
+   new meaning (ADR-0006, one color = one meaning) — deliberately not the
+   active-control blue #4c7bab (would overload "active"), not gold (Controlled
+   Ship) and not the suspended red (.route-row__suspended). Lightened cousin
+   of the control blue so it still reads as "informational, not alarming". */
 .fleet-list__status--waiting {
   color: #6c9bd1;
 }
