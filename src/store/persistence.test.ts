@@ -186,8 +186,30 @@ function refitInProgressWorld(): World {
     { kind: "foundHeadquarters", portId: hqPortId },
     { kind: "commissionShipyard", portId: shipyardPortId },
   ]);
+  // #286: the Shipyard is constructed, not instant — build it out (rush + tick)
+  // until it activates before a Refit can be commissioned.
+  let guard = 0;
+  while (world.company.shipyard?.construction && guard++ < 500) {
+    world = tick(world, [{ kind: "rushShipyardBuild" }]);
+  }
   world = tick(world, [{ kind: "commissionRefit", shipId: homeShip.id }]);
   for (let i = 0; i < 10; i++) world = tick(world, []); // let auto-draw gather some materials
+  return world;
+}
+
+/** A world with the Shipyard still **under construction** (#286) — commissioned
+ *  and driven a few ticks so its own site gathered some materials, but not yet
+ *  activated. Exercises save/load round-trip mid-construction. */
+function shipyardUnderConstructionWorld(): World {
+  const base = createWorld("shipyard-construct-save");
+  const hqPortId = base.region.ports[0].id;
+  const shipyardPortId = base.region.ports[1].id;
+  let world: World = { ...base, company: { ...base.company, thalers: 1_000_000 } };
+  world = tick(world, [
+    { kind: "foundHeadquarters", portId: hqPortId },
+    { kind: "commissionShipyard", portId: shipyardPortId },
+  ]);
+  for (let i = 0; i < 5; i++) world = tick(world, []); // auto-draw gathers some, not all
   return world;
 }
 
@@ -229,6 +251,19 @@ describe("persistence", () => {
     // site has gathered something (not a freshly-opened empty one).
     expect(world.company.shipyard?.refitOrder).toBeDefined();
     const anyDrawn = Object.values(world.company.shipyard!.refitOrder!.siteStore).some((qty) => qty > 0);
+    expect(anyDrawn).toBe(true);
+    const restored = parseWorldJson(exportWorldJson(world));
+    expect(restored).toEqual(world);
+    expect(restored.company.shipyard).toEqual(world.company.shipyard);
+  });
+
+  it("round-trips a mid-construction Shipyard through the real persistence layer — construction site identity (#286)", () => {
+    const world = shipyardUnderConstructionWorld();
+    // Preconditions: the fixture landed with a Shipyard under construction whose
+    // own site gathered something (not a freshly-opened empty one) and no refit.
+    expect(world.company.shipyard?.construction).toBeDefined();
+    expect(world.company.shipyard?.refitOrder).toBeUndefined();
+    const anyDrawn = Object.values(world.company.shipyard!.construction!.siteStore).some((qty) => qty > 0);
     expect(anyDrawn).toBe(true);
     const restored = parseWorldJson(exportWorldJson(world));
     expect(restored).toEqual(world);

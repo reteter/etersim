@@ -112,31 +112,52 @@ HOLD_LADDER: readonly number[] = [2, 1.5, 1.25]   // tuning
 holdLadder(baseHold): number[]      // cumulative, rounded once from base: [100, 150, 188] for 50
 nextHoldStep(ship): number | null   // null at cap
 refitRecipe(ship): Record<GoodId, number>   // ceil(SHIP_RECIPE[g] × holdGained / baseHold × REFIT_MATERIAL_FACTOR)
-REFIT_MATERIAL_FACTOR = 1.0, REFIT_LABOR_FEE = 500, SHIPYARD_COST = 3000   // tuning
-Shipyard { portId: PortId, refitOrder?: RefitOrder }
+REFIT_MATERIAL_FACTOR = 1.0, REFIT_LABOR_FEE = 500   // tuning
+SHIPYARD_LABOR_FEE = 1000, SHIPYARD_RECIPE   // construction; tuning (#286)
+Shipyard { portId: PortId, construction?: { siteStore }, refitOrder?: RefitOrder }
 RefitOrder { shipId: ShipId, targetHold: number, siteStore: Record<GoodId, number> }
 isUnderRefit(world, shipId): boolean   // derived lock predicate, no stored flag
+isShipyardActive(world): boolean   // #286: exists and construction complete
 computeRefitRushQuote(world): RushQuote   // computeRushQuote's Refit counterpart
+computeShipyardBuildRushQuote(world): RushQuote   // #286: the construction site's rush
+activateShipyardIfComplete(world): World   // #286: launchIfComplete's building analog
 ```
 
 `world.company.shipyard?: Shipyard` — absent until commissioned (same optional shape as
 `headquarters`). Commands: `commissionShipyard(portId)` (requires Headquarters, no
-existing Shipyard; instant and flat-cost, Reserve-checked — the `foundHeadquarters`
-analog, reusing `commissionBuilding` only for its reserve-gated fee check, since
-`Shipyard` carries no `siteStore` of its own — *erratum, #275 implementation: earlier
-drafted as "flat cost + recipe", corrected once the `Shipyard` type settled to
-`{ portId, refitOrder? }` with no site field*); `commissionRefit(shipId)` (gates above;
-charges the labor fee up front, Reserve-checked; auto-suspends the assignment — the
-recipe-bearing step, `placeBuildOrder`'s analog); `rushRefit()` (the Refit site's rush,
-`rushBuild`'s analog — not named explicitly in the original Tech draft, added here for
-completeness). The Shipyard site's auto-draw runs in the same tick phase as the HQ's,
-after it in `tick()`, through the shared ConstructionSite engine. Completion applies
-`hold = targetHold` and clears `refitOrder`. Ledger kinds: `shipyardBuilt`,
-`refitStart`, `refitComplete`. **Net worth counts an active refit's `siteStore`
-exactly like the HQ build site's** (owner decision 2026-07-16, resolving the #285
-review flag): in-progress refit materials keep their book value at region-average
-mid, so the company-value chart shows the same honest dip-then-growth shape for a
-Refit as for ship construction.
+existing Shipyard; **charges `SHIPYARD_LABOR_FEE` up front and opens a ConstructionSite
+against `SHIPYARD_RECIPE`, Reserve-checked** — the `placeBuildOrder` analog, reusing
+`commissionBuilding` for both the fee charge and the empty site it seeds `construction`
+with; the building **activates when the recipe fills**); `rushShipyardBuild()` (the
+construction site's rush, `rushBuild`'s analog); `commissionRefit(shipId)` (gates above,
+plus **the Shipyard must be active — no refit before it is built**; charges the refit
+labor fee up front, Reserve-checked; auto-suspends the assignment — the recipe-bearing
+step, `placeBuildOrder`'s analog); `rushRefit()` (the Refit site's rush, `rushBuild`'s
+analog). The Shipyard's construction and refit auto-draws run in the same tick phase as
+the HQ's, after it in `tick()`, through the shared ConstructionSite engine. Construction
+completion clears `construction` (silent activation — no second ledger kind, the E15
+`plantBuilt` precedent); refit completion applies `hold = targetHold` and clears
+`refitOrder`. Ledger kinds: `shipyardBuilt` (now emitted at **commission** carrying the
+labor fee — E15 precedent), `refitStart`, `refitComplete`. **Scarcity (E13 law, #286):
+one active Build Order per Company — an HQ ship hull OR a Shipyard under construction;
+enforced in `placeBuildOrder`/`commissionShipyard` via `hasActiveBuildOrder`. A
+RefitOrder is neither and keeps its own one-per-Shipyard scarcity (orthogonal).** **Net
+worth counts the HQ build site, the Shipyard's own construction site (#286), and an
+active refit's `siteStore` alike** (owner decision 2026-07-16, resolving the #285 review
+flag): in-progress materials keep their book value at region-average mid, so the
+company-value chart shows the same honest dip-then-growth shape for every construction.
+
+> **Counter-erratum (#286, owner-ratified 2026-07-16).** The #275-implementation erratum
+> struck through above — "commissionShipyard is instant and flat-cost; `Shipyard` carries
+> no site field" — **resolved the draft incoherence the wrong way.** The building family's
+> ratified pattern is **HQ is the only instant building; every later building is
+> constructed via the Build Order pattern** (Storehouse, E13 §Construction; ProcessingPlant,
+> E15 §Design). The Shipyard shipped in #285 following an incoherent Tech draft; the
+> #285 post-merge audit (finding 1) flagged it and the owner ratified the fix as **fix the
+> type, not the prose**: Design (scope line — "built after the Headquarters via the Build
+> Order pattern") and CONTEXT.md stand as written; this §Tech is corrected to match them.
+> `SHIPYARD_COST` (flat 3000) is replaced by `SHIPYARD_LABOR_FEE` + `SHIPYARD_RECIPE`;
+> `Shipyard` gains the optional `construction` field.
 
 Refit lock (#275): `isUnderRefit` gates `sailTo`, `assignRoute`, `resumeRoute` (blocked
 for the whole refit so "resume is manual after completion" holds — the route pass never
@@ -191,8 +212,9 @@ Filed 2026-07-16; milestone **E14 — Shipyard & Refit**.
 | --- | --- | --- | --- |
 | #99 | sim | `refactor(sim)`: ConstructionSite seam + `commissionBuilding` generalization, zero behavior change — **shipped** (PR #278) | — |
 | #274 | sim | `feat(sim)`: `baseHold` + SAVE_VERSION 12 + hold ladder (`shipyard.ts` pure parts) — **shipped** (PR #279) | #99 |
-| #275 | sim | `feat(sim)`: Shipyard building + RefitOrder lifecycle (commands, lock, auto-draw phase, ledger) | #274 |
-| #276 | ui | `feat(ui)`: PortPanel Shipyard section + map refit bubble + "w przebudowie" status + E2E | #275 |
+| #275 | sim | `feat(sim)`: Shipyard building + RefitOrder lifecycle (commands, lock, auto-draw phase, ledger) — **shipped** (PR #285) | #274 |
+| #286 | sim | `fix(sim)`: Shipyard is **constructed** via ConstructionSite, not bought instantly (`SHIPYARD_RECIPE` + labor fee, auto-draw/deliver/rush, one-order law, activation) — corrects the #285 instant-purchase (post-merge audit finding 1, owner-ratified 2026-07-16) | #275 |
+| #276 | ui | `feat(ui)`: PortPanel Shipyard section + map refit bubble + "w przebudowie" status + E2E | #286 |
 
 Sequencing note: E14 is pulled ahead of E13's remaining work (owner call 2026-07-16):
 #99 was cut for E13 but is file-disjoint from E13's permit/storehouse scope and unblocks

@@ -6,6 +6,7 @@ import type { Route } from "./route";
 import { emptyCargo, isRouteActive, type Ship } from "./ship";
 import {
   computeRefitRushQuote,
+  computeShipyardBuildRushQuote,
   holdLadder,
   isUnderRefit,
   nextHoldStep,
@@ -13,7 +14,8 @@ import {
   HOLD_LADDER,
   REFIT_LABOR_FEE,
   REFIT_MATERIAL_FACTOR,
-  SHIPYARD_COST,
+  SHIPYARD_LABOR_FEE,
+  SHIPYARD_RECIPE,
 } from "./shipyard";
 import { tick } from "./tick";
 import { createWorld, type World } from "./world";
@@ -117,8 +119,8 @@ describe("tuning constants", () => {
     expect(REFIT_LABOR_FEE).toBe(500);
   });
 
-  it("SHIPYARD_COST is a positive flat commissioning cost (tuning)", () => {
-    expect(SHIPYARD_COST).toBeGreaterThan(0);
+  it("SHIPYARD_LABOR_FEE is a positive flat commissioning cost (tuning)", () => {
+    expect(SHIPYARD_LABOR_FEE).toBeGreaterThan(0);
   });
 });
 
@@ -134,11 +136,19 @@ function richFounded(seedStr: string, thalers: number): World {
   return applyCommand(funded, { kind: "foundHeadquarters", portId });
 }
 
-/** Same, plus a commissioned Shipyard at the second port. */
+/** Same, plus an **active** Shipyard at the second port. Since #286 a Shipyard
+ *  is constructed (commission opens a ConstructionSite; it activates when the
+ *  Recipe fills), so refit-lifecycle fixtures fast-forward past construction by
+ *  clearing the `construction` field directly — the refit behavior under test
+ *  is unchanged, only the setup now goes through the build-out. */
 function richWithShipyard(seedStr: string, thalers: number): World {
   const founded = richFounded(seedStr, thalers);
   const shipyardPortId = founded.region.ports[1].id;
-  return applyCommand(founded, { kind: "commissionShipyard", portId: shipyardPortId });
+  const commissioned = applyCommand(founded, { kind: "commissionShipyard", portId: shipyardPortId });
+  return {
+    ...commissioned,
+    company: { ...commissioned.company, shipyard: { portId: shipyardPortId } },
+  };
 }
 
 /** Docks s0 at `portId` in place (no travel), matching building.test.ts's pattern. */
@@ -152,42 +162,204 @@ function dockShipAt(w: World, portId: string, shipId = w.company.ships[0].id): W
   };
 }
 
-describe("commissionShipyard (#275)", () => {
+const emptySite = (): Record<string, number> => Object.fromEntries(GOOD_IDS.map((g) => [g, 0]));
+
+describe("SHIPYARD_RECIPE (#286)", () => {
+  it("is a positive quantity of every good (the Shipyard is constructed, not bought)", () => {
+    for (const good of GOOD_IDS) expect(SHIPYARD_RECIPE[good]).toBeGreaterThan(0);
+  });
+});
+
+describe("commissionShipyard creates a ConstructionSite (#286)", () => {
   it("requires a Headquarters", () => {
     const w = createWorld("shipyard-nohq");
-    const funded: World = { ...w, company: { ...w.company, thalers: SHIPYARD_COST + CONSTRUCTION_RESERVE + 100 } };
+    const funded: World = { ...w, company: { ...w.company, thalers: SHIPYARD_LABOR_FEE + CONSTRUCTION_RESERVE + 100 } };
     const portId = funded.region.ports[0].id;
     expect(applyCommand(funded, { kind: "commissionShipyard", portId })).toBe(funded);
   });
 
-  it("charges the flat cost and plants the Shipyard at the chosen port", () => {
-    const w = richFounded("shipyard-ok", HEADQUARTERS_COST + SHIPYARD_COST + CONSTRUCTION_RESERVE + 100);
+  it("charges the labor fee and opens an empty construction site — no instant active Shipyard", () => {
+    const w = richFounded("shipyard-ok", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + CONSTRUCTION_RESERVE + 100);
     const portId = w.region.ports[1].id;
     const next = applyCommand(w, { kind: "commissionShipyard", portId });
-    expect(next.company.thalers).toBe(w.company.thalers - SHIPYARD_COST);
-    expect(next.company.shipyard).toEqual({ portId });
+    expect(next.company.thalers).toBe(w.company.thalers - SHIPYARD_LABOR_FEE);
+    // Under construction: the `construction` field is present, `refitOrder` absent.
+    expect(next.company.shipyard).toEqual({ portId, construction: { siteStore: emptySite() } });
   });
 
-  it("appends exactly one shipyardBuilt event carrying thalers", () => {
-    const w = richFounded("shipyard-ledger", HEADQUARTERS_COST + SHIPYARD_COST + CONSTRUCTION_RESERVE + 100);
+  it("appends exactly one shipyardBuilt event carrying the labor fee (E15 plantBuilt precedent — commission-time)", () => {
+    const w = richFounded("shipyard-ledger", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + CONSTRUCTION_RESERVE + 100);
     const portId = w.region.ports[1].id;
     const next = applyCommand(w, { kind: "commissionShipyard", portId });
     expect(next.ledger[next.ledger.length - 1]).toEqual({
       kind: "shipyardBuilt",
       tick: w.tick,
       portId,
-      thalers: SHIPYARD_COST,
+      thalers: SHIPYARD_LABOR_FEE,
     });
   });
 
-  it("rejects a second Shipyard (one per Company) and an unaffordable one — no ledger event either", () => {
-    const w = richFounded("shipyard-second", HEADQUARTERS_COST + SHIPYARD_COST * 2 + CONSTRUCTION_RESERVE + 100);
+  it("rejects a second Shipyard (one per Company, even mid-construction) and an unaffordable fee — no ledger event either", () => {
+    const w = richFounded("shipyard-second", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE * 2 + CONSTRUCTION_RESERVE + 100);
     const built = applyCommand(w, { kind: "commissionShipyard", portId: w.region.ports[1].id });
     const twice = applyCommand(built, { kind: "commissionShipyard", portId: w.region.ports[2].id });
     expect(twice).toBe(built);
 
-    const poor = richFounded("shipyard-poor", HEADQUARTERS_COST + SHIPYARD_COST + CONSTRUCTION_RESERVE - 1);
+    const poor = richFounded("shipyard-poor", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + CONSTRUCTION_RESERVE - 1);
     expect(applyCommand(poor, { kind: "commissionShipyard", portId: poor.region.ports[1].id })).toBe(poor);
+  });
+});
+
+describe("one active Build Order per Company — ship or building (E13 scarcity law, #286)", () => {
+  it("rejects commissionShipyard while an HQ ship Build Order is active", () => {
+    const w0 = richFounded("law-hq-then-yard", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 100_000);
+    const w = applyCommand(w0, { kind: "placeBuildOrder" });
+    expect(w.company.headquarters?.buildOrder).toBeDefined();
+    const blocked = applyCommand(w, { kind: "commissionShipyard", portId: w.region.ports[1].id });
+    expect(blocked).toBe(w);
+  });
+
+  it("rejects placeBuildOrder while the Shipyard is under construction", () => {
+    const w0 = richFounded("law-yard-then-hq", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 100_000);
+    const w = applyCommand(w0, { kind: "commissionShipyard", portId: w0.region.ports[1].id });
+    expect(w.company.shipyard?.construction).toBeDefined();
+    const blocked = applyCommand(w, { kind: "placeBuildOrder" });
+    expect(blocked).toBe(w);
+  });
+
+  it("allows placeBuildOrder once the Shipyard has activated (construction cleared)", () => {
+    const active = richWithShipyard("law-after-active", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 100_000);
+    expect(active.company.shipyard?.construction).toBeUndefined();
+    const placed = applyCommand(active, { kind: "placeBuildOrder" });
+    expect(placed.company.headquarters?.buildOrder).toBeDefined();
+  });
+});
+
+/** Runs a shipyard-under-construction world to activation by rushing the
+ *  construction site (fresh quote each pass; the Reserve and port stock cap a
+ *  single rush) and ticking between rushes so stock and the daily auto-draw cap
+ *  replenish. Asserts it actually activated. */
+function buildOutShipyard(w0: World): World {
+  let w = w0;
+  let guard = 0;
+  while (w.company.shipyard?.construction && guard++ < 200) {
+    w = applyCommand(w, { kind: "rushShipyardBuild" });
+    if (w.company.shipyard?.construction) w = tick(w, []);
+  }
+  expect(w.company.shipyard?.construction).toBeUndefined();
+  expect(w.company.shipyard).toBeDefined();
+  return w;
+}
+
+describe("Shipyard construction lifecycle (#286)", () => {
+  it("does not accept a commissionRefit before activation (building not yet active)", () => {
+    const w0 = richFounded("construct-norefit", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 100_000);
+    const shipyardPortId = w0.region.ports[1].id;
+    const w1 = applyCommand(w0, { kind: "commissionShipyard", portId: shipyardPortId });
+    const w = dockShipAt(w1, shipyardPortId);
+    expect(w.company.shipyard?.construction).toBeDefined();
+    const attempt = applyCommand(w, { kind: "commissionRefit", shipId: w.company.ships[0].id });
+    expect(attempt).toBe(w); // rejected — no RefitOrder opened
+    expect(attempt.company.shipyard?.refitOrder).toBeUndefined();
+  });
+
+  it("activates (clears construction, keeps portId) when the Recipe fills via auto-draw", () => {
+    const w0 = richFounded("construct-autodraw", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 1_000_000);
+    const shipyardPortId = w0.region.ports[1].id;
+    let w = applyCommand(w0, { kind: "commissionShipyard", portId: shipyardPortId });
+    let guard = 0;
+    while (w.company.shipyard?.construction && guard++ < 2000) w = tick(w, []);
+    expect(w.company.shipyard).toEqual({ portId: shipyardPortId });
+    expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(true);
+    // Activation is a silent state change (E15 precedent — no second ledger kind);
+    // the single shipyardBuilt event fired at commission time.
+    expect(w.ledger.filter((e) => e.kind === "shipyardBuilt")).toHaveLength(1);
+  });
+
+  it("fills the construction site via deliver from any Company ship", () => {
+    const w0 = richFounded("construct-deliver", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 100_000);
+    const shipyardPortId = w0.region.ports[1].id;
+    const w1 = applyCommand(w0, { kind: "commissionShipyard", portId: shipyardPortId });
+    const need = SHIPYARD_RECIPE.timber;
+    const laden: World = {
+      ...w1,
+      company: {
+        ...w1.company,
+        ships: w1.company.ships.map((s) =>
+          s.id === w1.company.ships[0].id
+            ? { ...s, cargo: { ...s.cargo, timber: need + 5 }, location: { kind: "docked" as const, portId: shipyardPortId } }
+            : s,
+        ),
+      },
+    };
+    const after = applyCommand(laden, { kind: "deliver", shipId: laden.company.ships[0].id, good: "timber" });
+    expect(after.company.shipyard!.construction!.siteStore.timber).toBe(need);
+    expect(after.company.ships[0].cargo.timber).toBe(5);
+    expect(after.ledger[after.ledger.length - 1]).toEqual({
+      kind: "delivery",
+      tick: laden.tick,
+      shipId: laden.company.ships[0].id,
+      portId: shipyardPortId,
+      good: "timber",
+      qty: need,
+    });
+  });
+
+  it("rushShipyardBuild fills the site, and computeShipyardBuildRushQuote previews exactly what it charges", () => {
+    const w0 = richFounded("construct-rush", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 1_000_000);
+    const shipyardPortId = w0.region.ports[1].id;
+    const w = applyCommand(w0, { kind: "commissionShipyard", portId: shipyardPortId });
+    const quote = computeShipyardBuildRushQuote(w);
+    expect(quote.lines.length).toBeGreaterThan(0);
+    const after = applyCommand(w, { kind: "rushShipyardBuild" });
+    const rushEvents = after.ledger
+      .filter((e) => e.kind === "rush")
+      .map((e) => (e.kind === "rush" ? { good: e.good, qty: e.qty, thalers: e.thalers } : null));
+    expect(quote.lines).toEqual(rushEvents);
+    expect(w.company.thalers - after.company.thalers).toBe(quote.total);
+  });
+
+  it("rushShipyardBuild is rejected with no Shipyard under construction, and its quote is empty", () => {
+    const active = richWithShipyard("construct-rush-none", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 100_000);
+    expect(computeShipyardBuildRushQuote(active)).toEqual({ lines: [], total: 0 });
+    expect(applyCommand(active, { kind: "rushShipyardBuild" })).toBe(active);
+  });
+
+  it("construction auto-draw and rush respect the Reserve (never dips below it)", () => {
+    const w0 = richFounded("construct-reserve", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + CONSTRUCTION_RESERVE);
+    const shipyardPortId = w0.region.ports[1].id;
+    const w = applyCommand(w0, { kind: "commissionShipyard", portId: shipyardPortId });
+    expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE);
+    let stepped = w;
+    for (let t = 0; t < 24; t++) stepped = tick(stepped, []);
+    expect(stepped.company.thalers).toBe(CONSTRUCTION_RESERVE);
+    for (const good of GOOD_IDS) expect(stepped.company.shipyard!.construction!.siteStore[good]).toBe(0);
+    const rushed = applyCommand(w, { kind: "rushShipyardBuild" });
+    expect(rushed).toBe(w); // nothing affordable above the Reserve
+  });
+
+  it("a built-out Shipyard then accepts a Refit (construction → active → refit end to end)", () => {
+    const w0 = richFounded("construct-then-refit", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 1_000_000);
+    const shipyardPortId = w0.region.ports[1].id;
+    const commissioned = applyCommand(w0, { kind: "commissionShipyard", portId: shipyardPortId });
+    const active = buildOutShipyard(commissioned);
+    const docked = dockShipAt(active, shipyardPortId);
+    const refit = applyCommand(docked, { kind: "commissionRefit", shipId: docked.company.ships[0].id });
+    expect(refit.company.shipyard?.refitOrder).toBeDefined();
+  });
+});
+
+describe("determinism mid-construction (#286)", () => {
+  it("same seed with a Shipyard under construction yields a deep-equal world after identical commands", () => {
+    const run = (): World => {
+      const w0 = createWorld(9191);
+      let w: World = { ...w0, company: { ...w0.company, thalers: 1_000_000 } };
+      w = applyCommand(w, { kind: "foundHeadquarters", portId: w.region.ports[0].id });
+      w = applyCommand(w, { kind: "commissionShipyard", portId: w.region.ports[1].id });
+      for (let t = 0; t < 20; t++) w = tick(w, []);
+      return w;
+    };
+    expect(run()).toEqual(run());
   });
 });
 
@@ -199,14 +371,14 @@ describe("commissionRefit (#275)", () => {
   });
 
   it("requires the ship to be docked at the Shipyard port", () => {
-    const w = richWithShipyard("refit-elsewhere", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w = richWithShipyard("refit-elsewhere", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipId = w.company.ships[0].id;
     // s0 is docked at its home port (port 0), the Shipyard is at port 1.
     expect(applyCommand(w, { kind: "commissionRefit", shipId })).toBe(w);
   });
 
   it("charges REFIT_LABOR_FEE and opens a RefitOrder targeting the next ladder rung", () => {
-    const w0 = richWithShipyard("refit-ok", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("refit-ok", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipyardPortId = w0.company.shipyard!.portId;
     const w = dockShipAt(w0, shipyardPortId);
     const shipId = w.company.ships[0].id;
@@ -220,7 +392,7 @@ describe("commissionRefit (#275)", () => {
   });
 
   it("appends exactly one refitStart event carrying thalers", () => {
-    const w0 = richWithShipyard("refit-ledger", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("refit-ledger", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipyardPortId = w0.company.shipyard!.portId;
     const w = dockShipAt(w0, shipyardPortId);
     const shipId = w.company.ships[0].id;
@@ -235,13 +407,13 @@ describe("commissionRefit (#275)", () => {
   });
 
   it("rejects a second concurrent RefitOrder (one at a time) and a fee that would dip into the Reserve", () => {
-    const w0 = richWithShipyard("refit-second", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("refit-second", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipyardPortId = w0.company.shipyard!.portId;
     const w = dockShipAt(w0, shipyardPortId);
     const running = applyCommand(w, { kind: "commissionRefit", shipId: w.company.ships[0].id });
     expect(applyCommand(running, { kind: "commissionRefit", shipId: running.company.ships[0].id })).toBe(running);
 
-    const broke = richWithShipyard("refit-broke", HEADQUARTERS_COST + SHIPYARD_COST + REFIT_LABOR_FEE + CONSTRUCTION_RESERVE - 1);
+    const broke = richWithShipyard("refit-broke", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + REFIT_LABOR_FEE + CONSTRUCTION_RESERVE - 1);
     const brokeAtYard = dockShipAt(broke, broke.company.shipyard!.portId);
     expect(applyCommand(brokeAtYard, { kind: "commissionRefit", shipId: brokeAtYard.company.ships[0].id })).toBe(
       brokeAtYard,
@@ -249,7 +421,7 @@ describe("commissionRefit (#275)", () => {
   });
 
   it("rejects a refit for a ship already at the ladder cap — a loud guard, not a silent zero-recipe order", () => {
-    const w0 = richWithShipyard("refit-cap", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("refit-cap", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipyardPortId = w0.company.shipyard!.portId;
     const capped: Ship = { ...w0.company.ships[0], hold: 188 }; // at the ladder cap for baseHold 50
     const w = {
@@ -262,7 +434,7 @@ describe("commissionRefit (#275)", () => {
   });
 
   it("auto-suspends an active Route assignment on start (existing manual-sailTo semantics)", () => {
-    const w0 = richWithShipyard("refit-suspend", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("refit-suspend", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipyardPortId = w0.company.shipyard!.portId;
     const otherPortId = w0.region.ports.find((p) => p.id !== shipyardPortId)!.id;
     const route: Route = {
@@ -284,7 +456,7 @@ describe("commissionRefit (#275)", () => {
   });
 
   it("leaves a ship with no assignment untouched (nothing to suspend)", () => {
-    const w0 = richWithShipyard("refit-noassign", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("refit-noassign", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const w = dockShipAt(w0, w0.company.shipyard!.portId);
     const shipId = w.company.ships[0].id;
     const refit = applyCommand(w, { kind: "commissionRefit", shipId });
@@ -299,7 +471,7 @@ describe("isUnderRefit (#275)", () => {
   });
 
   it("is true only for the exact ship targeted by the active RefitOrder", () => {
-    const w0 = richWithShipyard("underrefit-active", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("underrefit-active", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const w = dockShipAt(w0, w0.company.shipyard!.portId);
     const shipId = w.company.ships[0].id;
     const refit = applyCommand(w, { kind: "commissionRefit", shipId });
@@ -308,7 +480,7 @@ describe("isUnderRefit (#275)", () => {
   });
 
   it("is false once the RefitOrder is not active (Shipyard present, no refit)", () => {
-    const w = richWithShipyard("underrefit-idle", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w = richWithShipyard("underrefit-idle", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     expect(isUnderRefit(w, w.company.ships[0].id)).toBe(false);
   });
 });
@@ -323,14 +495,14 @@ function refitInProgress(seedStr: string, thalers: number): World {
 
 describe("refit lock enforcement (#275)", () => {
   it("rejects sailTo for the locked ship", () => {
-    const w = refitInProgress("lock-sailto", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w = refitInProgress("lock-sailto", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipId = w.company.ships[0].id;
     const other = w.region.ports.find((p) => p.id !== w.company.shipyard!.portId)!.id;
     expect(applyCommand(w, { kind: "sailTo", shipId, portId: other })).toBe(w);
   });
 
   it("rejects assignRoute for the locked ship", () => {
-    const w0 = refitInProgress("lock-assign", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = refitInProgress("lock-assign", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipId = w0.company.ships[0].id;
     const portA = w0.company.shipyard!.portId;
     const portB = w0.region.ports.find((p) => p.id !== portA)!.id;
@@ -340,7 +512,7 @@ describe("refit lock enforcement (#275)", () => {
   });
 
   it("rejects resumeRoute for the locked ship — resume stays manual after completion", () => {
-    const w0 = richWithShipyard("lock-resume", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("lock-resume", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const portA = w0.company.shipyard!.portId;
     const portB = w0.region.ports.find((p) => p.id !== portA)!.id;
     const route: Route = { id: "r1", name: "loop", stops: [{ portId: portA, orders: [] }, { portId: portB, orders: [] }] };
@@ -356,7 +528,7 @@ describe("refit lock enforcement (#275)", () => {
   });
 
   it("rejects buy and sell for the locked ship's own cargo", () => {
-    const w = refitInProgress("lock-trade", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w = refitInProgress("lock-trade", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipId = w.company.ships[0].id;
     expect(applyCommand(w, { kind: "buy", shipId, good: "grain", qty: 1 })).toBe(w);
     const laden = { ...w, company: { ...w.company, ships: [{ ...w.company.ships[0], cargo: { ...w.company.ships[0].cargo, grain: 5 } }] } };
@@ -364,7 +536,7 @@ describe("refit lock enforcement (#275)", () => {
   });
 
   it("a suspended, locked ship never advances across ticks (route pass stays dormant)", () => {
-    const w0 = richWithShipyard("lock-noadvance", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("lock-noadvance", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const portA = w0.company.shipyard!.portId;
     const portB = w0.region.ports.find((p) => p.id !== portA)!.id;
     const route: Route = { id: "r1", name: "loop", stops: [{ portId: portA, orders: [] }, { portId: portB, orders: [] }] };
@@ -381,7 +553,7 @@ describe("refit lock enforcement (#275)", () => {
 
 describe("deliver to the refit site (#275)", () => {
   it("falls through to the refit site when a same-port HQ build needs none of the good (#286 audit)", () => {
-    const w0 = refitInProgress("deliver-colocation", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = refitInProgress("deliver-colocation", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipyardPortId = w0.company.shipyard!.portId;
     // Active HQ build at the SAME port, already full on electronics (need 0)
     // but incomplete overall — the pre-fix code swallowed the delivery here.
@@ -412,7 +584,7 @@ describe("deliver to the refit site (#275)", () => {
   });
 
   it("moves min(cargo, remaining need) into the RefitOrder's siteStore from any Company ship", () => {
-    const w0 = refitInProgress("deliver-refit", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = refitInProgress("deliver-refit", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipyardPortId = w0.company.shipyard!.portId;
     const targetShipId = w0.company.shipyard!.refitOrder!.shipId;
     // A second ship (not the one under refit) ferries materials in.
@@ -444,7 +616,7 @@ describe("deliver to the refit site (#275)", () => {
   });
 
   it("the refit-locked target ship can itself deliver cargo into the site (deliver is not lock-gated)", () => {
-    const w0 = refitInProgress("deliver-self", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = refitInProgress("deliver-self", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipId = w0.company.shipyard!.refitOrder!.shipId;
     const laden = {
       ...w0,
@@ -458,7 +630,7 @@ describe("deliver to the refit site (#275)", () => {
   });
 
   it("is a no-op away from the Shipyard port and with no active RefitOrder", () => {
-    const w0 = richWithShipyard("deliver-noop", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w0 = richWithShipyard("deliver-noop", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     const shipId = w0.company.ships[0].id; // docked at home port, not the Shipyard
     const laden = {
       ...w0,
@@ -473,7 +645,7 @@ describe("deliver to the refit site (#275)", () => {
 
 describe("Shipyard auto-draw (#275)", () => {
   it("fills the refit site over ticks, same cadence/cap as the HQ site, and stalls at the Reserve", () => {
-    const w0 = refitInProgress("autodraw-refit", HEADQUARTERS_COST + SHIPYARD_COST + 1_000_000);
+    const w0 = refitInProgress("autodraw-refit", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 1_000_000);
     let w = w0;
     for (let t = 0; t < 24; t++) w = tick(w, []);
     const store = w.company.shipyard!.refitOrder?.siteStore;
@@ -485,7 +657,7 @@ describe("Shipyard auto-draw (#275)", () => {
   });
 
   it("stalls silently at the Reserve — no dip below it, no site growth", () => {
-    const w = refitInProgress("autodraw-stall", HEADQUARTERS_COST + SHIPYARD_COST + REFIT_LABOR_FEE + CONSTRUCTION_RESERVE);
+    const w = refitInProgress("autodraw-stall", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + REFIT_LABOR_FEE + CONSTRUCTION_RESERVE);
     expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE);
     let stepped = w;
     for (let t = 0; t < 24; t++) stepped = tick(stepped, []);
@@ -494,15 +666,18 @@ describe("Shipyard auto-draw (#275)", () => {
   });
 
   it("both HQ build and Shipyard refit auto-draw in the same tick, sharing (and respecting) the purse", () => {
-    // Found HQ, place a build order, commission a Shipyard, and start a
-    // refit — both sites active at once, both must stall at the same Reserve.
+    // Found HQ, build out the Shipyard first (#286: it is constructed, and the
+    // one-order law forbids an HQ hull alongside a Shipyard *under construction*),
+    // then start a refit and — refit being orthogonal to the one-order law — an
+    // HQ hull build. Both sites active at once, both must stall at the Reserve.
     const w0 = createWorld("autodraw-both");
     let w: World = { ...w0, company: { ...w0.company, thalers: 1_000_000 } };
     w = applyCommand(w, { kind: "foundHeadquarters", portId: w.region.ports[0].id });
-    w = applyCommand(w, { kind: "placeBuildOrder" });
     w = applyCommand(w, { kind: "commissionShipyard", portId: w.region.ports[1].id });
+    w = buildOutShipyard(w);
     w = dockShipAt(w, w.region.ports[1].id);
     w = applyCommand(w, { kind: "commissionRefit", shipId: w.company.ships[0].id });
+    w = applyCommand(w, { kind: "placeBuildOrder" });
 
     for (let t = 0; t < 24; t++) {
       w = tick(w, []);
@@ -517,7 +692,7 @@ describe("Shipyard auto-draw (#275)", () => {
 
 describe("rushRefit + computeRefitRushQuote (#275)", () => {
   it("computeRefitRushQuote previews exactly what rushRefit charges", () => {
-    const w = refitInProgress("rush-refit", HEADQUARTERS_COST + SHIPYARD_COST + 1_000_000);
+    const w = refitInProgress("rush-refit", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 1_000_000);
     const quote = computeRefitRushQuote(w);
     expect(quote.lines.length).toBeGreaterThan(0);
     const after = applyCommand(w, { kind: "rushRefit" });
@@ -529,13 +704,13 @@ describe("rushRefit + computeRefitRushQuote (#275)", () => {
   });
 
   it("is rejected with no active RefitOrder, and computeRefitRushQuote is empty", () => {
-    const w = richWithShipyard("rush-refit-none", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const w = richWithShipyard("rush-refit-none", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 10_000);
     expect(computeRefitRushQuote(w)).toEqual({ lines: [], total: 0 });
     expect(applyCommand(w, { kind: "rushRefit" })).toBe(w);
   });
 
   it("quotes and spends at most purse - Reserve; never dips below it", () => {
-    const w = refitInProgress("rush-refit-reserve", HEADQUARTERS_COST + SHIPYARD_COST + REFIT_LABOR_FEE + CONSTRUCTION_RESERVE + 2000);
+    const w = refitInProgress("rush-refit-reserve", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + REFIT_LABOR_FEE + CONSTRUCTION_RESERVE + 2000);
     const quote = computeRefitRushQuote(w);
     expect(quote.total).toBeLessThanOrEqual(2000);
     const after = applyCommand(w, { kind: "rushRefit" });
@@ -545,7 +720,7 @@ describe("rushRefit + computeRefitRushQuote (#275)", () => {
 
 describe("Refit completion (#275)", () => {
   it("sets hold to the exact target threshold, clears refitOrder, and lifts the lock when the recipe fills", () => {
-    const w = refitInProgress("complete-refit", HEADQUARTERS_COST + SHIPYARD_COST + 1_000_000);
+    const w = refitInProgress("complete-refit", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 1_000_000);
     const shipId = w.company.shipyard!.refitOrder!.shipId;
     const targetHold = w.company.shipyard!.refitOrder!.targetHold;
 
@@ -564,7 +739,7 @@ describe("Refit completion (#275)", () => {
   });
 
   it("appends exactly one refitComplete event with no thalers field", () => {
-    const w = refitInProgress("complete-ledger", HEADQUARTERS_COST + SHIPYARD_COST + 1_000_000);
+    const w = refitInProgress("complete-ledger", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 1_000_000);
     const shipId = w.company.shipyard!.refitOrder!.shipId;
     const targetHold = w.company.shipyard!.refitOrder!.targetHold;
     const shipyardPortId = w.company.shipyard!.portId;
@@ -582,7 +757,7 @@ describe("Refit completion (#275)", () => {
   });
 
   it("cargo aboard the refit target ship is untouched across completion", () => {
-    const w0 = refitInProgress("complete-cargo", HEADQUARTERS_COST + SHIPYARD_COST + 1_000_000);
+    const w0 = refitInProgress("complete-cargo", HEADQUARTERS_COST + SHIPYARD_LABOR_FEE + 1_000_000);
     const shipId = w0.company.shipyard!.refitOrder!.shipId;
     // Give the target ship some cargo unrelated to the refit materials.
     const w: World = {

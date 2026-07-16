@@ -188,10 +188,11 @@ export interface NetWorthBreakdown {
 
 /**
  * Company net worth: thalers + fleet cargo + construction-site stores (the HQ
- * build site and an active refit site alike — owner decision 2026-07-16), all
- * goods valued at the region-average mid price. Ships and buildings carry no
- * book value by design — the company-value chart tells the honest investment
- * story (a build is a visible dip, then steeper growth).
+ * build site, the Shipyard's own construction site (#286), and an active refit
+ * site alike — owner decision 2026-07-16), all goods valued at the
+ * region-average mid price. Ships and buildings carry no book value by design —
+ * the company-value chart tells the honest investment story (a build is a
+ * visible dip, then steeper growth).
  */
 export function computeNetWorth(world: World): NetWorthBreakdown {
   const mids = {} as Record<GoodId, number>;
@@ -205,6 +206,7 @@ export function computeNetWorth(world: World): NetWorthBreakdown {
   let siteStoreValue = 0;
   const stores = [
     world.company.headquarters?.buildOrder?.siteStore,
+    world.company.shipyard?.construction?.siteStore,
     world.company.shipyard?.refitOrder?.siteStore,
   ];
   for (const store of stores) {
