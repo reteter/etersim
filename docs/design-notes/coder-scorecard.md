@@ -215,6 +215,36 @@ tier-2 review over the whole diff.
 Cert note: coder ran full Playwright 92/92 + 477 unit in-worktree; post-merge full run
 on main pending the owner's squash-merge of #265.
 
+## E9.1 + E14 waves 1–2 (retro backfill from the 2026-07-16 LCM session)
+
+Backfilled the same evening: the LCM session closed without appending rows (wave
+reports died with it; PR bodies remain — findings/fix-loop `n/r` where the body
+doesn't state them). Coder model: Sonnet 5; reviews per the LCM lesson: one
+two-axis subagent per wave.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-16 | #270 | #261, #262 | 3 | n/r | n/r | pass | E9.1 sim: Stop `qty` + Margin Gate + SAVE_VERSION 11. |
+| 07-16 | #273 | #263 | 2 | n/r | n/r | pass | E9.1 UI: route editor qty/minMargin + "czeka na marżę" indicator. Closed the E9.1 milestone. |
+| 07-16 | #277 | #238 | 2 | n/r | n/r | pass | Pages deploy + single-file build; the game went public. |
+| 07-16 | #278 | #99 | 3 | n/r | n/r | pass | ConstructionSite seam extraction; zero behavior change, HQ tests green unmodified (the E9.1 byte-identity discipline). |
+| 07-16 | #279 | #274 | 3 | 2 (minor) | 1 | pass | `baseHold` + Hold ladder + SAVE_VERSION 12. Two-axis review: Spec 0 (ladder math + migration independently re-derived), Standards 2 minors fixed in one round (unconditional migration backfill; independent recipe oracle). TDD self-flag: the one-line field assignments were assertion-covered after the fact. Spec erratum (rounding-scheme indistinguishability) surfaced by the review, routed to session close. |
+
+## E14 wave 3 — #285 (first post-merge audit; the outage wave)
+
+One Sonnet coder. The review became a **post-merge audit**: the owner squash-merged
+during the 2026-07-16 platform outage; the reviewer — silently cast on the driver's
+frontier model by dispatch default — was recast to Opus mid-outage (incident 0015
+born here; casting rule now in CLAUDE.md).
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-16 | #285 | #275 | 3 | 5 (major) | 0 | pass | Shipyard building + RefitOrder lifecycle; 567 in-worktree, audit corroborated the count. The major is a **docs contradiction, not code**: instant-flat-cost vs "built via the Build Order pattern" (Design/CONTEXT) — audit judged the coder's reading defensible against the locked type, owner ratified *constructed* → #286 (package-side root cause: incoherent Tech draft). 2 minors owner-decided (deliver un-gated: accepted as spec'd; deliver co-location swallow: fixed in #287), 2 nits (netWorth refit siteStore → #287; barrel exports → #276 prerequisite). Standards axis: 0 defects. Coder report exemplary — 8 self-flags incl. honest TDD order (34 red-first, 2 after) and a read-path near-miss on the main checkout. Fix loop 0: all remediation was driver-side post-merge (#287) or re-scoped (#286). |
+
+Advisor layer, E14 W3: consulted twice (sanctioned); the pre-PR consult surfaced
+the netWorth flag the audit later confirmed independently — first advisor∩review
+overlap in the tally, and a benign one (both layers right, coder-side first).
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
