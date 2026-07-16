@@ -72,6 +72,44 @@ function e9World(): World {
   return world;
 }
 
+/** A world with a routed ship mid-wait on an unmet Margin Gate (E9.1) — the
+ *  one save shape invisible to any function of World before E9.1 (Tech —
+ *  "Structural finding that shapes everything", docs/specs/E9.1). Must
+ *  round-trip through the real persistence layer, not just a bare
+ *  JSON.parse/stringify, so an envelope-layer bug (e.g. stripping `waiting`)
+ *  is actually catchable. */
+function gateWaitingWorld(): World {
+  const base = createWorld("gate-wait-save");
+  const a = base.region.lanes[0].a;
+  const b = base.region.lanes[0].b;
+  const route = {
+    id: "gated",
+    name: "gated",
+    stops: [
+      {
+        portId: a,
+        orders: [
+          { kind: "buy" as const, good: "timber" as const }, // ungated sibling
+          { kind: "buy" as const, good: "grain" as const, minMargin: 1_000_000 }, // never met
+        ],
+      },
+      { portId: b, orders: [{ kind: "sell" as const, good: "grain" as const }] },
+    ],
+  };
+  const homeShip = base.company.ships[0];
+  let world: World = {
+    ...base,
+    company: {
+      ...base.company,
+      thalers: 5000,
+      routes: [route],
+      ships: [{ ...homeShip, location: { kind: "docked", portId: a } }],
+    },
+  };
+  world = tick(world, [{ kind: "assignRoute", shipId: homeShip.id, routeId: "gated" }]);
+  return world;
+}
+
 /** A world carrying one open offer and one active contract, then de-shaped
  *  back to the pre-#226 v9 wire format (no `requiredRank` on either) — the
  *  exact shape a v9 save on disk actually had, not a hand-invented literal.
@@ -135,6 +173,15 @@ describe("persistence", () => {
       world.company.headquarters!.buildOrder!.siteStore,
     );
     expect(restored.company.ships[0].assignment).toEqual(world.company.ships[0].assignment);
+  });
+
+  it("round-trips a mid-wait Margin Gate ship through the real persistence layer (E9.1 — waiting is load-bearing state, ADR-0007)", () => {
+    const world = gateWaitingWorld();
+    // Precondition: the fixture actually landed in the waiting state.
+    expect(world.company.ships[0].assignment?.waiting).toBe(true);
+    const restored = parseWorldJson(exportWorldJson(world));
+    expect(restored).toEqual(world);
+    expect(restored.company.ships[0].assignment?.waiting).toBe(true);
   });
 
   it("round-trips a mid-session world through the autosave slot", () => {

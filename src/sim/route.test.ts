@@ -674,6 +674,36 @@ describe("route Stop qty — 'up to N' (#261)", () => {
     expect(shipOf(after).cargo.grain).toBe(expectedQty);
   });
 
+  it("qty absent ⇒ byte-identical to today, over a scripted multi-loop run: the ENTIRE World is pinned, not one field (a literal pre-#261 diff isn't possible in one tree — a full-world assertion over the ungated run is the achievable form)", () => {
+    const run = (): World => {
+      const { a, b } = directPair(createWorld("qty-absent-full"));
+      const route: Route = {
+        id: "r",
+        name: "r",
+        stops: [
+          { portId: a, orders: [{ kind: "buy", good: "grain" }] },
+          { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+        ],
+      };
+      const world = seed("qty-absent-full", a, 5000, [route]);
+      const shipId = shipOf(world).id;
+      let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+      for (let t = 0; t < 300; t++) w = tick(w, []); // several full A<->B loop iterations
+      return w;
+    };
+    const w1 = run();
+    const w2 = run();
+    // Full-World determinism, not a plucked field — the strongest pin
+    // achievable without a prior-tree diff (same technique as the existing
+    // "is deterministic over a multi-loop run" / "combined determinism"
+    // tests in this suite, applied specifically to the qty-absent path).
+    expect(w1).toEqual(w2);
+    expect(JSON.parse(JSON.stringify(w1))).toEqual(w1); // ADR-0004 round-trip
+    // Sanity: the scenario actually exercised buy + sell + several loops, not a no-op.
+    expect(w1.tick).toBe(301);
+    expect(w1.ledger.filter((e) => e.kind === "trade").length).toBeGreaterThan(2);
+  });
+
   it("buy qty below Hold & affordability: clips to N, not the greedy fill", () => {
     const { a, b } = directPair(createWorld("qty-below"));
     const route: Route = {
@@ -846,7 +876,7 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     }
   });
 
-  it("gate passing fires the gated buy once (up to N, clipped by Hold/Thalers) and advances, clearing waiting", () => {
+  it("gate passing fires the gated buy exactly once (up to N, clipped by Hold/Thalers) and advances, clearing waiting", () => {
     const { a, b } = directPair(createWorld("gate-pass"));
     const route = gatedRoute(a, b, 1_000_000); // starts unmet
     const world = seed("gate-pass", a, 5000, [route]);
@@ -856,11 +886,9 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     expect(shipOf(w).assignment).toMatchObject({ waiting: true });
     expect(shipOf(w).cargo.grain).toBe(0);
 
-    // Force the reference port's sell price up (lower stock => higher price),
-    // so the predicted margin now clears the (still impossibly-high-looking,
-    // but now beaten) threshold. We instead directly relax the threshold to
-    // something guaranteed to already pass, simulating "the market moved":
-    // the gate only cares about a *fresh* evaluation each poll.
+    // Relax the threshold to something guaranteed to already pass, simulating
+    // "the market moved" — the gate only cares about a *fresh* evaluation
+    // each poll, so an updateRoute is the cheapest deterministic way to flip it.
     const relaxed: Route = {
       ...route,
       stops: [
@@ -880,6 +908,17 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     expect(shipOf(w).cargo.grain).toBeGreaterThan(0); // gated buy fired
     expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 1 }); // advanced
     expect(shipOf(w).assignment?.waiting).toBeUndefined(); // cleared, not stored false
+
+    // "Fires exactly once": the ship stays docked at `a` this tick (only the
+    // index advanced — the dwell mirrors manual play's quantization), then
+    // redirects toward Stop 1 (`b`) next tick without touching cargo/thalers
+    // again. Charged once, not once per poll.
+    const cargoAfterFire = shipOf(w).cargo.grain;
+    const thalersAfterFire = w.company.thalers;
+    w = tick(w, []); // the following tick: redirect only, no execution
+    expect(shipOf(w).location.kind).toBe("underway"); // departed toward b
+    expect(shipOf(w).cargo.grain).toBe(cargoAfterFire); // unchanged — no second buy
+    expect(w.company.thalers).toBe(thalersAfterFire); // unchanged — no double-charge
   });
 
   it("an inactive gate (no sell-stop for the good on the route) executes the buy normally, no waiting", () => {
@@ -916,15 +955,11 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     expect(shipOf(after).assignment).toEqual({ routeId: "r", nextStopIndex: 1, suspended: false });
   });
 
-  it("save/load mid-wait is identity (JSON round-trip, ADR-0004)", () => {
-    const { a, b } = directPair(createWorld("gate-save"));
-    const route = gatedRoute(a, b, 1_000_000);
-    const world = seed("gate-save", a, 5000, [route]);
-    const shipId = shipOf(world).id;
-    const waiting = tick(world, [{ kind: "assignRoute", shipId, routeId: "gated" }]);
-    expect(shipOf(waiting).assignment?.waiting).toBe(true);
-    expect(JSON.parse(JSON.stringify(waiting))).toEqual(waiting);
-  });
+  // "Save/load mid-wait is identity" is exercised against the real
+  // persistence layer (exportWorldJson/parseWorldJson), not a bare
+  // JSON.parse/stringify — see src/store/persistence.test.ts
+  // ("round-trips a mid-wait Margin Gate ship..."), so an envelope-layer bug
+  // (e.g. stripping `waiting`) is actually catchable.
 
   it("suspend-while-waiting round-trip: a manual sailTo away clears waiting once the route redirects", () => {
     const { a, b } = directPair(createWorld("gate-suspend"));

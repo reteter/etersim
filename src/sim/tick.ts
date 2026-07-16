@@ -133,7 +133,7 @@ interface GatedBuy {
 }
 
 /** Splits a Stop's orders into its active gated buys (in list order). */
-function classifyGatedBuys(route: Route, stopIndex: number, orders: readonly StopOrder[]): GatedBuy[] {
+function activeGatedBuys(route: Route, stopIndex: number, orders: readonly StopOrder[]): GatedBuy[] {
   const gated: GatedBuy[] = [];
   for (const order of orders) {
     if (order.kind !== "buy" || order.minMargin === undefined) continue;
@@ -180,11 +180,33 @@ function dispatchToStop(region: Region, ship: Ship, targetPortId: PortId): Ship 
   };
 }
 
-/** Builds an assignment with `waiting` genuinely absent (not `false`) —
- *  "not waiting" must be the same shape as before E9.1 (byte-identical
- *  saves/tests for ungated routes), never a stored `false`. */
-function assignmentAt(asn: NonNullable<Ship["assignment"]>, nextStopIndex: number): Ship["assignment"] {
+/** Builds the assignment for a ship that has just advanced past a Stop, with
+ *  `waiting` genuinely absent (not `false`) — "not waiting" must be the same
+ *  shape as before E9.1 (byte-identical saves/tests for ungated routes),
+ *  never a stored `false`. */
+function advancedAssignment(
+  asn: NonNullable<Ship["assignment"]>,
+  nextStopIndex: number,
+): Ship["assignment"] {
   return { routeId: asn.routeId, nextStopIndex, suspended: asn.suspended };
+}
+
+/** Executes `orders` at the current Stop, advances past it (mod the Route
+ *  length), and clears `waiting`. Shared by both "fire and move on" paths in
+ *  `runRouteForShip`: a fresh arrival whose gates already clear, and a
+ *  waiting poll whose gates just cleared — both end the same way. */
+function executeAndAdvance(
+  world: World,
+  shipId: ShipId,
+  orders: readonly StopOrder[],
+  route: Route,
+  stopIndex: number,
+  asn: NonNullable<Ship["assignment"]>,
+): World {
+  const executed = executeStop(world, shipId, orders, route.id);
+  const advanced = executed.company.ships.find((s) => s.id === shipId)!;
+  const nextIdx = (stopIndex + 1) % route.stops.length;
+  return replaceShip(executed, { ...advanced, assignment: advancedAssignment(asn, nextIdx) });
 }
 
 /**
@@ -228,11 +250,11 @@ function runRouteForShip(world: World, shipId: ShipId): World {
 
   if (route.stops[idx].portId !== arrivalPortId) {
     const redirected = dispatchToStop(world.region, ship, route.stops[idx].portId);
-    return replaceShip(world, { ...redirected, assignment: assignmentAt(asn, idx) });
+    return replaceShip(world, { ...redirected, assignment: advancedAssignment(asn, idx) });
   }
 
   const orders = route.stops[idx].orders;
-  const gatedBuys = classifyGatedBuys(route, idx, orders);
+  const gatedBuys = activeGatedBuys(route, idx, orders);
   const gatedOrders = new Set<StopOrder>(gatedBuys.map((g) => g.order));
   const siblings = orders.filter((o) => !gatedOrders.has(o));
 
@@ -240,10 +262,7 @@ function runRouteForShip(world: World, shipId: ShipId): World {
     if (gatedBuys.length === 0 || gatedBuys.every((g) => gatePasses(world, arrivalPortId, g))) {
       // No active gate, or every gate already clears: run the whole Stop,
       // exactly as today.
-      const executed = executeStop(world, shipId, orders, route.id);
-      const advanced = executed.company.ships.find((s) => s.id === shipId)!;
-      const nextIdx = (idx + 1) % route.stops.length;
-      return replaceShip(executed, { ...advanced, assignment: assignmentAt(asn, nextIdx) });
+      return executeAndAdvance(world, shipId, orders, route, idx, asn);
     }
     // At least one gated buy unmet: run only the non-gated siblings, hold
     // the index, start waiting. No gated buy fires this tick.
@@ -260,15 +279,14 @@ function runRouteForShip(world: World, shipId: ShipId): World {
   if (gatedBuys.length > 0 && !gatedBuys.every((g) => gatePasses(world, arrivalPortId, g))) {
     return world; // still unmet: dwell unchanged, still waiting.
   }
-  const executed = executeStop(
+  return executeAndAdvance(
     world,
     shipId,
     gatedBuys.map((g) => g.order),
-    route.id,
+    route,
+    idx,
+    asn,
   );
-  const advanced = executed.company.ships.find((s) => s.id === shipId)!;
-  const nextIdx = (idx + 1) % route.stops.length;
-  return replaceShip(executed, { ...advanced, assignment: assignmentAt(asn, nextIdx) });
 }
 
 /** Docking phase (#80): in ships[] array order — the deterministic race for the
