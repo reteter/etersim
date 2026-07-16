@@ -950,6 +950,45 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     expect(shipOf(w).location.kind).toBe("underway"); // redirected toward a
     expect(shipOf(w).assignment?.waiting).toBeUndefined(); // cleared by the redirect
   });
+
+  it("atomic v1: two gated buys at one Stop — one clears, one doesn't ⇒ NEITHER fires, ship keeps waiting", () => {
+    const { a, b } = directPair(createWorld("gate-atomic"));
+    // Both grain and timber gated at @a; both reference @b (sell-stops for
+    // each good). grain's threshold is trivially met, timber's is not — the
+    // atomic rule says the whole group withholds until *every* gate clears.
+    const route: Route = {
+      id: "atomic",
+      name: "atomic",
+      stops: [
+        {
+          portId: a,
+          orders: [
+            { kind: "buy", good: "grain", minMargin: -1_000_000 }, // trivially met
+            { kind: "buy", good: "timber", minMargin: 1_000_000 }, // never met
+          ],
+        },
+        {
+          portId: b,
+          orders: [
+            { kind: "sell", good: "grain" },
+            { kind: "sell", good: "timber" },
+          ],
+        },
+      ],
+    };
+    const world = seed("gate-atomic", a, 5000, [route]);
+    const shipId = shipOf(world).id;
+
+    let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "atomic" }]);
+    expect(shipOf(w).cargo.grain).toBe(0); // withheld despite its own gate passing
+    expect(shipOf(w).cargo.timber).toBe(0);
+    expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 0, waiting: true });
+
+    w = tick(w, []); // poll: timber's gate still unmet, so the whole group stays withheld
+    expect(shipOf(w).cargo.grain).toBe(0);
+    expect(shipOf(w).cargo.timber).toBe(0);
+    expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 0, waiting: true });
+  });
 });
 
 describe("combined determinism — routes + HQ + build (#80/#81)", () => {
