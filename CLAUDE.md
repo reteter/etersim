@@ -11,7 +11,8 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - `docs/specs/` — one feature spec per epic (Design + Tech sections).
 - `docs/personas/` — Designer/Engineer/Analyst hats, the Orchestrator role, the Coder subagent contract (harness def: `.claude/agents/coder.md`), and the Professor architecture reviewer (harness def: `.claude/agents/professor.md`).
 - `docs/design-notes/` — parking lot for playtest observations and deferred ideas. Items may be grilled and locked before implementation; `trade-loop-followups.md` tracks E2 post-playtest follow-ups (all shipped as of 2026-07-08).
-- `docs/HANDOFF.md` — canonical session-state note (queue, watch items, gotchas), written for any model in any harness; per-machine auto-memory mirrors it, never the reverse. Updated at every session close.
+- `docs/HANDOFF.md` — exportable session-state snapshot (state, queue, watch), written for any model in any harness. Updated **only on owner request** (ceremony decision 2026-07-16); its date stamp is the freshness marker — when stale, trust `git log` / `gh issue list`. Claude Code's per-machine auto-memory is the day-to-day working channel.
+- `docs/PROCESS.md` — the outside-reader tour: how this repo runs a multi-model AI team (roles, model ladder, gates, evidence base).
 - `docs/agent-memory.md` — durable, machine-independent lessons exported from per-machine memory.
 
 ## Rules
@@ -19,16 +20,18 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 - Language: code, docs, commits, issues — English. Conversation with the user — Polish. Player-facing UI strings — Polish (2026-07-14 UI grill; legacy English strings tracked for a sweep).
 - Every epic starts with grilling, then a spec approved by the user, then GitHub issues (`gh`; milestone = epic).
 - TDD for `src/sim` (Vitest). UI verified with Playwright E2E tests (plus light unit tests for the store bridge); manual playtesting recommended for exploration.
-- Feature branches + PR (`Closes #n`), conventional commits. Before merge: tests, typecheck, lint, and the tiered wave check (review depth scales with the diff's risk surface — `docs/WORKFLOW.md` §Verification gates).
+- Feature branches + PR (`Closes #n`), conventional commits. Before merge: tests, typecheck, lint, and the tiered wave check (review depth scales with the diff's risk surface — `docs/WORKFLOW.md` §Verification gates). One exception: the session-close docs-only batch commits straight to `main`, pushed immediately (WORKFLOW §Documentation law).
 - Spec drift: updating the spec is part of the task.
 - Determinism is sacred: all sim randomness flows from the seeded RNG; no `Math.random`, no `Date.now` inside `src/sim`.
-- Session start: read `docs/HANDOFF.md`, then check open work with `gh issue list`. Before starting any task, run the pre-work checklist in `docs/SELFCHECK.md` and post its report. Session close: update `docs/HANDOFF.md` (overwrite; history lives in git).
+- Session start: read `docs/HANDOFF.md` (mind its date stamp), then check open work with `gh issue list` and prune merged branches. Before starting any task, run the pre-work checklist in `docs/SELFCHECK.md` and post its report (short form is the default; full form for epics / `src/sim` / external agents). Session close: write the forward pointer into auto-memory; update `docs/HANDOFF.md` only when the owner asks.
 
 ## Git & worktrees
 
 - `.claude/worktrees/agent-*` directories are not always real `git worktree` entries — some turn out to be plain subdirectories nested inside the main repo (e.g. `.claude/worktrees/<name>`, 3 levels below repo root). Check `git worktree list` before trusting `pwd`; if the directory isn't listed there, `git rev-parse --show-toplevel` still resolves to the main repo root, so `git add`/`git status` paths are relative to that root, not to `pwd` — use absolute paths (or `git -C <toplevel>`) to avoid pathspec errors.
 - Clean up branches right after each merge, not later: `git worktree remove` before `git branch -D` (branch delete fails while a worktree holds it). After `gh pr merge --delete-branch`, verify the remote branch actually got deleted (`git branch -a` / `git fetch --prune`) — it silently fails when the branch is still checked out in a worktree, leaving stale remote/local branches to accumulate.
 - Subagents working in a worktree must never `cd` to an absolute repo path or act on the main checkout: address git as `git -C <their-worktree>`, and never `checkout`/`commit`/`reset` on `main`. After a coder wave, verify the main repo is clean and on the expected SHA (`docs/incidents/0001`).
+- Dispatch coders with `isolation: "worktree"` ONLY — no manual `git worktree add`, no hardcoded worktree path in the prompt; say "work in your assigned worktree" and push `HEAD:<target-branch>` by refspec (`docs/incidents/0012`).
+- Wave-close order: verify merged content is reachable from `origin/main` → remove worktrees + prune branches → `npm install` if the merge touched `package.json`/lock → **then** certify, printing `pwd` + branch + SHA first. A clean `git worktree list` is the go-signal; a cert red with a module-not-found / missing-type signature is stale-env until proven otherwise (incidents 0008/0010/0011/0013).
 
 ## Incidents
 

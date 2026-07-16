@@ -35,8 +35,10 @@ File a short report whenever:
 - A command touched the wrong repo/branch/file, or did something hard to undo.
 - Something surprised you in a way the next person should be warned about.
 
-Cheap is the point. A report should take a few minutes. If it takes an hour, the
-template is wrong — trim it.
+Cheap is the point. A report should take a few minutes and stay **within ~25 lines**
+(cap, owner decision 2026-07-16) — What happened / Impact / Recommendation are the
+load-bearing sections; the §Log one-liner is what future sessions actually read.
+Existing longer reports stay as written; the cap applies forward.
 
 ## How
 

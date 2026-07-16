@@ -2,7 +2,7 @@
 
 - **Date:** 2026-07-15
 - **Detected by:** self-report + investigation — a post-merge certification looked RED; investigated before reporting it, found it environmental.
-- **Status:** Closed (root cause identified; prevention = certify only after worktree cleanup, landed in `docs/HANDOFF.md` §Gotchas and here).
+- **Status:** Closed (root cause identified; prevention = certify only after worktree cleanup; since the 2026-07-16 ceremony slim it lives in `CLAUDE.md` §Git & worktrees and WORKFLOW §E2E certification points).
 
 ## What happened
 
@@ -55,6 +55,7 @@ ordering is habitual or the tooling ignores the path.
 
 ## Follow-up
 
-Prevention landed this session in `docs/HANDOFF.md` §Gotchas and the wave-close ordering
-note. Optional hardening not taken: the `eslint.config.js` ignore for `.claude/worktrees/**`
+Prevention landed 2026-07-15 in the session-state note; moved 2026-07-16 to
+`CLAUDE.md` §Git & worktrees + WORKFLOW §E2E certification points (durable homes).
+Optional hardening not taken: the `eslint.config.js` ignore for `.claude/worktrees/**`
 — file a chore issue if we want the belt in addition to the ordering discipline.
