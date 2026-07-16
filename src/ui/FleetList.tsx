@@ -1,5 +1,6 @@
-import { cargoUsed, etaTicks, type Region, type Route, type Ship } from "../sim";
+import { cargoUsed, etaTicks, type Route, type Ship, type World } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { formatWaitingGates, waitingGates } from "../store/waitingStatus";
 import { ShipIcon } from "./icons";
 import { portName } from "./portName";
 
@@ -12,16 +13,25 @@ import { portName } from "./portName";
  */
 
 /** One status word per ship, in priority order: a suspended assignment beats
- *  "on route" (still assigned, just not driving right now), which beats the
- *  raw location state. Matches the AC vocabulary exactly (docked / underway /
- *  on route / suspended) so the four values are mutually exclusive. */
-function statusLabel(ship: Ship, region: Region): string {
+ *  "czeka" (waiting on a Margin Gate, E9.1 — still docked at its own next
+ *  Stop, not driving right now), which beats "on route" (assigned generally),
+ *  which beats the raw location state. Matches the AC vocabulary exactly
+ *  (docked / underway / on route / suspended / czeka) so the five values are
+ *  mutually exclusive — `waiting` never coexists with `suspended`
+ *  (`runRouteForShip` clears it on redirect, ADR-0007). */
+function statusLabel(ship: Ship, world: World): string {
+  const region = world.region;
   const loc = ship.location;
   const locDetail =
     loc.kind === "docked"
       ? `at ${portName(region, loc.portId)}`
       : `to ${portName(region, loc.destination)} · ~${etaTicks(ship, region)}`;
   if (ship.assignment?.suspended) return `Suspended — ${locDetail}`;
+  if (ship.assignment?.waiting) {
+    const gates = waitingGates(world, ship);
+    const gateText = gates.length > 0 ? formatWaitingGates(gates) : "czeka na marżę";
+    return `${gateText} — ${locDetail}`;
+  }
   if (ship.assignment) return `On route — ${locDetail}`;
   return loc.kind === "docked" ? `Docked ${locDetail}` : `Underway ${locDetail}`;
 }
@@ -66,7 +76,15 @@ export function FleetList() {
                   }
                 />
                 <span className="fleet-list__name">{ship.name}</span>
-                <span className="fleet-list__status">{statusLabel(ship, world.region)}</span>
+                <span
+                  className={
+                    ship.assignment?.waiting
+                      ? "fleet-list__status fleet-list__status--waiting"
+                      : "fleet-list__status"
+                  }
+                >
+                  {statusLabel(ship, world)}
+                </span>
                 {route && <span className="fleet-list__route">{route}</span>}
                 <span className="fleet-list__hold">
                   {cargoUsed(ship)}/{ship.hold}
