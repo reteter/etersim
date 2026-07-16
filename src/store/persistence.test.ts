@@ -72,9 +72,49 @@ function e9World(): World {
   return world;
 }
 
+/** A world with a routed ship mid-wait on an unmet Margin Gate (E9.1) — the
+ *  one save shape invisible to any function of World before E9.1 (Tech —
+ *  "Structural finding that shapes everything", docs/specs/E9.1). Must
+ *  round-trip through the real persistence layer, not just a bare
+ *  JSON.parse/stringify, so an envelope-layer bug (e.g. stripping `waiting`)
+ *  is actually catchable. */
+function gateWaitingWorld(): World {
+  const base = createWorld("gate-wait-save");
+  const a = base.region.lanes[0].a;
+  const b = base.region.lanes[0].b;
+  const route = {
+    id: "gated",
+    name: "gated",
+    stops: [
+      {
+        portId: a,
+        orders: [
+          { kind: "buy" as const, good: "timber" as const }, // ungated sibling
+          { kind: "buy" as const, good: "grain" as const, minMargin: 1_000_000 }, // never met
+        ],
+      },
+      { portId: b, orders: [{ kind: "sell" as const, good: "grain" as const }] },
+    ],
+  };
+  const homeShip = base.company.ships[0];
+  let world: World = {
+    ...base,
+    company: {
+      ...base.company,
+      thalers: 5000,
+      routes: [route],
+      ships: [{ ...homeShip, location: { kind: "docked", portId: a } }],
+    },
+  };
+  world = tick(world, [{ kind: "assignRoute", shipId: homeShip.id, routeId: "gated" }]);
+  return world;
+}
+
 /** A world carrying one open offer and one active contract, then de-shaped
  *  back to the pre-#226 v9 wire format (no `requiredRank` on either) — the
- *  exact shape a v9 save on disk actually had, not a hand-invented literal. */
+ *  exact shape a v9 save on disk actually had, not a hand-invented literal.
+ *  Used only to prove v9 is now rejected outright (E9.1 dropped the v9->v10
+ *  hop, same precedent as v8's drop at the previous bump). */
 function v9SaveWithContractOffer(): { version: 9; world: World } {
   const base = createWorld("v9-migration");
   const homePortId = base.region.ports[0].id;
@@ -107,6 +147,14 @@ function v9SaveWithContractOffer(): { version: 9; world: World } {
   };
 }
 
+/** A v10 save (post-#226, pre-E9.1): a world whose routes/ships carry no
+ *  `qty`/`minMargin`/`waiting` at all — the exact shape a v10 save on disk
+ *  actually had. `migrateV10ToV11` must carry it forward unchanged. */
+function v10Save(): { version: 10; world: World } {
+  const world = e9World();
+  return { version: 10, world };
+}
+
 describe("persistence", () => {
   it("round-trips a mid-session world through JSON deep-equal (spec §Testing)", () => {
     const world = midSessionWorld();
@@ -125,6 +173,15 @@ describe("persistence", () => {
       world.company.headquarters!.buildOrder!.siteStore,
     );
     expect(restored.company.ships[0].assignment).toEqual(world.company.ships[0].assignment);
+  });
+
+  it("round-trips a mid-wait Margin Gate ship through the real persistence layer (E9.1 — waiting is load-bearing state, ADR-0007)", () => {
+    const world = gateWaitingWorld();
+    // Precondition: the fixture actually landed in the waiting state.
+    expect(world.company.ships[0].assignment?.waiting).toBe(true);
+    const restored = parseWorldJson(exportWorldJson(world));
+    expect(restored).toEqual(world);
+    expect(restored.company.ships[0].assignment?.waiting).toBe(true);
   });
 
   it("round-trips a mid-session world through the autosave slot", () => {
@@ -191,34 +248,35 @@ describe("persistence", () => {
     expect(parsed.version).toBe(SAVE_VERSION);
   });
 
-  describe("v9 -> v10 migration (issue #226 — desperation clause adds requiredRank)", () => {
-    it("parseWorldJson backfills requiredRank: tier onto a v9 contract offer, otherwise unchanged", () => {
-      const v9Save = v9SaveWithContractOffer();
-      const text = JSON.stringify(v9Save);
+  describe("v10 -> v11 migration (E9.1 — StopOrder.qty/minMargin, ShipAssignment.waiting)", () => {
+    it("parseWorldJson carries a v10 world forward unchanged (identity migration)", () => {
+      const save = v10Save();
+      const text = JSON.stringify(save);
 
       const migrated = parseWorldJson(text);
 
-      expect(migrated.contractOffers).toHaveLength(1);
-      expect(migrated.contractOffers[0]).toEqual({
-        ...(v9Save.world.contractOffers[0] as ContractOffer),
-        requiredRank: (v9Save.world.contractOffers[0] as ContractOffer).tier,
-      });
-      // Nothing else in the world was touched by the migration.
-      expect(migrated).toEqual({ ...v9Save.world, contractOffers: migrated.contractOffers });
+      expect(migrated).toEqual(save.world);
     });
 
-    it("loadAutosave transparently migrates a v9 slot, so an old save keeps loading (incident 0009 concern)", () => {
+    it("loadAutosave transparently migrates a v10 slot, so an old save keeps loading (incident 0009 concern)", () => {
       const storage = fakeStorage();
-      const v9Save = v9SaveWithContractOffer();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify(v9Save));
+      const save = v10Save();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify(save));
 
       const restored = loadAutosave(storage);
       expect(restored).not.toBeNull();
       expect(hasAutosave(storage)).toBe(true);
-      expect(restored!.contractOffers[0]).toMatchObject({ requiredRank: 2 });
+      expect(restored).toEqual(save.world);
     });
 
-    it("a save older than v9 is still rejected — migration is one step, not open-ended", () => {
+    it("a save older than v10 (v9) is now rejected — migration is one step, not open-ended", () => {
+      const storage = fakeStorage();
+      const v9Save = v9SaveWithContractOffer();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify(v9Save));
+      expect(loadAutosave(storage)).toBeNull();
+    });
+
+    it("a save older than v9 (v8) is still rejected", () => {
       const storage = fakeStorage();
       const world = midSessionWorld();
       storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 8, world }));

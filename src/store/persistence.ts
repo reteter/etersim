@@ -46,45 +46,31 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  boundary's `refreshContractOffers` stamps the clause proper, so the save
  *  self-heals rather than needing its own clause computation here. Per the
  *  one-step-migration precedent (every prior bump but #203 rejected the
- *  version before it outright), v8 is no longer readable — only v9 carries
- *  forward now. */
-export const SAVE_VERSION = 10;
+ *  version before it outright), v8 is no longer readable — only v9 carried
+ *  forward to v10.
+ *  v11: E9.1 added `StopOrder.qty`/`StopOrder.minMargin` (Margin Gate) and
+ *  `ShipAssignment.waiting` (docs/specs/E9.1-route-qty-and-margin-gate.md) —
+ *  all three additive and absent-safe (absent ⇒ greedy / no gate / not
+ *  waiting), so a v10 world is already valid v11 shape; `migrateV10ToV11` is
+ *  a documented identity, kept as a real migration step (rather than
+ *  silently accepting v10 as v11) so "version tracks World shape" stays
+ *  honest. Per the one-step-migration precedent, v9 is no longer readable —
+ *  only v10 carries forward now. */
+export const SAVE_VERSION = 11;
 
 /** Save envelope versions this adapter can still read, migrating forward to
- *  `SAVE_VERSION` on load (issue #226) — currently just the immediately
- *  preceding version; a save older than that is unreadable, same as every
- *  prior bump (v8 dropped here, matching that precedent — #203's chain
- *  never carried v8 through a second hop, and this bump doesn't start one). */
-const READABLE_VERSIONS: ReadonlySet<number> = new Set([9, SAVE_VERSION]);
+ *  `SAVE_VERSION` on load — currently just the immediately preceding version;
+ *  a save older than that is unreadable, same as every prior bump (v9 dropped
+ *  here, matching the v8-drop precedent at the previous bump). */
+const READABLE_VERSIONS: ReadonlySet<number> = new Set([10, SAVE_VERSION]);
 
-/** v9 -> v10 (issue #226): `ContractOffer`/`ActiveContract` gained a required
- *  `requiredRank` field (the desperation clause). A v9 offer's access rule
- *  was always "rank >= tier", so the backfill `requiredRank: tier` is exact,
- *  never a guess — it reproduces the old gate until the board's next refresh
- *  applies the clause. Operates on the raw, untyped parsed JSON (a v9 offer
- *  has no `requiredRank` at all, so treating it as `ContractOffer` before
- *  this pass would be a type lie) and returns a `World` only once every
- *  offer/active contract carries what the current `ContractOffer` shape
- *  requires. */
-function migrateV9ToV10(rawWorld: {
-  contractOffers?: unknown;
-  company?: { contracts?: unknown };
-}): World {
-  const backfillRequiredRank = (offer: Record<string, unknown>) =>
-    offer.requiredRank === undefined ? { ...offer, requiredRank: offer.tier } : offer;
-
-  const contractOffers = Array.isArray(rawWorld.contractOffers)
-    ? rawWorld.contractOffers.map((o: Record<string, unknown>) => backfillRequiredRank(o))
-    : [];
-  const contracts = Array.isArray(rawWorld.company?.contracts)
-    ? (rawWorld.company.contracts as Record<string, unknown>[]).map((c) => backfillRequiredRank(c))
-    : [];
-
-  return {
-    ...rawWorld,
-    contractOffers,
-    company: { ...rawWorld.company, contracts },
-  } as unknown as World;
+/** v10 -> v11 (E9.1): `StopOrder` gained `qty`/`minMargin` and
+ *  `ShipAssignment` gained `waiting` — all optional and absent-safe, so a
+ *  v10 world already satisfies the v11 shape verbatim. Identity migration,
+ *  documented rather than silently accepting v10 as v11 (keeps "version
+ *  tracks World shape" honest — see SAVE_VERSION comment). */
+function migrateV10ToV11(rawWorld: unknown): World {
+  return rawWorld as World;
 }
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
@@ -148,7 +134,7 @@ function deserialize(text: string | null): World | null {
   }
   if (!isReadableEnvelopeShape(parsed)) return null;
   if (parsed.version === SAVE_VERSION) return parsed.world as unknown as World;
-  return migrateV9ToV10(parsed.world); // the only older readable version (v9)
+  return migrateV10ToV11(parsed.world); // the only older readable version (v10)
 }
 
 /**

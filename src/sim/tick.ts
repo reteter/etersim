@@ -4,7 +4,7 @@ import { refreshContractOffers, settleContracts } from "./contract";
 import { GOOD_IDS, type GoodId } from "./goods";
 import { UPKEEP_PER_DAY } from "./guild";
 import { appendLedgerEvent, computeNetWorth } from "./ledger";
-import { effectiveBase, marketTick, maxAffordableQty, NEUTRAL_MODIFIERS } from "./market";
+import { effectiveBase, marketTick, maxAffordableQty, NEUTRAL_MODIFIERS, unitMargin } from "./market";
 import { osmosisTick } from "./osmosis";
 import { shortestCourse } from "./pathfinding";
 import {
@@ -15,7 +15,7 @@ import {
   type Region,
 } from "./region";
 import { deriveSubstream, nextFloat, nextUint32, type RngState } from "./rng";
-import type { Route, RouteId } from "./route";
+import { resolveReferencePort, type Route, type RouteId, type StopOrder } from "./route";
 import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
 import { replaceShip, snapshotPrices, STARTING_HOLD, type World } from "./world";
 
@@ -84,8 +84,11 @@ function chargeDockingFee(world: World, portId: PortId, shipId: ShipId): World {
 /** Execute one Stop's orders best-effort, in list order, by dispatching the
  *  *same* Commands a player would — routes get no special math, so a Route can
  *  never out- or under-perform the identical manual trades (E9 equivalence
- *  guarantee). buy fills the affordable share of the Hold; sell empties the
- *  good; deliver moves min(cargo, need) into the build site (no-op off-HQ). */
+ *  guarantee). buy fills the affordable share of the Hold, capped at
+ *  `order.qty` if set (E9.1 "up to N"; absent ⇒ today's greedy fill); sell
+ *  empties the good, capped at `order.qty` if set (remainder carried
+ *  onward — E9.1 sell-dosing); deliver moves min(cargo, need) into the build
+ *  site (no-op off-HQ), never taking `qty`. */
 function executeStop(
   world: World,
   shipId: ShipId,
@@ -100,21 +103,63 @@ function executeStop(
     if (order.kind === "buy") {
       const port = w.region.ports.find((p) => p.id === dockedAt)!;
       const holdSpace = ship.hold - cargoUsed(ship);
+      const maxQty = order.qty === undefined ? holdSpace : Math.min(order.qty, holdSpace);
       const qty = maxAffordableQty(
         port.market[order.good],
         effectiveBase(port, order.good),
-        holdSpace,
+        maxQty,
         w.company.thalers,
       );
       if (qty > 0) w = applyCommand(w, { kind: "buy", shipId, good: order.good, qty, routeId });
     } else if (order.kind === "sell") {
       const have = ship.cargo[order.good];
-      if (have > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty: have, routeId });
+      const qty = order.qty === undefined ? have : Math.min(order.qty, have);
+      if (qty > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty, routeId });
     } else {
       w = applyCommand(w, { kind: "deliver", shipId, good: order.good });
     }
   }
   return w;
+}
+
+/** A gated buy at a Stop: the order plus its resolved reference port (E9.1
+ *  Margin Gate). Only buy orders that carry `minMargin` *and* have a live
+ *  reference (a sell-stop for the same good exists somewhere on the route)
+ *  land here — a `minMargin` with no reference is inactive and stays an
+ *  ordinary sibling. */
+interface GatedBuy {
+  readonly order: StopOrder;
+  readonly referencePort: PortId;
+}
+
+/** Splits a Stop's orders into its active gated buys (in list order). */
+function activeGatedBuys(route: Route, stopIndex: number, orders: readonly StopOrder[]): GatedBuy[] {
+  const gated: GatedBuy[] = [];
+  for (const order of orders) {
+    if (order.kind !== "buy" || order.minMargin === undefined) continue;
+    const referencePort = resolveReferencePort(route, stopIndex, order.good);
+    if (referencePort !== null) gated.push({ order, referencePort });
+  }
+  return gated;
+}
+
+/** Whether a gated buy's Margin Gate currently passes: the reference port's
+ *  unit sell price minus the unit ask here (`unitMargin`, market.ts — the
+ *  same pricing functions the buy/sell Commands use) meets `minMargin`.
+ *  `null` (zero local stock, either side) means unevaluable ⇒ fails ⇒ keep
+ *  waiting. Reads pre-`marketTick` prices, same as the docking-phase
+ *  Commands (this runs inside the same docking phase, before the tick's
+ *  market step). */
+function gatePasses(world: World, dockedPortId: PortId, gated: GatedBuy): boolean {
+  const buyPort = world.region.ports.find((p) => p.id === dockedPortId)!;
+  const sellPort = world.region.ports.find((p) => p.id === gated.referencePort)!;
+  const margin = unitMargin(
+    buyPort.market[gated.order.good],
+    effectiveBase(buyPort, gated.order.good),
+    sellPort.market[gated.order.good],
+    effectiveBase(sellPort, gated.order.good),
+  );
+  return margin !== null && margin >= gated.order.minMargin!;
 }
 
 /** Put a docked ship underway toward `targetPortId` on the shortest Course. A
@@ -135,19 +180,58 @@ function dispatchToStop(region: Region, ship: Ship, targetPortId: PortId): Ship 
   };
 }
 
+/** Builds the assignment for a ship that has just advanced past a Stop, with
+ *  `waiting` genuinely absent (not `false`) — "not waiting" must be the same
+ *  shape as before E9.1 (byte-identical saves/tests for ungated routes),
+ *  never a stored `false`. */
+function advancedAssignment(
+  asn: NonNullable<Ship["assignment"]>,
+  nextStopIndex: number,
+): Ship["assignment"] {
+  return { routeId: asn.routeId, nextStopIndex, suspended: asn.suspended };
+}
+
+/** Executes `orders` at the current Stop, advances past it (mod the Route
+ *  length), and clears `waiting`. Shared by both "fire and move on" paths in
+ *  `runRouteForShip`: a fresh arrival whose gates already clear, and a
+ *  waiting poll whose gates just cleared — both end the same way. */
+function executeAndAdvance(
+  world: World,
+  shipId: ShipId,
+  orders: readonly StopOrder[],
+  route: Route,
+  stopIndex: number,
+  asn: NonNullable<Ship["assignment"]>,
+): World {
+  const executed = executeStop(world, shipId, orders, route.id);
+  const advanced = executed.company.ships.find((s) => s.id === shipId)!;
+  const nextIdx = (stopIndex + 1) % route.stops.length;
+  return replaceShip(executed, { ...advanced, assignment: advancedAssignment(asn, nextIdx) });
+}
+
 /**
  * Route logic for one docked ship, keyed on state (not on "did it just
  * transition") so an assign/resume that leaves the ship already at its next
  * Stop's port is handled by the same seam as a fresh arrival:
  * - not docked / unassigned / suspended → untouched.
  * - route gone → assignment cleared (finished its Course, now routeless).
- * - at its next Stop's port → execute the Stop, advance the index, and dwell
- *   docked for this tick. The dwell mirrors manual play's quantization (a ship
- *   can never depart the tick it arrives) and gives the player a tick-boundary
- *   window to intervene (a manual sailTo auto-suspends the Route).
- * - elsewhere → redirect toward the next Stop's port, no execution. This is
- *   both the normal post-dwell departure and the recovery when a template edit
- *   moved the Stop out from under an in-flight ship (no wrong-port trade).
+ * - at its next Stop's port, `!asn.waiting` (fresh arrival): a Stop's active
+ *   Margin Gates (E9.1 — buy orders with `minMargin` and a live reference)
+ *   are evaluated. All pass (or none active) → execute the whole Stop,
+ *   advance the index, dwell (identical to today for ungated routes). Any
+ *   gated buy unmet → execute only the non-gated siblings, hold the index,
+ *   set `waiting = true`, fire no gated buy.
+ * - at its next Stop's port, `asn.waiting` (poll): re-evaluate the gated
+ *   buys' gates only — siblings already ran and never re-run. All pass →
+ *   fire the gated buys once as a deferred atomic group, advance, clear
+ *   `waiting`. Otherwise dwell unchanged, still waiting.
+ * - elsewhere → redirect toward the next Stop's port, no execution, `waiting`
+ *   cleared. This is both the normal post-dwell departure and the recovery
+ *   when a template edit moved the Stop out from under an in-flight ship (no
+ *   wrong-port trade). The dwell mirrors manual play's quantization (a ship
+ *   can never depart the tick it arrives) and gives the player a
+ *   tick-boundary window to intervene (a manual sailTo auto-suspends the
+ *   Route, ADR-0007).
  */
 function runRouteForShip(world: World, shipId: ShipId): World {
   const ship = world.company.ships.find((s) => s.id === shipId)!;
@@ -166,14 +250,43 @@ function runRouteForShip(world: World, shipId: ShipId): World {
 
   if (route.stops[idx].portId !== arrivalPortId) {
     const redirected = dispatchToStop(world.region, ship, route.stops[idx].portId);
-    return replaceShip(world, { ...redirected, assignment: { ...asn, nextStopIndex: idx } });
+    return replaceShip(world, { ...redirected, assignment: advancedAssignment(asn, idx) });
   }
 
-  // At our next Stop's port: execute best-effort, advance the index, dwell.
-  const executed = executeStop(world, shipId, route.stops[idx].orders, route.id);
-  const advanced = executed.company.ships.find((s) => s.id === shipId)!;
-  const nextIdx = (idx + 1) % route.stops.length;
-  return replaceShip(executed, { ...advanced, assignment: { ...asn, nextStopIndex: nextIdx } });
+  const orders = route.stops[idx].orders;
+  const gatedBuys = activeGatedBuys(route, idx, orders);
+  const gatedOrders = new Set<StopOrder>(gatedBuys.map((g) => g.order));
+  const siblings = orders.filter((o) => !gatedOrders.has(o));
+
+  if (!asn.waiting) {
+    if (gatedBuys.length === 0 || gatedBuys.every((g) => gatePasses(world, arrivalPortId, g))) {
+      // No active gate, or every gate already clears: run the whole Stop,
+      // exactly as today.
+      return executeAndAdvance(world, shipId, orders, route, idx, asn);
+    }
+    // At least one gated buy unmet: run only the non-gated siblings, hold
+    // the index, start waiting. No gated buy fires this tick.
+    const executed = executeStop(world, shipId, siblings, route.id);
+    const advanced = executed.company.ships.find((s) => s.id === shipId)!;
+    return replaceShip(executed, {
+      ...advanced,
+      assignment: { routeId: asn.routeId, nextStopIndex: idx, suspended: asn.suspended, waiting: true },
+    });
+  }
+
+  // Waiting poll: siblings already ran on arrival — never touch them again.
+  // Re-evaluate only the gated buys' gates.
+  if (gatedBuys.length > 0 && !gatedBuys.every((g) => gatePasses(world, arrivalPortId, g))) {
+    return world; // still unmet: dwell unchanged, still waiting.
+  }
+  return executeAndAdvance(
+    world,
+    shipId,
+    gatedBuys.map((g) => g.order),
+    route,
+    idx,
+    asn,
+  );
 }
 
 /** Docking phase (#80): in ships[] array order — the deterministic race for the
