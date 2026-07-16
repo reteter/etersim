@@ -16,6 +16,10 @@ Worked example (#28+#32, Controlled Ship + Harbor): one spliced package (shared 
 
 Note: the coding harness itself may bias toward inline — e.g. Claude Code's built-in `Agent` tool description states *"Do not spawn agents unless the user asks … Only use this tool when the user explicitly says to use a subagent, or names one of the available agent types."* Other agent runtimes (Grok, etc.) may differ; treat the harness guidance as one input, this heuristic as the project's intent.
 
+## Engineer inline vs. subagent
+
+The Engineer hat is worn **inline during a grill** — the Design is still moving, and a cold subagent would re-derive context every turn (waste). Once the **Design is locked**, the Tech pass can go to a **read-only Engineer subagent** fed a self-contained package (the locked Design + ENGINEER.md): it drafts the Tech section and **routes questions up** rather than relitigating locks — so it is design dialogue held by a subagent, not a coder task queue (ENGINEER.md §Altitude contract). Evidence (#254, 2026-07-15): subagent-"Carl" caught the stored `waiting`-bit save/load determinism hazard a naïve build would have missed. Cost: the package must carry the *whole* locked Design — worth it for a closed Design, waste for an open one. **Rule of thumb: closed Design → subagent-Engineer; open grill → in-line Engineer hat.**
+
 ## Parallel coders MUST run in isolated worktrees
 
 When you fan out to ≥2 coder subagents at once, dispatch each with `isolation: "worktree"`. Coder subagents share the main repo's single working tree and git HEAD/index by default — two of them on separate feature branches will step on each other: one agent's `git switch` and uncommitted files bleed into the other's working directory mid-task.

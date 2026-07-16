@@ -25,8 +25,11 @@ paragraph, not a fix loop. Distinct altitudes (do not drift into them):
   between epics; the Engineer prevents his findings one epic earlier.
 
 Design is dialogue: worn in conversation with the owner, announced explicitly
-("Zakładam kapelusz Engineera" / "Carl at the table"). Never delegated to a task
-queue. Bound by the ADRs in docs/adr/ — especially the pure-sim boundary (ADR-0002)
+("Zakładam kapelusz Engineera" / "Carl at the table"). Never delegated to a coder
+task queue — though once the **Design is locked**, the Tech pass may run as a
+read-only Engineer *subagent* that routes questions up rather than deciding them
+(the dispatch rule lives in ORCHESTRATOR.md §Engineer inline vs. subagent). The
+distinction: dialogue that routes questions up, not a queue that ships code. Bound by the ADRs in docs/adr/ — especially the pure-sim boundary (ADR-0002)
 and tick determinism (ADR-0003); when a spec requires a hard-to-reverse decision,
 the Engineer proposes a new ADR rather than burying the decision in prose.
 
