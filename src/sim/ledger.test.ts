@@ -116,6 +116,34 @@ describe("computeNetWorth", () => {
     expect(result.total).toBeCloseTo(expectedTotal, 6);
   });
 
+  it("counts an active refit's site store like the HQ build site's (#285 follow-up, owner decision 2026-07-16)", () => {
+    const portA = makePort("A", 100, 100, 1.0);
+    const portB = makePort("B", 100, 100, 1.0);
+    const region: Region = { ports: [portA, portB], lanes: [] };
+
+    const base0 = createWorld(4);
+    const ship = { ...base0.company.ships[0], location: { kind: "docked", portId: "A" } as const };
+    const world: World = {
+      ...base0,
+      region,
+      company: {
+        ...base0.company,
+        thalers: 500,
+        ships: [ship],
+        shipyard: {
+          portId: "A",
+          refitOrder: { shipId: ship.id, targetHold: 100, siteStore: { ...emptyCargo(), textiles: 4, timber: 1 } },
+        },
+      },
+    };
+
+    // Both ports at equilibrium with bias 1.0 => mid == basePrice: 4×40 + 1×250.
+    const expectedSiteStoreValue = 4 * 40 + 1 * 250;
+    const result = computeNetWorth(world);
+    expect(result.siteStoreValue).toBeCloseTo(expectedSiteStoreValue, 6);
+    expect(result.total).toBeCloseTo(500 + expectedSiteStoreValue, 6);
+  });
+
   it("ships and buildings carry no book value: an empty fleet with no build is worth exactly its thalers", () => {
     const base0 = createWorld(2);
     const world: World = { ...base0, company: { ...base0.company, thalers: 777, ships: [] } };

@@ -132,7 +132,11 @@ recipe-bearing step, `placeBuildOrder`'s analog); `rushRefit()` (the Refit site'
 completeness). The Shipyard site's auto-draw runs in the same tick phase as the HQ's,
 after it in `tick()`, through the shared ConstructionSite engine. Completion applies
 `hold = targetHold` and clears `refitOrder`. Ledger kinds: `shipyardBuilt`,
-`refitStart`, `refitComplete`.
+`refitStart`, `refitComplete`. **Net worth counts an active refit's `siteStore`
+exactly like the HQ build site's** (owner decision 2026-07-16, resolving the #285
+review flag): in-progress refit materials keep their book value at region-average
+mid, so the company-value chart shows the same honest dip-then-growth shape for a
+Refit as for ship construction.
 
 Refit lock (#275): `isUnderRefit` gates `sailTo`, `assignRoute`, `resumeRoute` (blocked
 for the whole refit so "resume is manual after completion" holds — the route pass never

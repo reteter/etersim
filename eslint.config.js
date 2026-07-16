@@ -5,7 +5,10 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["dist", "coverage", "node_modules", "tmp"],
+    // .claude holds harness-managed agent worktrees (full repo copies): their
+    // own tsconfigs break eslint's tsconfigRootDir inference for the WHOLE
+    // run while one stands, so lint must never crawl into them.
+    ignores: ["dist", "coverage", "node_modules", "tmp", ".claude"],
   },
   {
     files: ["**/*.{ts,tsx}"],
