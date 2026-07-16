@@ -31,4 +31,4 @@ Medium — structural. Any merged PR that adds/changes dependencies leaves the l
 
 ## Follow-up
 
-- Recorded in README §Log; cert-ritual reminder to carry into HANDOFF / the wave-close checklist.
+- Recorded in README §Log; cert-ritual rule lives in `CLAUDE.md` §Git & worktrees + WORKFLOW §E2E certification points (since the 2026-07-16 ceremony slim).

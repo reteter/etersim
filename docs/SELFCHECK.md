@@ -22,7 +22,7 @@ Name what kind of work you were asked to do — each kind has a different bar:
 | **Design / grill / spec** | Conversation with the owner; never delegated; one question at a time; output lands in specs + CONTEXT.md + PRD (docs sync sweep, WORKFLOW.md). |
 | **Implementation (issue)** | Approved spec exists; issue is in a milestone; TDD for `src/sim`; feature branch + PR; owner merges. |
 | **Playtest analysis** | Verify each observation against code before classifying; route to grill / issue / parking lot; do not decide design. |
-| **Docs-only change** | Still branch + PR; sweep for stale cross-references (WORKFLOW.md §Docs sync sweep). |
+| **Docs-only change** | Branch + PR (exception: the session-close docs batch commits straight to `main` — WORKFLOW.md §Documentation law); sweep for stale cross-references (WORKFLOW.md §Docs sync sweep). |
 
 If the task doesn't fit any row, ask the owner before proceeding.
 
@@ -85,7 +85,16 @@ Post this (fill it in) as your first message after the selfcheck, **before creat
 branch or editing any file**, and wait for the owner's go-ahead unless the task prompt
 explicitly said to proceed without one. Posted after the work it is a receipt, not a
 checkpoint — the point is to catch misunderstandings while they are still free
-(incident 0003):
+(incident 0003).
+
+**Short form is the default** (ceremony slim, owner decision 2026-07-16):
+
+```
+Selfcheck (short): <task> → gate <row from §1> | env: <branch, baseline> | plan: <one line>
+```
+
+**Full form** — required for epics, grills, external-agent work, and anything touching
+`src/sim`; also whenever any §3 check came back not-clean:
 
 ```
 Selfcheck complete.
@@ -95,16 +104,6 @@ Selfcheck complete.
 - Plan: <2–4 steps, first test to write if TDD>
 - Watch-outs: <incident/log items or spec non-goals that touch this task>
 ```
-
-**Short form** — for a small standalone in-session task (single issue, no `src/sim`,
-no spec change), three lines suffice:
-
-```
-Selfcheck (short): <task> → gate <row from §1> | env: <branch, baseline> | plan: <one line>
-```
-
-Epics, grills, external-agent work, and anything touching `src/sim` always get the
-full report.
 
 ## 6. Post-work — before you declare done
 

@@ -8,7 +8,8 @@ exported. Update this file when a durable, machine-independent lesson lands; del
 entries when they expire.
 
 Last export: 2026-07-16. Session-state notes (queue, watch items) do NOT live here —
-they live in [HANDOFF.md](HANDOFF.md), the canonical per-session note.
+they live in [HANDOFF.md](HANDOFF.md), the exportable snapshot updated on owner
+request (since 2026-07-16; Claude Code auto-memory is the day-to-day channel).
 
 ## Windows gh/git encoding pitfall (feedback)
 
@@ -37,6 +38,16 @@ unambiguous check is: (1) stash the change, re-run the failing tests → proves 
 is green; (2) restore, re-run the *same* failing tests **in isolation** (single worker) → if
 they still fail, it's a real regression, not contention. (Different scar family from the
 false-RED certify-order ones, incidents 0011/0013.)
+
+## advisor() availability + resume hazard (Claude Code harness, 2026-07-15)
+
+`advisor()` works from a non-Fable main/Orchestrator agent (Opus 4.8 confirmed); the
+harness "check your network · retry" message is misleading — the call is in flight,
+wait it out. It is unavailable only when Fable itself is the executor (advisor tier ≥
+executor tier pairing rule, WORKFLOW §Casting). Separate hazard: resuming a subagent
+after a mid-response crash **silently drops any in-flight advisor/tool call** — name
+and re-issue it in the resume message (incident 0012). A dropped advisor consult is a
+silently skipped gate.
 
 ## Model ladder for orchestration (feedback, owner-confirmed 2026-07-13)
 
@@ -82,7 +93,7 @@ changes; watch for Linux-only breakage invisible on Windows (import-path casing,
 Fable access runs through **2026-07-19** with no renewal promised; the next frontier
 partner may be a non-Claude model in a non-Claude harness. That is why the process is
 model-agnostic (WORKFLOW §Casting) and why everything a session needs lives in the
-repo: HANDOFF.md (state), agent-memory.md (durable lessons), PRD/specs (direction),
+repo: HANDOFF.md (state snapshot, on request), agent-memory.md (durable lessons), PRD/specs (direction),
 incidents (scars). The owner works from the terminal CLI; `gh` is the sync mechanism
 between machines. Don't assume frontier-tier capacity when planning scope —
 `design-frontier` items wait for an owner-led grill.

@@ -97,7 +97,9 @@ run on `main` after all of a wave's PRs merge — red returns the wave to the fi
 never "merged, fix later". Full run + baseline (tests, typecheck, lint) at
 epic/milestone close. Every certification run starts by printing `pwd` +
 `git branch --show-current` and stops on a mismatch — a persistent shell may still
-sit in a coder worktree (incident 0008).
+sit in a coder worktree (incident 0008). Cert order is law: worktrees removed and
+branches pruned **first** (clean `git worktree list` is the go-signal, incident 0011),
+`npm install` first if the merge touched `package.json`/lock (incident 0013).
 
 **Milestone playtest law (owner lock, 2026-07-15).** No milestone closes on green
 metrics alone: an owner playtest is part of every milestone's close. The harness
@@ -135,6 +137,12 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
 - **ADRs** (docs/adr/, sequential numbering) record decisions that are hard to reverse, surprising without context, and the result of a real trade-off. One paragraph is enough.
 - **PRD** (docs/PRD.md) owns vision, pillars, scope and roadmap; epics beyond the current milestone are drafts.
 - Decisions recorded in these documents are settled — link to them instead of reopening, unless new facts appear.
+- **Session-close docs exception (owner, 2026-07-16):** the session-close docs-only
+  batch (HANDOFF when requested, scorecard rows, incident reports, memory exports)
+  commits **directly to `main`** and is pushed immediately — before committing,
+  `git status -sb` must show `main` level with `origin/main` (the incident-0006 guard
+  was the unpushed local commit, not the missing PR). Anything beyond the close ritual
+  still takes branch + PR.
 
 ### Docs sync sweep (before committing a spec or decision batch)
 
@@ -150,50 +158,17 @@ decision session's output), sweep:
 The spec's own §Docs sync section lists the expected targets; the sweep verifies
 nothing else drifted. (Codified 2026-07-07 — the E10 sweep touched six files.)
 
-## Session Opening Rituals (post-compact / session start)
+## Session rituals (start / close)
 
-These rituals establish shared language, reduce context loss after `/compact`, and keep sessions focused. They are especially important when wearing persona hats (Designer / Engineer / Orchestrator).
+Lightweight by design (ceremony slim, owner decision 2026-07-16):
 
-### Starting Persona: The Anchor
-
-**Proposed name for the starting persona: "The Anchor".**
-
-The Anchor is the role taken at the very beginning of a session (or right after compact). Its job is to ground the conversation:
-
-- Deliver or request a crisp recap of locked decisions and current focus.
-- Explicitly name the working persona/hat for the session.
-- Set expectations for format (grill, spec work, implementation, retro).
-- Ensure CONTEXT.md terms are used from the first message.
-
-The Anchor is lightweight and hands off quickly once the session has direction (e.g. "Assuming Designer hat — starting the grill").
-
-### Recommended Rituals
-
-1. **Session Start (especially after compact)**
-   - Short recap: "Locked so far: X, Y. Current focus: Z."
-   - Explicit hat/persona declaration: "Zakładam czapkę Designera" / "Assuming the Anchor then switching to Designer."
-   - State the session goal and any known open questions.
-   - Before starting any task: run the pre-work checklist (`docs/SELFCHECK.md` §1–§5) and post its report before the first edit; before declaring a task done, walk the post-work gates (SELFCHECK §6) and report each gate closed or OPEN.
-
-2. **During Grilling**
-   - Label every branch clearly: "**Branch 2.3 — Controlled Ship header**"
-   - Use consistent decision language:
-     - "Locked:"
-     - "Open branch:"
-     - "Extracting to issue #NN"
-   - One focused question at a time (per grilling skill). Avoid dumping 5 questions at once.
-
-3. **After Decisions**
-   - Immediate checkpoint: "What do we update now?" (spec, CONTEXT.md, issue bodies, follow-ups doc).
-   - Scope check: "Does this belong in the current issue or a follow-up?"
-   - Record terms in CONTEXT.md as soon as a new concept is locked.
-
-4. **End of Session**
-   - Mini-retro (2–3 sentences): what worked well, what to improve.
-   - Forward pointer: "What are we taking to the next session?" or "Next focus: ..."
-   - **Write the forward pointer into `docs/HANDOFF.md`** (overwrite — git keeps
-     history). That file is the canonical session state for any model in any
-     harness; per-machine auto-memory is a mirror of it, never the source
-     (owner lock, 2026-07-15).
-
-These rituals are meant to be lightweight. The goal is predictability and a shared vocabulary so both sides know what to expect and how to respond.
+- **Start:** read `docs/HANDOFF.md` (mind its date stamp — it updates only on owner
+  request), check `gh issue list`, prune merged branches, then selfcheck
+  (`docs/SELFCHECK.md`; short form is the default — full form for epics, `src/sim`,
+  external agents). Recap locked decisions in one line and declare the working hat.
+- **During grills:** label branches ("**Branch 2.3 — …**"), one focused question at a
+  time, consistent decision language ("Locked:" / "Open branch:" / "Extracting to
+  issue #NN"). After each decision: update spec / CONTEXT.md / issues immediately.
+- **Close:** 2–3-sentence retro + forward pointer written into Claude Code auto-memory
+  (the working channel); update `docs/HANDOFF.md` only when the owner asks. The
+  session-close docs batch commits straight to `main` (§Documentation law).
