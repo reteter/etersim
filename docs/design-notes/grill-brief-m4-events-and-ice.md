@@ -20,6 +20,12 @@ delivered as *Głos Eteru* dispatches — and the concrete market model of Aethe
   and markets); osmosis won't carry it (fictional corollary — skiffs don't take
   cargo that dies in transit). Storage arbitrage impossible by nature (2026-07-16,
   lock 3).
+- E15 grill addenda (2026-07-16): decay applies in **building stores too** — Holds,
+  markets, plant/storehouse stores, no exceptions; and **chain 3 lands here** —
+  aether superconductor (electronics + aether ice → eterowy superprzewodnik;
+  consumers: industrial + urban), the advanced-logistics chain whose machinery slot
+  E15 designs and this epic fills (new good + recipe row + tests + its own
+  SAVE_VERSION bump, together with the aetherIce good itself).
 - Determinism: event draws and decay flow from the seeded RNG (ADR-0003); readable
   depth (pillar 4): the cause of every price move must be visible.
 - Balance work runs on the E11 harness (owner directive 2026-07-15) — the grill

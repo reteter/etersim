@@ -141,8 +141,30 @@ don't take cargo that dies in transit), so price gradients stay steep and the pl
 is the only equalizer. Storage arbitrage is impossible by nature. Rhyme: the
 historical Victorian ice trade — melt was a line in the margin. Locked at the
 fantasy-roadmap grill (2026-07-16); numbers, source geometry and consumption fiction
-belong to the M4 grill (docs/design-notes/grill-brief-m4-events-and-ice.md).
+belong to the M4 grill (docs/design-notes/grill-brief-m4-events-and-ice.md). Decay
+applies everywhere — Holds, markets, building stores — no exceptions (E15 grill).
+Future industrial role: chain-3 input (coolant) of the Processing plant. Polish
+vocabulary law (owner, 2026-07-16): **eteryczny** for nature (eteryczny lód),
+**eterowy** for industrial products (eterowy superprzewodnik) — deliberate asymmetry.
 _Avoid_: ether ice, ice (alone, in identifiers)
+
+**Provisions** (PL: prowiant):
+The first processed good (E15, chain 1: grain + textiles → provisions): preserved
+rations — hard-labor ports eat tinned, not fresh. Like every processed good it is a
+full market citizen (quotes, spread, osmosis, storable) that **no port produces** —
+the world's only producer is industry, i.e. the player; consumption is narrow (two
+archetypes). Workaday chain, and the crew stream of the future Expedition (M5).
+_Avoid_: rations, food (as identifiers)
+
+**Clearwood** (PL: przezroczyste drewno):
+The second processed good (E15, chain 2: aether salt + timber → clearwood):
+living wood with the pigment drawn out of its structure — transparent, UV-blocking,
+naturally warm; better than glass and priced like it knows it (real
+transparent-wood material science with the aether written in). The super-luxury
+good; narrow consumption (metropolitan elite, mining magnates); premium hull
+material of the future Expedition (M5) — the player flies into the unknown first
+class.
+_Avoid_: transparent wood (in identifiers), glasswood
 
 **Market** (PL: rynek):
 The per-port exchange where goods are bought and sold; prices react to stock changes.
@@ -356,8 +378,9 @@ founding button and the HQ port's progress section) and #85 (Trasy tab, see Rout
 **Building** (PL: budynek):
 A Company-owned structure at a Port. E9 shipped the first type — the Headquarters; E14
 adds the Shipyard; E13 (M3) adds rank-gated guild Buildings (see Storehouse, Building
-permit). Per-region *branch offices* stay parked (multi-region hook, PRD). NPC-owned
-Guildhouses are world-side and are not Company Buildings.
+permit); E15 (M4) adds the third Company type — the Processing plant. Per-region
+*branch offices* stay parked (multi-region hook, PRD). NPC-owned Guildhouses are
+world-side and are not Company Buildings.
 _Avoid_: structure, facility
 
 **Headquarters** (PL: siedziba):
@@ -381,10 +404,24 @@ consumes mainly processed goods — the 1.0 funnel is raw goods → Processing �
 Expedition. Company-owned, not guild-licensed: the guilds are a cartel ("honour
 amongst thieves") and share no mechanics — your industry you build yourself. The two
 building tracks: guild-licensed (Building permits, rank-gated — Storehouse variants)
-vs Company-owned (Headquarters, Shipyard, processing buildings). No implementation;
-spec comes from the frontier pre-grill (before 2026-07-19).
+vs Company-owned (Headquarters, Shipyard, processing buildings). Spec:
+[E15-processing.md](docs/specs/E15-processing.md) (grilled 2026-07-16); see
+Processing plant.
 _Avoid_: crafting, manufacturing, refining (as identifiers — "refining" collides
 with Refit's semantic field)
+
+**Processing plant** (PL: przetwórnia):
+The Company's third Building type (E15): a continuous works with a chain fixed at
+construction — one implementation, chain variants (the Storehouse pattern). Own
+finite input and output stores; converts once per world day up to its rate. Fed
+**only by Company deliveries** (the cartel won't supply a competing industry — no
+auto-draw in operation; construction auto-draws as usual, the asymmetry is
+deliberate) and drained **only by withdraw** (no auto-sell; the plant never spends
+thalers): value-add is created in the plant, profit is created on the route. At most
+one plant per port; siting free; daily building upkeep under the Reserve clamp. Two
+legible stalls: **starved** (PL: głód surowca) and **backlogged** (PL: magazyn
+pełny). Spec: [E15-processing.md](docs/specs/E15-processing.md).
+_Avoid_: factory, manufactory, works (as identifiers)
 
 **Refit** (PL: przebudowa):
 The Shipyard's mechanic (E14): a mini Build Order against a ship docked at the Shipyard

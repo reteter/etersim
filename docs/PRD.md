@@ -315,12 +315,16 @@ master spends more time on the Price board than in the route editor.
   arbitrage impossible by nature; speed and hold-vs-course dilemmas become live.
   The proving ground for the market-behavior machinery full arcana (M6+) will reuse.
   Shares the grill brief with events (above).
-- **Processing** (Arcana split as amended 2026-07-16; `design-frontier`, **frontier
-  pre-grill → spec before 2026-07-19**): Company-owned processing buildings consume
-  input goods and create processed goods, including arcane ones — the depth engine
-  that closes the pacing gap (§Where 1.0 ends) and builds the Great Work's funnel
-  (raw → processing → Expedition). Company-owned, not guild-licensed: the guilds are
-  a cartel and don't share mechanics — your industry you build yourself.
+- **E15 Processing** (Arcana split as amended 2026-07-16; grilled by the frontier
+  2026-07-16, `procedural` once the spec PR merges): Company-owned **processing
+  plants** — continuous works, fed only by Company deliveries (the cartel won't
+  supply a competing industry), drained only by withdraw — convert input goods into
+  processed goods the world consumes but never produces. Chains v1: provisions
+  (grain+textiles) and clearwood (aether salt+timber); chain 3 (aether
+  superconductor, electronics+aether ice) lands with the events+ice epic. The depth
+  engine that closes the pacing gap (§Where 1.0 ends) and builds the Great Work's
+  funnel (raw → processing → Expedition). Runs first in M4, after E13 → E11
+  (hard sequencing). Spec: [specs/E15-processing.md](specs/E15-processing.md).
 
 ### M5 — The Great Work (draft; absorbs the old "M5 Arc"/E7 for 1.0)
 
