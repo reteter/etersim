@@ -241,6 +241,13 @@ the player reads.
   port only. Spec: [specs/E13-guild-buildings.md](specs/E13-guild-buildings.md) (approved 2026-07-09).
   `procedural` — next implementation work.
 
+- **E14 Shipyard & Refit** (post-M3 pull-forward, owner call 2026-07-16): the Company's
+  second Building — one **Shipyard** per Company, commissioned after the Headquarters —
+  where a docked ship undergoes a **Refit**: a mini Build Order raising its Hold along a
+  fixed multiplier ladder over `baseHold` (×2 → ×1.5 → ×1.25, hard cap). Adopts #99
+  (construction-site generalization) as its first issue; `baseHold` is the anchor for
+  future ship types. Spec: [specs/E14-shipyard-and-refit.md](specs/E14-shipyard-and-refit.md) (draft).
+
 **M3 success criteria:**
 - Determinism extends to guilds: same seed + same commands ⇒ identical world including
   contract offers, ranks and Ledger (asserted by test).
