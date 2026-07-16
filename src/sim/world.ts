@@ -9,6 +9,7 @@ import type { LaneId, PortId, Region } from "./region";
 import { nextInt, seedRng, type RngState } from "./rng";
 import type { Route } from "./route";
 import { emptyCargo, type Ship } from "./ship";
+import type { Shipyard } from "./shipyard";
 import { HEARTLAND, type RegionTemplate } from "./template";
 import { generateRegion } from "./worldgen";
 
@@ -24,6 +25,10 @@ export interface Company {
   /** Headquarters (E9): one per Company, unlocks routes and construction.
    *  `buildOrder` present iff an active build is in progress. */
   readonly headquarters?: Headquarters;
+  /** Shipyard (E14): the Company's second Building, one per Company.
+   *  `refitOrder` present iff a Refit is active. Absent until commissioned —
+   *  same optional shape as `headquarters`. */
+  readonly shipyard?: Shipyard;
   /** Guild enrollment + progress (E3, guild.ts): enrolled iff the guild's key
    *  is present. Rank is always derived via `rankOf`, never stored here. */
   readonly guilds: Partial<Record<GuildId, { points: number }>>;

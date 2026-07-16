@@ -17,6 +17,7 @@ import {
 import { deriveSubstream, nextFloat, nextUint32, type RngState } from "./rng";
 import { resolveReferencePort, type Route, type RouteId, type StopOrder } from "./route";
 import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
+import { runShipyardAutoDraw } from "./shipyard";
 import { replaceShip, snapshotPrices, STARTING_HOLD, type World } from "./world";
 
 export type { Command };
@@ -449,6 +450,10 @@ export function tick(world: World, commands: readonly Command[]): World {
   const advanced = before.map((ship) => advanceShip(ship, w.region));
   w = runDockingPhase(w, before, advanced);
   w = runBuildSiteAutoDraw(w);
+  // Shipyard's Refit site (E14 #275): same tick phase as the HQ build site,
+  // drawing sequentially from the same shared purse — HQ first, so a thin
+  // purse's Reserve floor is respected by both in a fixed, deterministic order.
+  w = runShipyardAutoDraw(w);
 
   const ports = w.region.ports.map((port) => ({
     ...port,

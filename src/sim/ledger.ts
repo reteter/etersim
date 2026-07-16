@@ -119,6 +119,35 @@ export type LedgerEvent =
        *  (docs/specs/E3-contracts-and-guilds.md — Ledger). */
       readonly outcome: "met" | "missed" | "breached" | "resigned";
       readonly pointsDelta: number;
+    }
+  | {
+      /** The Shipyard commissioned (E14, #275) — the Shipyard analog of
+       *  `founding`. */
+      readonly kind: "shipyardBuilt";
+      readonly tick: number;
+      readonly portId: PortId;
+      readonly thalers: number;
+    }
+  | {
+      /** A Refit started (E14, #275): the labor fee charged up front — the
+       *  Shipyard analog of `laborFee`, tagged with the ship/port for the
+       *  audit trail. */
+      readonly kind: "refitStart";
+      readonly tick: number;
+      readonly shipId: ShipId;
+      readonly portId: PortId;
+      readonly thalers: number;
+    }
+  | {
+      /** A Refit completed (E14, #275): the ship's new Hold — the Shipyard
+       *  analog of `launch`. Moves no thalers (materials were already logged
+       *  by their own autoDraw/delivery/rush events), so it carries `hold`
+       *  instead. */
+      readonly kind: "refitComplete";
+      readonly tick: number;
+      readonly shipId: ShipId;
+      readonly portId: PortId;
+      readonly hold: number;
     };
 
 /** Appends one event to the Ledger. The single seam every mutation point
