@@ -388,6 +388,15 @@ body {
   white-space: nowrap;
 }
 
+/* "czeka na marżę" (E9.1, Margin Gate, ADR-0007): a NEW status color for a
+   new meaning (ADR-0006, one color = one meaning) — deliberately not the
+   active-control blue #4c7bab (would overload "active"), not gold (Controlled
+   Ship) and not the suspended red (.route-row__suspended). Lightened cousin
+   of the control blue so it still reads as "informational, not alarming". */
+.fleet-list__status--waiting {
+  color: #6c9bd1;
+}
+
 .fleet-list__route {
   flex-shrink: 0;
   color: #a8b2c2;
@@ -1443,6 +1452,26 @@ body {
   background: rgba(76, 123, 171, 0.25);
   border-color: #4c7bab;
   color: #e6e6e6;
+}
+
+/* qty ("up to N") / minMargin (Margin Gate) inputs, E9.1 — stacked under the
+   cell's chip, narrow enough to keep the goods × Kup/Sprzedaj/Dostarcz table
+   scannable. */
+.stop-row__qty,
+.stop-row__min-margin {
+  display: block;
+  width: 3.2rem;
+  margin: 0.2rem auto 0;
+  padding: 0.1rem 0.25rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.stop-row__gate-warning {
+  margin: 0.2rem 0 0;
+  color: #d9705f; /* same as .route-row__suspended — a warning, not a new meaning */
+  font-size: 0.7rem;
+  max-width: 8rem;
 }
 
 /* Notice strip (#97, 2026-07-14 UI grill lock 1): persistent, not a
