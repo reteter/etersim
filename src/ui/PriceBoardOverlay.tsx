@@ -13,7 +13,7 @@ import {
 import { useGameStore } from "../store/gameStore";
 import { KontraktyTab } from "./KontraktyTab";
 import { OverlayShell } from "./OverlayShell";
-import { priceTrend, TREND_GLYPH, type Trend } from "./priceTrend";
+import { priceTrend, TREND_GLYPH, TREND_LEGEND, type Trend } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
 import { Tabs } from "./Tabs";
 
@@ -128,11 +128,13 @@ export function PriceBoardOverlay({
       {tab === "kontrakty" ? (
         <KontraktyTab world={world} />
       ) : (
-        <div className="price-board" role="table" aria-label="Region price board">
+        <>
+          <p className="price-board__legend">{TREND_LEGEND}</p>
+          <div className="price-board" role="table" aria-label="Region price board">
           <div className="price-board__row price-board__row--header" role="row">
             <span className="price-board__port-header">Port</span>
             {GOOD_IDS.map((good) => (
-              <span key={good} className="price-board__good-header">
+              <span key={good} className="price-board__good-header" title={TREND_LEGEND}>
                 {GOODS[good].name}
               </span>
             ))}
@@ -177,7 +179,10 @@ export function PriceBoardOverlay({
                       >
                         {quoteLabel(cell.bid)}
                       </span>
-                      <span className={`price-board__trend price-board__trend--${cell.trend}`}>
+                      <span
+                        className={`price-board__trend price-board__trend--${cell.trend}`}
+                        title={TREND_LEGEND}
+                      >
                         {TREND_GLYPH[cell.trend]}
                       </span>
                       <span
@@ -195,7 +200,8 @@ export function PriceBoardOverlay({
               </div>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
     </OverlayShell>
   );

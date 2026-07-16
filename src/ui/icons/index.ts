@@ -7,3 +7,8 @@ export { UrbanIcon } from "./UrbanIcon";
 export { MiningIcon } from "./MiningIcon";
 export { VerdantIcon } from "./VerdantIcon";
 export { FreeportIcon } from "./FreeportIcon";
+export { GrainIcon } from "./GrainIcon";
+export { TextilesIcon } from "./TextilesIcon";
+export { AetherSaltIcon } from "./AetherSaltIcon";
+export { ElectronicsIcon } from "./ElectronicsIcon";
+export { TimberIcon } from "./TimberIcon";

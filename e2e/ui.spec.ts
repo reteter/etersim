@@ -390,6 +390,21 @@ test.describe('main game UI after start', () => {
     await expect(page.locator('.market-row__ask').first()).toHaveCSS('text-align', 'right');
   });
 
+  test('good icons render before every good name, and the archetype icon before the port subtitle (#74)', async ({
+    page,
+  }) => {
+    await page.locator('g.port').first().click({ force: true });
+    await expect(page.locator('.market')).toBeVisible();
+
+    // One icon per good row (5 goods).
+    await expect(page.locator('.market-row__name svg.market-row__icon')).toHaveCount(5);
+
+    // The archetype icon sits before the archetype label under the port name.
+    await expect(page.locator('.side-panel__subtitle svg.side-panel__subtitle-icon')).toHaveCount(
+      1,
+    );
+  });
+
   test('port panel shows two-sided bid/ask per good, ask never below bid, with a real spread somewhere (#61)', async ({
     page,
   }) => {
@@ -467,6 +482,21 @@ test.describe('region price board (#62)', () => {
 
     await expect(dialog.locator('.price-board__ask--best').first()).toBeVisible();
     await expect(dialog.locator('.price-board__bid--best').first()).toBeVisible();
+  });
+
+  test('shows the trend legend explaining the last-day-boundary comparison (#127)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+
+    // A fresh player misread the glyphs as "vs the starting price" — the
+    // legend must state the real window and explicitly rule that out.
+    await expect(dialog.locator('.price-board__legend')).toContainText('ostatniej granicy dnia');
+    await expect(dialog.locator('.price-board__legend')).toContainText('nie ceny początkowej');
+
+    const glyphTitle = await dialog.locator('.price-board__trend').first().getAttribute('title');
+    expect(glyphTitle).toContain('ostatniej granicy dnia');
   });
 
   test("marks the Controlled Ship's docked port row", async ({ page }) => {
