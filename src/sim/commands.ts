@@ -278,39 +278,47 @@ export function applyCommand(world: World, command: Command): World {
           ship.cargo,
           command.good,
         );
-        if (moved <= 0) return launchIfComplete(world);
-
-        const delivered: Ship = {
-          ...ship,
-          cargo: { ...ship.cargo, [command.good]: ship.cargo[command.good] - moved },
-        };
-        const withShip = replaceShip(world, delivered);
-        const withDelivery: World = {
-          ...withShip,
-          company: {
-            ...withShip.company,
-            headquarters: { portId: hq.portId, buildOrder: { siteStore } },
-          },
-        };
-        return launchIfComplete(
-          appendLedgerEvent(withDelivery, {
-            kind: "delivery",
-            tick: world.tick,
-            shipId: ship.id,
-            portId: hq.portId,
-            good: command.good,
-            qty: moved,
-          }),
-        );
+        if (moved <= 0) {
+          // The build needs none of this good: fall through to a refit site
+          // sharing the port instead of swallowing the delivery (#286 audit
+          // finding, owner call 2026-07-16). With no such site, the old
+          // no-op stands (a completed recipe still launches).
+          const refitHere =
+            world.company.shipyard?.refitOrder !== undefined &&
+            world.company.shipyard.portId === dockedPortId;
+          if (!refitHere) return launchIfComplete(world);
+        } else {
+          const delivered: Ship = {
+            ...ship,
+            cargo: { ...ship.cargo, [command.good]: ship.cargo[command.good] - moved },
+          };
+          const withShip = replaceShip(world, delivered);
+          const withDelivery: World = {
+            ...withShip,
+            company: {
+              ...withShip.company,
+              headquarters: { portId: hq.portId, buildOrder: { siteStore } },
+            },
+          };
+          return launchIfComplete(
+            appendLedgerEvent(withDelivery, {
+              kind: "delivery",
+              tick: world.tick,
+              shipId: ship.id,
+              portId: hq.portId,
+              good: command.good,
+              qty: moved,
+            }),
+          );
+        }
       }
 
       // The Shipyard's active Refit site (E14 #275): any Company ship may
       // deliver, not only the ship under refit — the target ship stays
       // locked in port, but bringing materials is exactly how the site
-      // fills. Deliberately checked second: if both a Headquarters build and
-      // a Shipyard refit happen to sit at the same port, the build claims
-      // the delivery first (matches the pre-#275 tested behavior; a known,
-      // reported edge case rather than a resolved ambiguity).
+      // fills. Checked second: a same-port Headquarters build claims the
+      // delivery first, per good — when it needs none of the good, the
+      // delivery falls through to here (#286 audit finding).
       const shipyard = world.company.shipyard;
       if (shipyard && shipyard.refitOrder && shipyard.portId === dockedPortId) {
         const targetShip = world.company.ships.find((s) => s.id === shipyard.refitOrder!.shipId);

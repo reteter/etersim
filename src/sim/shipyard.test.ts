@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CONSTRUCTION_RESERVE, HEADQUARTERS_COST } from "./building";
+import { CONSTRUCTION_RESERVE, HEADQUARTERS_COST, SHIP_RECIPE } from "./building";
 import { applyCommand } from "./commands";
 import { GOOD_IDS } from "./goods";
 import type { Route } from "./route";
@@ -380,6 +380,37 @@ describe("refit lock enforcement (#275)", () => {
 });
 
 describe("deliver to the refit site (#275)", () => {
+  it("falls through to the refit site when a same-port HQ build needs none of the good (#286 audit)", () => {
+    const w0 = refitInProgress("deliver-colocation", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
+    const shipyardPortId = w0.company.shipyard!.portId;
+    // Active HQ build at the SAME port, already full on electronics (need 0)
+    // but incomplete overall — the pre-fix code swallowed the delivery here.
+    const hqSiteStore = { ...emptyCargo(), electronics: SHIP_RECIPE.electronics };
+    const ferry: Ship = {
+      id: "ferry",
+      name: "Ferry",
+      hold: 50,
+      baseHold: 50,
+      cargo: { ...emptyCargo(), electronics: 50 },
+      location: { kind: "docked", portId: shipyardPortId },
+    };
+    const w: World = {
+      ...w0,
+      company: {
+        ...w0.company,
+        ships: [...w0.company.ships, ferry],
+        headquarters: { portId: shipyardPortId, buildOrder: { siteStore: hqSiteStore } },
+      },
+    };
+    const targetShip = w.company.ships.find((s) => s.id === w.company.shipyard!.refitOrder!.shipId)!;
+    const need = refitRecipe(targetShip).electronics;
+
+    const after = applyCommand(w, { kind: "deliver", shipId: "ferry", good: "electronics" });
+    expect(after.company.shipyard!.refitOrder!.siteStore.electronics).toBe(need);
+    expect(after.company.headquarters!.buildOrder!.siteStore.electronics).toBe(SHIP_RECIPE.electronics);
+    expect(after.company.ships.find((s) => s.id === "ferry")!.cargo.electronics).toBe(50 - need);
+  });
+
   it("moves min(cargo, remaining need) into the RefitOrder's siteStore from any Company ship", () => {
     const w0 = refitInProgress("deliver-refit", HEADQUARTERS_COST + SHIPYARD_COST + 10_000);
     const shipyardPortId = w0.company.shipyard!.portId;
