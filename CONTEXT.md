@@ -320,10 +320,10 @@ progress, auto-draw rate, stall reason, rush quote/execute; `PortPanel.tsx` gain
 founding button and the HQ port's progress section) and #85 (Trasy tab, see Route above).
 
 **Building** (PL: budynek):
-A Company-owned structure at a Port. E9 has exactly one type — the Headquarters; E13
-(M3) adds rank-gated guild Buildings (see Storehouse, Building permit). Per-region
-*branch offices* stay parked (multi-region hook, PRD). NPC-owned Guildhouses are
-world-side and are not Company Buildings.
+A Company-owned structure at a Port. E9 shipped the first type — the Headquarters; E14
+adds the Shipyard; E13 (M3) adds rank-gated guild Buildings (see Storehouse, Building
+permit). Per-region *branch offices* stay parked (multi-region hook, PRD). NPC-owned
+Guildhouses are world-side and are not Company Buildings.
 _Avoid_: structure, facility
 
 **Headquarters** (PL: siedziba):
@@ -332,6 +332,22 @@ choice for a flat thaler price, active immediately. Unlocks the orchestration la
 Route panel and ship construction. New ships launch docked at the Headquarters port.
 Progression beat: manual trader → founder → orchestrator.
 _Avoid_: HQ (in identifiers), base, office
+
+**Shipyard** (PL: stocznia):
+The Company's second Building type (E14) — one per Company, commissioned at a port of
+the player's choice once the Headquarters exists, built via the Build Order pattern.
+Introduces the Refit. Deliberately not rank-gated (not a guild Building).
+_Avoid_: dock, wharf, dry dock
+
+**Refit** (PL: przebudowa):
+The Shipyard's mechanic (E14): a mini Build Order against a ship docked at the Shipyard
+port that raises its Hold to the next rung of a fixed multiplier ladder over the ship's
+`baseHold` (×2 → ×1.5 → ×1.25, thresholds rounded once from base; hard cap after three).
+One active Refit per Shipyard; starting one auto-suspends the ship's Route and locks the
+ship in port; cargo stays aboard; no cancellation (v1). Materials arrive like any
+construction: auto-draw, deliver, rush — all under the Reserve. `baseHold` is the Hold a
+ship launched with (all current ships: 50), the anchor for future ship types.
+_Avoid_: upgrade (reserved for future non-Hold improvements), overhaul, retrofit
 
 **Recipe** (PL: przepis):
 The bill of materials for one hull: per-good quantities across all five goods — much
