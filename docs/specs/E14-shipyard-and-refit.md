@@ -3,7 +3,8 @@
 Feature spec for epic E14 (post-M3 pull-forward — owner call 2026-07-16, see Sequencing
 note). Terms per [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on
 2026-07-16.
-Status: **draft**.
+Status: **approved (2026-07-16** — owner merge of PR #271; issues cut into milestone
+"E14 — Shipyard & Refit"**)**.
 
 Grill inputs: owner request 2026-07-16 (ship upgrade — cargo Hold size — via a new
 Building unlocked after the Headquarters); [#99](https://github.com/reteter/etersim/issues/99)
@@ -40,6 +41,10 @@ its route).
   Each threshold is computed **once from `baseHold`** and rounded to the nearest
   integer — never iterated from prior rounded values. For `baseHold` 50:
   **50 → 100 → 150 → 188**. Three refit levels, then a hard cap.
+  *Erratum (2026-07-16, #274 wave review):* for THIS multiplier set the two rounding
+  schemes are mathematically indistinguishable for any integer `baseHold` (rungs 1–2
+  are exact integers), so no test can discriminate them — round-once stays as the
+  spec'd convention, enforceable only if the multipliers ever change.
 - The ladder multipliers are **tuning constants** (tuning ≠ spec drift); the *shape*
   (fixed multiplier ladder from `baseHold`, hard cap at the end) is spec.
 - A ship's refit level is **derived** from `hold` vs its ladder — no stored level field.
@@ -160,14 +165,14 @@ as the HQ's, through the shared ConstructionSite engine. Completion applies
 
 ## Issue cut
 
-Filed after approval; milestone **E14 — Shipyard & Refit**.
+Filed 2026-07-16; milestone **E14 — Shipyard & Refit**.
 
 | Issue | Track | Scope | Depends on |
 | --- | --- | --- | --- |
-| #99 | sim | `refactor(sim)`: ConstructionSite seam + `commissionBuilding` generalization, zero behavior change | — |
-| TBD | sim | `feat(sim)`: `baseHold` + SAVE_VERSION 12 + hold ladder (`shipyard.ts` pure parts) | #99 |
-| TBD | sim | `feat(sim)`: Shipyard building + RefitOrder lifecycle (commands, lock, auto-draw phase, ledger) | prev |
-| TBD | ui | `feat(ui)`: PortPanel Shipyard section + map refit bubble + "w przebudowie" status + E2E | prev |
+| #99 | sim | `refactor(sim)`: ConstructionSite seam + `commissionBuilding` generalization, zero behavior change — **shipped** (PR #278) | — |
+| #274 | sim | `feat(sim)`: `baseHold` + SAVE_VERSION 12 + hold ladder (`shipyard.ts` pure parts) — **shipped** (PR #279) | #99 |
+| #275 | sim | `feat(sim)`: Shipyard building + RefitOrder lifecycle (commands, lock, auto-draw phase, ledger) | #274 |
+| #276 | ui | `feat(ui)`: PortPanel Shipyard section + map refit bubble + "w przebudowie" status + E2E | #275 |
 
 Sequencing note: E14 is pulled ahead of E13's remaining work (owner call 2026-07-16):
 #99 was cut for E13 but is file-disjoint from E13's permit/storehouse scope and unblocks
