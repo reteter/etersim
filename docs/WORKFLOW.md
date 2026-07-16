@@ -104,13 +104,18 @@ metrics alone: an owner playtest is part of every milestone's close. The harness
 (E11) screens balance and solvency so the playtest is spent judging *fun* — the one
 signal no model or metric replaces.
 
-**Batching.** 2–4 small same-area issues per coder package; separate branch + PR per
-issue, each cut from `main` (disjoint files → no stacks); the wave check reads them
-all in one pass. When a stack is unavoidable (hard dependency), the child's PR opens
-only **after** its base has merged, already retargeted to `main` — a child PR based
-on a feature branch invites the batch-merge trap of incident 0010. After any merge
-batch, verify each PR's content is reachable from `origin/main` before deleting
-branches.
+**Batching.** 2–4 small same-area issues per coder package. **Prefer one PR for the
+batch** (owner rule 2026-07-16): issues here are small and concrete, so when they touch
+the same files/feature — or are simply cheap to review together — a single branch that
+`Closes` each beats per-issue ceremony (which was splitting hairs). The PR body lists
+`Closes #n` for **every** issue it lands, and the wave check still verifies each issue's
+acceptance criteria **separately**. Split into separate PRs only when issues are genuinely
+independent *and* each earns its own review/closeability, or when combining would bloat one
+diff past comfortable review. A single batched PR also sidesteps stacks; when a hard
+dependency still forces one, the child's PR opens only **after** its base has merged,
+already retargeted to `main` — a child PR based on a feature branch invites the batch-merge
+trap of incident 0010. After any merge batch, verify each PR's content is reachable from
+`origin/main` before deleting branches.
 
 **PR timing.** Coders push branches and report; **PRs open only after the wave check
 closes** (Orchestrator opens them, or explicitly instructs the coder to). An open PR
