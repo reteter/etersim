@@ -4,7 +4,8 @@ Feature spec for epic E15 (M4's first epic — the depth engine of the 8–12 h 
 anchor, PRD §Where 1.0 ends). Terms per [CONTEXT.md](../../CONTEXT.md). Grilled and
 decided with the owner on 2026-07-16 (frontier pre-grill — the one (c)-track topic of
 the fantasy-roadmap session; all other M4 topics ship as grill briefs).
-Status: **draft — pending owner approval**.
+Status: **approved (2026-07-16** — owner merge of PR #280; issues #281–#284 filed
+into milestone "E15 — Processing"**)**.
 
 Grill inputs: [fantasy-roadmap-grill-2026-07-16.md](../design-notes/fantasy-roadmap-grill-2026-07-16.md)
 (locks 4–5: Arcana-split amendment, building dichotomy, guild cartel); PRD §M4
@@ -222,18 +223,18 @@ plantStall(plant): "starved" | "backlogged" | null           // derived, not sto
   orchestration or like a chore; does the first plant's payback read on the Ledger
   chart (visible dip → steeper growth).
 
-## Sequencing & issue cut (to be filed after approval)
+## Sequencing & issue cut
 
-Hard order: **E13 → E15** (union + store/withdraw), **E11 before E15 tuning
-finalizes** (two-way guardrails need batch evidence). Chain 3 + Aether ice: the
-events+ice epic (grill brief ready).
+Filed 2026-07-16; milestone **E15 — Processing**. Hard order: **E13 → E15** (union +
+store/withdraw), **E11 before E15 tuning finalizes** (two-way guardrails need batch
+evidence). Chain 3 + Aether ice: the events+ice epic (grill brief ready).
 
-| Track | Scope | Depends on |
-| --- | --- | --- |
-| sim | `feat(sim)`: goods +2, profiles/bias/worldgen rows, SAVE_VERSION bump + migration | E13 shipped |
-| sim | `feat(sim)`: ProcessingPlant — commission, ConstructionSite build, conversion phase, stores, deliver/withdraw targeting, upkeep, Ledger kinds | row above |
-| tests | `test(sim)`: two-way no-dominance guardrail + agency check | sim rows |
-| ui | `feat(ui)`: PortPanel Processing section, route-editor withdraw chips at plant ports, board columns, E2E | sim rows |
+| Issue | Track | Scope | Depends on |
+| --- | --- | --- | --- |
+| #281 | sim | `feat(sim)`: goods +2, profiles/bias/worldgen rows, SAVE_VERSION bump + migration | E13 shipped |
+| #282 | sim | `feat(sim)`: ProcessingPlant — commission, ConstructionSite build, conversion phase, stores, deliver/withdraw targeting, upkeep, Ledger kinds | #281 |
+| #283 | tests | `test(sim)`: two-way no-dominance guardrail + agency check | #281, #282 |
+| #284 | ui | `feat(ui)`: PortPanel Processing section, route-editor withdraw chips at plant ports, board columns, E2E | #282 |
 
 ### Docs sync (with this spec's PR)
 
