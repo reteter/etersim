@@ -1,6 +1,6 @@
 # etersim — Product Requirements Document
 
-Living document. Owner: Jakub. Terms per [CONTEXT.md](../CONTEXT.md). Last updated: 2026-07-15.
+Living document. Owner: Jakub. Terms per [CONTEXT.md](../CONTEXT.md). Last updated: 2026-07-16.
 
 ## Vision
 
@@ -63,11 +63,17 @@ stops being only about profit and becomes the engine of finding out.
   pirates and free traders as opt-in encounters (#131's hooks; ADR-0004's "no direct
   combat" stands at every level), new civilizations. The old E6 draft dissolves into
   this gradient.
-- **Arcana split** — the region gets **one** arcane good with genuinely distinct
-  market behavior (the taste of weirdness, and the test of the machinery); full arcana
-  debuts as the economic fuel of the Multiregion level — goods created by buildings,
-  worth moving *between* regions. Aether currents ride the long crossings. The old E5
-  draft dissolves into these two installments.
+- **Arcana split** (amended 2026-07-16,
+  [fantasy-roadmap grill](design-notes/fantasy-roadmap-grill-2026-07-16.md) — the
+  goods-created-by-buildings machinery now debuts in 1.0, not at M6) — the region gets
+  **one** arcane good with genuinely distinct market behavior (Aether ice, perishable —
+  the taste of weirdness, and the test of the machinery), and **Processing** enters
+  1.0 as M4/M5's depth engine: Company-owned processing buildings consume input goods
+  and create processed goods, including arcane ones; the Great Work consumes mainly
+  processed goods (raw → processing → Expedition). Full arcana as the economic fuel of
+  the Multiregion level — chains whose inputs and outputs live in *different* regions —
+  is the machinery's scale-up, no longer its debut. Aether currents ride the long
+  crossings. The old E5 draft dissolves into these two installments.
 
 ### Where 1.0 ends
 
@@ -76,6 +82,13 @@ Region's Great Work (working name: the Expedition), commissioned by the guilds,
 completes → the second region opens, the first administrator appears → credits roll.
 The zoom-out moment *is* the ending — and the cliffhanger. Multiregion proper, galaxy
 and the Unknown are post-1.0 expansions.
+
+**Pacing anchor** (owner lock 2026-07-16, tuning target — not a promise): first
+playthrough to credits ≈ **8–12 hours**, no single phase (manual trade /
+orchestration / mastery / Great Work) longer than ~⅓ of the whole. Measured baseline
+2026-07-16: ~20 minutes to "done" — the gap is closed by chain depth (Processing),
+not price tuning. Phase lengths are measured by the E11 harness (world-days to
+milestone); fun is judged by owner playtests (milestone playtest law).
 
 ### Flagged open question (design-frontier)
 
@@ -277,17 +290,37 @@ implementation after each spec is `procedural`. The old E5/E6 drafts are dissolv
 per §Long-term fantasy (epic numbers retired; see the Arcana split and Events
 gradient laws).
 
-- **Cluster A — route automation**: quality-of-life for the orchestration layer
-  (grill pending; parked inputs live in the cluster's design notes and issues).
-- **Cluster B — economic surface**: ship dispatch from the Price Board, the offer
-  label system (#227), the board as the permanent post-HQ workbench. (The harness
-  part of this cluster was grilled and unparked into E11 v1 on 2026-07-15.)
+**M4's beat** (fantasy-roadmap grill, 2026-07-16): the master's itch is *"my machine
+runs without me — and the world stopped surprising me."* M4 removes toil and returns
+uncertainty; the player's verb shifts from *click* to **read and react** — mastery is
+the speed of reading the Price board, not the number of clicks. Success measure: a
+master spends more time on the Price board than in the route editor.
+
+- **The Workbench (Clusters A+B, converging)**: the Price board becomes the control
+  center — route planning integrated into the board, ship dispatch from it, the offer
+  label system (#227) — while the region map's role shifts to *check the fleet +
+  enjoy what you built*. Keybinds are settled. (The harness part of this cluster was
+  grilled and unparked into E11 v1 on 2026-07-15.) Grill brief:
+  [grill-brief-m4-workbench.md](design-notes/grill-brief-m4-workbench.md).
 - **Economic events** (Events gradient, level 1): flow shocks, bounty/blight —
-  disturbances of production/consumption, never threats to ships. Builds on E8's
-  flow-drift machinery; balanced with the E11 harness.
-- **First arcane good** (Arcana split, installment 1): one good with genuinely
-  distinct market behavior — the taste of weirdness and the proving ground for the
-  machinery that full arcana (M6+) will reuse.
+  disturbances of production/consumption, never threats to ships. Events enter the
+  world as **dispatches** of the region's gazette, *Głos Eteru* (Victorian-press
+  tone): cause, place, expected duration — never price conclusions; the player's joy
+  is knowing what it means first. Tempo: days, not ticks. Builds on E8's flow-drift
+  machinery; balanced with the E11 harness. Grill brief:
+  [grill-brief-m4-events-and-ice.md](design-notes/grill-brief-m4-events-and-ice.md).
+- **First arcane good — Aether ice** (Arcana split, installment 1): one good that
+  visibly breaks exactly one market law — **it perishes** (daily decay in holds and
+  markets; osmosis won't carry it, so the player is the only equalizer). Storage
+  arbitrage impossible by nature; speed and hold-vs-course dilemmas become live.
+  The proving ground for the market-behavior machinery full arcana (M6+) will reuse.
+  Shares the grill brief with events (above).
+- **Processing** (Arcana split as amended 2026-07-16; `design-frontier`, **frontier
+  pre-grill → spec before 2026-07-19**): Company-owned processing buildings consume
+  input goods and create processed goods, including arcane ones — the depth engine
+  that closes the pacing gap (§Where 1.0 ends) and builds the Great Work's funnel
+  (raw → processing → Expedition). Company-owned, not guild-licensed: the guilds are
+  a cartel and don't share mechanics — your industry you build yourself.
 
 ### M5 — The Great Work (draft; absorbs the old "M5 Arc"/E7 for 1.0)
 
@@ -296,19 +329,57 @@ The arc that ends 1.0: rank culmination → the Guilds jointly commission the Re
 consuming streams of many goods at once, generalizing the Build Order machinery
 (the same generalization path E13 starts). Completion triggers the first recession
 of the lens. `design-frontier` (the Great Work grill is the big one: commissioning
-flow, contract integration, pacing).
+flow, contract integration, pacing). Grill brief:
+[grill-brief-m5-great-work.md](design-notes/grill-brief-m5-great-work.md).
+
+Locks from the fantasy-roadmap grill (2026-07-16):
+
+- **Commissioned, signed, sailed.** The Expedition is the guilds' project and the
+  player is the indispensable contractor — the apotheosis of the contract system
+  (the market pays for goods, the guild pays for reliability; this is the final exam
+  of reliability). Two gestures belong to the player: **accepting the commission and
+  choosing the Expedition shipyard's port**. The convocation arrives as a *Głos
+  Eteru* dispatch ("Five guilds convene…").
+- **The funnel.** The Great Work consumes mainly **processed goods** (M4 Processing)
+  — you must build an industry first, not just amass piles; that is what makes it
+  structurally great, not merely expensive.
+- **The finale is a voyage.** On completion the colossus departs past the outermost
+  orbit ring and the camera follows it out — the region shrinks astern to a single
+  node of a larger map: the first recession of the lens rendered literally, with
+  credits. The Pale Blue Dot paraphrase (#237) plays **during** this zoom-out
+  voyage, not on a separate screen. *Głos Eteru* covers construction milestones
+  along the way, so the finale has a rising pulse, not just a progress bar.
 
 ### M6 — First zoom-out (draft; 1.0 ships when M4–M6 close)
 
 What lies behind the credits: the second region opens, the first **administrator**
 takes over the mastered region (delegation stays optional), long inter-region
 crossings arrive with aether currents and travel hazards (Events gradient, level 2),
-and arcana debuts as inter-region fuel (Arcana split, installment 2). Carried hooks
-from the E9 grill (2026-07-09, formerly the Horizon multi-region entry): per-region
-**branch offices** unlock the buildings mechanic in a new region; the paid
-administrator shifts gameplay from managing a region to managing *between* regions.
-`design-frontier` — and it opens with the flagged recursion question
-(§Long-term fantasy): whether a region becomes a node of a re-instantiated sim.
+and full arcana scales up as inter-region fuel (Arcana split, installment 2 — the
+machinery debuted with M4 Processing). Carried hooks from the E9 grill (2026-07-09,
+formerly the Horizon multi-region entry): per-region **branch offices** unlock the
+buildings mechanic in a new region; the paid administrator shifts gameplay from
+managing a region to managing *between* regions. `design-frontier` — and it opens
+with the flagged recursion question (§Long-term fantasy): whether a region becomes
+a node of a re-instantiated sim. Grill brief:
+[grill-brief-m6-zoom-out.md](design-notes/grill-brief-m6-zoom-out.md).
+
+Locks from the fantasy-roadmap grill (2026-07-16):
+
+- **Contractor → discoverer → guide.** Having found the new region, the player is no
+  longer a contractor in the guilds' eyes but the **guide of their expansion** — the
+  cartel that finally opened its table now follows the company it sent into the
+  dark. Delegation is the natural consequence, never a menu that "unlocked".
+- **The administrator is a character, not sliders**: nominated by the guild convent
+  (dispatch: "The Council of Five Guilds recommends…"), confirmed by the player,
+  given a **coarse verbal mandate** ("don't fear risk", "grow the fleet"). The
+  delegated region folds into **reports** — a tab in the spirit of the HQ
+  company-state view, written in someone's voice.
+- **The role changes with the lens**: the multiregion Price board is a *different*
+  board. Architectural note (flagged, not locked): E11's Policy is the embryo of
+  the administrator — a deterministic, parameterized strategy playing a region; the
+  mandate is a Policy selection/parameterization. Sits beside the recursion
+  question, not instead of it.
 
 ### Post-1.0 (vision, not promise)
 

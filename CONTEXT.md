@@ -34,6 +34,28 @@ institutions as the commissioner.
 _Avoid_: megaproject, wonder, super-build (as identifiers; "Super Budowa" was the
 grill-session working name)
 
+**Dispatch** (PL: depesza):
+An in-world news item — the voice of the region's gazette, **Głos Eteru** (Polish
+proper name, nominative; Victorian-press tone). A Dispatch states cause, place and
+expected duration of a happening — never price conclusions: the reader does the
+pricing. The one narrative channel that grows with the game: M4's economic events,
+M5's guild convocation and construction milestones, M6's second-region news and
+administrator nomination all arrive as Dispatches. Locked at the fantasy-roadmap
+grill (2026-07-16); no implementation yet (M4 grill decides the surface — see
+docs/design-notes/grill-brief-m4-events-and-ice.md).
+_Avoid_: news, notification, event popup (as identifiers); gazette (for the item —
+that's the masthead)
+
+**Administrator** (PL: zarządca):
+The delegate mechanic of the first lens recession (M6): a **character, not
+sliders** — nominated by the guild convent, confirmed by the player, given a coarse
+verbal **mandate** (PL: mandat; e.g. "don't fear risk", "grow the fleet"). The
+delegated region folds into reports in the administrator's voice; manual play always
+remains (Lens ladder law). Architectural note, flagged not locked: E11's Policy is
+the embryo of this mechanic. No implementation; the M6 grill owns it (see
+docs/design-notes/grill-brief-m6-zoom-out.md).
+_Avoid_: governor (reserved for the Galaxy level), manager, AI player
+
 **Port** (PL: port):
 Any dockable location with a market — a planet harbor, a station, a floating enclave.
 _Avoid_: city, planet, station (as gameplay terms)
@@ -109,6 +131,18 @@ _Avoid_: item, resource, commodity
 **Arcane good** (PL: towar magiczny):
 A category of goods of magical origin or use. Flows through the same market mechanisms as any other good — there is no separate magic system.
 _Avoid_: spell, artifact (as economy terms)
+
+**Aether ice** (PL: eteryczny lód):
+The region's first Arcane good (M4, Arcana split installment 1). Ordinary goods obey
+four market laws — elasticity, osmosis, flow drift, storability; Aether ice visibly
+breaks exactly one: **it perishes** (stock decays daily, in Holds and in port markets
+alike), with a corollary carried by the fiction — Trade osmosis won't move it (skiffs
+don't take cargo that dies in transit), so price gradients stay steep and the player
+is the only equalizer. Storage arbitrage is impossible by nature. Rhyme: the
+historical Victorian ice trade — melt was a line in the margin. Locked at the
+fantasy-roadmap grill (2026-07-16); numbers, source geometry and consumption fiction
+belong to the M4 grill (docs/design-notes/grill-brief-m4-events-and-ice.md).
+_Avoid_: ether ice, ice (alone, in identifiers)
 
 **Market** (PL: rynek):
 The per-port exchange where goods are bought and sold; prices react to stock changes.
@@ -338,6 +372,19 @@ The Company's second Building type (E14) — one per Company, commissioned at a 
 the player's choice once the Headquarters exists, built via the Build Order pattern.
 Introduces the Refit. Deliberately not rank-gated (not a guild Building).
 _Avoid_: dock, wharf, dry dock
+
+**Processing** (PL: przetwórstwo):
+The mechanic of goods transformation (M4/M5 depth engine; Arcana split as amended
+2026-07-16): **Company-owned processing buildings** consume input Goods and create
+**processed goods** (PL: towary przetworzone), including arcane ones. The Great Work
+consumes mainly processed goods — the 1.0 funnel is raw goods → Processing →
+Expedition. Company-owned, not guild-licensed: the guilds are a cartel ("honour
+amongst thieves") and share no mechanics — your industry you build yourself. The two
+building tracks: guild-licensed (Building permits, rank-gated — Storehouse variants)
+vs Company-owned (Headquarters, Shipyard, processing buildings). No implementation;
+spec comes from the frontier pre-grill (before 2026-07-19).
+_Avoid_: crafting, manufacturing, refining (as identifiers — "refining" collides
+with Refit's semantic field)
 
 **Refit** (PL: przebudowa):
 The Shipyard's mechanic (E14): a mini Build Order against a ship docked at the Shipyard
