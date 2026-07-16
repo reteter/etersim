@@ -30,6 +30,29 @@ grill — running that grill with a strong-tier model is a deliberate, named cho
 not a drift. The labels exist so an orchestrator *notices* the moment work crosses
 from execution into design.
 
+### Low-cost mode — "sesja LCM" (owner decision, 2026-07-16)
+
+A declared session stance for **procedural** work (queue items with an approved
+spec). The owner names it at session start; the driver may propose it when the
+queue is purely procedural. Levers, in order of impact:
+
+- **Driver effort medium** (or a cheaper driver model per §Casting). Frontier
+  reasoning is reserved for where decisions compound: grills, package design,
+  post-wave integration calls.
+- **Fewer checkpoints:** one decision packet to the owner up front ("on these N
+  open points I pick X — veto now"), then run the queue to completion; one report
+  at the end, not one per wave.
+- **Thicker waves:** batch more small issues per package (§Batching) so a wave's
+  fixed cost (dispatch, review, cert) amortizes over more work.
+- **Resume over fresh** for reviewers and fix-loop coders — a hard rule in LCM.
+- **Long runs in the background** (full Playwright, builds) — never spend a driver
+  turn waiting.
+
+What LCM must **not** touch: verification tiers, TDD, cert points, the owner-merge
+law — the scorecard sample says gates are cheap relative to what they catch. Cut
+coordination and cold starts, never gates. And no budget-triggered automatics: LCM
+is declared, never silently inferred mid-wave.
+
 ## Pipeline
 
 ```
