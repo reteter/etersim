@@ -244,10 +244,13 @@ A Company-level template: a looping, ordered list of port Stops, created and edi
 Headquarters' Route panel. Assigned to Ships **by reference** — one Route can sail on many
 Ships at once, and editing the template applies to every assigned Ship from its next Stop
 (an index left out of range wraps to Stop 0; deleting an assigned Route lets ships finish
-their current Course, then leaves them routeless). Routes carry no price or wait
-conditions — a route is a frozen bet that its spreads keep paying. A manual order to a
-routed Ship suspends the Route (it stays assigned); resuming sails to the next Stop in
-order. Ship-side state: `(routeId, next Stop index, suspended?)`.
+their current Course, then leaves them routeless). A route is a frozen bet that its
+spreads keep paying — with one deliberate exception: a buy order may carry a **Margin Gate**
+(`minMargin`, E9.1) that makes the Ship *wait* in port until carrying the good onward is worth
+it (ADR-0007; otherwise routes carry no price or wait conditions). A manual order to a routed
+Ship suspends the Route (it stays assigned); resuming sails to the next Stop in order.
+Ship-side state: `(routeId, next Stop index, suspended?, waiting?)` — `waiting?` (E9.1) marks a
+Ship docked at its own next Stop with a Margin Gate unmet, siblings already run, the index held.
 _Implementation_: sim model + semantics shipped in #80 (`route.ts`, route Commands, the
 docking-phase route pass in `tick.ts`); assignable Routes need ≥ 2 Stops over ≥ 2 distinct
 ports. Route-editor UI shipped in #85 (`HeadquartersPanel.tsx` Trasy tab — list-based Stop
@@ -270,9 +273,13 @@ _Avoid_: path, leg sequence; route (reserved for the player-facing loop)
 **Stop** (PL: przystanek):
 One entry of a Route: a Port plus its orders, each naming its economic effect — **buy**
 (good → fill available Hold at ask), **sell** (good → sell all at bid), **deliver** (good →
-transfer cargo to the local build site, up to the recipe's remaining need). Orders execute
-best-effort on docking ("do what you can and sail on" — no waiting, no conditions), then
-the ship departs immediately. A deliver order at a port with no active build is a no-op.
+transfer cargo to the local build site, up to the recipe's remaining need). buy and sell
+orders may carry an optional **`qty`** ceiling ("up to N", E9.1; absent ⇒ greedy — buy fills
+the Hold, sell empties the good); deliver never takes `qty`. A buy order may also carry a
+**Margin Gate** (`minMargin`, see below). Orders execute best-effort on docking ("do what you
+can and sail on" — no conditions **except** an unmet Margin Gate, which withholds
+stop-advancement, ADR-0007), then the ship departs immediately. A deliver order at a port with
+no active build is a no-op.
 _Implementation_: shipped in #80 — a routed Stop executes by dispatching the same
 buy/sell/deliver Commands a player issues (equivalence by construction). A ship dwells one
 tick at each Stop before departing (the manual-play quantization + the intervention
@@ -281,6 +288,23 @@ load/unload wording ("unload" became ambiguous once deliver existed). E13 (M3) a
 order kinds: **store** and **withdraw** (transfer between Cargo and a Storehouse,
 market-free — the goods are already yours).
 _Avoid_: waypoint, leg; load/unload (pre-E9 wording)
+
+**Margin Gate** (PL: próg marży):
+An optional wait condition on a **buy** Stop order (`minMargin`, E9.1): the Ship dwells docked
+and re-evaluates each tick, withholding stop-advancement, until the good's **predicted per-unit
+margin** — `sell_price(reference port) − buy_price(here)`, from the same market pricing the real
+Commands use — reaches `minMargin`. The **reference port** is the next *sell*-stop for that good
+in route order, wrapping the loop (deliver is never a reference; no sell-stop ⇒ the gate is
+inactive and the buy executes normally). Non-gated siblings at the Stop still execute on
+arrival; only advancement waits. Multiple gates at one Stop are **atomic** (v1): the Ship waits
+until all pass, then fires all gated buys together. The wait is indefinite by design — the
+player owns the threshold — made humane by a visible *"czeka na marżę ≥ X (teraz Y)"* indicator
+and the `sailTo` escape hatch, and counter-pressured by flat daily upkeep. The **one deliberate
+exception** to E9 route equivalence (ADR-0007): no single manual Command means "wait for
+margin." Stored as `ShipAssignment.waiting?`; the UI display is derived.
+_Implementation_: E9.1 (`docs/specs/E9.1-route-qty-and-margin-gate.md`); `resolveReferencePort`
++ `unitMargin` (pure, sim + UI), the `runRouteForShip` gate state machine, `SAVE_VERSION 11`.
+_Avoid_: price floor, limit order (these imply a market order type, not a route wait); stop-loss
 
 **Voyage** (PL: rejs):
 One traversal of a lane by a ship, taking a number of ticks.
