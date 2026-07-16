@@ -51,6 +51,11 @@ export interface Ship {
   readonly name: string;
   /** Hold: total cargo capacity in units (CONTEXT.md). */
   readonly hold: number;
+  /** The Hold this ship launched with — characteristic of its (future) type,
+   *  50 for every ship today. The base the Hold ladder's thresholds are
+   *  computed from (E14 spec — "The Hold ladder"); never changes after
+   *  launch. */
+  readonly baseHold: number;
   /** Cargo aboard, zero-filled for every good (deterministic iteration). */
   readonly cargo: Record<GoodId, number>;
   readonly location: ShipLocation;

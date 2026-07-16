@@ -23,7 +23,7 @@ const region: Region = {
 };
 
 function ship(location: Ship["location"], assignment?: Ship["assignment"]): Ship {
-  return { id: "s0", name: "s0", hold: 50, cargo: emptyCargo(), location, assignment };
+  return { id: "s0", name: "s0", hold: 50, baseHold: 50, cargo: emptyCargo(), location, assignment };
 }
 
 describe("courseTicks", () => {

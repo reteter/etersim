@@ -90,6 +90,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     id: "s0",
     name: generateShipName(0),
     hold: STARTING_HOLD,
+    baseHold: STARTING_HOLD,
     cargo: emptyCargo(),
     location: { kind: "docked", portId: region.ports[homeIndex].id },
   };

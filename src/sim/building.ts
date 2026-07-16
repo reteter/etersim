@@ -291,8 +291,9 @@ export function computeBuildEstimate(world: World): BuildEstimate | null {
 }
 
 /** Launch a new ship when the current siteStore completes the recipe: append a
- *  Ship (hold 50, empty, docked at HQ, generated name) and clear the buildOrder.
- *  Pure; a no-op when there is no completable build. */
+ *  Ship (hold 50, baseHold 50 — the ladder's starting rung, E14 spec, empty,
+ *  docked at HQ, generated name) and clear the buildOrder. Pure; a no-op
+ *  when there is no completable build. */
 export function launchIfComplete(world: World): World {
   const hq = world.company.headquarters;
   if (!hq || !hq.buildOrder) return world;
@@ -303,6 +304,7 @@ export function launchIfComplete(world: World): World {
     id: `s${shipCount}`,
     name: generateShipName(shipCount),
     hold: 50,
+    baseHold: 50,
     cargo: emptyCargo(),
     location: { kind: "docked", portId: hq.portId },
   };

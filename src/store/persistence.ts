@@ -55,22 +55,38 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  a documented identity, kept as a real migration step (rather than
  *  silently accepting v10 as v11) so "version tracks World shape" stays
  *  honest. Per the one-step-migration precedent, v9 is no longer readable —
- *  only v10 carries forward now. */
-export const SAVE_VERSION = 11;
+ *  only v10 carries forward now.
+ *  v12: E14 (#274) adds `Ship.baseHold` — the Hold ladder's base (docs/specs/
+ *  E14-shipyard-and-refit.md — "The Hold ladder"). A v11 save's ships carry
+ *  no `baseHold` at all, but every ship that ever existed pre-E14 launched
+ *  with hold 50 and no way to grow it, so `migrateV11ToV12` backfills
+ *  `baseHold: 50` onto every `Company.ships` entry — lossless by
+ *  construction, same shape as the v9->v10 `requiredRank` backfill. Per the
+ *  one-step-migration precedent, v10 is no longer readable — only v11
+ *  carries forward now. */
+export const SAVE_VERSION = 12;
 
 /** Save envelope versions this adapter can still read, migrating forward to
  *  `SAVE_VERSION` on load — currently just the immediately preceding version;
- *  a save older than that is unreadable, same as every prior bump (v9 dropped
- *  here, matching the v8-drop precedent at the previous bump). */
-const READABLE_VERSIONS: ReadonlySet<number> = new Set([10, SAVE_VERSION]);
+ *  a save older than that is unreadable, same as every prior bump (v10
+ *  dropped here, matching the v9-drop precedent at the previous bump). */
+const READABLE_VERSIONS: ReadonlySet<number> = new Set([11, SAVE_VERSION]);
 
-/** v10 -> v11 (E9.1): `StopOrder` gained `qty`/`minMargin` and
- *  `ShipAssignment` gained `waiting` — all optional and absent-safe, so a
- *  v10 world already satisfies the v11 shape verbatim. Identity migration,
- *  documented rather than silently accepting v10 as v11 (keeps "version
- *  tracks World shape" honest — see SAVE_VERSION comment). */
-function migrateV10ToV11(rawWorld: unknown): World {
-  return rawWorld as World;
+/** v11 -> v12 (E14 #274): backfills `Ship.baseHold: 50` onto every ship in
+ *  `Company.ships` — lossless because every ship that could exist in a v11
+ *  save launched at hold 50 with no way to have grown it yet (the Hold
+ *  ladder/Refit ship first at v12). */
+function migrateV11ToV12(rawWorld: unknown): World {
+  const world = rawWorld as World;
+  return {
+    ...world,
+    company: {
+      ...world.company,
+      // Unconditional: a v11 ship never carries baseHold (the field ships at
+      // v12), so `?? 50` would only mask a mislabeled envelope.
+      ships: world.company.ships.map((ship) => ({ ...ship, baseHold: 50 })),
+    },
+  };
 }
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
@@ -134,7 +150,7 @@ function deserialize(text: string | null): World | null {
   }
   if (!isReadableEnvelopeShape(parsed)) return null;
   if (parsed.version === SAVE_VERSION) return parsed.world as unknown as World;
-  return migrateV10ToV11(parsed.world); // the only older readable version (v10)
+  return migrateV11ToV12(parsed.world); // the only older readable version (v11)
 }
 
 /**
