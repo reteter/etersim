@@ -202,6 +202,19 @@ false-red: post-merge `npm test`/`tsc` failed on stale `node_modules` (incident 
 green after `npm install` (477 unit + 86/86 e2e). **Dispatch note: the incident-0012 fix
 held on its first live wave — no coder hit a worktree/tool mismatch.**
 
+## Market panel refresh — #73/#74/#127 (2026-07-16, first single-PR batch)
+
+First wave under the 2026-07-16 batching rule (#264): three coupled same-file issues
+landed as **one PR** (`Closes` each), one Sonnet coder in one worktree, one Sonnet
+tier-2 review over the whole diff.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-16 | #265 | #73, #74, #127 | 2 | 0 | 0 | pass (coder-side) | Good icons + qty-defaults-max row + trend legend, one branch. Clean review — all 3 AC met, `maxQty=0` edge safe, e2e honest (no `dispatchEvent`). **Self-caught real regression the report models well**: added `display:flex` to the shared `.side-panel__subtitle`, corrupting `innerText()` assertions in ShipPanel; coder *disproved* the "parallel-worker contention" hypothesis (stash → baseline green; re-run same tests in isolation → still red = real regression), root-caused, and moved layout onto the icon element. New scar class (shared-CSS-class layout change breaks unrelated `innerText()` tests) → agent-memory. Two deferred notes: no reset-to-max chip (playtest watch); aria-labels stay EN by design (visible text PL) → #184. |
+
+Cert note: coder ran full Playwright 92/92 + 477 unit in-worktree; post-merge full run
+on main pending the owner's squash-merge of #265.
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at

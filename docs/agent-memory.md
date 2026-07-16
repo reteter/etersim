@@ -7,7 +7,7 @@ repo-versioned export of the entries worth carrying anywhere. Machine-local entr
 exported. Update this file when a durable, machine-independent lesson lands; delete
 entries when they expire.
 
-Last export: 2026-07-15. Session-state notes (queue, watch items) do NOT live here —
+Last export: 2026-07-16. Session-state notes (queue, watch items) do NOT live here —
 they live in [HANDOFF.md](HANDOFF.md), the canonical per-session note.
 
 ## Windows gh/git encoding pitfall (feedback)
@@ -19,6 +19,24 @@ Write the full text to a file (UTF-8) and use `gh pr edit --body-file` /
 way; tracked as issue #136 → docs/incidents/0007. Related PowerShell quirk
 (2026-07-15): `gh api repos/{owner}/{repo}/...` placeholder syntax fails
 ("command parameter was already specified") — use the explicit `owner/repo` path.
+
+## Shared CSS class + layout change silently breaks `innerText()` e2e (project, 2026-07-16)
+
+Adding a layout-changing rule (`display: flex`/`grid`) to a CSS class **shared across
+components** can corrupt Playwright assertions in an *unrelated* component that reuses the
+class. Trace (#73 wave, market-panel-refresh): `.side-panel__subtitle` got `display: flex`
+to lay out an icon in `PortPanel`, but `ShipPanel` reuses that class for plain-text "Docked
+at {port}". Flex changed how Playwright's `innerText()` (which respects rendered layout,
+unlike `textContent`) serialized the text — it inserted a line break, so a helper regex
+built from the subtitle stopped matching and 7 tests went red, including specs the change
+never touched. **Fix pattern:** never add layout rules to a class used by >1 component;
+scope the layout to a new dedicated class/element (here, `.side-panel__subtitle-icon`).
+**Debugging meta-lesson:** when a Playwright run goes red after a change, "maybe it's
+parallel-worker contention" is a hypothesis to *disprove*, not a default — the cheap
+unambiguous check is: (1) stash the change, re-run the failing tests → proves the baseline
+is green; (2) restore, re-run the *same* failing tests **in isolation** (single worker) → if
+they still fail, it's a real regression, not contention. (Different scar family from the
+false-RED certify-order ones, incidents 0011/0013.)
 
 ## Model ladder for orchestration (feedback, owner-confirmed 2026-07-13)
 

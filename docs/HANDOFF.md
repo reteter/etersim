@@ -6,81 +6,77 @@ reads only the repo must lose nothing. Update at every session close (WORKFLOW
 §Session Opening Rituals →  End of Session) — overwrite, don't append; history
 lives in git. Keep it one screen: state → queue → watch → gotchas.
 
-_Last update: 2026-07-15, end of the #254 grill + Engineer-subagent experiment session._
+_Last update: 2026-07-16, end of the E9.1-issues + market-panel-refresh wave session._
 
 ## State
 
-- **main @ 47c1390** — clean, no open PRs, no stray branches/worktrees. Certified green
-  earlier this session cycle: **477 unit, typecheck, lint, Playwright 86/86** (after
-  `npm install` — incident 0013). Three Opus-Orchestrator drobiazgi waves are fully
-  shipped and merged (#248 `isRouteActive`, #249 tab-cycle keybinds, #251 dispatch fix,
-  #252 route goods×kind table, #253 React test infra; docs #250/#256).
-- **This session = a full grill of #254 + a persona experiment.** No code shipped; the
-  deliverable is a **draft spec**.
-- **NEW draft spec: `docs/specs/E9.1-route-qty-and-margin-gate.md`** (status: draft,
-  pending owner approval). It captures the WHOLE closed grill (Design) + the Engineer's
-  Tech draft. **This is the next session's starting point — do NOT re-grill.**
-- **#254 grill is LOCKED.** Feature = route Stop `qty` ("up to N", buy/sell, absent =
-  greedy, E9-preserving) + **Margin Gate** (`minMargin` on buy only; wait until
-  `sell_price(next sell-stop, wrap) − buy_price(here) ≥ minMargin`; dwell indefinitely,
-  siblings execute, UI "czeka na marżę" indicator is a HARD requirement; multiple gates
-  at one Stop = atomic v1; `quoteBuy` with null=keep-waiting). Decided extras: **stored
-  `ShipAssignment.waiting?` bit** (save/load determinism — the Engineer's key catch),
-  **SAVE_VERSION 10→11 identity migration**, **new ADR-0007** "Routes may wait" (the
-  deliberate E9-equivalence exception).
-- **Persona experiment worked** (owner: "naprawdę cenny wkład"): Designer (me) held the
-  *what*, an Engineer-"Carl" subagent (agent `Plan`, read-only, fed a self-contained
-  package + ENGINEER.md) held the *how* and did NOT relitigate locked decisions — routed
-  2 real questions up. Payoff = the `waiting`-bit catch a naïve build would have missed
-  (silent save/load determinism bug). Cost = cold start needs the full locked Design in
-  the package. Rule of thumb: **subagent-Engineer for a closed Design; in-line Engineer
-  hat during the grill itself.** The subagent even self-called advisor.
+- **main @ bf5eb9a** — clean, single worktree. Merged this session: **#258** (Engineer
+  inline-vs-subagent persona rule), **#260** (ADR-0007 "Routes may wait" + CONTEXT Margin
+  Gate glossary + E9.1 spec approved). Code baseline unchanged by those (docs-only):
+  last certified **477 unit / typecheck / lint / 92 Playwright**.
+- **THREE PRs open, awaiting the owner's squash-merge ("sq-merge"):**
+  - **#264** — docs: batch small issues into one PR by default (new WORKFLOW rule, below).
+  - **#265** — feat(ui) market panel refresh, **Closes #73/#74/#127**. Tier-2 wave check
+    **CLEAN, 0 findings**; coder gates green (477 unit, 92/92 e2e). **Post-merge full
+    Playwright on main is PENDING the sq-merge** — run it before branching the next wave.
+  - **the session-close docs PR** carrying this HANDOFF + the #265 scorecard row +
+    the new agent-memory scar (create/observe it in the PR list).
+- **#254/E9.1 is fully issued.** Spec approved; milestone **#10 "E9.1 — Route qty + Margin
+  Gate"** holds **#261** (qty sim, do first) → **#262** (Margin Gate sim: minMargin +
+  `waiting` bit + resolver + `runRouteForShip` state machine + SAVE_VERSION 10→11) →
+  **#263** (UI). ADR-0007 + CONTEXT entries already on main, so all three are dispatchable.
+- **New process rule (owner, 2026-07-16, #264):** a coder batch lands as **ONE PR that
+  `Closes` each issue** by default — per-issue PRs were ceremony for small concrete issues.
+  Wave check still verifies each issue's AC separately. #265 is the first batch under it.
 
 ## Queue (owner-agreed order)
 
-1. **#254 → spec approval → issues.** Next session: owner reviews `E9.1` draft →
-   approve/adjust → then file **ADR-0007**, the **CONTEXT.md** "Margin Gate" entry, and
-   cut **3 issues** (proposed split in the spec: (1) qty A+B sim, (2) Margin Gate sim +
-   ADR + waiting bit + migration, (3) UI inputs + indicator). Milestone = the E9.1 epic.
-2. **#255** — visible click affordance for empty cells in the #220 route table (small,
-   CSS-mostly mini-PR).
-3. **#184** — EN→PL player-string sweep. **SOLO on a quiet tree** (touches many UI files
-   + e2e selectors) — do not overlap with other UI waves.
-4. **E13 Guild buildings** (#99–#102, spec approved 2026-07-09) — before cutting the wave,
-   skim the spec against current `contract.ts`/`building.ts`.
+1. **E9.1 build** — dispatch **#261** (qty sim, TDD) first; then **#262** (the Margin Gate
+   + `waiting` bit + migration — the heavy one, ADR-0007 in hand); then **#263** (UI). One
+   coder each; #261→#262 share `StopOrder`/`executeStop` so sequence them.
+2. **Coder B package (ready, not yet dispatched):** **#255** (route-table empty-cell click
+   affordance) + **#175** (keybind → HQ Trasy tab). Disjoint from the market panel; one
+   coder, one PR (both touch HeadquartersPanel/TopBar).
+3. **#184** — EN→PL player-string sweep. **SOLO on a quiet tree.** Now also covers the
+   market column headers ("Good/Trend/Bid/Ask/Stock") + PriceBoard "Port" (left EN in #265)
+   and the intentional aria-label(EN)/visible-text(PL) split.
+4. **E13 Guild buildings** (#99–#102) — skim spec vs current `contract.ts`/`building.ts`.
 5. **E11 v1** (#232 → #233 → #234).
 
-`design-frontier` items (M4 clusters, economic events, first arcane good, M5 Great Work,
-M6 zoom-out) wait for an **owner-led grill** — do not start them from the queue.
+`design-frontier` items wait for an owner-led grill. New infra issue **#259**: a
+`scripts/squash-merge.ps1` (safe deliberate sq-merge + cleanup, `[y/N]` default N).
 
 ## Watch items
 
-- **Uncommitted at session close?** No — the draft spec + this HANDOFF go out on a docs
-  branch + PR (see below). Verify the PR merged before the next wave branches from main.
-- Coders: 2× self-reported TDD-order deviation to date. A third ⇒ grill a coder-contract line.
-- Recurring coder smell: `dispatchEvent(...)` standing in for real interaction in e2e
-  (honest pattern: `focus()`/`.click()` + real key + `toBeFocused()`).
-- Scorecard (`docs/design-notes/coder-scorecard.md`) ~15 rows — past the ~12 threshold for
-  the Opus-vs-Sonnet (and Opus-vs-Fable advisor) A/B; a read-out is due.
+- **#265 post-merge cert is OPEN** — full Playwright on main after the owner sq-merges it.
+- **New scar (agent-memory):** a layout rule (`display:flex`) on a **shared** CSS class
+  corrupts `innerText()` e2e in an unrelated component. Disprove "contention" via
+  stash→isolation, don't assume it. Caught+fixed inside the #73 wave (nothing shipped bad).
+- **Scorecard ~16 rows** (`docs/design-notes/coder-scorecard.md`) — the Opus-vs-Sonnet (and
+  Opus-vs-Fable advisor) A/B read-out is overdue.
+- **Deferred, playtest watch:** no "reset-to-max" chip on the collapsed market row (#73).
+- **Owner-flagged for a future docs sweep:** whether HANDOFF is even needed; general docs
+  drift is accepted as the cost of fast iteration — a sweep will tidy it.
+- **#243 closed** won't-fix (option C: blank-seed timestamp filename accepted as-is).
+- **Fable access ends 2026-07-19** — owner assumes no further extension; prioritize the
+  last Fable-executor conversations (roadmap/long-game grill) before it lapses.
 
 ## Gotchas (this machine / this repo)
 
-- **Dispatch coders with `isolation: "worktree"` ONLY** (incident 0012) — NO manual
-  `git worktree add`, no hardcoded worktree path in the prompt; tell the coder to "work in
-  your assigned worktree" and push `HEAD:<target-branch>` by refspec. The sandbox is
-  **asymmetric — Bash writes the "forbidden" worktree freely**, so isolation is not a Bash
-  boundary. **Resume-after-crash silently drops an in-flight advisor/tool call — re-issue
-  it in the resume message.** Fix validated (wave B: zero locks).
-- **`npm install` BEFORE certifying** when a merge touched `package.json`/lock (incident
-  0013): a cert red whose signature is module-not-found / missing-type-from-a-just-added
-  package is stale-env until proven otherwise.
-- **Certify AFTER worktree cleanup, never concurrently** (incident 0011): clean
-  `git worktree list` is the go-signal (else `eslint .` over-scans worktree `src/` copies
-  and Playwright flakes under contention → false RED).
-- **advisor() works from a non-Fable main/Orchestrator agent** (Opus 4.8 confirmed); the
-  harness "check your network · retry" message is MISLEADING — the call is in flight, wait.
-  Unavailable only when Fable is executor (pairing rule).
-- PowerShell + `gh`: UTF-8 bodies ONLY via `--body-file`; use explicit `owner/repo` paths.
+- **Session START: check `git branch -a` + prune**, not just at close — merged remote
+  branches accumulate silently (found 8 dead ones this session; remote delete after a
+  squash-merge is easy to forget / silently fails while a worktree holds the branch).
+- **Dispatch coders with `isolation: "worktree"` ONLY** (incident 0012): no manual
+  `git worktree add`, no hardcoded path; say "work in your assigned worktree", push
+  `HEAD:<branch>` by refspec. Sandbox is asymmetric — Bash writes the worktree freely.
+  Resume-after-crash silently drops an in-flight advisor/tool call — re-issue it.
+- **`npm install` BEFORE certifying** when a merge touched `package.json`/lock (0013);
+  **certify AFTER worktree cleanup, never concurrently** (0011). Clean `git worktree list`
+  is the go-signal.
+- **advisor() works from a non-Fable main/Orchestrator** (Opus 4.8); the "check your
+  network · retry" message is misleading — the call is in flight, wait. Unavailable only
+  when Fable is executor (pairing rule).
+- PowerShell + `gh`: UTF-8 bodies ONLY via `--body-file`; explicit `owner/repo` paths.
 - Playwright: dedicated port via `PLAYWRIGHT_PORT` (5173 may be squatted).
-- Certification runs start by printing pwd + branch + SHA (incident 0008); after merge
-  batches verify content reachable from `origin/main` before deleting branches (0010).
+- Certification runs print pwd + branch + SHA first (0008); after merge batches verify
+  content reachable from `origin/main` before deleting branches (0010).
