@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyDeliveryToSiteStore,
+  applyDeliveryToConstructionSite,
   applyRushQuoteToSite,
   commissionBuilding,
   CONSTRUCTION_RESERVE,
@@ -52,17 +52,17 @@ describe("siteRemainingNeed / isSiteComplete (#99)", () => {
   });
 });
 
-describe("applyDeliveryToSiteStore (#99)", () => {
+describe("applyDeliveryToConstructionSite (#99)", () => {
   it("moves min(cargo, remaining need) per the site's own recipe", () => {
     const site = customSite("p-anywhere", { ...emptySiteStore(), grain: 1 });
-    const { siteStore, moved } = applyDeliveryToSiteStore(site, { ...emptySiteStore(), grain: 5 }, "grain");
+    const { siteStore, moved } = applyDeliveryToConstructionSite(site, { ...emptySiteStore(), grain: 5 }, "grain");
     expect(moved).toBe(2); // need was 3 - 1
     expect(siteStore.grain).toBe(3);
   });
 
   it("moves nothing and returns the same siteStore reference when need is 0", () => {
     const site = customSite("p-anywhere", { ...emptySiteStore(), grain: 3 });
-    const result = applyDeliveryToSiteStore(site, { ...emptySiteStore(), grain: 10 }, "grain");
+    const result = applyDeliveryToConstructionSite(site, { ...emptySiteStore(), grain: 10 }, "grain");
     expect(result.moved).toBe(0);
     expect(result.siteStore).toBe(site.siteStore);
   });

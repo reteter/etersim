@@ -16,7 +16,7 @@ import type { World } from "./world";
  * ConstructionSite (E14 spec — "#99 first: the construction-site seam"): the
  * pure engine below (`drawConstructionSite`, `quoteConstructionSiteRush`,
  * `applyRushQuoteToSite`, `siteRemainingNeed`, `isSiteComplete`,
- * `applyDeliveryToSiteStore`) is parameterized on `{ recipe, siteStore,
+ * `applyDeliveryToConstructionSite`) is parameterized on `{ recipe, siteStore,
  * portId }` instead of reading `world.company.headquarters.buildOrder`
  * directly, so ship construction (the Headquarters) and future callers
  * (Refit, guild buildings) share one engine. The Headquarters-shaped
@@ -119,7 +119,7 @@ export function autoDrawCapForDayTick(dayTick: number): number {
 
 /** Move min(cargo, remaining need) of one good into a site's siteStore, per
  *  its recipe. Pure; the generic engine behind `applyDeliveryToSite`. */
-export function applyDeliveryToSiteStore(
+export function applyDeliveryToConstructionSite(
   site: Pick<ConstructionSite, "recipe" | "siteStore">,
   cargo: Record<GoodId, number>,
   good: GoodId,
@@ -143,7 +143,7 @@ export function applyDeliveryToSite(
   cargo: Record<GoodId, number>,
   good: GoodId,
 ): { readonly siteStore: Record<GoodId, number>; readonly moved: number } {
-  return applyDeliveryToSiteStore({ recipe: SHIP_RECIPE, siteStore }, cargo, good);
+  return applyDeliveryToConstructionSite({ recipe: SHIP_RECIPE, siteStore }, cargo, good);
 }
 
 /** One good's line in a rush preview: how many units, at what total cost. */
