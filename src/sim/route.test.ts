@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { applyCommand } from "./commands";
 import { DOCKING_FEE } from "./region";
-import { effectiveBase, maxAffordableQty, quoteBuy } from "./market";
+import { effectiveBase, maxAffordableQty, quoteBuy, quoteSell, unitMargin } from "./market";
 import { shortestCourse } from "./pathfinding";
-import type { Route } from "./route";
+import { resolveReferencePort, type Route } from "./route";
 import type { Ship } from "./ship";
 import { tick } from "./tick";
-import { createWorld, type World } from "./world";
+import { createWorld, STARTING_HOLD, type World } from "./world";
 
 const shipOf = (w: World): Ship => w.company.ships[0];
 const portOf = (w: World, id: string) => w.region.ports.find((p) => p.id === id)!;
@@ -479,6 +479,476 @@ describe("shared-purse race in ships[] order (#80)", () => {
     expect(g0).toBeGreaterThanOrEqual(g1); // s0 races first for the shared purse
     expect(after.company.thalers).toBeGreaterThanOrEqual(0);
     expect(run(world)).toEqual(after); // deterministic
+  });
+});
+
+describe("resolveReferencePort (E9.1, pure — no World/market)", () => {
+  const stop = (portId: string, orders: Route["stops"][number]["orders"]) => ({ portId, orders });
+
+  it("finds the next sell-stop for the good, scanning forward from the current index", () => {
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        stop("a", [{ kind: "buy", good: "grain" }]),
+        stop("b", [{ kind: "sell", good: "grain" }]),
+        stop("c", [{ kind: "sell", good: "textiles" }]),
+      ],
+    };
+    expect(resolveReferencePort(route, 0, "grain")).toBe("b");
+  });
+
+  it("wraps the loop: a sell-stop 'before' the current index in the array is still found", () => {
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        stop("a", [{ kind: "sell", good: "grain" }]),
+        stop("b", []),
+        stop("c", [{ kind: "buy", good: "grain" }]),
+      ],
+    };
+    // Current index 2 (buy @c); scanning forward wraps to index 0 (sell @a).
+    expect(resolveReferencePort(route, 2, "grain")).toBe("a");
+  });
+
+  it("skips the current Stop structurally (offset starts at 1) — a sell at the current index never counts", () => {
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        stop("a", [{ kind: "sell", good: "grain" }, { kind: "buy", good: "grain" }]),
+        stop("b", []),
+        stop("c", []),
+      ],
+    };
+    // The only sell of grain on the whole route sits at the current index —
+    // skipped structurally, so no *other* Stop satisfies the reference.
+    expect(resolveReferencePort(route, 0, "grain")).toBeNull();
+  });
+
+  it("deliver is never a reference — a deliver-only Stop for the good does not satisfy the gate", () => {
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        stop("a", [{ kind: "buy", good: "grain" }]),
+        stop("b", [{ kind: "deliver", good: "grain" }]),
+      ],
+    };
+    expect(resolveReferencePort(route, 0, "grain")).toBeNull();
+  });
+
+  it("returns null (inactive gate) when no sell-stop for the good exists anywhere on the route", () => {
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        stop("a", [{ kind: "buy", good: "grain" }]),
+        stop("b", [{ kind: "sell", good: "textiles" }]),
+      ],
+    };
+    expect(resolveReferencePort(route, 0, "grain")).toBeNull();
+  });
+});
+
+describe("unitMargin (E9.1 — sole site margin is computed, same pricing fns as the Commands)", () => {
+  it("equals quoteSell(reference, 1) - quoteBuy(here, 1) — the exact per-unit Command math", () => {
+    const w = createWorld("margin-fn");
+    const a = w.region.ports[0];
+    const b = w.region.ports[1];
+    const margin = unitMargin(
+      a.market.grain,
+      effectiveBase(a, "grain"),
+      b.market.grain,
+      effectiveBase(b, "grain"),
+    );
+    const expected =
+      quoteSell(b.market.grain, effectiveBase(b, "grain"), 1)! -
+      quoteBuy(a.market.grain, effectiveBase(a, "grain"), 1)!;
+    expect(margin).toBe(expected);
+  });
+
+  it("is null when the local buy side has zero stock (unevaluable, not infinite margin)", () => {
+    const w = createWorld("margin-null");
+    const a = w.region.ports[0];
+    const b = w.region.ports[1];
+    const dryEntry = { ...a.market.grain, stock: 0 };
+    expect(unitMargin(dryEntry, effectiveBase(a, "grain"), b.market.grain, effectiveBase(b, "grain"))).toBeNull();
+  });
+});
+
+describe("isValidRoute rejections (E9.1 qty + Margin Gate)", () => {
+  const { a, b } = directPair(createWorld("valid-e91"));
+
+  it("rejects qty on a deliver order", () => {
+    const route: Route = {
+      id: "x",
+      name: "x",
+      stops: [
+        { portId: a, orders: [{ kind: "deliver", good: "grain", qty: 5 }] },
+        { portId: b, orders: [] },
+      ],
+    };
+    expect(applyCommand(createWorld("valid-e91"), { kind: "createRoute", route }).company.routes).toHaveLength(0);
+  });
+
+  it("rejects qty <= 0", () => {
+    const route: Route = {
+      id: "x",
+      name: "x",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain", qty: 0 }] },
+        { portId: b, orders: [] },
+      ],
+    };
+    expect(applyCommand(createWorld("valid-e91"), { kind: "createRoute", route }).company.routes).toHaveLength(0);
+  });
+
+  it("rejects a non-integer qty", () => {
+    const route: Route = {
+      id: "x",
+      name: "x",
+      stops: [
+        { portId: a, orders: [{ kind: "sell", good: "grain", qty: 2.5 }] },
+        { portId: b, orders: [] },
+      ],
+    };
+    expect(applyCommand(createWorld("valid-e91"), { kind: "createRoute", route }).company.routes).toHaveLength(0);
+  });
+
+  it("rejects minMargin on a sell order", () => {
+    const route: Route = {
+      id: "x",
+      name: "x",
+      stops: [
+        { portId: a, orders: [{ kind: "sell", good: "grain", minMargin: 5 }] },
+        { portId: b, orders: [] },
+      ],
+    };
+    expect(applyCommand(createWorld("valid-e91"), { kind: "createRoute", route }).company.routes).toHaveLength(0);
+  });
+
+  it("rejects minMargin on a deliver order", () => {
+    const route: Route = {
+      id: "x",
+      name: "x",
+      stops: [
+        { portId: a, orders: [{ kind: "deliver", good: "grain", minMargin: 5 }] },
+        { portId: b, orders: [] },
+      ],
+    };
+    expect(applyCommand(createWorld("valid-e91"), { kind: "createRoute", route }).company.routes).toHaveLength(0);
+  });
+
+  it("accepts minMargin on a buy order", () => {
+    const route: Route = {
+      id: "x",
+      name: "x",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain", minMargin: 5 }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    expect(applyCommand(createWorld("valid-e91"), { kind: "createRoute", route }).company.routes).toHaveLength(1);
+  });
+});
+
+describe("route Stop qty — 'up to N' (#261)", () => {
+  it("qty absent ⇒ byte-identical to today: cargo exactly maxAffordableQty(entry, base, holdSpace, purse)", () => {
+    const { a, b } = directPair(createWorld("qty-absent"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain" }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const world = seed("qty-absent", a, 120, [route]);
+    const shipId = shipOf(world).id;
+    const portA = portOf(world, a);
+    const expectedQty = maxAffordableQty(portA.market.grain, effectiveBase(portA, "grain"), STARTING_HOLD, 120);
+
+    const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    expect(shipOf(after).cargo.grain).toBe(expectedQty);
+  });
+
+  it("buy qty below Hold & affordability: clips to N, not the greedy fill", () => {
+    const { a, b } = directPair(createWorld("qty-below"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain", qty: 3 }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const world = seed("qty-below", a, 5000, [route]);
+    const shipId = shipOf(world).id;
+    const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    expect(shipOf(after).cargo.grain).toBe(3);
+  });
+
+  it("buy qty exactly at Hold space: clips to Hold, same as greedy (qty === holdSpace)", () => {
+    const { a, b } = directPair(createWorld("qty-at-hold"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain", qty: STARTING_HOLD }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const world = seed("qty-at-hold", a, 100_000, [route]);
+    const shipId = shipOf(world).id;
+    const portA = portOf(world, a);
+    const expectedQty = maxAffordableQty(
+      portA.market.grain,
+      effectiveBase(portA, "grain"),
+      STARTING_HOLD,
+      100_000,
+    );
+    const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    expect(shipOf(after).cargo.grain).toBe(expectedQty);
+  });
+
+  it("buy qty above Hold space: still clipped to Hold, N is only a ceiling", () => {
+    const { a, b } = directPair(createWorld("qty-above-hold"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain", qty: STARTING_HOLD * 10 }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const world = seed("qty-above-hold", a, 100_000, [route]);
+    const shipId = shipOf(world).id;
+    const portA = portOf(world, a);
+    const expectedQty = maxAffordableQty(
+      portA.market.grain,
+      effectiveBase(portA, "grain"),
+      STARTING_HOLD,
+      100_000,
+    );
+    const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    expect(shipOf(after).cargo.grain).toBe(expectedQty);
+    expect(shipOf(after).cargo.grain).toBeLessThanOrEqual(STARTING_HOLD);
+  });
+
+  it("buy qty above what the purse affords: clipped by affordability, not by N", () => {
+    const { a, b } = directPair(createWorld("qty-unaffordable"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain", qty: 40 }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const world = seed("qty-unaffordable", a, 120, [route]);
+    const shipId = shipOf(world).id;
+    const portA = portOf(world, a);
+    const expectedQty = maxAffordableQty(portA.market.grain, effectiveBase(portA, "grain"), 40, 120);
+    expect(expectedQty).toBeLessThan(40); // genuinely purse-limited, not N-limited
+    const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    expect(shipOf(after).cargo.grain).toBe(expectedQty);
+  });
+
+  it("sell qty clips to N, carrying the remainder onward (dosing across ports)", () => {
+    const { a, b } = directPair(createWorld("sell-qty"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain", qty: 10 }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain", qty: 4 }] },
+      ],
+    };
+    const world = seed("sell-qty", a, 5000, [route]);
+    const shipId = shipOf(world).id;
+    let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]); // buys 10 @ a, dwells
+    expect(shipOf(w).cargo.grain).toBe(10);
+    w = tick(w, []); // departs toward b
+    let guard = 0;
+    while (!(shipOf(w).location.kind === "docked" && dockedAt(w) === b) && guard++ < 500) w = tick(w, []);
+    // Only 4 sold at b; the other 6 remain aboard (carried onward), never force-sold.
+    expect(shipOf(w).cargo.grain).toBe(6);
+  });
+
+  it("sell qty above what's on board: sells everything on board, no error, no negative cargo", () => {
+    const { a, b } = directPair(createWorld("sell-qty-over"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain", qty: 5 }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain", qty: 999 }] },
+      ],
+    };
+    const world = seed("sell-qty-over", a, 5000, [route]);
+    const shipId = shipOf(world).id;
+    let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    expect(shipOf(w).cargo.grain).toBe(5);
+    w = tick(w, []);
+    let guard = 0;
+    while (!(shipOf(w).location.kind === "docked" && dockedAt(w) === b) && guard++ < 500) w = tick(w, []);
+    expect(shipOf(w).cargo.grain).toBe(0);
+  });
+});
+
+describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
+  /** Route with a gated buy at Stop 0 (@a) and a sell-stop for the same good
+   *  at Stop 1 (@b) — the reference port. A sibling buy (timber, no gate) at
+   *  Stop 0 lets the "siblings execute once" regression bite if the
+   *  implementation ever re-runs them on a waiting poll. */
+  function gatedRoute(a: string, b: string, minMargin: number): Route {
+    return {
+      id: "gated",
+      name: "gated",
+      stops: [
+        {
+          portId: a,
+          orders: [
+            { kind: "buy", good: "timber" }, // ungated sibling
+            { kind: "buy", good: "grain", minMargin },
+          ],
+        },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+  }
+
+  it("an unmet gate never advances the index and fires no gated buy, but still runs non-gated siblings once", () => {
+    const { a, b } = directPair(createWorld("gate-unmet"));
+    const route = gatedRoute(a, b, 1_000_000); // impossibly high — never met
+    const world = seed("gate-unmet", a, 5000, [route]);
+    const shipId = shipOf(world).id;
+
+    let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "gated" }]);
+    expect(shipOf(w).cargo.timber).toBeGreaterThan(0); // sibling ran
+    expect(shipOf(w).cargo.grain).toBe(0); // gated buy withheld
+    expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 0, waiting: true });
+
+    const cargoTimber1 = shipOf(w).cargo.timber;
+    const thalers1 = w.company.thalers;
+
+    // Poll several more ticks: still docked, gate still unmet.
+    for (let i = 0; i < 5; i++) {
+      w = tick(w, []);
+      expect(shipOf(w).location).toEqual({ kind: "docked", portId: a });
+      expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 0, waiting: true });
+      expect(shipOf(w).cargo.grain).toBe(0); // still withheld
+      // The key regression: siblings must NEVER re-run while waiting.
+      expect(shipOf(w).cargo.timber).toBe(cargoTimber1);
+      expect(w.company.thalers).toBe(thalers1);
+    }
+  });
+
+  it("gate passing fires the gated buy once (up to N, clipped by Hold/Thalers) and advances, clearing waiting", () => {
+    const { a, b } = directPair(createWorld("gate-pass"));
+    const route = gatedRoute(a, b, 1_000_000); // starts unmet
+    const world = seed("gate-pass", a, 5000, [route]);
+    const shipId = shipOf(world).id;
+
+    let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "gated" }]);
+    expect(shipOf(w).assignment).toMatchObject({ waiting: true });
+    expect(shipOf(w).cargo.grain).toBe(0);
+
+    // Force the reference port's sell price up (lower stock => higher price),
+    // so the predicted margin now clears the (still impossibly-high-looking,
+    // but now beaten) threshold. We instead directly relax the threshold to
+    // something guaranteed to already pass, simulating "the market moved":
+    // the gate only cares about a *fresh* evaluation each poll.
+    const relaxed: Route = {
+      ...route,
+      stops: [
+        {
+          portId: a,
+          orders: [
+            { kind: "buy", good: "timber" },
+            { kind: "buy", good: "grain", minMargin: -1_000_000 }, // now trivially met
+          ],
+        },
+        route.stops[1],
+      ],
+    };
+    w = applyCommand(w, { kind: "updateRoute", route: relaxed });
+
+    w = tick(w, []); // waiting poll: gate now passes
+    expect(shipOf(w).cargo.grain).toBeGreaterThan(0); // gated buy fired
+    expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 1 }); // advanced
+    expect(shipOf(w).assignment?.waiting).toBeUndefined(); // cleared, not stored false
+  });
+
+  it("an inactive gate (no sell-stop for the good on the route) executes the buy normally, no waiting", () => {
+    const { a, b } = directPair(createWorld("gate-inactive"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain", minMargin: 1_000_000 }] },
+        { portId: b, orders: [{ kind: "sell", good: "textiles" }] }, // no sell of grain anywhere
+      ],
+    };
+    const world = seed("gate-inactive", a, 5000, [route]);
+    const shipId = shipOf(world).id;
+    const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    expect(shipOf(after).cargo.grain).toBeGreaterThan(0); // executed despite the absurd threshold
+    expect(shipOf(after).assignment?.waiting).toBeUndefined();
+    expect(shipOf(after).assignment?.nextStopIndex).toBe(1); // advanced normally
+  });
+
+  it("no gate at all ⇒ waiting stays absent (not false) — assignRoute's shape is unchanged", () => {
+    const { a, b } = directPair(createWorld("no-gate"));
+    const route: Route = {
+      id: "r",
+      name: "r",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain" }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const world = seed("no-gate", a, 500, [route]);
+    const shipId = shipOf(world).id;
+    const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    expect(shipOf(after).assignment).toEqual({ routeId: "r", nextStopIndex: 1, suspended: false });
+  });
+
+  it("save/load mid-wait is identity (JSON round-trip, ADR-0004)", () => {
+    const { a, b } = directPair(createWorld("gate-save"));
+    const route = gatedRoute(a, b, 1_000_000);
+    const world = seed("gate-save", a, 5000, [route]);
+    const shipId = shipOf(world).id;
+    const waiting = tick(world, [{ kind: "assignRoute", shipId, routeId: "gated" }]);
+    expect(shipOf(waiting).assignment?.waiting).toBe(true);
+    expect(JSON.parse(JSON.stringify(waiting))).toEqual(waiting);
+  });
+
+  it("suspend-while-waiting round-trip: a manual sailTo away clears waiting once the route redirects", () => {
+    const { a, b } = directPair(createWorld("gate-suspend"));
+    const c = createWorld("gate-suspend").region.ports.find((p) => p.id !== a && p.id !== b)!.id;
+    const route = gatedRoute(a, b, 1_000_000);
+    const world = seed("gate-suspend", a, 5000, [route]);
+    const shipId = shipOf(world).id;
+
+    let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "gated" }]);
+    expect(shipOf(w).assignment?.waiting).toBe(true);
+
+    // Manual sailTo elsewhere: suspends the Route (escape hatch, ADR-0007).
+    w = tick(w, [{ kind: "sailTo", shipId, portId: c }]);
+    expect(shipOf(w).assignment?.suspended).toBe(true);
+
+    // Arrive at c, then resume in the same tick: the route pass immediately
+    // redirects toward Stop 0's port (a) since the ship isn't there — this
+    // clears the stale `waiting` right away (before the ship ever redocks).
+    let guard = 0;
+    while (!(shipOf(w).location.kind === "docked") && guard++ < 500) w = tick(w, []);
+    w = tick(w, [{ kind: "resumeRoute", shipId }]);
+    expect(shipOf(w).assignment?.suspended).toBe(false);
+    expect(shipOf(w).location.kind).toBe("underway"); // redirected toward a
+    expect(shipOf(w).assignment?.waiting).toBeUndefined(); // cleared by the redirect
   });
 });
 

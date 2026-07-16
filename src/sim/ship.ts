@@ -23,12 +23,16 @@ export type ShipLocation =
       readonly destination: PortId;
     };
 
-/** A Route assigned to a Ship (E9): only `(routeId, next Stop index, suspended?)`
- *  lives on the ship — the Route template itself is Company state. */
+/** A Route assigned to a Ship (E9): only
+ *  `(routeId, next Stop index, suspended?, waiting?)` lives on the ship — the
+ *  Route template itself is Company state. `waiting` (E9.1) marks a ship
+ *  docked at its own next Stop with a Margin Gate unmet, siblings already
+ *  run, the index held — absent/false ≡ today (no gate ever pending). */
 export interface ShipAssignment {
   readonly routeId: RouteId;
   readonly nextStopIndex: number;
   readonly suspended: boolean;
+  readonly waiting?: boolean;
 }
 
 /** True when the ship is running a Route on autopilot: assigned and not

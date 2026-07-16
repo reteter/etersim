@@ -122,6 +122,28 @@ export function quoteSell(entry: MarketGood, base: number, qty: number): number 
 }
 
 /**
+ * Predicted per-unit margin for a Margin Gate (E9.1): the reference port's
+ * unit sell price minus the unit ask here — both via the *same* pricing
+ * functions the real buy/sell Commands use, so there is no phantom margin
+ * (sole site this is computed; the UI calls the same function). The unit
+ * ask is `quoteBuy(buyEntry, buyBase, 1)`; `null` at zero local stock means
+ * "unevaluable" (a ship with no local stock has nothing to buy regardless)
+ * ⇒ the gate keeps waiting rather than treating it as an infinite margin.
+ */
+export function unitMargin(
+  buyEntry: MarketGood,
+  buyBase: number,
+  sellEntry: MarketGood,
+  sellBase: number,
+): number | null {
+  const ask = quoteBuy(buyEntry, buyBase, 1);
+  if (ask === null) return null;
+  const bid = quoteSell(sellEntry, sellBase, 1);
+  if (bid === null) return null;
+  return bid - ask;
+}
+
+/**
  * Mid price ÷ effective base at the entry's stock level, independent of the
  * base (docs/specs/E8-living-economy.md — Price-elastic flows): `price`'s
  * raw term and its floor/ceiling clamp are both linear in `base`, so the

@@ -70,7 +70,10 @@ export const MAX_SHIP_NAME_LENGTH = 40;
 
 /** A Route is assignable iff it has ≥2 Stops spanning ≥2 distinct ports, and no
  *  good appears in more than one order per Stop. The distinct-port rule stops an
- *  all-same-port loop from executing (and never paying a docking fee) forever. */
+ *  all-same-port loop from executing (and never paying a docking fee) forever.
+ *  E9.1: `qty` is buy/sell only, a positive integer; `minMargin` is buy only
+ *  (the owner ruled out waiting to sell — never on sell/deliver), no sign
+ *  constraint of its own. */
 function isValidRoute(route: Route): boolean {
   if (!route || !route.id || !route.name || !Array.isArray(route.stops)) return false;
   if (route.stops.length < 2) return false;
@@ -83,6 +86,11 @@ function isValidRoute(route: Route): boolean {
       if (!order || !order.good) return false;
       if (seen.has(order.good)) return false;
       seen.add(order.good);
+      if (order.qty !== undefined) {
+        if (order.kind === "deliver") return false;
+        if (!Number.isInteger(order.qty) || order.qty <= 0) return false;
+      }
+      if (order.minMargin !== undefined && order.kind !== "buy") return false;
     }
   }
   return ports.size >= 2;
