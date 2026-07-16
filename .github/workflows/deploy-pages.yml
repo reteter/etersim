@@ -1,0 +1,59 @@
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  # Allow manually re-running a deploy from the Actions tab without a new push.
+  workflow_dispatch:
+
+# Only one deploy in flight at a time; a newer push cancels an in-progress one.
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (project-pages base)
+        # /etersim/ matches this repo's GitHub Pages project-page path
+        # (https://reteter.github.io/etersim/). Passed only here via CLI flag
+        # (npm forwards args after "--" to the underlying `vite build`) so the
+        # default `npm run build` (local/preview) keeps base: "/".
+        run: npm run build -- --base=/etersim/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
