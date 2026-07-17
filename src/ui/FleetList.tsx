@@ -1,4 +1,4 @@
-import { cargoUsed, etaTicks, type Route, type Ship, type World } from "../sim";
+import { cargoUsed, etaTicks, isUnderRefit, type Route, type Ship, type World } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { formatWaitingGates, waitingGates } from "../store/waitingStatus";
 import { ShipIcon } from "./icons";
@@ -12,13 +12,16 @@ import { portName } from "./portName";
  * click-to-designate mechanic Harbor and the map already use (#28/#32).
  */
 
-/** One status word per ship, in priority order: a suspended assignment beats
- *  "czeka" (waiting on a Margin Gate, E9.1 — still docked at its own next
- *  Stop, not driving right now), which beats "on route" (assigned generally),
- *  which beats the raw location state. Matches the AC vocabulary exactly
- *  (docked / underway / on route / suspended / czeka) so the five values are
- *  mutually exclusive — `waiting` never coexists with `suspended`
- *  (`runRouteForShip` clears it on redirect, ADR-0007). */
+/** One status word per ship, in priority order: **"w przebudowie"** (E14,
+ *  #276 — a Refit locks the ship in the Shipyard) beats everything, because
+ *  commissionRefit auto-suspends a routed ship's assignment, so a refitting
+ *  ship would otherwise read "Suspended" (routed) or "Docked" (routeless) and
+ *  the refit state would never show. Then a suspended assignment beats "czeka"
+ *  (waiting on a Margin Gate, E9.1 — still docked at its own next Stop, not
+ *  driving right now), which beats "on route" (assigned generally), which
+ *  beats the raw location state. Mutually exclusive by construction —
+ *  `waiting` never coexists with `suspended` (`runRouteForShip` clears it on
+ *  redirect, ADR-0007). */
 function statusLabel(ship: Ship, world: World): string {
   const region = world.region;
   const loc = ship.location;
@@ -26,6 +29,7 @@ function statusLabel(ship: Ship, world: World): string {
     loc.kind === "docked"
       ? `at ${portName(region, loc.portId)}`
       : `to ${portName(region, loc.destination)} · ~${etaTicks(ship, region)}`;
+  if (isUnderRefit(world, ship.id)) return `w przebudowie — ${locDetail}`;
   if (ship.assignment?.suspended) return `Suspended — ${locDetail}`;
   if (ship.assignment?.waiting) {
     const gates = waitingGates(world, ship);
@@ -78,9 +82,11 @@ export function FleetList() {
                 <span className="fleet-list__name">{ship.name}</span>
                 <span
                   className={
-                    ship.assignment?.waiting
-                      ? "fleet-list__status fleet-list__status--waiting"
-                      : "fleet-list__status"
+                    isUnderRefit(world, ship.id)
+                      ? "fleet-list__status fleet-list__status--refit"
+                      : ship.assignment?.waiting
+                        ? "fleet-list__status fleet-list__status--waiting"
+                        : "fleet-list__status"
                   }
                 >
                   {statusLabel(ship, world)}

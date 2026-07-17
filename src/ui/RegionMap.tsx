@@ -1,5 +1,18 @@
 import { useEffect, useState, type ComponentType, type CSSProperties, type SVGProps } from "react";
-import { shortestCourse, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
+import {
+  GOOD_IDS,
+  GOODS,
+  refitRecipe,
+  shortestCourse,
+  siteRemainingNeed,
+  type LaneId,
+  type Port,
+  type PortArchetype,
+  type PortId,
+  type Region,
+  type Ship,
+  type Voyage,
+} from "../sim";
 import { useGameStore } from "../store/gameStore";
 import {
   AgrarianIcon,
@@ -17,6 +30,12 @@ import { skiffGlyphs } from "./skiffPosition";
 const VIEW_SIZE = 100;
 const PADDING = 10;
 const SHIP_ICON_SIZE = 4;
+/** Refit bubble geometry (E14, #276): a small progress bar floated above the
+ *  Shipyard port while a Refit is active. Width/height in viewBox units;
+ *  `_Y` lifts it clear of the port label (drawn at y − 4). */
+const REFIT_BUBBLE_W = 18;
+const REFIT_BUBBLE_H = 2.4;
+const REFIT_BUBBLE_Y = 10;
 const PORT_ICON_SIZE = 3.5;
 const PORT_DISC_RADIUS = 3;
 /** projectToViewBox is a uniform scale (both axes), so this factor also
@@ -139,6 +158,7 @@ export function RegionMap({
   const controlledShipId = useGameStore((s) => s.controlledShipId);
   const selectedRouteId = useGameStore((s) => s.selectedRouteId);
   const routes = useGameStore((s) => s.world?.company.routes ?? []);
+  const shipyard = useGameStore((s) => s.world?.company.shipyard ?? null);
 
   const [hoveredPortId, setHoveredPortId] = useState<PortId | null>(null);
 
@@ -174,6 +194,40 @@ export function RegionMap({
       ? (shortestCourse(region, dockedPortId, hoveredPortId) ?? []).map((v) => v.laneId)
       : [],
   );
+
+  // Refit bubble (docs/specs/E14 — "a ship under Refit shows on the map as a
+  // bubble with a small progress bar … details in its tooltip"). Progress =
+  // filled / required summed over the recipe (`refitRecipe` recomputed from
+  // the live ship, the same value the sim's site uses); the tooltip carries
+  // the target Hold and per-good remaining.
+  const refitBubble = (() => {
+    if (!shipyard?.refitOrder) return null;
+    const port = portsById.get(shipyard.portId);
+    const ship = ships.find((s) => s.id === shipyard.refitOrder!.shipId);
+    if (!port || !ship) return null;
+    const recipe = refitRecipe(ship);
+    const site = { recipe, siteStore: shipyard.refitOrder.siteStore, portId: shipyard.portId };
+    let filled = 0;
+    let required = 0;
+    const remainingParts: string[] = [];
+    for (const good of GOOD_IDS) {
+      const need = recipe[good] ?? 0;
+      if (need <= 0) continue;
+      required += need;
+      filled += Math.min(shipyard.refitOrder.siteStore[good] ?? 0, need);
+      const remaining = siteRemainingNeed(site, good);
+      if (remaining > 0) remainingParts.push(`${GOODS[good].name} ${remaining}`);
+    }
+    return {
+      pos: project(port),
+      filled,
+      required,
+      pct: required > 0 ? filled / required : 1,
+      targetHold: shipyard.refitOrder.targetHold,
+      shipName: ship.name,
+      remainingText: remainingParts.length > 0 ? remainingParts.join(", ") : "gotowe",
+    };
+  })();
 
   return (
     <svg
@@ -397,6 +451,38 @@ export function RegionMap({
           );
         })}
       </g>
+      {/* Refit bubble (docs/specs/E14 — UI surfaces): a small progress bar
+          above the Shipyard port while a Refit is active, its <title> the
+          per-good-remaining tooltip. Drawn last (topmost) but floated above
+          the port disc so it doesn't cover the clickable node. */}
+      {refitBubble && (
+        <g className="region-map__refit-bubble" data-port-id={shipyard!.portId}>
+          <title>
+            {`Przebudowa ${refitBubble.shipName} — ładownia → ${refitBubble.targetHold}; brakuje: ${refitBubble.remainingText}`}
+          </title>
+          <rect
+            className="refit-bubble__track"
+            x={refitBubble.pos.x - REFIT_BUBBLE_W / 2}
+            y={refitBubble.pos.y - REFIT_BUBBLE_Y}
+            width={REFIT_BUBBLE_W}
+            height={REFIT_BUBBLE_H}
+            rx={REFIT_BUBBLE_H / 2}
+            role="progressbar"
+            aria-label={`Refit progress — ${refitBubble.shipName}`}
+            aria-valuenow={refitBubble.filled}
+            aria-valuemin={0}
+            aria-valuemax={refitBubble.required}
+          />
+          <rect
+            className="refit-bubble__fill"
+            x={refitBubble.pos.x - REFIT_BUBBLE_W / 2}
+            y={refitBubble.pos.y - REFIT_BUBBLE_Y}
+            width={REFIT_BUBBLE_W * refitBubble.pct}
+            height={REFIT_BUBBLE_H}
+            rx={REFIT_BUBBLE_H / 2}
+          />
+        </g>
+      )}
     </svg>
   );
 }

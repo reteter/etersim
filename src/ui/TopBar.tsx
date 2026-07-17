@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SPEEDS, type Speed } from "../sim";
+import { isUnderRefit, SPEEDS, type Speed } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { GameMenu } from "./GameMenu";
 import { HeadquartersPanel } from "./HeadquartersPanel";
@@ -113,7 +113,7 @@ export function TopBar() {
         if (!selection || selection.kind !== "port") return;
         const ship = world.company.ships.find((s) => s.id === controlledShipId);
         if (!ship) return;
-        const { disabledHint } = sailability(ship, selection.id, world.region);
+        const { disabledHint } = sailability(ship, selection.id, world.region, isUnderRefit(world, ship.id));
         if (disabledHint !== null) return;
         dispatch({ kind: "sailTo", shipId: ship.id, portId: selection.id });
       }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cargoUsed, etaTicks, GOOD_IDS, GOODS, MAX_SHIP_NAME_LENGTH, type PortId, type Ship, type ShipId } from "../sim";
+import { cargoUsed, etaTicks, GOOD_IDS, GOODS, isUnderRefit, MAX_SHIP_NAME_LENGTH, type PortId, type Ship, type ShipId } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { portName } from "./portName";
 
@@ -62,6 +62,11 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
   const used = cargoUsed(ship);
   const loaded = GOOD_IDS.filter((good) => ship.cargo[good] > 0);
   const location = ship.location;
+  // Refit status (E14, #276): the ship targeted by the active Refit is locked
+  // in the Shipyard, its Hold growing toward `targetHold`. Read directly off
+  // the shipyard's refitOrder so the panel names the target the same way the
+  // Fleet list flags "w przebudowie".
+  const refit = isUnderRefit(world, ship.id) ? world.company.shipyard?.refitOrder : undefined;
 
   // Opens the named Port's panel — the same `select` action the map's port
   // nodes dispatch (RegionMap.tsx `onClick`) — so the "Docked at"/"Underway
@@ -85,6 +90,11 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
       ) : (
         <p className="side-panel__subtitle">
           Underway to {portLink(location.destination)} — ETA {etaTicks(ship, world.region)} ticks
+        </p>
+      )}
+      {refit && (
+        <p className="ship-panel__refit">
+          w przebudowie — ładownia → {refit.targetHold}
         </p>
       )}
 

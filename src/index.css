@@ -397,6 +397,23 @@ body {
   color: #6c9bd1;
 }
 
+/* "w przebudowie" (E14, Refit, #276): a NEW status color for a new meaning
+   (ADR-0006, one color = one meaning) — a warm teal, deliberately none of the
+   four the task reserves: not gold (#e0a840, Controlled Ship), not the
+   active-control / waiting blues (#4c7bab / #6c9bd1), not the suspended red
+   (#d9705f). The "w przebudowie" label text carries the meaning; the teal is
+   the recognition aid. Shared by the Fleet list status and the ShipPanel
+   refit line. */
+.fleet-list__status--refit,
+.ship-panel__refit {
+  color: #34b6a3;
+}
+
+.ship-panel__refit {
+  margin: 0.25rem 0 0;
+  font-weight: 600;
+}
+
 .fleet-list__route {
   flex-shrink: 0;
   color: #a8b2c2;
@@ -1233,6 +1250,30 @@ body {
 
 .headquarters-section {
   margin: 0.75rem 0;
+}
+
+/* Shipyard section (E14, #276): the PortPanel's Refit surface, same rhythm as
+   the Headquarters section it sits beside. */
+.shipyard-section {
+  margin: 0.75rem 0;
+}
+
+.shipyard-refit__ship {
+  width: 100%;
+  margin: 0.35rem 0;
+}
+
+/* Refit bubble on the map (E14, #276): a small progress bar above the
+   Shipyard port. Same teal as the "w przebudowie" status (one meaning, one
+   color, ADR-0006) so the map and panel read as the same state. */
+.refit-bubble__track {
+  fill: #2a3342;
+  stroke: #34b6a3;
+  stroke-width: 0.3;
+}
+
+.refit-bubble__fill {
+  fill: #34b6a3;
 }
 
 .headquarters-progress {

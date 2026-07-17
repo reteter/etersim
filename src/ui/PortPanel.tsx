@@ -7,6 +7,7 @@ import {
   GOOD_IDS,
   GOODS,
   HEADQUARTERS_COST,
+  isUnderRefit,
   price,
   quoteBuy,
   quoteSell,
@@ -45,6 +46,7 @@ import {
 import { priceTrend, TREND_GLYPH, TREND_LEGEND } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
 import { sailability } from "./sailability";
+import { ShipyardSection } from "./ShipyardSection";
 
 /** Archetype → vendored SVG icon, shown before the archetype label under the
  *  port name (#74). Same icon set RegionMap/GuildBadge already use
@@ -318,9 +320,19 @@ function MarketRow({
  * title hint — when the ship can't sail here right now (underway, already
  * docked at this port, or unreachable); otherwise a live ETA.
  */
-function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; region: Region }) {
+function SailControl({
+  ship,
+  portId,
+  region,
+  underRefit,
+}: {
+  ship: Ship;
+  portId: PortId;
+  region: Region;
+  underRefit: boolean;
+}) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const { disabledHint, eta } = sailability(ship, portId, region);
+  const { disabledHint, eta } = sailability(ship, portId, region, underRefit);
   const label = `Sail ${ship.name} here`;
 
   if (disabledHint !== null) {
@@ -522,6 +534,10 @@ export function PortPanel({ portId }: { portId: PortId }) {
   const dockedHere = ship.location.kind === "docked" && ship.location.portId === port.id;
   const snapshot = world.priceSnapshots[port.id];
   const ArchetypeIcon = ARCHETYPE_ICONS[port.archetype];
+  // Refit lock (E14, #276): the ship targeted by an active Refit is locked in
+  // the Shipyard — the Sail control disables with a reason, and its own cargo
+  // trades no-op at the sim level.
+  const underRefit = isUnderRefit(world, ship.id);
 
   return (
     <>
@@ -533,9 +549,11 @@ export function PortPanel({ portId }: { portId: PortId }) {
 
       <Harbor port={port} ships={world.company.ships} controlledShipId={controlledShipId} />
 
-      <SailControl ship={ship} portId={port.id} region={world.region} />
+      <SailControl ship={ship} portId={port.id} region={world.region} underRefit={underRefit} />
 
       <HeadquartersSection world={world} portId={port.id} />
+
+      <ShipyardSection world={world} portId={port.id} />
 
       <GuildhouseSection world={world} portId={port.id} />
 

@@ -57,13 +57,34 @@ export {
   LABOR_FEE,
   remainingNeed,
   SHIP_RECIPE,
+  siteRemainingNeed,
   type BuildEstimate,
   type BuildEstimateLine,
   type BuildOrder,
+  type ConstructionSite,
   type Headquarters,
   type RushQuote,
   type RushQuoteLine,
 } from "./building";
+// E14 (#276, docs/specs/E14-shipyard-and-refit.md — UI surfaces): the
+// PortPanel Shipyard section, the map refit bubble and the "w przebudowie"
+// status all consume these Shipyard/Refit seams. Per the #276 task package's
+// barrel-scope exception, these are pure re-export lines only — no other
+// src/sim change. `estimateBuy` (market.ts) is re-exported for the same
+// reason: the UI's commission/refit estimate mirrors `computeBuildEstimate`
+// exactly (a sim-side `computeShipyardEstimate`/`computeRefitEstimate` would
+// be drift-proof — a suggestion for the sim-cleanup issue).
+export { estimateBuy } from "./market";
+export {
+  computeRefitRushQuote,
+  computeShipyardRushQuote,
+  isUnderRefit,
+  nextHoldStep,
+  refitRecipe,
+  REFIT_LABOR_FEE,
+  SHIPYARD_LABOR_FEE,
+  SHIPYARD_RECIPE,
+} from "./shipyard";
 export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
 export { tick, type Command } from "./tick";
