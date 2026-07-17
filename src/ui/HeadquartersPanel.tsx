@@ -135,7 +135,7 @@ function ConstructionTab({ world }: { world: World }) {
             disabled={!quote || quote.total <= 0}
             onClick={() => dispatch({ kind: "rushBuild" })}
           >
-            Rush the rest — ₸{quote?.total ?? 0}
+            Dokup resztę — ₸{quote?.total ?? 0}
           </button>
         </>
       )}

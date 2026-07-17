@@ -197,7 +197,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
 
     // Rush shows a live quote (nonzero — deep purse, nothing bought yet)
     // and executes: the purse drops by exactly the quoted amount.
-    const rushBtn = dialog2.getByRole('button', { name: /Rush the rest — ₸\d/ });
+    const rushBtn = dialog2.getByRole('button', { name: /Dokup resztę — ₸\d/ });
     await expect(rushBtn).toBeVisible();
     const rushLabel = (await rushBtn.textContent()) ?? '';
     const quoted = Number(rushLabel.replace(/[^\d]/g, ''));
