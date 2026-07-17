@@ -1496,6 +1496,25 @@ body {
   color: #e6e6e6;
 }
 
+/* #255: an empty order cell must read as a clickable target — a faint
+   placeholder dot that brightens on hover/focus. Neutral greys only, so the
+   cue carries no color meaning (ADR-0006) and never competes with the
+   active ✓. Scoped to the route-editor table: future chips elsewhere
+   (E15 withdraw chips) shouldn't inherit the dot. */
+.stop-row__good-cell .chip:not(.chip--active)::after {
+  content: "·";
+  opacity: 0.35;
+}
+.stop-row__good-cell .chip:not(.chip--active):hover,
+.stop-row__good-cell .chip:not(.chip--active):focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.stop-row__good-cell .chip:not(.chip--active):hover::after,
+.stop-row__good-cell .chip:not(.chip--active):focus-visible::after {
+  opacity: 0.8;
+}
+
 /* qty ("up to N") / minMargin (Margin Gate) inputs, E9.1 — stacked under the
    cell's chip, narrow enough to keep the goods × Kup/Sprzedaj/Dostarcz table
    scannable. */
