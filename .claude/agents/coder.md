@@ -47,7 +47,11 @@ the repo read-set, the SELFCHECK §5 report, and the §6 gates are the Orchestra
 
 ## Implementation bar
 
-- `src/sim` grows test-first (Vitest): failing test, watch it fail, then implement.
+- `src/sim` grows test-first (Vitest) by default: failing test, watch it fail, then
+  implement. A test written after its implementation must carry named per-test red
+  evidence in your report — revert/stash the change and say which tests went red, or
+  a targeted mutation where revert is impractical; an unflagged after-the-fact test
+  is a contract violation (docs/personas/CODER.md §Laws).
   Exact-value assertions and adversarial paths — a test that can't fail is not a test
   (incident 0005).
 - No React/DOM imports in `src/sim` (ADR-0002); no `Math.random`/`Date.now` there

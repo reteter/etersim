@@ -52,9 +52,15 @@ All of SELFCHECK.md §4 applies. The ones coders have actually broken or nearly 
   clean recovery — but a Bash-write workaround into the "forbidden" path (Bash sits
   outside the sandbox) is a last resort, and either way the mismatch is a prominent
   report item, not a footnote.
-- **TDD for `src/sim`** — failing test first, and tests must be able to fail:
-  exact-value assertions, adversarial paths. Weak self-authored assertions once hid
-  real bugs behind "247 green" (incident 0005).
+- **TDD for `src/sim`** — failing test first is the default path. A test written
+  after its implementation is contract-conformant **only** with per-test
+  discrimination proof in the evidence report: revert/stash the covered change and
+  name which tests went red, or — where revert is impractical (e.g. type-forced
+  fields) — a targeted mutation the test catches. An unflagged after-the-fact test
+  found in review is a contract violation, not a judgement finding (grill
+  2026-07-17). Either path: tests must be able to fail — exact-value assertions,
+  adversarial paths. Weak self-authored assertions once hid real bugs behind
+  "247 green" (incident 0005).
 - **Never suppress your way to green**: no `lint --fix` to clear errors, no
   `--no-verify`, no weakening a test to pass it (incident 0005).
 - **Determinism and sim purity** (ADR-0002/0003); identifiers from CONTEXT.md,
