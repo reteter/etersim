@@ -48,6 +48,14 @@ was both-defensible. n=1 — a datapoint, not a ruling.
    no eval-flavored branch name and never verbalized awareness. Hawthorne effects
    mostly raise diligence — which is part of what we measure — but the arms were not
    blind.
+   **Post-hoc (2026-07-17, verified empirically via a Haiku probe):** the "ambient
+   context" leak is now pinned down. A fresh subagent's startup context includes the
+   full CLAUDE.md hierarchy, the git snapshot, **and the auto-memory `MEMORY.md`
+   index** (first 200 lines / 25KB; topic-file bodies are NOT loaded). During this
+   run the index's session-state line contained eval vocabulary — including the
+   prior-run framing and, going forward, it would have named the tiebreak axis
+   (ADR-0007) outright. Both arms saw the same index (symmetric), but it is an
+   awareness channel and can leak the scoring axis.
 2. **Reference solution reachable by arm B.** Arm A's branch was pushed to origin and
    its worktree stood in-tree during B's run; the Bash sandbox is asymmetric
    (incident 0012). Mitigation after the fact: a forced disclosure (self-report from
@@ -65,6 +73,15 @@ was both-defensible. n=1 — a datapoint, not a ruling.
 ## Protocol lessons for the next paired run
 
 - Neutral branch names (`feat/286-b`), no "evaluation" wording in the package.
+- **Scrub the auto-memory index before dispatch.** Subagents receive the `MEMORY.md`
+  index verbatim at startup (verified 2026-07-17). Before dispatching either arm:
+  move eval-flavored content (prior verdicts, axis names, "A/B"/"eval" wording) from
+  the index into a topic file — topic bodies don't load — leaving a neutral state
+  line ("main @ SHA; queue: #n…"). Restore after both arms are dispatched. Known
+  residue accepted: repo files (this note, the scorecard) remain grep-reachable, but
+  the task package scopes reading; note it under threats-to-validity if it matters.
+- Built-in Explore/Plan agents skip CLAUDE.md/memory/git entirely; coder-type agents
+  cannot opt out — scrubbing the index is the only lever for them.
 - Don't push the reference arm to origin until both arms finish; remove the
   reference worktree before dispatching the second arm.
 - Capture cost as limit-% timestamps at dispatch and completion (owner-side reads
