@@ -1,17 +1,26 @@
 import { useState, type ComponentType, type SVGProps } from "react";
 import {
   cargoUsed,
+  computeRefitRushQuote,
+  computeShipyardRushQuote,
   CONSTRUCTION_RESERVE,
   effectiveBase,
   ENROLLMENT_FEE,
   GOOD_IDS,
   GOODS,
   HEADQUARTERS_COST,
+  isUnderRefit,
+  nextHoldStep,
   price,
   quoteBuy,
   quoteSell,
   RANK_THRESHOLDS,
   rankOf,
+  refitRecipe,
+  REFIT_LABOR_FEE,
+  SHIPYARD_LABOR_FEE,
+  SHIPYARD_RECIPE,
+  type ConstructionSite,
   type GoodId,
   type GuildId,
   type MarketGood,
@@ -24,6 +33,7 @@ import {
   type World,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { deriveSiteStallReason } from "../store/siteStall";
 import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
 import { FOUNDING_GOAL, foundingProgress, foundingSavings } from "./foundingProgress";
@@ -45,6 +55,7 @@ import {
 import { priceTrend, TREND_GLYPH, TREND_LEGEND } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
 import { sailability } from "./sailability";
+import { computeSiteEstimate } from "./siteEstimate";
 
 /** Archetype → vendored SVG icon, shown before the archetype label under the
  *  port name (#74). Same icon set RegionMap/GuildBadge already use
@@ -318,9 +329,22 @@ function MarketRow({
  * title hint — when the ship can't sail here right now (underway, already
  * docked at this port, or unreachable); otherwise a live ETA.
  */
-function SailControl({ ship, portId, region }: { ship: Ship; portId: PortId; region: Region }) {
+function SailControl({
+  ship,
+  portId,
+  region,
+  locked,
+}: {
+  ship: Ship;
+  portId: PortId;
+  region: Region;
+  /** True while `ship` is the Shipyard's active Refit target (#276) — the
+   *  sail button gains a Polish disabled reason instead of the sim silently
+   *  rejecting `sailTo` underneath it. */
+  locked: boolean;
+}) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const { disabledHint, eta } = sailability(ship, portId, region);
+  const { disabledHint, eta } = sailability(ship, portId, region, locked);
   const label = `Sail ${ship.name} here`;
 
   if (disabledHint !== null) {
@@ -405,6 +429,253 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
           No active build order — open Headquarters from the TopBar to start one.
         </p>
       )}
+    </div>
+  );
+}
+
+/** Shared stall-reason label (STALL_LABEL, HeadquartersPanel.tsx) — the
+ *  Shipyard's own site and a Refit site reuse `deriveSiteStallReason`
+ *  (store/siteStall.ts), the generic counterpart of `deriveStallReason`, so
+ *  they get the identical Polish copy for "wstrzymane: rezerwa skarbca" /
+ *  "wstrzymane: brak towaru" the Budowa tab already shows. */
+const SITE_STALL_LABEL: Record<"reserve" | "goods", string> = {
+  reserve: "wstrzymane: rezerwa skarbca",
+  goods: "wstrzymane: brak towaru",
+};
+
+/**
+ * Refit picker (docs/specs/E14 — UI: "start a Refit (pick a docked ship, see
+ * target Hold + estimate)"): every Company ship docked *at this port* that
+ * isn't already at the Hold ladder's cap (`nextHoldStep` non-null) is an
+ * eligible target. Renders only once the Shipyard has activated and has no
+ * active RefitOrder — `ShipyardSection` below gates entry into this branch.
+ */
+function RefitPicker({ world, portId }: { world: World; portId: PortId }) {
+  const dispatch = useGameStore((s) => s.dispatch);
+  const port = world.region.ports.find((p) => p.id === portId)!;
+  const eligible = world.company.ships.filter(
+    (s) =>
+      s.location.kind === "docked" && s.location.portId === portId && nextHoldStep(s) !== null,
+  );
+  const [shipId, setShipId] = useState<ShipId | "">("");
+  const [confirming, setConfirming] = useState(false);
+  const selected = eligible.find((s) => s.id === shipId) ?? null;
+  const targetHold = selected ? nextHoldStep(selected) : null;
+  const estimate =
+    selected && targetHold !== null ? computeSiteEstimate(port, refitRecipe(selected), REFIT_LABOR_FEE) : null;
+  const thalers = world.company.thalers;
+  const canAfford = thalers >= REFIT_LABOR_FEE + CONSTRUCTION_RESERVE;
+
+  return (
+    <>
+      {eligible.length === 0 ? (
+        <p className="side-panel__hint">
+          Brak tu dokowanych statków kwalifikujących się do przebudowy.
+        </p>
+      ) : (
+        <>
+          <select
+            className="shipyard-refit-picker__select"
+            aria-label="Wybierz statek do przebudowy"
+            value={shipId}
+            onChange={(e) => {
+              setShipId(e.target.value as ShipId | "");
+              setConfirming(false);
+            }}
+          >
+            <option value="">Wybierz statek…</option>
+            {eligible.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          {selected && estimate && targetHold !== null && (
+            <>
+              {confirming ? (
+                <div className="build-confirm">
+                  <p>
+                    Rozpocząć przebudowę {selected.name}: ładownia {selected.hold} → {targetHold}?
+                    Szacunkowy koszt: ₸{estimate.total} (przy dzisiejszych cenach).
+                  </p>
+                  <div className="build-confirm__actions">
+                    <button
+                      type="button"
+                      className="menu-btn"
+                      onClick={() => {
+                        dispatch({ kind: "commissionRefit", shipId: selected.id });
+                        setConfirming(false);
+                        setShipId("");
+                      }}
+                    >
+                      Potwierdź — ₸{REFIT_LABOR_FEE}
+                    </button>
+                    <button type="button" className="menu-btn" onClick={() => setConfirming(false)}>
+                      Anuluj
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="side-panel__hint">
+                    Ładownia {selected.hold} → {targetHold}. Szacunkowy koszt: ₸{estimate.total} (przy
+                    dzisiejszych cenach).
+                  </p>
+                  <button
+                    type="button"
+                    className="menu-btn"
+                    disabled={!canAfford}
+                    title={
+                      canAfford
+                        ? undefined
+                        : `wymaga ₸${REFIT_LABOR_FEE + CONSTRUCTION_RESERVE} — robocizna ₸${REFIT_LABOR_FEE} + rezerwa ₸${CONSTRUCTION_RESERVE}`
+                    }
+                    onClick={() => setConfirming(true)}
+                  >
+                    Rozpocznij przebudowę — ₸{REFIT_LABOR_FEE}
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+/**
+ * Shipyard section (docs/specs/E14-shipyard-and-refit.md — UI surfaces:
+ * "PortPanel section... following the Storehouse-section pattern"; the
+ * Storehouse itself hasn't shipped yet, so this mirrors the real precedent,
+ * `HeadquartersSection` above — same "render the commission button at every
+ * port pre-commission, only the Shipyard's own port shows the rest"
+ * structure). States, in order: no Shipyard yet (commission button, gated on
+ * an existing Headquarters, no HQ build in progress, and the Reserve —
+ * #124's "never a silent no-op" rule); the Shipyard's own construction site
+ * still active (progress/stall/rush, the Budowa tab's widgets reused via
+ * `BuildProgress`/`deriveSiteStallReason`); activated with an active Refit
+ * (same progress/stall/rush, against `refitRecipe(targetShip)`); activated
+ * with no Refit (the picker, `RefitPicker` above).
+ */
+function ShipyardSection({ world, portId }: { world: World; portId: PortId }) {
+  const dispatch = useGameStore((s) => s.dispatch);
+  const [confirming, setConfirming] = useState(false);
+  const shipyard = world.company.shipyard;
+  const thalers = world.company.thalers;
+
+  if (!shipyard) {
+    const headquarters = world.company.headquarters;
+    const port = world.region.ports.find((p) => p.id === portId)!;
+    const estimate = computeSiteEstimate(port, SHIPYARD_RECIPE, SHIPYARD_LABOR_FEE);
+    const disabledReason = !headquarters
+      ? "Wymaga założonej siedziby"
+      : headquarters.buildOrder
+        ? "Budowa siedziby wciąż trwa"
+        : thalers < SHIPYARD_LABOR_FEE + CONSTRUCTION_RESERVE
+          ? `wymaga ₸${SHIPYARD_LABOR_FEE + CONSTRUCTION_RESERVE} — robocizna ₸${SHIPYARD_LABOR_FEE} + rezerwa ₸${CONSTRUCTION_RESERVE}`
+          : null;
+
+    return (
+      <div className="shipyard-section">
+        <h3 className="side-panel__heading">Stocznia</h3>
+        {confirming ? (
+          <div className="build-confirm">
+            <p>
+              Zlecić budowę stoczni? Szacunkowy koszt: ₸{estimate.total} (przy dzisiejszych cenach).
+            </p>
+            <div className="build-confirm__actions">
+              <button
+                type="button"
+                className="menu-btn"
+                onClick={() => {
+                  dispatch({ kind: "commissionShipyard", portId });
+                  setConfirming(false);
+                }}
+              >
+                Potwierdź — ₸{SHIPYARD_LABOR_FEE}
+              </button>
+              <button type="button" className="menu-btn" onClick={() => setConfirming(false)}>
+                Anuluj
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="menu-btn"
+            disabled={disabledReason !== null}
+            title={disabledReason ?? undefined}
+            onClick={() => setConfirming(true)}
+          >
+            Zbuduj stocznię — ₸{SHIPYARD_LABOR_FEE}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (shipyard.portId !== portId) return null;
+
+  if (shipyard.site) {
+    const site: ConstructionSite = {
+      recipe: SHIPYARD_RECIPE,
+      siteStore: shipyard.site.siteStore,
+      portId,
+    };
+    const stallReason = deriveSiteStallReason(world, site);
+    const quote = computeShipyardRushQuote(world);
+    return (
+      <div className="shipyard-section">
+        <h3 className="side-panel__heading">Stocznia</h3>
+        <BuildProgress siteStore={shipyard.site.siteStore} recipe={SHIPYARD_RECIPE} />
+        {stallReason && <p className="headquarters-stall">{SITE_STALL_LABEL[stallReason]}</p>}
+        <button
+          type="button"
+          className="menu-btn"
+          disabled={!quote || quote.total <= 0}
+          onClick={() => dispatch({ kind: "rushShipyard" })}
+        >
+          Rush the rest — ₸{quote?.total ?? 0}
+        </button>
+      </div>
+    );
+  }
+
+  if (shipyard.refitOrder) {
+    const refitOrder = shipyard.refitOrder;
+    const targetShip = world.company.ships.find((s) => s.id === refitOrder.shipId);
+    // Defensive — shouldn't happen with a valid World (mirrors
+    // `activeRefitSite`'s own defensive null in shipyard.ts).
+    if (!targetShip) return null;
+    const recipe = refitRecipe(targetShip);
+    const site: ConstructionSite = { recipe, siteStore: refitOrder.siteStore, portId };
+    const stallReason = deriveSiteStallReason(world, site);
+    const quote = computeRefitRushQuote(world);
+    return (
+      <div className="shipyard-section">
+        <h3 className="side-panel__heading">Stocznia</h3>
+        <p className="side-panel__hint">
+          Przebudowa: {targetShip.name} — ładownia {targetShip.hold} → {refitOrder.targetHold}
+        </p>
+        <BuildProgress siteStore={refitOrder.siteStore} recipe={recipe} />
+        {stallReason && <p className="headquarters-stall">{SITE_STALL_LABEL[stallReason]}</p>}
+        <button
+          type="button"
+          className="menu-btn"
+          disabled={!quote || quote.total <= 0}
+          onClick={() => dispatch({ kind: "rushRefit" })}
+        >
+          Rush the rest — ₸{quote?.total ?? 0}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="shipyard-section">
+      <h3 className="side-panel__heading">Stocznia</h3>
+      <RefitPicker world={world} portId={portId} />
     </div>
   );
 }
@@ -533,9 +804,16 @@ export function PortPanel({ portId }: { portId: PortId }) {
 
       <Harbor port={port} ships={world.company.ships} controlledShipId={controlledShipId} />
 
-      <SailControl ship={ship} portId={port.id} region={world.region} />
+      <SailControl
+        ship={ship}
+        portId={port.id}
+        region={world.region}
+        locked={isUnderRefit(world, ship.id)}
+      />
 
       <HeadquartersSection world={world} portId={port.id} />
+
+      <ShipyardSection world={world} portId={port.id} />
 
       <GuildhouseSection world={world} portId={port.id} />
 

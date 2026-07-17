@@ -1,5 +1,16 @@
 import { useEffect, useState, type ComponentType, type CSSProperties, type SVGProps } from "react";
-import { shortestCourse, type LaneId, type Port, type PortArchetype, type PortId, type Region, type Ship, type Voyage } from "../sim";
+import {
+  GOODS,
+  shortestCourse,
+  type LaneId,
+  type Port,
+  type PortArchetype,
+  type PortId,
+  type Region,
+  type Ship,
+  type Shipyard,
+  type Voyage,
+} from "../sim";
 import { useGameStore } from "../store/gameStore";
 import {
   AgrarianIcon,
@@ -11,6 +22,7 @@ import {
   VerdantIcon,
 } from "./icons";
 import { projectToViewBox } from "./mapProjection";
+import { refitBubbleData } from "./refitBubble";
 import { shipPosition } from "./shipPosition";
 import { skiffGlyphs } from "./skiffPosition";
 
@@ -19,6 +31,11 @@ const PADDING = 10;
 const SHIP_ICON_SIZE = 4;
 const PORT_ICON_SIZE = 3.5;
 const PORT_DISC_RADIUS = 3;
+/** Refit bubble geometry (#276): a small pill sitting above the Shipyard
+ *  port's disc, well clear of the port icon/label. */
+const REFIT_BUBBLE_WIDTH = 8;
+const REFIT_BUBBLE_HEIGHT = 1.6;
+const REFIT_BUBBLE_Y_OFFSET = 6;
 /** projectToViewBox is a uniform scale (both axes), so this factor also
  *  converts a unit-plane distance (orbit radius) into viewBox units. */
 const SCALE = VIEW_SIZE - 2 * PADDING;
@@ -111,6 +128,67 @@ function usePrefersReducedMotion(): boolean {
 }
 
 /**
+ * Refit bubble (#276, docs/specs/E14-shipyard-and-refit.md — UI surfaces: "a
+ * ship under Refit shows on the map as a bubble with a small progress bar";
+ * details in its tooltip): drawn above the Shipyard port's disc while a
+ * RefitOrder is active, derived purely from `refitBubbleData` (refitBubble.ts)
+ * so the geometry/markup here stays dumb. A native `<title>` child gives a
+ * real browser hover tooltip; `data-*` attributes carry the same numbers for
+ * E2E assertions (SVG `title` attributes aren't reliably queryable in
+ * Playwright). `role="progressbar"` + `aria-value*` mirror the HQ/Shipyard
+ * per-good bars (BuildProgress.tsx) — the same accessible-progress pattern,
+ * aggregate over the whole Recipe here instead of per-good (spec: "Progress =
+ * filled/required over the recipe").
+ */
+function RefitBubble({ region, ships, shipyard }: { region: Region; ships: readonly Ship[]; shipyard?: Shipyard }) {
+  const data = refitBubbleData(shipyard, ships, region);
+  if (!data) return null;
+  const port = region.ports.find((p) => p.id === data.portId);
+  if (!port) return null;
+
+  const center = project(port);
+  const x = center.x - REFIT_BUBBLE_WIDTH / 2;
+  const y = center.y - REFIT_BUBBLE_Y_OFFSET - REFIT_BUBBLE_HEIGHT / 2;
+  const tooltip = [
+    `Przebudowa: ${data.shipName}`,
+    `Docelowa ładownia: ${data.targetHold}`,
+    ...data.remaining.map((r) => `${GOODS[r.good].name}: brakuje ${r.remaining}`),
+  ].join("\n");
+
+  return (
+    <g
+      className="refit-bubble"
+      data-ship-id={data.shipId}
+      data-target-hold={data.targetHold}
+      data-remaining={data.remaining.map((r) => `${r.good}:${r.remaining}`).join(",")}
+    >
+      <title>{tooltip}</title>
+      <rect
+        className="refit-bubble__bg"
+        x={x}
+        y={y}
+        width={REFIT_BUBBLE_WIDTH}
+        height={REFIT_BUBBLE_HEIGHT}
+        rx={REFIT_BUBBLE_HEIGHT / 2}
+      />
+      <rect
+        className="refit-bubble__fill"
+        role="progressbar"
+        aria-label={`Postęp przebudowy — ${data.shipName}`}
+        aria-valuenow={data.filled}
+        aria-valuemin={0}
+        aria-valuemax={data.required}
+        x={x}
+        y={y}
+        width={REFIT_BUBBLE_WIDTH * data.progress}
+        height={REFIT_BUBBLE_HEIGHT}
+        rx={REFIT_BUBBLE_HEIGHT / 2}
+      />
+    </g>
+  );
+}
+
+/**
  * SVG region map (docs/specs/E2-trade-loop.md — UI layout; #174 fixed the
  * single-ship prop so the whole fleet renders): ports as nodes, lanes as
  * edges, every Company ship positioned by shipPosition(). Clicking a port or
@@ -121,12 +199,16 @@ function usePrefersReducedMotion(): boolean {
 export function RegionMap({
   region,
   ships,
+  shipyard,
   osmosisPulse,
   tick,
 }: {
   region: Region;
   /** Every Company ship (#174) — docked and underway alike, not just [0]. */
   ships: readonly Ship[];
+  /** The Company's Shipyard (#276), if any — only its active RefitOrder (if
+   *  any) matters here, drawn as a progress bubble at its port. */
+  shipyard?: Shipyard;
   osmosisPulse: Record<LaneId, number>;
   /** World.tick (CONTEXT.md: Tick) — the only clock osmosis skiffs read
    *  (#161): sim-time anchored, not wall-clock. */
@@ -397,6 +479,7 @@ export function RegionMap({
           );
         })}
       </g>
+      <RefitBubble region={region} ships={ships} shipyard={shipyard} />
     </svg>
   );
 }

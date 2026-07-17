@@ -12,12 +12,22 @@ import { previewCourseTicks } from "./coursePreview";
  * share one gate instead of two hand-kept copies — and so react-refresh
  * doesn't flag a non-component export sharing a file with the `PortPanel`
  * component.
+ *
+ * `locked` (#276): true while the ship is the target of an active Refit
+ * (`isUnderRefit`, src/sim/shipyard.ts) — the sim already rejects `sailTo`
+ * for a locked ship (commands.ts), so this just surfaces the same gate as a
+ * disabled reason instead of a silent no-op, checked first since a locked
+ * ship's location doesn't matter (it's always docked at the Shipyard port).
  */
 export function sailability(
   ship: Ship,
   portId: PortId,
   region: Region,
+  locked = false,
 ): { disabledHint: string; eta: null } | { disabledHint: null; eta: number } {
+  if (locked) {
+    return { disabledHint: "W przebudowie w stoczni — postój zablokowany.", eta: null };
+  }
   if (ship.location.kind !== "docked") {
     return { disabledHint: "Underway — dock to sail elsewhere.", eta: null };
   }

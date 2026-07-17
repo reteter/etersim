@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { cargoUsed, etaTicks, GOOD_IDS, GOODS, MAX_SHIP_NAME_LENGTH, type PortId, type Ship, type ShipId } from "../sim";
+import {
+  cargoUsed,
+  etaTicks,
+  GOOD_IDS,
+  GOODS,
+  isUnderRefit,
+  MAX_SHIP_NAME_LENGTH,
+  type PortId,
+  type Ship,
+  type ShipId,
+} from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { portName } from "./portName";
 
@@ -80,6 +90,12 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
     <>
       <h2 className="side-panel__title">Ship</h2>
       <ShipNameField key={ship.id} ship={ship} />
+      {isUnderRefit(world, ship.id) && (
+        // "w przebudowie" status (#276, ADR-0006 — same violet as
+        // FleetList's status word / the map's refit bubble, one meaning
+        // everywhere it shows).
+        <p className="ship-panel__status ship-panel__status--refit">W przebudowie</p>
+      )}
       {location.kind === "docked" ? (
         <p className="side-panel__subtitle">Docked at {portLink(location.portId)}</p>
       ) : (

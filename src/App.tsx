@@ -45,6 +45,7 @@ function App() {
         <RegionMap
           region={world.region}
           ships={world.company.ships}
+          shipyard={world.company.shipyard}
           osmosisPulse={world.osmosisPulse}
           tick={world.tick}
         />
