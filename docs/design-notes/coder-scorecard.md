@@ -245,6 +245,29 @@ Advisor layer, E14 W3: consulted twice (sanctioned); the pre-PR consult surfaced
 the netWorth flag the audit later confirmed independently — first advisor∩review
 overlap in the tally, and a benign one (both layers right, coder-side first).
 
+## E14 follow-up — #286 paired A/B (Opus vs Sonnet, 2026-07-17)
+
+**First same-task pair in the sample.** Two coders, identical task package and
+baseline (`main @ 1808706`), independent worktrees; arm B's branch was named
+`eval/...` and never intended to merge — the comparative review then recommended
+merging B, and the owner ratified it (#289 merged; #288 closed unmerged; arm-A
+strengths ported via #290). Reviews: two-subagent `/code-review` fan-out per arm
+(arm A's by orchestrator error — incident 0016; arm B's kept identical **by owner
+request** for symmetric conditions). Full write-up incl. threats to validity:
+`design-notes/ab-286-shipyard-construction.md`. Cost metric is **% of a session
+limit** (subscription; Opus tokens weigh ~2×), token counts as sanity check.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-17 | #288 (closed unmerged) | #286 arm A — **Opus** | 3 | 3 (judgement) | 0 | n/a (not merged) | 583 unit green in-worktree; Spec clean 8/8 AC. Cleaner code (guard-clause deliver, DRY `hasActiveBuildOrder`) but **no SAVE_VERSION bump — deviates from the written ADR-0007 precedent** (the losing axis). Third self-reported TDD-order deviation in the sample (netWorth term; closed + mutation-verified after advisor prompt) — **coder-contract grill triggered**. Advisor ×2. Cost ~30% session limit (169k tokens). |
+| 07-17 | #289 | #286 arm B — **Sonnet** | 3 | 3 (judgement) | 0 | pass | 589 unit + proactive affected e2e 26/26 in-worktree; Spec clean 8/8 AC. **Gets the one written-precedent axis right** (SAVE_VERSION 12→13, identity migration, incident-0009 diligence). Judgement findings: non-null-assertion regression, 3× deliver duplication, one guarded weak assertion → all in #290. Zero TDD deviations; advisor ×1. Noticed the A/B setup from worktree metadata (saw only commit subject + SHA; disclosure audited, corroborated by full structural divergence). Cost ~21% session limit (254k tokens). |
+
+Pair verdict: each arm had a real edge (A code cleanliness, B precedent
+conformance + broader tests ~20 vs ~14 new behaviors + 30% cheaper); the tiebreak
+was the single axis with a written answer. n=1 — a datapoint, not a ruling.
+Post-merge cert: main @ c96315b — 589 unit / typecheck / lint / full Playwright
+96/96.
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at

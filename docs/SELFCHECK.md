@@ -119,7 +119,7 @@ per PR, full run at wave merge and epic close), and spec sync (behavior drifted 
 spec update ships in the same task).
 
 If a gate cannot be closed — a skill is unavailable in your harness, a tool errors
-out, you lack access (`/code-review`, Playwright, `gh`, …) — **report it, don't route
+out, you lack access (the review gate, Playwright, `gh`, …) — **report it, don't route
 around it**: name the gate, say what you tried, and leave it explicitly OPEN for the
 owner. A silently skipped gate is worse than an open one.
 

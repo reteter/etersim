@@ -98,6 +98,13 @@ downgrade below what the paths dictate:
 | 2 | UI only (no `src/sim`) | **One** review subagent on the cheap model tier, given a distilled package (ACs, ADR-0006, area scars) — it never re-derives repo context. Affected e2e specs already ran coder-side. |
 | 3 | `src/sim` / economy / multi-file wave | **One** two-axis (Standards + Spec) review subagent on the strong model tier, reading the whole wave's diffs in one context, package supplied. |
 
+The review **package** at every tier names the repo's scar tissue explicitly: the ACs,
+the epic spec, **all ADRs** (by list — an ADR's title may not betray which laws it
+carries; ADR-0007 holds the SAVE_VERSION rule), and `docs/incidents/README.md` §Log.
+A reviewer follows what its package hands it; sources left out of the package are
+sources left out of the review (learned in the #286 A/B: both arms' reviews missed
+the ADR-0007 save-versioning precedent because no package pointed at it).
+
 Closing a wave check includes appending one row per coder PR to
 [design-notes/coder-scorecard.md](design-notes/coder-scorecard.md) (findings,
 fix-loop rounds, cert outcome) — the durable sample behind coder-model decisions.
