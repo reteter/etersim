@@ -4,6 +4,7 @@ import {
   isSiteComplete,
   quoteConstructionSiteRush,
   SHIP_RECIPE,
+  type BuildOrder,
   type ConstructionSite,
   type RushQuote,
 } from "./building";
@@ -85,10 +86,26 @@ export function refitRecipe(ship: Ship): Record<GoodId, number> {
   return recipe;
 }
 
-/** Flat commissioning cost for the Shipyard building itself — the
- *  `foundHeadquarters` analog (instant, no site of its own; `Shipyard` has no
- *  `siteStore` field). Tuning ≠ spec drift. */
-export const SHIPYARD_COST = 3000;
+/** Bill of materials for the Shipyard building itself, filled through the
+ *  same ConstructionSite engine (#99) as ship construction — the "buildings
+ *  are constructed, not bought" pattern Storehouse/ProcessingPlant will also
+ *  follow (E13/E15 precedent). Tuning ≠ spec drift. #286 fix: replaces the
+ *  earlier instant `SHIPYARD_COST` flat purchase (2026-07-16 owner
+ *  ratification of the #285 post-merge audit — the Design section always
+ *  said "built via the Build Order pattern"; the #285 Tech draft had it
+ *  instant instead). */
+export const SHIPYARD_RECIPE: Record<GoodId, number> = {
+  grain: 60,
+  textiles: 40,
+  aetherSalt: 30,
+  electronics: 15,
+  timber: 20,
+};
+
+/** Flat labor fee charged up front when `commissionShipyard` opens the
+ *  Shipyard's own construction site — the `LABOR_FEE`/`STOREHOUSE_LABOR_FEE`
+ *  analog. Tuning. */
+export const SHIPYARD_LABOR_FEE = 700;
 
 /** The active construction against a docked ship: which ship, the Hold
  *  threshold it's aiming for (one of `holdLadder`'s rungs), and the
@@ -102,11 +119,106 @@ export interface RefitOrder {
 }
 
 /** The Company's second Building (E14): one per Company, commissioned at a
- *  port of the player's choice once the Headquarters exists. Absent until
- *  commissioned — same optional shape as `Headquarters`. */
+ *  port of the player's choice once the Headquarters exists.
+ *  `world.company.shipyard` is present from the moment `commissionShipyard`
+ *  succeeds (same optional shape as `Headquarters`), but the building only
+ *  *activates* once `site` clears — #286 fix: commissioning opens a
+ *  ConstructionSite (`SHIPYARD_RECIPE`) instead of instantly creating a
+ *  usable building, so `commissionRefit` (below) gates on `!site` in
+ *  addition to `!refitOrder`. `site` and `refitOrder` are mutually
+ *  exclusive by construction: a Refit cannot start before the Shipyard
+ *  itself is built. */
 export interface Shipyard {
   readonly portId: PortId;
+  readonly site?: BuildOrder;
   readonly refitOrder?: RefitOrder;
+}
+
+/** Builds the `ConstructionSite` view of the Shipyard's own build site, or
+ *  `null` with no Shipyard/no active site (already built or never
+ *  commissioned) — the #286 fix's construction-side counterpart of
+ *  `activeRefitSite`. */
+function activeShipyardSite(world: World): ConstructionSite | null {
+  const shipyard = world.company.shipyard;
+  if (!shipyard || !shipyard.site) return null;
+  return { recipe: SHIPYARD_RECIPE, siteStore: shipyard.site.siteStore, portId: shipyard.portId };
+}
+
+/** True iff the Shipyard has been commissioned but its own construction
+ *  site hasn't completed yet — `commissionRefit` gates on this (in addition
+ *  to `refitOrder`) so no Refit can start before the building activates
+ *  (#286 fix). */
+export function isShipyardUnderConstruction(world: World): boolean {
+  return activeShipyardSite(world) !== null;
+}
+
+/** Pure preview of what `rushShipyard` (commands.ts) would buy right now
+ *  toward the Shipyard's own construction. Empty with no Shipyard, no
+ *  active site, or the port can't be found. The `computeRushQuote`/
+ *  `computeRefitRushQuote` pattern, so the UI's quote can never drift from
+ *  what actually gets charged. */
+export function computeShipyardRushQuote(world: World): RushQuote {
+  const site = activeShipyardSite(world);
+  if (!site) return { lines: [], total: 0 };
+  const port = world.region.ports.find((p) => p.id === site.portId);
+  if (!port) return { lines: [], total: 0 };
+  return quoteConstructionSiteRush(site, port, world.company.thalers);
+}
+
+/** Completes the Shipyard's own construction when its Recipe fills: `site`
+ *  clears (the building activates) and a `shipyardBuilt` event is appended.
+ *  Pure; a no-op when there is no completable site. The Shipyard-self analog
+ *  of `launchIfComplete`/`completeRefitIfDone`. */
+export function completeShipyardIfDone(world: World): World {
+  const shipyard = world.company.shipyard;
+  const site = activeShipyardSite(world);
+  if (!shipyard || !site) return world;
+  if (!isSiteComplete(site)) return world;
+
+  const completed: World = {
+    ...world,
+    company: { ...world.company, shipyard: { portId: shipyard.portId } }, // site cleared, activates
+  };
+  return appendLedgerEvent(completed, {
+    kind: "shipyardBuilt",
+    tick: world.tick,
+    portId: shipyard.portId,
+  });
+}
+
+/** Run one tick's auto-draw for the Shipyard's own construction site (after
+ *  the docking phase, alongside `runBuildSiteAutoDraw`/`runShipyardAutoDraw`
+ *  — same tick phase, same cap/cadence, drawing sequentially from the shared
+ *  purse). Attempts activation afterward. Pure; a no-op with no active site
+ *  (never commissioned, or already built). Mutually exclusive in practice
+ *  with `runShipyardAutoDraw` (a Refit cannot be active while the Shipyard
+ *  itself is still under construction). */
+export function runShipyardConstructionAutoDraw(world: World): World {
+  const shipyard = world.company.shipyard;
+  const site = activeShipyardSite(world);
+  if (!shipyard || !site) return world;
+
+  const dayTick = world.tick % TICKS_PER_DAY;
+  const cap = autoDrawCapForDayTick(dayTick);
+  if (cap <= 0) return completeShipyardIfDone(world);
+
+  const ports = [...world.region.ports];
+  const portIdx = ports.findIndex((p) => p.id === shipyard.portId);
+  if (portIdx < 0) return world;
+
+  const result = drawConstructionSite(site, ports[portIdx], world.company.thalers, cap, world.tick);
+  ports[portIdx] = result.port;
+
+  const drawn: World = {
+    ...world,
+    company: {
+      ...world.company,
+      thalers: result.thalers,
+      shipyard: { portId: shipyard.portId, site: { siteStore: result.siteStore } },
+    },
+    region: { ...world.region, ports },
+  };
+  return completeShipyardIfDone(appendLedgerEvents(drawn, result.events));
 }
 
 /** True iff `shipId` is the exact ship targeted by the Shipyard's active

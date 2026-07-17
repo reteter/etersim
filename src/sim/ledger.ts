@@ -121,12 +121,16 @@ export type LedgerEvent =
       readonly pointsDelta: number;
     }
   | {
-      /** The Shipyard commissioned (E14, #275) — the Shipyard analog of
-       *  `founding`. */
+      /** The Shipyard's own construction site completed (E14 #286 fix): the
+       *  building activates — the Shipyard analog of `launch`. Moves no
+       *  thalers (the labor fee was already logged by `laborFee` at
+       *  `commissionShipyard`; materials by their own autoDraw/delivery/rush
+       *  events) — unlike the pre-fix instant-purchase model this replaces,
+       *  where `shipyardBuilt` fired at commission time carrying the flat
+       *  cost. */
       readonly kind: "shipyardBuilt";
       readonly tick: number;
       readonly portId: PortId;
-      readonly thalers: number;
     }
   | {
       /** A Refit started (E14, #275): the labor fee charged up front — the
@@ -188,10 +192,11 @@ export interface NetWorthBreakdown {
 
 /**
  * Company net worth: thalers + fleet cargo + construction-site stores (the HQ
- * build site and an active refit site alike — owner decision 2026-07-16), all
- * goods valued at the region-average mid price. Ships and buildings carry no
- * book value by design — the company-value chart tells the honest investment
- * story (a build is a visible dip, then steeper growth).
+ * build site, the Shipyard's own build site, and an active refit site alike —
+ * owner decision 2026-07-16, extended to the Shipyard's own site by the #286
+ * fix), all goods valued at the region-average mid price. Ships and buildings
+ * carry no book value by design — the company-value chart tells the honest
+ * investment story (a build is a visible dip, then steeper growth).
  */
 export function computeNetWorth(world: World): NetWorthBreakdown {
   const mids = {} as Record<GoodId, number>;
@@ -205,6 +210,7 @@ export function computeNetWorth(world: World): NetWorthBreakdown {
   let siteStoreValue = 0;
   const stores = [
     world.company.headquarters?.buildOrder?.siteStore,
+    world.company.shipyard?.site?.siteStore,
     world.company.shipyard?.refitOrder?.siteStore,
   ];
   for (const store of stores) {

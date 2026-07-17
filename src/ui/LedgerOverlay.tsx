@@ -66,11 +66,10 @@ function transactionDelta(event: TransactionEvent): number | null {
       return -event.thalers;
     case "contractFee":
       return event.thalers;
-    // shipyardBuilt/refitStart (E14, #275): flat costs paid up front — the
-    // Shipyard analogs of founding/laborFee above. Minimal exhaustiveness
-    // fix, no dedicated Shipyard UI treatment (out of #275's sim-only scope
-    // wall; flagged in the completion report).
-    case "shipyardBuilt":
+    // refitStart (E14, #275): a flat cost paid up front — the Shipyard
+    // analog of laborFee above. Minimal exhaustiveness fix, no dedicated
+    // Shipyard UI treatment (out of #275's sim-only scope wall; flagged in
+    // the completion report).
     case "refitStart":
       return -event.thalers;
     case "delivery":
@@ -85,7 +84,12 @@ function transactionDelta(event: TransactionEvent): number | null {
     case "settlement":
     // refitComplete (E14, #275): moves no thalers (materials already logged
     // by their own autoDraw/delivery/rush events) — same precedent.
+    // shipyardBuilt (E14, #286 fix): now fires at activation, not
+    // commission — the labor fee is logged separately by `laborFee` at
+    // `commissionShipyard`, so this event moves no thalers either (same
+    // precedent as refitComplete/launch).
     case "refitComplete":
+    case "shipyardBuilt":
       return null;
   }
 }
@@ -144,7 +148,9 @@ function describeTransaction(event: TransactionEvent, world: World): string {
     // extension in this file) — no dedicated Shipyard UI treatment here
     // (out of #275's sim-only scope wall; flagged in the completion report).
     case "shipyardBuilt":
-      return `Commissioned Shipyard at ${portName(world, event.portId)}`;
+      // #286 fix: this event now fires when the Shipyard's own construction
+      // site completes (activation), not at commission time.
+      return `Shipyard built at ${portName(world, event.portId)}`;
     case "refitStart":
       return `Refit started for ${shipName(world, event.shipId)} at ${portName(world, event.portId)}`;
     case "refitComplete":

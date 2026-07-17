@@ -144,6 +144,32 @@ describe("computeNetWorth", () => {
     expect(result.total).toBeCloseTo(500 + expectedSiteStoreValue, 6);
   });
 
+  it("counts the Shipyard's own (not-yet-activated) construction site's store like the HQ build site's (#286 fix)", () => {
+    const portA = makePort("A", 100, 100, 1.0);
+    const portB = makePort("B", 100, 100, 1.0);
+    const region: Region = { ports: [portA, portB], lanes: [] };
+
+    const base0 = createWorld(5);
+    const world: World = {
+      ...base0,
+      region,
+      company: {
+        ...base0.company,
+        thalers: 500,
+        shipyard: {
+          portId: "A",
+          site: { siteStore: { ...emptyCargo(), grain: 6, aetherSalt: 2 } },
+        },
+      },
+    };
+
+    // Both ports at equilibrium with bias 1.0 => mid == basePrice: 6×10 + 2×60.
+    const expectedSiteStoreValue = 6 * 10 + 2 * 60;
+    const result = computeNetWorth(world);
+    expect(result.siteStoreValue).toBeCloseTo(expectedSiteStoreValue, 6);
+    expect(result.total).toBeCloseTo(500 + expectedSiteStoreValue, 6);
+  });
+
   it("ships and buildings carry no book value: an empty fleet with no build is worth exactly its thalers", () => {
     const base0 = createWorld(2);
     const world: World = { ...base0, company: { ...base0.company, thalers: 777, ships: [] } };
@@ -463,7 +489,7 @@ const KIND_CATEGORY: Record<LedgerEvent["kind"], LedgerGrammarCategory> = {
   upkeep: "thalers",
   contractFee: "thalers",
   settlement: "pointsDelta",
-  shipyardBuilt: "thalers",
+  shipyardBuilt: "neither",
   refitStart: "thalers",
   refitComplete: "neither",
 };
@@ -519,8 +545,16 @@ function scriptedAllKindsWorld(): World {
   while (w.company.headquarters?.buildOrder && guard++ < 5000) w = tick(w, []);
   expect(w.company.ships.length).toBeGreaterThan(1); // precondition: actually launched
 
-  // shipyardBuilt — commission the Shipyard at port B (E14 #275).
+  // laborFee (again) + shipyardBuilt — commission the Shipyard at port B
+  // (E14 #286 fix: this now opens a construction site, not an instant
+  // purchase) and rush it to activation.
   w = applyCommand(w, { kind: "commissionShipyard", portId: portB });
+  guard = 0;
+  while (w.company.shipyard?.site && guard++ < 500) {
+    w = applyCommand(w, { kind: "rushShipyard" });
+    if (w.company.shipyard?.site) w = tick(w, []);
+  }
+  expect(w.company.shipyard?.site).toBeUndefined(); // precondition: actually activated
 
   // refitStart — dock s0 at the Shipyard port and start a Refit.
   w = {

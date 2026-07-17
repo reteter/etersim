@@ -26,8 +26,11 @@ export interface Company {
    *  `buildOrder` present iff an active build is in progress. */
   readonly headquarters?: Headquarters;
   /** Shipyard (E14): the Company's second Building, one per Company.
-   *  `refitOrder` present iff a Refit is active. Absent until commissioned —
-   *  same optional shape as `headquarters`. */
+   *  Present from the moment `commissionShipyard` succeeds (same optional
+   *  shape as `headquarters`), but only *activated* once `site` clears
+   *  (#286 fix — construction via ConstructionSite, not an instant
+   *  purchase); `refitOrder` present iff a Refit is active (only possible
+   *  once activated). */
   readonly shipyard?: Shipyard;
   /** Guild enrollment + progress (E3, guild.ts): enrolled iff the guild's key
    *  is present. Rank is always derived via `rankOf`, never stored here. */
