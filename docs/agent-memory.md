@@ -7,7 +7,7 @@ repo-versioned export of the entries worth carrying anywhere. Machine-local entr
 exported. Update this file when a durable, machine-independent lesson lands; delete
 entries when they expire.
 
-Last export: 2026-07-16. Session-state notes (queue, watch items) do NOT live here —
+Last export: 2026-07-17. Session-state notes (queue, watch items) do NOT live here —
 they live in [HANDOFF.md](HANDOFF.md), the exportable snapshot updated on owner
 request (since 2026-07-16; Claude Code auto-memory is the day-to-day channel).
 
@@ -76,6 +76,22 @@ session start — in a session older than the agent def, fall back to `general-p
 with the persona files named in the prompt. Watch-out observed 2026-07-13: a Sonnet
 coder spontaneously ran a self `/code-review` (incident-0005 pattern, budget burn) —
 coder packages should explicitly forbid spawning subagents.
+
+## Subagent casting override + mid-flight corrections (Claude Code harness, 2026-07-17)
+
+Two facts from the Professor-on-Fable dispatch (s7):
+
+- The Agent tool's `model` parameter **overrides the agent definition's frontmatter
+  `model:`** — a persona def pinned to one model (professor.md says `model: opus`) can
+  be re-cast per dispatch without editing the def. This is the sanctioned way to make
+  a one-off casting decision (incident-0015 rule "name the casting" still applies:
+  pass it explicitly, never rely on inheritance).
+- `SendMessage` to a running subagent is delivered **only at its next tool round** —
+  a correction can lose the race against work already in flight. Trace: the "skip the
+  file write" correction arrived after the Professor had already written all three
+  report parts to disk. Corollary: put constraints in the initial dispatch prompt;
+  treat mid-flight corrections as best-effort, and design them to be safe when they
+  arrive late ("if already done, leave it — don't spend tokens undoing").
 
 ## GitHub Actions minutes near-exhausted (project; expires with the billing cycle)
 

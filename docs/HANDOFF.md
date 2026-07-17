@@ -8,25 +8,32 @@ Keep it one screen: state → queue → watch. Standing gotchas live in `CLAUDE.
 (§Git & worktrees), `docs/agent-memory.md`, and `docs/incidents/README.md` §Log —
 not here.
 
-_Last update: 2026-07-17 (owner-requested; machine handoff — owner continues from a
-fresh `git clone` on another machine, so per-machine auto-memory is NOT available
-there; this file + repo docs are the whole context)._
+_Last update: 2026-07-17 end of s7 (owner-requested; machine handoff — owner
+continues from a fresh `git clone` on a laptop that has NEVER run Claude Code, so
+no per-machine auto-memory exists there; this file + repo docs are the WHOLE
+context. Fresh-clone bootstrap: `npm install`, then the session-start ritual in
+CLAUDE.md §Rules; verify baseline with `npm test` + `npm run typecheck`; `gh auth
+login` needed for issues/PRs. `scripts/setup.ps1` does not exist yet — that's open
+issue #239)._
 
 ## State
 
-- **main @ ad37ae0** — clean, certified: **600 unit / typecheck** (full Playwright
-  100/100 ran coder-side on identical content). **E14 Shipyard & Refit is CODE-COMPLETE
-  (4/4):** #291 merged closes #276.
-- **#276 ran as the second paired A/B trial** (Opus vs Sonnet, upgraded protocol —
-  index scrub, reference-arm quarantine, clean disclosure audit). Owner ratified
-  merging the Sonnet arm; series now 2/2 for Sonnet on written-rule conformance +
-  tests at ~half the limit-% cost, Opus better architecture both times. Write-up:
+- **main @ cbe1fb2** — clean, pushed; baseline re-verified s7: **600 unit /
+  typecheck green**. **E14 Shipyard & Refit is CODE-COMPLETE (4/4).**
+- **Professor review (Fable) DONE s7** — full report:
+  `docs/design-notes/professor-construction-review.md`. Engine certified sound
+  (determinism, purity, save v13, Reserve, ledger grammar, quote/charge). Findings
+  routed: **#293 (new, type:bug)** = F1 HQ "Zleć budowę" silent no-op + F2 wrong
+  reason string; F3 → comment on #292; F5 → comment on #290; F4/F7 → grill agendas
+  (queue below); F6 → watch item below.
+- **#276 A/B series stands at 2/2 for Sonnet** (written-rule conformance + tests at
+  ~half the limit-% cost; Opus better architecture both times). Write-up:
   `docs/design-notes/ab-276-shipyard-ui.md`; rows in `coder-scorecard.md`.
-- **#292 (new)** — port arm-A strengths: stall-walk collapse, shared `SiteProgress`,
-  rush-string PL, sim-side estimate seam (coordinate with #272). Reference branch
+- **#292** — port arm-A strengths (stall-walk collapse, shared `SiteProgress`,
+  rush-string PL, sim estimate seam; coordinate with #272). Reference branch
   `feat/276-shipyard-ui` @ ddd33de stays on origin until #292 closes — then delete.
-- Costs this session: Opus arm ~24% limit, Sonnet arm ~14%, reviews+comparative on
-  Opus; session ended ~85%+.
+- Fable pool: ~72% used at s7 start; Professor dispatch (~130k subagent tokens) was
+  the deadline task and it's done — remaining pool through 07-19 is bonus.
 
 ## Queue (owner-agreed order, set s5/s6)
 
@@ -39,8 +46,8 @@ there; this file + repo docs are the whole context)._
    (E13 site iterator, E15 deliver addressing), F6 → conditional watch.
 2. **Owner-led grill: coder-contract TDD line** (trigger hit at 3 self-reported
    TDD-order deviations — see scorecard).
-3. #290 + #292 (both are "port arm-A patterns" follow-ups — natural single wave),
-   #272 (barrel), #255, plus the F1+F2 issue from the Professor's review.
+3. #290 + #292 + #293 (all Shipyard-area polish — natural single wave; #293 is the
+   Professor's F1+F2), #272 (barrel), #255.
 4. E13 Guild buildings (#100/#101 — skim spec vs code first; **grill agenda: F4
    ordered site iterator**) → E11 v1 (#232→#233→#234) → E15 (#281→#284, spec
    approved; **grill agenda: F7 deliver addressing**).
