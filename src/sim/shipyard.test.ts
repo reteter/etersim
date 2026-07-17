@@ -252,9 +252,12 @@ describe("Shipyard construction auto-draw/deliver/rush (#286)", () => {
     for (let t = 0; t < 24; t++) w = tick(w, []);
     expect(w.company.thalers).toBeGreaterThanOrEqual(CONSTRUCTION_RESERVE);
     const store = w.company.shipyard?.site?.siteStore;
-    if (store) {
-      for (const good of GOOD_IDS) expect(store[good]).toBeLessThanOrEqual(24);
-    }
+    // The recipe totals far more than 24 units across all goods, so the site
+    // must still be under construction — assert it exists rather than a
+    // guarded `if (store)`, which would pass vacuously (and silently stop
+    // checking anything) if the site had already cleared (incident 0005).
+    expect(store).toBeDefined();
+    for (const good of GOOD_IDS) expect(store![good]).toBeLessThanOrEqual(24);
     expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(true);
   });
 

@@ -134,6 +134,24 @@ export interface Shipyard {
   readonly refitOrder?: RefitOrder;
 }
 
+/** Rebuilds `base` with `patch` applied, spreading `base` first so any
+ *  `Shipyard` field neither named in `patch` nor explicitly cleared survives
+ *  untouched — a from-scratch literal (`{ portId: shipyard.portId, site:
+ *  {...} }`) would silently drop such a field the day `Shipyard` grows one
+ *  (e.g. a refit-cancellation flag, a save-compatible v2 extension), because
+ *  every field beyond `portId` is optional and the compiler has nothing to
+ *  flag (Professor F5 review, docs/design-notes/professor-construction-review.md,
+ *  #290). Clearing `site`/`refitOrder` is then a named decision — pass it
+ *  `undefined` explicitly — rather than an implicit one. `base` may be a
+ *  bare `{ portId }` (`commissionShipyard`'s fresh Shipyard, which is itself
+ *  a valid `Shipyard` with both optional fields absent). */
+export function withShipyard(
+  base: Shipyard,
+  patch: Partial<Pick<Shipyard, "site" | "refitOrder">>,
+): Shipyard {
+  return { ...base, ...patch };
+}
+
 /** Builds the `ConstructionSite` view of the Shipyard's own build site, or
  *  `null` with no Shipyard/no active site (already built or never
  *  commissioned) — the #286 fix's construction-side counterpart of
@@ -177,7 +195,7 @@ export function completeShipyardIfDone(world: World): World {
 
   const completed: World = {
     ...world,
-    company: { ...world.company, shipyard: { portId: shipyard.portId } }, // site cleared, activates
+    company: { ...world.company, shipyard: withShipyard(shipyard, { site: undefined }) }, // activates
   };
   return appendLedgerEvent(completed, {
     kind: "shipyardBuilt",
@@ -214,7 +232,7 @@ export function runShipyardConstructionAutoDraw(world: World): World {
     company: {
       ...world.company,
       thalers: result.thalers,
-      shipyard: { portId: shipyard.portId, site: { siteStore: result.siteStore } },
+      shipyard: withShipyard(shipyard, { site: { siteStore: result.siteStore } }),
     },
     region: { ...world.region, ports },
   };
@@ -276,7 +294,7 @@ export function completeRefitIfDone(world: World): World {
     company: {
       ...world.company,
       ships: world.company.ships.map((s) => (s.id === completedShip.id ? completedShip : s)),
-      shipyard: { portId: shipyard.portId }, // refitOrder cleared, lock lifted
+      shipyard: withShipyard(shipyard, { refitOrder: undefined }), // lock lifted
     },
   };
   return appendLedgerEvent(completed, {
@@ -314,10 +332,9 @@ export function runShipyardAutoDraw(world: World): World {
     company: {
       ...world.company,
       thalers: result.thalers,
-      shipyard: {
-        portId: shipyard.portId,
+      shipyard: withShipyard(shipyard, {
         refitOrder: { ...shipyard.refitOrder, siteStore: result.siteStore },
-      },
+      }),
     },
     region: { ...world.region, ports },
   };
