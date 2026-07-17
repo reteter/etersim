@@ -63,30 +63,30 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  `baseHold: 50` onto every `Company.ships` entry — lossless by
  *  construction, same shape as the v9->v10 `requiredRank` backfill. Per the
  *  one-step-migration precedent, v10 is no longer readable — only v11
- *  carries forward now. */
-export const SAVE_VERSION = 12;
+ *  carries forward now.
+ *  v13: E14 (#286 fix) adds `Shipyard.site?` (docs/specs/E14-shipyard-and-refit.md
+ *  — Tech counter-erratum, "construction via ConstructionSite, not an
+ *  instant purchase"). Additive and absent-safe — a v12 save's `Shipyard`
+ *  (if present) was always fully built under the old instant-purchase model,
+ *  so "no `site` field" already means exactly what it means going forward
+ *  ("activated"); `migrateV12ToV13` is a documented identity (the v10->v11
+ *  precedent), kept as a real migration step so "version tracks World
+ *  shape" stays honest. Per the one-step-migration precedent, v11 is no
+ *  longer readable — only v12 carries forward now. */
+export const SAVE_VERSION = 13;
 
 /** Save envelope versions this adapter can still read, migrating forward to
  *  `SAVE_VERSION` on load — currently just the immediately preceding version;
- *  a save older than that is unreadable, same as every prior bump (v10
+ *  a save older than that is unreadable, same as every prior bump (v11
  *  dropped here, matching the v9-drop precedent at the previous bump). */
-const READABLE_VERSIONS: ReadonlySet<number> = new Set([11, SAVE_VERSION]);
+const READABLE_VERSIONS: ReadonlySet<number> = new Set([12, SAVE_VERSION]);
 
-/** v11 -> v12 (E14 #274): backfills `Ship.baseHold: 50` onto every ship in
- *  `Company.ships` — lossless because every ship that could exist in a v11
- *  save launched at hold 50 with no way to have grown it yet (the Hold
- *  ladder/Refit ship first at v12). */
-function migrateV11ToV12(rawWorld: unknown): World {
-  const world = rawWorld as World;
-  return {
-    ...world,
-    company: {
-      ...world.company,
-      // Unconditional: a v11 ship never carries baseHold (the field ships at
-      // v12), so `?? 50` would only mask a mislabeled envelope.
-      ships: world.company.ships.map((ship) => ({ ...ship, baseHold: 50 })),
-    },
-  };
+/** v12 -> v13 (E14 #286 fix): a documented identity — `Shipyard.site?` is
+ *  additive and absent-safe, and every v12 `Shipyard` was already "built"
+ *  under the old instant-purchase model, which is exactly what "no `site`"
+ *  means at v13. Nothing to backfill. */
+function migrateV12ToV13(rawWorld: unknown): World {
+  return rawWorld as World;
 }
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
@@ -150,7 +150,7 @@ function deserialize(text: string | null): World | null {
   }
   if (!isReadableEnvelopeShape(parsed)) return null;
   if (parsed.version === SAVE_VERSION) return parsed.world as unknown as World;
-  return migrateV11ToV12(parsed.world); // the only older readable version (v11)
+  return migrateV12ToV13(parsed.world); // the only older readable version (v12)
 }
 
 /**

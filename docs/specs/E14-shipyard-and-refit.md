@@ -112,31 +112,79 @@ HOLD_LADDER: readonly number[] = [2, 1.5, 1.25]   // tuning
 holdLadder(baseHold): number[]      // cumulative, rounded once from base: [100, 150, 188] for 50
 nextHoldStep(ship): number | null   // null at cap
 refitRecipe(ship): Record<GoodId, number>   // ceil(SHIP_RECIPE[g] × holdGained / baseHold × REFIT_MATERIAL_FACTOR)
-REFIT_MATERIAL_FACTOR = 1.0, REFIT_LABOR_FEE = 500, SHIPYARD_COST = 3000   // tuning
-Shipyard { portId: PortId, refitOrder?: RefitOrder }
+REFIT_MATERIAL_FACTOR = 1.0, REFIT_LABOR_FEE = 500   // tuning
+SHIPYARD_RECIPE: Record<GoodId, number>, SHIPYARD_LABOR_FEE = 700   // tuning (#286 fix)
+Shipyard { portId: PortId, site?: BuildOrder, refitOrder?: RefitOrder }
 RefitOrder { shipId: ShipId, targetHold: number, siteStore: Record<GoodId, number> }
 isUnderRefit(world, shipId): boolean   // derived lock predicate, no stored flag
 computeRefitRushQuote(world): RushQuote   // computeRushQuote's Refit counterpart
+computeShipyardRushQuote(world): RushQuote   // computeRushQuote's Shipyard-construction counterpart (#286 fix)
 ```
 
-`world.company.shipyard?: Shipyard` — absent until commissioned (same optional shape as
-`headquarters`). Commands: `commissionShipyard(portId)` (requires Headquarters, no
-existing Shipyard; instant and flat-cost, Reserve-checked — the `foundHeadquarters`
-analog, reusing `commissionBuilding` only for its reserve-gated fee check, since
-`Shipyard` carries no `siteStore` of its own — *erratum, #275 implementation: earlier
-drafted as "flat cost + recipe", corrected once the `Shipyard` type settled to
-`{ portId, refitOrder? }` with no site field*); `commissionRefit(shipId)` (gates above;
-charges the labor fee up front, Reserve-checked; auto-suspends the assignment — the
-recipe-bearing step, `placeBuildOrder`'s analog); `rushRefit()` (the Refit site's rush,
-`rushBuild`'s analog — not named explicitly in the original Tech draft, added here for
-completeness). The Shipyard site's auto-draw runs in the same tick phase as the HQ's,
-after it in `tick()`, through the shared ConstructionSite engine. Completion applies
-`hold = targetHold` and clears `refitOrder`. Ledger kinds: `shipyardBuilt`,
-`refitStart`, `refitComplete`. **Net worth counts an active refit's `siteStore`
-exactly like the HQ build site's** (owner decision 2026-07-16, resolving the #285
-review flag): in-progress refit materials keep their book value at region-average
-mid, so the company-value chart shows the same honest dip-then-growth shape for a
-Refit as for ship construction.
+*Counter-erratum (2026-07-17, #286, owner-ratified post-#285-merge audit finding 1):*
+the `#275 implementation` erratum immediately below (kept verbatim, struck through in
+spirit not in text, for the paper trail) resolved the wrong way. It corrected the
+Tech draft's self-contradiction ("flat cost + recipe" naming a recipe for something
+"instant") by deleting the recipe — but the Design section above ("built via the Build
+Order pattern") and CONTEXT.md's **Shipyard** entry ("built via the Build Order
+pattern") were never wrong, and never in question. The building-family pattern is
+unambiguous once you read past this one Tech paragraph: **HQ is the only instant
+Building** (CONTEXT.md — Headquarters: "active immediately"); Storehouse (E13 spec —
+"a Build Order exactly like a hull") and the Processing plant (E15 spec — "a normal
+Build Order through the ConstructionSite seam") both construct. A Shipyard bought in
+one click was the outlier, not the rule — the #275 erratum fixed the type to match a
+one-off Tech slip instead of fixing the Tech slip to match the rule. This fix (#286)
+restores the correct shape: `Shipyard` gains `site?: BuildOrder` (the `Headquarters.
+buildOrder` shape, reused — recipe is the new `SHIPYARD_RECIPE` tuning constant,
+`portId` is `Shipyard.portId`, nothing to duplicate). `commissionShipyard` is now the
+`placeBuildOrder` analog, not the `foundHeadquarters` one: it charges `SHIPYARD_LABOR_FEE`
+up front (Reserve-checked, `laborFee` Ledger kind — reused rather than a new kind, same
+"why" as the ship's) and opens an empty site; `commissionRefit` additionally gates on
+`!shipyard.site` (the building must have activated); a new `rushShipyard()` command is
+the site's `rushBuild`/`rushRefit` analog. `runShipyardConstructionAutoDraw` draws the
+site each tick, between the HQ's `runBuildSiteAutoDraw` and the Refit's
+`runShipyardAutoDraw` (the two are mutually exclusive by construction — a Refit cannot
+start before the Shipyard itself has built, so their relative order never actually
+matters, but a fixed order keeps the tick phase list honest). Completion
+(`completeShipyardIfDone`) clears `site` (activating the building) and appends
+`shipyardBuilt` — which now fires at **activation**, not commission, carrying no
+`thalers` (the fee was already logged by `laborFee`; unlike the pre-fix instant model
+where `shipyardBuilt` fired at commission carrying the flat cost).
+
+*Original #275 implementation erratum (superseded by the above, kept for the paper
+trail):* "earlier drafted as 'flat cost + recipe', corrected once the `Shipyard` type
+settled to `{ portId, refitOrder? }` with no site field" — `commissionShipyard(portId)`
+was implemented instant and flat-cost, reusing `commissionBuilding` only for its
+reserve-gated fee check.
+
+`world.company.shipyard?: Shipyard` — present from the moment `commissionShipyard`
+succeeds (same optional shape as `headquarters`), but the building only *activates*
+once `site` clears (#286 fix). `commissionRefit(shipId)` (gates above — no Shipyard, an
+un-activated `site`, or an already-active `refitOrder`; charges the labor fee up front,
+Reserve-checked; auto-suspends the assignment — the recipe-bearing step,
+`placeBuildOrder`'s analog); `rushRefit()` (the Refit site's rush, `rushBuild`'s analog
+— not named explicitly in the original Tech draft, added here for completeness). The
+Shipyard's own construction site and its Refit site's auto-draw run in the same tick
+phase as the HQ's, after it in `tick()`, through the shared ConstructionSite engine.
+Refit completion applies `hold = targetHold` and clears `refitOrder`. Ledger kinds:
+`shipyardBuilt` (now at activation, #286 fix), `refitStart`, `refitComplete`, plus the
+reused `laborFee` (the Shipyard's own construction labor fee, #286 fix). **Net worth
+counts an active refit's `siteStore` exactly like the HQ build site's** (owner decision
+2026-07-16, resolving the #285 review flag) **and, by the same logic, the Shipyard's
+own construction site's `siteStore` too** (#286 fix, extending the pattern to the
+Shipyard's own build): in-progress materials keep their book value at region-average
+mid, so the company-value chart shows the same honest dip-then-growth shape for
+Shipyard construction as for a Refit or a ship build.
+
+**Scarcity (#286, E13 spec §Construction generalized):** one active Build Order per
+Company, ship or building — `placeBuildOrder` (ship) now also rejects while
+`shipyard.site` is active, and `commissionShipyard` rejects while
+`headquarters.buildOrder` is active. E13's own generalized `BuildOrder` target-kind
+union (`{kind:"ship"}|{kind:"building",...}`) is not implemented yet (E13 hasn't
+shipped this slice), so this fix establishes the enforcement point directly at the two
+call sites rather than waiting for that refactor — the Refit's own "one active
+RefitOrder per Shipyard" rule is unaffected and stays separate (a Refit is gated on the
+Shipyard already being built, so it can never coincide with the Shipyard's own site).
 
 Refit lock (#275): `isUnderRefit` gates `sailTo`, `assignRoute`, `resumeRoute` (blocked
 for the whole refit so "resume is manual after completion" holds — the route pass never
@@ -145,6 +193,20 @@ trades). `deliver` is deliberately NOT gated — any Company ship, including the
 target itself, may deliver into the refit site; that is one of its three fill sources.
 `unassignRoute` is also not gated (a decision, not an oversight — detaching a suspended
 assignment moves nothing and grants no escape from the lock).
+
+**Deliver targeting rule, three sites deep (#286 fix, generalizing the #285/#286 audit
+finding — same port can now host an HQ build, the Shipyard's own site, and a Refit
+site):** `deliver(good)` fills, in priority order — (1) a same-port HQ build's
+remaining need, (2) a same-port Shipyard construction site's remaining need, (3) a
+same-port Refit site's remaining need. Falls through per good when an earlier site in
+the chain needs none of it (rather than swallowing the delivery), same as the #285
+two-site precedent; a completed recipe still resolves (`launchIfComplete`/
+`completeShipyardIfDone`/`completeRefitIfDone`) even when nothing moved.
+
+**Persistence:** `Shipyard.site?` is additive and absent-safe — SAVE_VERSION 12 → 13,
+`migrateV12ToV13` is a documented identity (a v12 `Shipyard`, if present, was always
+fully built under the old instant-purchase model, exactly what "no `site`" still means
+at v13).
 
 ### UI
 

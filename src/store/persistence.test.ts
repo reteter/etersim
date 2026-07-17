@@ -148,8 +148,9 @@ function v9SaveWithContractOffer(): { version: 9; world: World } {
 }
 
 /** A v11 save (post-E9.1, pre-E14): a world whose ships carry no `baseHold`
- *  at all — the exact shape a v11 save on disk actually had.
- *  `migrateV11ToV12` must backfill `baseHold: 50` on every ship. */
+ *  at all — the exact shape a v11 save on disk actually had. Kept only to
+ *  prove v11 is now rejected outright (#286 fix dropped the v11->v12 hop,
+ *  same precedent as v9/v10's drop at the previous bumps). */
 function v11Save(): { version: 11; world: World } {
   const world = e9World();
   const deshaped = {
@@ -166,9 +167,9 @@ function v11Save(): { version: 11; world: World } {
   return { version: 11, world: deshaped };
 }
 
-/** A world with an active Refit (E14 #275) — a Headquarters, a Shipyard, and
- *  a partially-filled RefitOrder — driven a few ticks so the site actually
- *  gathered some materials, not just a freshly-opened empty one. */
+/** Drives a commissioned Shipyard's own construction site to activation via
+ *  rush + tick, then starts and partially fills a Refit — a Headquarters, a
+ *  fully-built Shipyard, and a partially-filled RefitOrder (E14 #275/#286). */
 function refitInProgressWorld(): World {
   const base = createWorld("refit-save");
   const hqPortId = base.region.ports[0].id;
@@ -186,21 +187,28 @@ function refitInProgressWorld(): World {
     { kind: "foundHeadquarters", portId: hqPortId },
     { kind: "commissionShipyard", portId: shipyardPortId },
   ]);
+  let guard = 0;
+  while (world.company.shipyard?.site && guard++ < 500) {
+    world = tick(world, [{ kind: "rushShipyard" }]);
+  }
   world = tick(world, [{ kind: "commissionRefit", shipId: homeShip.id }]);
   for (let i = 0; i < 10; i++) world = tick(world, []); // let auto-draw gather some materials
   return world;
 }
 
-/** The `baseHold`-backfilled counterpart of `v11Save().world`, i.e. what
- *  `migrateV11ToV12` should produce: every ship regains `baseHold: 50`. */
-function v11SaveMigrated(save: { world: World }): World {
-  return {
-    ...save.world,
-    company: {
-      ...save.world.company,
-      ships: save.world.company.ships.map((ship) => ({ ...ship, baseHold: 50 })),
-    },
-  };
+/** A Headquarters plus a commissioned Shipyard whose own construction site
+ *  is still filling — mid-construction, not yet activated (E14 #286 fix). */
+function shipyardConstructionInProgressWorld(): World {
+  const base = createWorld("yard-construction-save");
+  const hqPortId = base.region.ports[0].id;
+  const shipyardPortId = base.region.ports[1].id;
+  let world: World = { ...base, company: { ...base.company, thalers: 1_000_000 } };
+  world = tick(world, [
+    { kind: "foundHeadquarters", portId: hqPortId },
+    { kind: "commissionShipyard", portId: shipyardPortId },
+  ]);
+  for (let i = 0; i < 10; i++) world = tick(world, []); // let auto-draw gather some materials
+  return world;
 }
 
 describe("persistence", () => {
@@ -225,10 +233,24 @@ describe("persistence", () => {
 
   it("round-trips a mid-Refit world through the real persistence layer — Shipyard + RefitOrder identity (E14 #275)", () => {
     const world = refitInProgressWorld();
-    // Preconditions: the fixture actually landed with an active Refit whose
-    // site has gathered something (not a freshly-opened empty one).
+    // Preconditions: the fixture actually landed with a built Shipyard and
+    // an active Refit whose site has gathered something (not a
+    // freshly-opened empty one).
+    expect(world.company.shipyard?.site).toBeUndefined(); // activated
     expect(world.company.shipyard?.refitOrder).toBeDefined();
     const anyDrawn = Object.values(world.company.shipyard!.refitOrder!.siteStore).some((qty) => qty > 0);
+    expect(anyDrawn).toBe(true);
+    const restored = parseWorldJson(exportWorldJson(world));
+    expect(restored).toEqual(world);
+    expect(restored.company.shipyard).toEqual(world.company.shipyard);
+  });
+
+  it("round-trips a mid-Shipyard-construction world through the real persistence layer (E14 #286 fix — the site field, not yet activated)", () => {
+    const world = shipyardConstructionInProgressWorld();
+    // Preconditions: the fixture actually landed with the Shipyard's own
+    // site still active (not yet built) and having gathered something.
+    expect(world.company.shipyard?.site).toBeDefined();
+    const anyDrawn = Object.values(world.company.shipyard!.site!.siteStore).some((qty) => qty > 0);
     expect(anyDrawn).toBe(true);
     const restored = parseWorldJson(exportWorldJson(world));
     expect(restored).toEqual(world);
@@ -308,38 +330,52 @@ describe("persistence", () => {
     expect(parsed.version).toBe(SAVE_VERSION);
   });
 
-  describe("v11 -> v12 migration (E14 #274 — Ship.baseHold)", () => {
-    it("parseWorldJson backfills baseHold: 50 on every ship of a v11 world, lossless otherwise", () => {
-      const save = v11Save();
-      // Precondition: the deshaped fixture actually lacks baseHold.
-      expect(save.world.company.ships.every((s) => !("baseHold" in s))).toBe(true);
-      const text = JSON.stringify(save);
+  describe("v12 -> v13 migration (E14 #286 fix — Shipyard.site)", () => {
+    it("parseWorldJson accepts a v12 world unchanged (identity — Shipyard.site is additive/absent-safe)", () => {
+      const world = e9World(); // no shipyard field at all — the common v12 shape
+      const text = JSON.stringify({ version: 12, world });
 
       const migrated = parseWorldJson(text);
 
-      expect(migrated).toEqual(v11SaveMigrated(save));
-      expect(migrated.company.ships.every((s) => s.baseHold === 50)).toBe(true);
+      expect(migrated).toEqual(world);
     });
 
-    it("loadAutosave transparently migrates a v11 slot, so an old save keeps loading (incident 0009 concern)", () => {
+    it("parseWorldJson accepts a v12 world with a built (site-absent) Shipyard unchanged — that's exactly what 'no site' still means", () => {
+      const base = createWorld("v12-built-shipyard");
+      const hqPortId = base.region.ports[0].id;
+      const shipyardPortId = base.region.ports[1].id;
+      let world: World = { ...base, company: { ...base.company, thalers: 10_000 } };
+      world = tick(world, [{ kind: "foundHeadquarters", portId: hqPortId }]);
+      // A v12 save's Shipyard, if present, was always fully built (the old
+      // instant-purchase model) — same shape as `{ portId }` at v13.
+      world = { ...world, company: { ...world.company, shipyard: { portId: shipyardPortId } } };
+      const text = JSON.stringify({ version: 12, world });
+
+      const migrated = parseWorldJson(text);
+
+      expect(migrated).toEqual(world);
+      expect(migrated.company.shipyard).toEqual({ portId: shipyardPortId });
+    });
+
+    it("loadAutosave transparently migrates a v12 slot, so an old save keeps loading (incident 0009 concern)", () => {
       const storage = fakeStorage();
-      const save = v11Save();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify(save));
+      const world = e9World();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 12, world }));
 
       const restored = loadAutosave(storage);
       expect(restored).not.toBeNull();
       expect(hasAutosave(storage)).toBe(true);
-      expect(restored).toEqual(v11SaveMigrated(save));
+      expect(restored).toEqual(world);
     });
 
-    it("a save older than v11 (v10) is now rejected — migration is one step, not open-ended", () => {
+    it("a save older than v12 (v11) is now rejected — migration is one step, not open-ended", () => {
       const storage = fakeStorage();
-      const world = e9World();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 10, world }));
+      const save = v11Save();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify(save));
       expect(loadAutosave(storage)).toBeNull();
     });
 
-    it("a save older than v10 (v9) is still rejected", () => {
+    it("an even older save (v9) is still rejected", () => {
       const storage = fakeStorage();
       const v9Save = v9SaveWithContractOffer();
       storage.setItem(AUTOSAVE_KEY, JSON.stringify(v9Save));
