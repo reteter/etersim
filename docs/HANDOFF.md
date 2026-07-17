@@ -30,22 +30,20 @@ there; this file + repo docs are the whole context)._
 
 ## Queue (owner-agreed order, set s5/s6)
 
-1. **Professor dispatch — CAST ON FABLE (owner decision s6, 2026-07-17):** the Fable
-   pool (28% left, lapses 07-19) goes to the analysis itself; the separate "Fable
-   digest" step is dropped. One-off exception: Professor writes his full report to
-   `docs/design-notes/` (read-only waived for handoff durability), driver commits it.
-   Scope = the construction subsystem
-   end-to-end — `src/sim` site/shipyard/build-order + commands + save v13 + the
-   store→UI bridge (`siteStall`/`siteEstimate`/`BuildProgress`). Persona:
-   `docs/personas/PROFESSOR.md`, harness def `.claude/agents/professor.md`.
-2. **Fable digest of the Professor's findings — MUST land before 2026-07-19**
-   (Fable access lapses; the digest is cheap — reading a design note).
-3. **Owner-led grill: coder-contract TDD line** (trigger hit at 3 self-reported
+1. ~~Professor dispatch~~ — **DONE 2026-07-17 (s7, cast on Fable per owner decision
+   s6; the separate "Fable digest" step was dropped).** Report:
+   `docs/design-notes/professor-construction-review.md` — engine verified sound
+   (determinism, purity, v13, Reserve, ledger grammar, quote/charge); 7 findings
+   routed per its Routing Table: F1+F2 → new issue (HQ Budowa silent no-op + wrong
+   string), F3 → comment on #292, F5 → comment on #290, F4+F7 → grill agenda
+   (E13 site iterator, E15 deliver addressing), F6 → conditional watch.
+2. **Owner-led grill: coder-contract TDD line** (trigger hit at 3 self-reported
    TDD-order deviations — see scorecard).
-4. #290 + #292 (both are "port arm-A patterns" follow-ups — natural single wave),
-   #272 (barrel), #255.
-5. E13 Guild buildings (#100/#101 — skim spec vs code first) → E11 v1 (#232→#233→#234)
-   → E15 (#281→#284, spec approved).
+3. #290 + #292 (both are "port arm-A patterns" follow-ups — natural single wave),
+   #272 (barrel), #255, plus the F1+F2 issue from the Professor's review.
+4. E13 Guild buildings (#100/#101 — skim spec vs code first; **grill agenda: F4
+   ordered site iterator**) → E11 v1 (#232→#233→#234) → E15 (#281→#284, spec
+   approved; **grill agenda: F7 deliver addressing**).
 
 ## Watch items
 
@@ -58,4 +56,8 @@ there; this file + repo docs are the whole context)._
 - Both #276 arms left market buy/sell rows sim-guarded-only for a locked ship
   (silent no-op) — in #292 as a conditional item.
 - Recurring e2e smell: `dispatchEvent` standing in for real interaction.
-- Fable access ends 2026-07-19 — item 2 above is the deadline task.
+- Fable access ends 2026-07-19 — the deadline task (Professor on Fable) is done;
+  remaining pool is bonus.
+- Professor F6: `RefitOrder` mixed stored/derived truth splits if `HOLD_LADDER` is
+  ever tuned under a loaded mid-refit save — raise at the grill only if ladder
+  tuning enters an agenda.
