@@ -303,3 +303,11 @@ or targeted mutation) flagged in the report. The three historical TDD-order
 deviations (#205, #208, #288 arm A) were de facto that path before it had a
 name. From here, rows count a deviation only for a missing flag or missing
 proof — never for order itself.
+
+**A/B series closed (2026-07-17, owner):** 2/2 for Sonnet with the same shape in
+both pairs — treated as a consistent datapoint, not statistical proof; a third
+pair was declined (~35–50% of a session limit for low marginal information).
+Owner decision: **coder default = Sonnet** (closing the s4 Opus override —
+incident 0017), **advisor = Opus**; targeted strong-tier coder casting remains
+available for architecture-heavy packages (WORKFLOW §Casting). Revisit trigger:
+findings/fix-loop trend degradation or a new model release.

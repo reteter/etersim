@@ -24,6 +24,16 @@ without touching anything else in the process:
 > Claude Opus; cheap = Claude Sonnet. Any comparable model may fill a slot — the
 > gates below, not the vendor, carry the quality claim.
 
+**Casting decisions edit the def** (incident 0017): a role's model override is
+real only when the harness def (`.claude/agents/*.md` frontmatter) or the
+dispatch's explicit `model:` carries it — prose records (HANDOFF, memory) are
+pointers, not sources. 2026-07-17 (A/B read-out, series closed 2/2): the s4
+coder=Opus override is closed — coder returns to the cheap tier (Sonnet) as the
+standing default; the in-flight advisor is cast on the strong tier (Opus,
+satisfying advisor tier ≥ executor tier). Architecture-heavy packages (seam
+extraction, new-module design) may name a strong-tier coder explicitly — a
+deliberate, named choice per dispatch.
+
 When frontier access lapses: `procedural` roadmap items (PRD §Roadmap labels) keep
 full velocity under the standing gates; `design-frontier` items wait for an owner-led
 grill — running that grill with a strong-tier model is a deliberate, named choice,
