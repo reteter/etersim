@@ -57,13 +57,37 @@ export {
   LABOR_FEE,
   remainingNeed,
   SHIP_RECIPE,
+  siteRemainingNeed,
   type BuildEstimate,
   type BuildEstimateLine,
   type BuildOrder,
+  type ConstructionSite,
   type Headquarters,
   type RushQuote,
   type RushQuoteLine,
 } from "./building";
+// E14 (#276, PortPanel Shipyard section + map refit bubble + status — UI):
+// the Shipyard/Refit domain seams (#275) plus `siteRemainingNeed`/
+// `ConstructionSite` above (the #99 generic engine, used to derive a stall
+// reason for the Shipyard's own site and the Refit site the same way
+// `headquartersStall.ts` derives one for the HQ build) and `estimateBuy`
+// below (market.ts, the `computeBuildEstimate` pattern generalized to any
+// recipe/port pair) — none of these were re-exported from the barrel yet
+// (a separate barrel-cleanup issue is open); this UI-only pass adds pure
+// re-export lines only, per the task package's scope exception.
+export {
+  computeRefitRushQuote,
+  computeShipyardRushQuote,
+  isShipyardUnderConstruction,
+  isUnderRefit,
+  nextHoldStep,
+  refitRecipe,
+  REFIT_LABOR_FEE,
+  SHIPYARD_LABOR_FEE,
+  SHIPYARD_RECIPE,
+  type RefitOrder,
+  type Shipyard,
+} from "./shipyard";
 export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
 export { tick, type Command } from "./tick";
@@ -107,6 +131,7 @@ export {
 // (quotes already carry the spread; the bias is baked into priceBias).
 export {
   effectiveBase,
+  estimateBuy,
   marketTick,
   NEUTRAL_MODIFIERS,
   price,

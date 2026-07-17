@@ -921,6 +921,24 @@ body {
   color: #e0a840;
 }
 
+/* Refit bubble (#276): a small progress pill above the Shipyard port while a
+   Refit is active — the same violet the FleetList/ShipPanel status word uses
+   (.fleet-list__status--refit, ADR-0006 one-color-one-meaning), so the
+   in-progress read is consistent between the map and the side panel. */
+.refit-bubble {
+  pointer-events: none;
+}
+
+.refit-bubble__bg {
+  fill: rgba(11, 15, 24, 0.85);
+  stroke: #a373d6;
+  stroke-width: 0.3;
+}
+
+.refit-bubble__fill {
+  fill: #a373d6;
+}
+
 /* Region price board (#62): a wider overlay variant — the port×good grid
    needs more room than the Options/Credits dialogs. */
 .overlay__panel--wide {
@@ -1233,6 +1251,30 @@ body {
 
 .headquarters-section {
   margin: 0.75rem 0;
+}
+
+/* Shipyard section (#276) — reuses the Headquarters/Budowa widgets
+   (headquarters-progress, headquarters-stall, build-confirm, menu-btn); only
+   its own layout (margin, the Refit picker's select) is new. */
+.shipyard-section {
+  margin: 0.75rem 0;
+}
+
+.shipyard-refit-picker__select {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+/* "W przebudowie" ship status (#276, ADR-0006 — one color, one meaning): a
+   fresh violet, distinct from gold (Controlled Ship), the suspended/stall red
+   (#d9705f), active-control blue (#4c7bab), waiting blue (#6c9bd1) and the
+   mining-archetype purple (#7e55ab) — a locked-in-port state is its own axis,
+   not a shade of any of those. Shared by FleetList's status word, ShipPanel's
+   status line, and the map's refit-progress bubble (one color = one meaning
+   means the same hex everywhere the state shows). */
+.fleet-list__status--refit,
+.ship-panel__status--refit {
+  color: #a373d6;
 }
 
 .headquarters-progress {
