@@ -97,6 +97,36 @@ test.describe('Shipyard commission — PortPanel section (#276)', () => {
     await expect(page.locator('.shipyard-section')).toContainText(/kwalifikujących się do przebudowy|Wybierz statek/);
   });
 
+  test('while the Shipyard is under construction, HQ "Zleć budowę" is disabled with a reason (#293 F1)', async ({
+    page,
+  }) => {
+    const founded = foundedWorld('shipyard-hq-gate');
+    const w = applyCommand(founded, {
+      kind: 'commissionShipyard',
+      portId: founded.region.ports[1].id,
+    });
+    await continueWithWorld(page, w);
+
+    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const placeBtn = dialog.getByRole('button', { name: /Zleć budowę/ });
+    await expect(placeBtn).toBeDisabled();
+    await expect(placeBtn).toHaveAttribute('title', /stoczni/);
+  });
+
+  test('while a ship build is active at the HQ, Shipyard commission names ship construction (#293 F2)', async ({
+    page,
+  }) => {
+    const founded = foundedWorld('shipyard-hq-buildorder');
+    const w = applyCommand(founded, { kind: 'placeBuildOrder' });
+    await continueWithWorld(page, w);
+
+    await page.locator('g.port').nth(1).click({ force: true });
+    const commissionBtn = page.getByRole('button', { name: /Zbuduj stocznię — ₸\d/ });
+    await expect(commissionBtn).toBeDisabled();
+    await expect(commissionBtn).toHaveAttribute('title', /statku/);
+  });
+
   test('commission is gated on an existing Headquarters and the labor fee + Reserve (#122)', async ({ page }) => {
     const w0 = createWorld('shipyard-nohq');
     await continueWithWorld(page, w0);

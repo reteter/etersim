@@ -571,7 +571,7 @@ function ShipyardSection({ world, portId }: { world: World; portId: PortId }) {
     const disabledReason = !headquarters
       ? "Wymaga założonej siedziby"
       : headquarters.buildOrder
-        ? "Budowa siedziby wciąż trwa"
+        ? "Trwa budowa statku w siedzibie"
         : thalers < SHIPYARD_LABOR_FEE + CONSTRUCTION_RESERVE
           ? `wymaga ₸${SHIPYARD_LABOR_FEE + CONSTRUCTION_RESERVE} — robocizna ₸${SHIPYARD_LABOR_FEE} + rezerwa ₸${CONSTRUCTION_RESERVE}`
           : null;
