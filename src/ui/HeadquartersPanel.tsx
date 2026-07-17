@@ -49,7 +49,12 @@ function ConstructionTab({ world }: { world: World }) {
   const headquarters = world.company.headquarters!;
   const buildOrder = headquarters.buildOrder;
   const thalers = world.company.thalers;
-  const canPlace = !buildOrder && thalers >= LABOR_FEE + CONSTRUCTION_RESERVE;
+  // The one-Build-Order-per-Company law's other side (#293): placeBuildOrder
+  // rejects while the Shipyard's own site is active, so the button must gate
+  // too — same disabled-with-reason pattern as the Shipyard commission.
+  const shipyardUnderConstruction = Boolean(world.company.shipyard?.site);
+  const canPlace =
+    !buildOrder && !shipyardUnderConstruction && thalers >= LABOR_FEE + CONSTRUCTION_RESERVE;
   const stallReason = buildOrder ? deriveStallReason(world, headquarters) : null;
   const quote = buildOrder ? computeRushQuote(world) : null;
   const estimate = buildOrder ? null : computeBuildEstimate(world);
@@ -105,9 +110,11 @@ function ConstructionTab({ world }: { world: World }) {
           title={
             buildOrder
               ? "budowa już trwa"
-              : canPlace
-                ? undefined
-                : `wymaga ₸${LABOR_FEE + CONSTRUCTION_RESERVE} — robocizna ₸${LABOR_FEE} + rezerwa ₸${CONSTRUCTION_RESERVE}`
+              : shipyardUnderConstruction
+                ? "Trwa budowa stoczni"
+                : canPlace
+                  ? undefined
+                  : `wymaga ₸${LABOR_FEE + CONSTRUCTION_RESERVE} — robocizna ₸${LABOR_FEE} + rezerwa ₸${CONSTRUCTION_RESERVE}`
           }
           onClick={() => setConfirming(true)}
         >
