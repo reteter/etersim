@@ -268,6 +268,27 @@ was the single axis with a written answer. n=1 — a datapoint, not a ruling.
 Post-merge cert: main @ c96315b — 589 unit / typecheck / lint / full Playwright
 96/96.
 
+## E14 wave 4 — #276 paired A/B (Opus vs Sonnet, 2026-07-17)
+
+**Second same-task pair.** Identical package and baseline (`main @ f2a28f1`),
+protocol upgraded per the #286 lessons (index scrub, neutral branch names,
+reference-arm quarantine: A's branch + worktree deleted before B's dispatch;
+B's disclosure audit clean). Reviews: one two-axis Opus subagent per arm
+(tier-3 shape, symmetric — the incident-0016 correction held). Full write-up:
+`design-notes/ab-276-shipyard-ui.md`.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-17 | — (closed unmerged) | #276 arm A — **Opus** | 3 | 3 (judgement) | 0 | n/a (not merged) | PASS/PASS, 0 hard. Wins architecture (stall generalized in place, shared `SiteProgress`) and maintenance (teal clear of palette, defensive `?? 0`). Loses tests: 0 unit, brittle `toHaveCount(6)` + SVG `<title>` selectors; hides the commission section pre-HQ where repo precedent is disabled-with-reason. Advisor ×2. Cost ~24% limit (190k tokens). Reference branch kept for #292. |
+| 07-17 | #291 | #276 arm B — **Sonnet** | 3 | 4 (judgement) | 0 | pass | PASS/PASS, 0 hard. Wins AC fidelity (precedent-aligned disabled-with-reason gate, safer refit confirm), tests (~11 unit over extracted pure modules, negative + purse-drop==quote E2E, `data-*` selectors, full suite 100/100) and flag completeness (disclosed a limitation A shared silently; caught the package's nonexistent "Storehouse pattern"). Regressions → #292 (duplicated stall walk, repeated JSX, violet near mining-purple). Advisor ×1. Cost ~14% limit (217k tokens). |
+
+Pair verdict: axes split 3–2 for B; tiebreak = fix asymmetry (B's gaps are
+mechanical ports with A as the reference; A's missing test architecture is not).
+Owner ratified merge B; violet kept. **Series 2/2 for Sonnet, same shape both
+times: written-rule conformance + broader tests at ~half the limit-% cost; Opus
+wins architecture both times.** Post-merge cert: main @ ad37ae0 — 600 unit /
+typecheck (full Playwright ran coder-side same content, 100/100).
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
