@@ -289,6 +289,27 @@ times: written-rule conformance + broader tests at ~half the limit-% cost; Opus
 wins architecture both times.** Post-merge cert: main @ ad37ae0 — 600 unit /
 typecheck (full Playwright ran coder-side same content, 100/100).
 
+## E14 follow-up wave — #290 + #292 (arm-A ports, 2026-07-17 s9)
+
+Two Sonnet coders in parallel worktrees (disjoint file sets, reviewer-verified:
+`src/sim/{commands,shipyard,shipyard.test}.ts` vs store/UI/e2e + new
+`src/sim/siteEstimate.*`), one two-axis Opus reviewer over both diffs in one
+context (tier 3). Casting footnote: the wave ran on Sonnet via the def
+frontmatter while the s4 Opus override still nominally stood — incident 0017;
+the owner closed the override the same session (Sonnet ratified as default).
+Both dispatched under the pre-grill TDD line; the evidence path binds from the
+next dispatch.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-17 | #297 | #290 | 3 | 3 (note) | 0 | pass | Sim port of arm-A patterns + Professor F5 (`withShipyard` at all 10 sites, spread-order safe). Behavior-unchanged claim reviewer-verified (only the yard-autodraw assertion changed; zero `!` in the deliver chain via real narrowing; `tryDeliver` equivalence incl. ledger paths and zero-move tail). Notes: dead `applyDeliveryToSite` + deliberately-left sibling weak assertion → #299; `rushRefit` const cleanup judged in-scope (F5 site). Advisor ×2 — pre-code consult validated a real co-active HQ+Refit swallow trap in the guard design. |
+| 07-17 | #298 | #292 | 3 | 1 (note) | 0 | pass | Stall-walk collapse + Professor F3 (dry-run of earlier sites through the real `drawConstructionSite` — same primitive as the tick, cannot drift); concurrent-sites test judged genuinely discriminating (naive `null` vs accounted `"reserve"`, grounded on real `tick()`); all 6 deleted `siteStall` cases retargeted, no coverage loss. TDD honored red-first on `siteEstimate` (math byte-for-byte the deleted UI copy; ADR-0002 purity improved). Note: `!quote` guard was vacuous — simplification exactly behavior-preserving. Design watch: `precedingSites = []` default is a future-caller foot-gun (coder-flagged, both call sites correct). Advisor ×2. |
+
+Wave cert 2026-07-17: main @ e23ab48 — 607 unit / typecheck / lint / full
+Playwright 102/102; postmerge CLEAN (arm-A reference branch deleted with #292).
+Third and fourth consecutive zero-fix-loop tier-3 rows; first wave fully under
+the corrected casting rule (reviewer's Opus named explicitly at dispatch).
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
