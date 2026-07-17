@@ -30,7 +30,11 @@ there; this file + repo docs are the whole context)._
 
 ## Queue (owner-agreed order, set s5/s6)
 
-1. **Professor dispatch** (E14 is closed): scope = the construction subsystem
+1. **Professor dispatch — CAST ON FABLE (owner decision s6, 2026-07-17):** the Fable
+   pool (28% left, lapses 07-19) goes to the analysis itself; the separate "Fable
+   digest" step is dropped. One-off exception: Professor writes his full report to
+   `docs/design-notes/` (read-only waived for handoff durability), driver commits it.
+   Scope = the construction subsystem
    end-to-end — `src/sim` site/shipyard/build-order + commands + save v13 + the
    store→UI bridge (`siteStall`/`siteEstimate`/`BuildProgress`). Persona:
    `docs/personas/PROFESSOR.md`, harness def `.claude/agents/professor.md`.
