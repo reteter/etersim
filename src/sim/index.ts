@@ -48,10 +48,12 @@ export {
 } from "./region";
 export { type Route, type RouteId, type Stop, type StopOrder } from "./route";
 export {
+  autoDrawCapForDayTick,
   AUTO_DRAW_PER_DAY,
   computeBuildEstimate,
   computeRushQuote,
   CONSTRUCTION_RESERVE,
+  drawConstructionSite,
   generateShipName,
   HEADQUARTERS_COST,
   LABOR_FEE,
@@ -88,6 +90,10 @@ export {
   type RefitOrder,
   type Shipyard,
 } from "./shipyard";
+// #292: the Shipyard commission/Refit estimate seam, moved into src/sim so it
+// can never hand-drift from `computeBuildEstimate` above (was a UI-layer copy
+// in src/ui/siteEstimate.ts).
+export { computeRefitEstimate, computeShipyardEstimate } from "./siteEstimate";
 export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
 export { tick, type Command } from "./tick";

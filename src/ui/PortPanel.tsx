@@ -1,7 +1,9 @@
 import { useState, type ComponentType, type SVGProps } from "react";
 import {
   cargoUsed,
+  computeRefitEstimate,
   computeRefitRushQuote,
+  computeShipyardEstimate,
   computeShipyardRushQuote,
   CONSTRUCTION_RESERVE,
   effectiveBase,
@@ -33,7 +35,7 @@ import {
   type World,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
-import { deriveSiteStallReason } from "../store/siteStall";
+import { activeHeadquartersSite, deriveSiteStallReason } from "../store/headquartersStall";
 import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
 import { FOUNDING_GOAL, foundingProgress, foundingSavings } from "./foundingProgress";
@@ -55,7 +57,6 @@ import {
 import { priceTrend, TREND_GLYPH, TREND_LEGEND } from "./priceTrend";
 import { quoteLabel } from "./quoteFormat";
 import { sailability } from "./sailability";
-import { computeSiteEstimate } from "./siteEstimate";
 
 /** Archetype → vendored SVG icon, shown before the archetype label under the
  *  port name (#74). Same icon set RegionMap/GuildBadge already use
@@ -435,13 +436,58 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
 
 /** Shared stall-reason label (STALL_LABEL, HeadquartersPanel.tsx) — the
  *  Shipyard's own site and a Refit site reuse `deriveSiteStallReason`
- *  (store/siteStall.ts), the generic counterpart of `deriveStallReason`, so
- *  they get the identical Polish copy for "wstrzymane: rezerwa skarbca" /
- *  "wstrzymane: brak towaru" the Budowa tab already shows. */
+ *  (store/headquartersStall.ts), the generic counterpart of
+ *  `deriveStallReason`, so they get the identical Polish copy for
+ *  "wstrzymane: rezerwa skarbca" / "wstrzymane: brak towaru" the Budowa tab
+ *  already shows. */
 const SITE_STALL_LABEL: Record<"reserve" | "goods", string> = {
   reserve: "wstrzymane: rezerwa skarbca",
   goods: "wstrzymane: brak towaru",
 };
+
+/**
+ * The site's progress bar + stall reason + a live rush quote, shared by the
+ * Shipyard's own construction and an active Refit — the two
+ * `ConstructionSite`s `ShipyardSection` below renders (#292 — collapses the
+ * progress+stall+rush JSX that used to be repeated per branch). The quote
+ * comes from the same sim function the `rush*` command charges (never a
+ * drifting UI-only quote).
+ *
+ * `precedingSites` names the sites the same tick draws from the shared purse
+ * *before* `site` (Professor F3, #292 — see `deriveSiteStallReason`): the HQ
+ * Build Order for whichever of these two sites is active, since the Shipyard
+ * runs after the HQ in `tick.ts`'s fixed order and the Shipyard's own
+ * construction is mutually exclusive with an active Refit.
+ */
+function SiteProgress({
+  world,
+  site,
+  precedingSites,
+  rushTotal,
+  onRush,
+}: {
+  world: World;
+  site: ConstructionSite;
+  precedingSites: readonly ConstructionSite[];
+  rushTotal: number;
+  onRush: () => void;
+}) {
+  const stallReason = deriveSiteStallReason(world, site, precedingSites);
+  return (
+    <>
+      <BuildProgress siteStore={site.siteStore} recipe={site.recipe} />
+      {stallReason && <p className="headquarters-stall">{SITE_STALL_LABEL[stallReason]}</p>}
+      <button
+        type="button"
+        className="menu-btn"
+        disabled={rushTotal <= 0}
+        onClick={onRush}
+      >
+        Dokup resztę — ₸{rushTotal}
+      </button>
+    </>
+  );
+}
 
 /**
  * Refit picker (docs/specs/E14 — UI: "start a Refit (pick a docked ship, see
@@ -461,8 +507,7 @@ function RefitPicker({ world, portId }: { world: World; portId: PortId }) {
   const [confirming, setConfirming] = useState(false);
   const selected = eligible.find((s) => s.id === shipId) ?? null;
   const targetHold = selected ? nextHoldStep(selected) : null;
-  const estimate =
-    selected && targetHold !== null ? computeSiteEstimate(port, refitRecipe(selected), REFIT_LABOR_FEE) : null;
+  const estimate = selected && targetHold !== null ? computeRefitEstimate(port, selected) : null;
   const thalers = world.company.thalers;
   const canAfford = thalers >= REFIT_LABOR_FEE + CONSTRUCTION_RESERVE;
 
@@ -567,7 +612,7 @@ function ShipyardSection({ world, portId }: { world: World; portId: PortId }) {
   if (!shipyard) {
     const headquarters = world.company.headquarters;
     const port = world.region.ports.find((p) => p.id === portId)!;
-    const estimate = computeSiteEstimate(port, SHIPYARD_RECIPE, SHIPYARD_LABOR_FEE);
+    const estimate = computeShipyardEstimate(port);
     const disabledReason = !headquarters
       ? "Wymaga założonej siedziby"
       : headquarters.buildOrder
@@ -617,27 +662,32 @@ function ShipyardSection({ world, portId }: { world: World; portId: PortId }) {
 
   if (shipyard.portId !== portId) return null;
 
+  // Sites that already drew from the shared purse earlier in tick.ts's fixed
+  // order (HQ, Shipyard construction, Refit) — folded into both branches
+  // below via `precedingSites` (Professor F3, #292: a later site's readout
+  // must not test the raw pre-tick purse alone). The HQ Build Order is the
+  // only possible preceding site for either: the Shipyard's own construction
+  // and an active Refit are themselves mutually exclusive (`shipyard.ts`).
+  const hqSite = activeHeadquartersSite(world);
+  const precedingSites = hqSite ? [hqSite] : [];
+
   if (shipyard.site) {
     const site: ConstructionSite = {
       recipe: SHIPYARD_RECIPE,
       siteStore: shipyard.site.siteStore,
       portId,
     };
-    const stallReason = deriveSiteStallReason(world, site);
     const quote = computeShipyardRushQuote(world);
     return (
       <div className="shipyard-section">
         <h3 className="side-panel__heading">Stocznia</h3>
-        <BuildProgress siteStore={shipyard.site.siteStore} recipe={SHIPYARD_RECIPE} />
-        {stallReason && <p className="headquarters-stall">{SITE_STALL_LABEL[stallReason]}</p>}
-        <button
-          type="button"
-          className="menu-btn"
-          disabled={!quote || quote.total <= 0}
-          onClick={() => dispatch({ kind: "rushShipyard" })}
-        >
-          Rush the rest — ₸{quote?.total ?? 0}
-        </button>
+        <SiteProgress
+          world={world}
+          site={site}
+          precedingSites={precedingSites}
+          rushTotal={quote.total}
+          onRush={() => dispatch({ kind: "rushShipyard" })}
+        />
       </div>
     );
   }
@@ -650,7 +700,6 @@ function ShipyardSection({ world, portId }: { world: World; portId: PortId }) {
     if (!targetShip) return null;
     const recipe = refitRecipe(targetShip);
     const site: ConstructionSite = { recipe, siteStore: refitOrder.siteStore, portId };
-    const stallReason = deriveSiteStallReason(world, site);
     const quote = computeRefitRushQuote(world);
     return (
       <div className="shipyard-section">
@@ -658,16 +707,13 @@ function ShipyardSection({ world, portId }: { world: World; portId: PortId }) {
         <p className="side-panel__hint">
           Przebudowa: {targetShip.name} — ładownia {targetShip.hold} → {refitOrder.targetHold}
         </p>
-        <BuildProgress siteStore={refitOrder.siteStore} recipe={recipe} />
-        {stallReason && <p className="headquarters-stall">{SITE_STALL_LABEL[stallReason]}</p>}
-        <button
-          type="button"
-          className="menu-btn"
-          disabled={!quote || quote.total <= 0}
-          onClick={() => dispatch({ kind: "rushRefit" })}
-        >
-          Rush the rest — ₸{quote?.total ?? 0}
-        </button>
+        <SiteProgress
+          world={world}
+          site={site}
+          precedingSites={precedingSites}
+          rushTotal={quote.total}
+          onRush={() => dispatch({ kind: "rushRefit" })}
+        />
       </div>
     );
   }

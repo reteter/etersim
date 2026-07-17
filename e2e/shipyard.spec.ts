@@ -80,7 +80,7 @@ test.describe('Shipyard commission — PortPanel section (#276)', () => {
 
     // Rush shows a live quote and executes: the purse drops by exactly the
     // quoted amount, same guarantee as the Headquarters rush (#84).
-    const rushBtn = page.getByRole('button', { name: /Rush the rest — ₸\d/ });
+    const rushBtn = page.getByRole('button', { name: /Dokup resztę — ₸\d/ });
     await expect(rushBtn).toBeVisible();
     const rushLabel = (await rushBtn.textContent()) ?? '';
     const quoted = Number(rushLabel.replace(/[^\d]/g, ''));
@@ -188,7 +188,7 @@ test.describe('Refit — PortPanel picker, progress, map bubble, fleet status, s
     // (s0 is still docked right here, at the Shipyard's own port — "already
     // docked" is a different, unrelated disabled reason), but the Refit
     // lock's reason is gone.
-    const rushBtn = page.getByRole('button', { name: /Rush the rest — ₸\d/ });
+    const rushBtn = page.getByRole('button', { name: /Dokup resztę — ₸\d/ });
     await rushBtn.click();
     await expect(bubble).toHaveCount(0);
     await expect(page.locator('.fleet-list__status--refit')).toHaveCount(0);

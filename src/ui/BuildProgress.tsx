@@ -22,7 +22,10 @@ export function BuildProgress({
     <div className="headquarters-progress">
       {GOOD_IDS.map((good) => {
         const have = siteStore[good] ?? 0;
-        const need = recipe[good];
+        // Defensive (#292): a caller's recipe (e.g. a Refit's ladder step)
+        // isn't guaranteed to carry every GoodId at a positive quantity —
+        // don't rely on the full-recipe invariant holding forever.
+        const need = recipe[good] ?? 0;
         const pct = need > 0 ? Math.min(100, (have / need) * 100) : 100;
         return (
           <div key={good} className="headquarters-progress__row">
