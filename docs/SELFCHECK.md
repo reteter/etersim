@@ -63,7 +63,9 @@ npm test && npm run typecheck && npm run lint   # BASELINE green before you chan
    `Math.random`, no `Date.now` inside `src/sim` (ADR-0003).
 2. **Sim purity**: `src/sim` imports no React/DOM, ever (ADR-0002). The Harness and UI
    import the sim, never the reverse.
-3. **TDD for `src/sim`**: the failing test comes first. UI is verified with Playwright.
+3. **TDD for `src/sim`**: the failing test comes first by default; a test written
+   after implementation requires named per-test red evidence (revert or targeted
+   mutation), flagged in the report (grill 2026-07-17). UI is verified with Playwright.
 4. **Glossary first**: new domain concept ⇒ CONTEXT.md entry before the identifier.
 5. **Feature branch + PR, conventional commits, `Closes #n`.** Before merge: tests,
    typecheck, lint, and the wave check at the change's tier (WORKFLOW.md
