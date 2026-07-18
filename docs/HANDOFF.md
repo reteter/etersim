@@ -8,18 +8,37 @@ Keep it one screen: state → queue → watch. Standing gotchas live in `CLAUDE.
 (§Git & worktrees), `docs/agent-memory.md`, and `docs/incidents/README.md` §Log —
 not here.
 
-_Last update: 2026-07-17 end of s7 (owner-requested; machine handoff — owner
-continues from a fresh `git clone` on a laptop that has NEVER run Claude Code, so
-no per-machine auto-memory exists there; this file + repo docs are the WHOLE
-context. Fresh-clone bootstrap: `npm install`, then the session-start ritual in
-CLAUDE.md §Rules; verify baseline with `npm test` + `npm run typecheck`; `gh auth
-login` needed for issues/PRs. `scripts/setup.ps1` does not exist yet — that's open
-issue #239)._
+_Last update: 2026-07-18 s10 (owner-requested; docs-only session on the brother's
+machine — no orchestration, farewell conversation + status verification). Previous
+machine-handoff bootstrap notes (fresh clone, `npm install`, session-start ritual,
+`gh auth login`, no `scripts/setup.ps1` yet — #239) still apply to any new machine._
+
+## Model access (verified by web search 2026-07-18)
+
+- **Fable leaves paid plans 2026-07-19, 11:59 pm PT** (= Monday 07-20 ~09:00
+  Polish time — the whole Sunday still counts). No fourth extension. Afterwards
+  Fable runs only on prepaid usage credits ($10/M in, $50/M out); Anthropic says
+  it aims to restore it to subscriptions "once capacity allows" — **re-check at
+  session start**, they extended three times in five weeks. The "2x usage through
+  Aug 5" seen in cowork is a separate Claude Code rate-limit promo, not Fable.
+- **Fallback driver: the owner's OpenAI subscription includes frontier-model
+  access.** The owner finds its work/communication style a jarring change from
+  Anthropic models (irritating, but the reason is understood) — future sessions
+  may run in a different harness entirely. This file + `docs/PROCESS.md` +
+  `docs/WORKFLOW.md` are written model-agnostically on purpose. NOTE for any
+  non-Anthropic driver: the casting ladder (WORKFLOW §Roles, auto-memory
+  "model-ladder-orchestration") names Anthropic tiers (Fable/Opus/Sonnet) —
+  translate tiers to the available pool before dispatching; the *shape* of the
+  ladder (frontier orchestrates/reviews, mid-tier codes pre-resolved packages)
+  is the durable part, not the model names.
 
 ## State
 
-- **main @ cbe1fb2** — clean, pushed; baseline re-verified s7: **600 unit /
-  typecheck green**. **E14 Shipyard & Refit is CODE-COMPLETE (4/4).**
+- **main @ ae81a9c** (session-close s9) — clean, pushed. **E14 Shipyard & Refit
+  CODE-COMPLETE (4/4).** The s5/s6 queue item 3 wave **shipped in s8/s9**:
+  #290 (merged #297), #292 (merged #298), #255 (merged #295); #293 closed.
+  New from that wave: **#299** (sim cleanup: dead `applyDeliveryToSite`, weak
+  autodraw-refit assertion).
 - **Professor review (Fable) DONE s7** — full report:
   `docs/design-notes/professor-construction-review.md`. Engine certified sound
   (determinism, purity, save v13, Reserve, ledger grammar, quote/charge). Findings
@@ -46,8 +65,8 @@ issue #239)._
    (E13 site iterator, E15 deliver addressing), F6 → conditional watch.
 2. **Owner-led grill: coder-contract TDD line** (trigger hit at 3 self-reported
    TDD-order deviations — see scorecard).
-3. #290 + #292 + #293 (all Shipyard-area polish — natural single wave; #293 is the
-   Professor's F1+F2), #272 (barrel), #255.
+3. ~~#290 + #292 + #293 + #255~~ — **shipped s8/s9** (see State). Remaining from
+   this tier: #272 (barrel) + follow-up #299.
 4. E13 Guild buildings (#100/#101 — skim spec vs code first; **grill agenda: F4
    ordered site iterator**) → E11 v1 (#232→#233→#234) → E15 (#281→#284, spec
    approved; **grill agenda: F7 deliver addressing**).
@@ -63,8 +82,8 @@ issue #239)._
 - Both #276 arms left market buy/sell rows sim-guarded-only for a locked ship
   (silent no-op) — in #292 as a conditional item.
 - Recurring e2e smell: `dispatchEvent` standing in for real interaction.
-- Fable access ends 2026-07-19 — the deadline task (Professor on Fable) is done;
-  remaining pool is bonus.
+- Fable access: see §Model access above — ends 07-19 23:59 PT, no deadline tasks
+  left; re-check each session whether Anthropic restored Fable to subscriptions.
 - Professor F6: `RefitOrder` mixed stored/derived truth splits if `HOLD_LADDER` is
   ever tuned under a loaded mid-refit save — raise at the grill only if ladder
   tuning enters an agenda.
