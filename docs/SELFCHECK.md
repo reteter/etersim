@@ -90,6 +90,14 @@ explicitly said to proceed without one. Posted after the work it is a receipt, n
 checkpoint — the point is to catch misunderstandings while they are still free
 (incident 0003).
 
+**Pushing a PR ends the task.** The next work item takes a fresh selfcheck and, at minimum,
+**re-verifies the `env:` line before the first edit** — the branch especially. The
+branch → commit → push → PR sequence leaves you *on the feature branch*, and nothing in it
+returns to `main`; usually the owner's merge closes the gap, so it only opens when two PRs
+are prepared back-to-back with no merge between them. That is the ordinary shape of a
+docs-heavy decision session, and it is where s14 edited a second task's four files onto the
+previous PR's branch (incident 0021, caught before commit).
+
 **Short form is the default** (ceremony slim, owner decision 2026-07-16):
 
 ```
