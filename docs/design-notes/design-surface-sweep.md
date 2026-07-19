@@ -68,7 +68,7 @@ This is the class that produced #304.
 | Class | Count | Check | Status |
 | --- | --- | --- | --- |
 | Relative `.md` links | 208 | target file exists | **CLEAN** (2026-07-19, scripted) |
-| ADR references | 117 | citing text matches the ADR's actual decision | pending |
+| ADR references | 117 | citing text matches the ADR's actual decision | **worked s13** — F10 raised. Verified clean: ADR-0003's "1 tick = 1 world hour" agrees with `CONTEXT.md:718` and `src/sim/region.ts:5` (`TICKS_PER_DAY = 24`, comment cites the ADR); the ADR-0006 colour citations across `src/index.css` and e2e hold. |
 | Issue references | 196 unique | citing text matches the issue's current state + newest AC comment | pending |
 | Bare `see <doc>` refs | 10 | resolves and says what the citer claims | pending |
 | **Cross-epic triggers** (in `docs/`) | 11 statements | a re-evaluation trigger naming another epic is verified against that epic's spec **and against whether it has already fired** | **worked s13** — F4–F8 raised; #212's trigger verified NOT fired (`src/` at 19 201 of the ~30 000-line trigger) |
@@ -132,6 +132,41 @@ Findings needing work get issues; the rest stay as rows below until routed.
 | F7 | structural | specs have no staleness marker | `docs/design-notes/` and `docs/incidents/` both carry an indexed digest with a status column; **`docs/specs/` has neither an index nor a LIVE/HIST equivalent**, yet **7 of its 12 specs belong to closed milestones** (E2, E3, E8, E9, E9.1, E10, E12 — 13 files counting `TEMPLATE.md`; E1 shipped without a spec) and still read as normative prose. E14's spec makes a de-facto eighth, per F8. Some carry an implementation-status table, not all. Consequence for this sweep: binding rule 1 has **no defined analogue for specs**, so "does this shipped spec still bind?" currently has no answer. | **resolved s13** — owner ruling: every spec binds, no HIST analogue (binding rule 5). Remaining work — a one-line-per-spec index for `docs/specs/` — routed to **#309**. |
 | F8 | status | E14 milestone | Milestone **E14 — Shipyard & Refit is open with 0 open / 8 closed** issues. The tracker contradicts itself about whether the epic is done. | open — close the milestone, or say what is still owed |
 | F9 | structural | decisions revised in issue comments do not flow back | The repo's rule that **the newest AC comment supersedes** (WORKFLOW §4) makes an issue comment a legitimate place to change a decision — but nothing carries that change back to the **design note that originated it**. Two instances, one per direction: **#131** (trigger revised in a comment 2026-07-15; the originating grill note still says E3, F4) and **#304** (trigger premise found void; there the spec, HANDOFF and the note *were* updated in s12 — but only because a human happened to be reading them). The gap is not the comment, it is the absent return path. | open — candidate rule: a decision recorded in a design note that is later revised in an issue comment gets the revision written back in the same action, the way the design-notes and incidents indexes are maintained |
+| F10 | referential | PRD's hard-no scope list | `PRD.md:108` reads *"Out of scope (**hard no, see ADR-0004**): multiplayer, backend/accounts, mobile, Steam/desktop packaging, **3D, direct combat**"*, and `PRD.md:63` quotes **"ADR-0004's *no direct combat*"** as standing at every lens level. ADR-0004 is *Local persistence, no backend in v1*; it lists multiplayer, accounts, server sync, leaderboards, mobile, Steam — **no 3D, no combat, and no such phrase to quote**. The decision is presumably real and the owner's, but its cited authority is empty, and "no direct combat" is load-bearing: it governs the Events gradient and neighbours the M3 no-punishment lock that #131 phase 3 is parked behind. Anyone who checks the combat law at its stated source — as this sweep did — finds nothing. | open — either move the scope decision into an ADR that actually holds it, or cite whatever grill did decide it |
+
+## What the findings have in common (interpretation, not a finding)
+
+Read as a system rather than as ten defects, nine of the first ten sit in the same two
+places — and they are the places Donella Meadows ranks as high-leverage precisely because
+they look like housekeeping:
+
+- **Information flows** — *who learns what, and when.* F4, F5, F9 and F7 are all one shape:
+  the fact was updated somewhere, and the place a future reader will actually look never
+  heard about it. F5 is the sharpest, because there the rule *"HIST does not bind"* combines
+  with one wrong label to make a live parking lot unreachable **by design**.
+- **Feedback loops that report without measuring** — incident 0019 is the pure case: a guard
+  that announced a deletion it had not performed. A loop whose signal is disconnected from
+  the world has zero gain no matter how loudly it prints `OK`. F2 is the same defect slowed
+  down: HANDOFF refreshes on request, so its drift rate exceeds its correction rate.
+
+F10 is the exception and belongs elsewhere — not a broken flow but an **ungrounded rule**:
+a real constraint citing a source that does not contain it.
+
+The uncomfortable reading: this documentation system is **excellent at recording a decision
+at the moment it is made, and has almost no machinery for keeping a recorded decision true
+afterwards.** Those are different goals, and nearly every artifact here — ADRs, incidents,
+grill records, indexes — is built for the first. The sweep itself is a manual compensating
+loop for the second, which makes it slow, expensive, and dependent on somebody choosing to
+run it. That is a weak place to intervene.
+
+The stronger and cheaper move is one the repo has **already invented and only half-applied**:
+*"adding a note means adding its row in the same commit"* is exactly a propagation rule. It
+governs files. It does not yet govern decisions — which is all F9's candidate rule asks for.
+Generalising a rule that already works here beats inventing a mechanism.
+
+**Hold this loosely.** It is a model built from one session and a method that keyed on
+subjects and cross-references — so of course it surfaced cross-reference defects. That nine
+findings share a cause is a hypothesis the remaining passes can falsify, not a result.
 
 ## Stop rule
 
