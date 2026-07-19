@@ -27,7 +27,7 @@ One numbered item per observation: what the owner saw (screenshot refs under `tm
 
 - **Designer grill** — anything touching mechanics, pillars, or player fantasy.
 - **Engineer / straight issue** — clear bugs and presentational fixes with no design question inside; file via `gh` immediately.
-- **Parking lot** — real but out-of-scope ideas, recorded with the epic they most likely belong to.
+- **Parking lot** — real but out-of-scope ideas, recorded with the epic they most likely belong to. **If the item carries an unpark trigger, it also gets an issue** carrying that trigger (WORKFLOW.md §Documentation law: *a trigger is a promise, and promises live in the issue tracker*). The note keeps the reasoning; the issue keeps the obligation. An idea you are unwilling to file is recorded as an idea with no trigger — that is honest, and cheaper than a promise nothing keeps.
 
 When later work resolves an item, it gets a "Resolved → spec/issue" blockquote in place, keeping the original text for history (WORKFLOW.md §Docs sync sweep).
 

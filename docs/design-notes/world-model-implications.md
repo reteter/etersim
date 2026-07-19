@@ -178,13 +178,30 @@ Four questions. If any is unanswerable, what you have is not an implication:
 - **Pre-registered implications are forward-looking text** — the one kind that rots. W6/W7/W8
   must be attached to the M4 grill brief as acceptance criteria, or this section quietly
   becomes another parking lot, which is the exact defect sweep finding F5 records.
+  **This came true within the day** — §Next was itself three prose promises. Now **#325**;
+  see §Next for what that cost and what caught it.
 - **The register cannot validate its own premises.** If a PRD pillar is the wrong goal, every
   implication derived from it will pass while the game is worse for it. This checks
   *consistency with what we said*, never *whether what we said was right*.
 
 ## Next
 
-- Attach **W6/W7/W8** to `grill-brief-m4-events-and-ice.md` as acceptance criteria.
-- Automate **W9** as a script (anchored per incident 0020) — the cheapest item, and the one
-  with a demonstrated save.
-- Hand **W1/W2/W5** to **#234** as its assertion content when E11 slice 3 is picked up.
+~~Attach W6/W7/W8 to `grill-brief-m4-events-and-ice.md`; automate W9; hand W1/W2/W5 to
+#234.~~ **Superseded the same day it was written** — see below.
+
+This section was three promises in prose, which is precisely the defect
+[design-surface-sweep](design-surface-sweep.md) finding **F5** resolved hours earlier, and
+which §Honest limits below had already predicted about this very note. Under the resulting
+law — *a trigger is a promise, and promises live in the issue tracker*
+([WORKFLOW](../WORKFLOW.md) §Documentation law) — each item now has an outflow:
+
+| Item | Where it lives now |
+| --- | --- |
+| **W6/W7/W8** → M4 grill brief as acceptance criteria | **#325** |
+| **W9** → anchored script (incident 0020) | **#324** |
+| **W1/W2/W5** → E11 assertion content | **comment on #234**, not a new issue — the obligation already had a home, so it went there |
+
+Recorded rather than quietly fixed, because the note breaking its own stated rule within a
+day is the most useful thing it has demonstrated so far: **stating a defect is not the same
+as being immune to it.** The register predicted this failure in §Honest limits and then
+committed it anyway. What stopped it was not the prediction — it was a law with a detector.
