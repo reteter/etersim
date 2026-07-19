@@ -20,9 +20,9 @@ import type { World } from "./world";
  * portId }` instead of reading `world.company.headquarters.buildOrder`
  * directly, so ship construction (the Headquarters) and future callers
  * (Refit, guild buildings) share one engine. The Headquarters-shaped
- * functions below (`remainingNeed`, `isRecipeComplete`, `applyDeliveryToSite`,
- * `runBuildSiteAutoDraw`, `computeRushQuote`) are thin, behavior-preserving
- * wrappers over that engine, kept for existing callers (commands.ts, UI).
+ * functions below (`remainingNeed`, `isRecipeComplete`, `runBuildSiteAutoDraw`,
+ * `computeRushQuote`) are thin, behavior-preserving wrappers over that
+ * engine, kept for existing callers (commands.ts, UI).
  */
 
 export const HEADQUARTERS_COST = 2500;
@@ -118,7 +118,8 @@ export function autoDrawCapForDayTick(dayTick: number): number {
 }
 
 /** Move min(cargo, remaining need) of one good into a site's siteStore, per
- *  its recipe. Pure; the generic engine behind `applyDeliveryToSite`. */
+ *  its recipe. Pure; shared by the deliver command (commands.ts) for both
+ *  the Headquarters build site and construction sites in general. */
 export function applyDeliveryToConstructionSite(
   site: Pick<ConstructionSite, "recipe" | "siteStore">,
   cargo: Record<GoodId, number>,
@@ -133,17 +134,6 @@ export function applyDeliveryToConstructionSite(
     [good]: (site.siteStore[good] ?? 0) + moved,
   };
   return { siteStore: next, moved };
-}
-
-/** Move min(cargo, remaining need) of one good into the site store, against
- *  SHIP_RECIPE. Pure; shared by the deliver command and a Route's deliver
- *  Stop. */
-export function applyDeliveryToSite(
-  siteStore: Record<GoodId, number>,
-  cargo: Record<GoodId, number>,
-  good: GoodId,
-): { readonly siteStore: Record<GoodId, number>; readonly moved: number } {
-  return applyDeliveryToConstructionSite({ recipe: SHIP_RECIPE, siteStore }, cargo, good);
 }
 
 /** One good's line in a rush preview: how many units, at what total cost. */

@@ -87,13 +87,19 @@ its route).
 ### #99 first: the construction-site seam
 
 The Build Order machinery in `src/sim/building.ts` (siteStore, `remainingNeed`,
-`isRecipeComplete`, `applyDeliveryToSite`, auto-draw walk, rush quote/execute) is
+`isRecipeComplete`, the delivery helper, auto-draw walk, rush quote/execute) is
 Headquarters-shaped: it reads `world.company.headquarters.buildOrder` directly. Issue 1
 extracts a **`ConstructionSite`** seam — `{ recipe, siteStore, portId }` plus pure
 helpers parameterized on the site instead of the HQ — so ship construction and Refit
 are two callers of one engine. `commissionBuilding` from #99 lands here as the generic
 "place a construction" command shape. No behavior change; existing tests must stay
 green unmodified (the E9.1 byte-identity discipline).
+
+(As landed: the delivery helper is `applyDeliveryToConstructionSite`, already
+parameterized on `{ recipe, siteStore }` rather than the HQ — its Headquarters-shaped
+wrapper `applyDeliveryToSite` became dead once #290's `tryDeliver` in `commands.ts:164`
+started calling the seam engine directly for both the HQ build site and the Shipyard
+refit site, and was removed in #299.)
 
 ### `src/sim/ship.ts`
 
