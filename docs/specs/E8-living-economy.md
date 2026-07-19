@@ -244,7 +244,8 @@ The agreed full-information economic view (fog stays parked for E6):
 - `PriceBoardOverlay.tsx` (new, Options/Credits overlay pattern): ports × goods table,
   bid/ask + trend per cell, archetype accents, cheapest-ask / highest-bid highlights
   per good, docked-row marker, row click → port panel. TopBar button + default hotkey
-  (reconcile configurability with #56 when it lands).
+  (nothing to reconcile: #56 landed 2026-07-13 as **v1-lite** — fixed bindings plus a
+  read-only Keybinds tab, with remappable bindings explicitly not built by owner decision).
 - `RegionMap.tsx`: ambient osmosis layer — small pulses along lanes with
   `|osmosisPulse|` above a display threshold, direction from the sign, density/speed
   from magnitude; clearly subordinate to the Controlled Ship glyph; respects

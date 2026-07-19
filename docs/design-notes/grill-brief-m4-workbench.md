@@ -36,8 +36,8 @@ planning, dispatch and reading in one surface — and what the region map keeps.
    must remain for the "enjoy what you built" role to feel earned?
 5. Board information density at 7–9 ports × 5+ goods (+ Aether ice, + processed
    goods later): filtering, pinning, per-good focus?
-6. Which of the parked automation inputs (Cluster A notes/issues, e.g. #173, #255,
-   #177 family) fold in, which stay parked?
+6. Which of the parked automation inputs (Cluster A notes/issues, e.g. #173, #177
+   family) fold in, which stay parked?
 
 ## Traps
 
@@ -52,6 +52,7 @@ planning, dispatch and reading in one surface — and what the region map keeps.
 ## Inputs
 
 - PRD §M4 (beat + Workbench entry), fantasy-roadmap-grill-2026-07-16.md lock 1.
-- #227, #173, #255, #177; Cluster A parked inputs in design-notes.
+- #227, #173, #177; Cluster A parked inputs in design-notes. (#255 was on this list
+  until 2026-07-19 — it had shipped; dropped by sweep F11.)
 - `PriceBoardOverlay.tsx`, `HeadquartersPanel.tsx` (Trasy tab), `KontraktyTab.tsx`
   — the surfaces being merged or bridged.
