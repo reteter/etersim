@@ -8,82 +8,100 @@ Keep it one screen: state → queue → watch. Standing gotchas live in `CLAUDE.
 (§Git & worktrees), `docs/agent-memory.md`, and `docs/incidents/README.md` §Log —
 not here.
 
-_Last update: 2026-07-18 s10 (owner-requested; docs-only session on the brother's
-machine — no orchestration, farewell conversation + status verification). Previous
-machine-handoff bootstrap notes (fresh clone, `npm install`, session-start ritual,
-`gh auth login`, no `scripts/setup.ps1` yet — #239) still apply to any new machine._
+_Last update: 2026-07-19 s11 (owner-requested; first Opus-driven orchestration session
+after the Fable series — wave shipped, two process fixes from retro). Machine-handoff
+bootstrap notes for any new machine (fresh clone, `npm install`, `gh auth login`,
+no `scripts/setup.ps1` yet — #239) still apply._
 
-## Model access (verified by web search 2026-07-18)
+## Running-in, not sanding down (owner framing, 2026-07-19)
 
-- **Fable leaves paid plans 2026-07-19, 11:59 pm PT** (= Monday 07-20 ~09:00
-  Polish time — the whole Sunday still counts). No fourth extension. Afterwards
-  Fable runs only on prepaid usage credits ($10/M in, $50/M out); Anthropic says
-  it aims to restore it to subscriptions "once capacity allows" — **re-check at
-  session start**, they extended three times in five weeks. The "2x usage through
-  Aug 5" seen in cowork is a separate Claude Code rate-limit promo, not Fable.
-- **Fallback driver: the owner's OpenAI subscription includes frontier-model
-  access.** The owner finds its work/communication style a jarring change from
-  Anthropic models (irritating, but the reason is understood) — future sessions
-  may run in a different harness entirely. This file + `docs/PROCESS.md` +
-  `docs/WORKFLOW.md` are written model-agnostically on purpose. NOTE for any
-  non-Anthropic driver: the casting ladder (WORKFLOW §Roles, auto-memory
-  "model-ladder-orchestration") names Anthropic tiers (Fable/Opus/Sonnet) —
-  translate tiers to the available pool before dispatching; the *shape* of the
-  ladder (frontier orchestrates/reviews, mid-tier codes pre-resolved packages)
-  is the durable part, not the model names.
+We are **breaking the process in with fresh oil, not sandpaper.** The goal is
+instructions that are clear, consistent, and **do not collide with the driving model's
+trained nature** — where a rule fights the model's grain, the rule is the thing that
+gets reshaped, not the model. Fighting a model's trained behaviour or its system prompt
+is windmill-tilting: it redirects effort toward "looking correct" instead of doing the
+work the project needs.
+
+Practical consequence: **the owner runs an extended retro at session end** and process
+tension is a first-class output of a session, ranked alongside shipped code. Two
+examples from s11, neither catchable by any verification gate because both described
+things that were working, only worse than they could:
+
+- `scripts/postmerge.ps1` was hand-walked by a driver who had just confirmed it
+  existed. Fix was **not** a stricter rule — the line now names the three guarantees
+  the script encodes (0010 merge-base reachability, 0011 worktree go-signal, 0013 deps
+  check), so a hand-walk is allowed and its cost is visible.
+- `docs/design-notes/` had reached 36 files with no digest. Fixed by an index plus,
+  crucially, the **ritual** that maintains it (WORKFLOW §Documentation law).
+
+Expected payoff, stated by the owner: as tensions are removed, session throughput
+should rise several-fold. Treat unresolved friction as debt worth naming out loud.
+
+## Model access
+
+- **Fable leaves paid plans 2026-07-19, 11:59 pm PT** (= Monday 07-20 ~09:00 Polish
+  time). No fourth extension announced. Afterwards Fable runs only on prepaid credits
+  ($10/M in, $50/M out); Anthropic says it aims to restore it to subscriptions "once
+  capacity allows" — **re-check at session start**, they extended three times in five
+  weeks.
+- **Fallback driver: the owner's OpenAI subscription includes frontier-model access.**
+  Future sessions may run in a different harness entirely. This file, `docs/PROCESS.md`
+  and `docs/WORKFLOW.md` are model-agnostic on purpose. NOTE for any non-Anthropic
+  driver: the casting ladder names Anthropic tiers (frontier/strong/cheap = Fable/Opus/
+  Sonnet) — translate tiers to the available pool; the *shape* (frontier orchestrates
+  and grills, strong reviews, cheap codes pre-resolved packages) is the durable part.
+- s11 datapoint: an **Opus-driven** orchestration session ran the full loop — parallel
+  coder dispatch, tier-3 review, fix loop, cert, docs — without frontier involvement.
 
 ## State
 
-- **main @ ae81a9c** (session-close s9) — clean, pushed. **E14 Shipyard & Refit
-  CODE-COMPLETE (4/4).** The s5/s6 queue item 3 wave **shipped in s8/s9**:
-  #290 (merged #297), #292 (merged #298), #255 (merged #295); #293 closed.
-  New from that wave: **#299** (sim cleanup: dead `applyDeliveryToSite`, weak
-  autodraw-refit assertion).
-- **Professor review (Fable) DONE s7** — full report:
-  `docs/design-notes/professor-construction-review.md`. Engine certified sound
-  (determinism, purity, save v13, Reserve, ledger grammar, quote/charge). Findings
-  routed: **#293 (new, type:bug)** = F1 HQ "Zleć budowę" silent no-op + F2 wrong
-  reason string; F3 → comment on #292; F5 → comment on #290; F4/F7 → grill agendas
-  (queue below); F6 → watch item below.
-- **#276 A/B series stands at 2/2 for Sonnet** (written-rule conformance + tests at
-  ~half the limit-% cost; Opus better architecture both times). Write-up:
-  `docs/design-notes/ab-276-shipyard-ui.md`; rows in `coder-scorecard.md`.
-- **#292** — port arm-A strengths (stall-walk collapse, shared `SiteProgress`,
-  rush-string PL, sim estimate seam; coordinate with #272). Reference branch
-  `feat/276-shipyard-ui` @ ddd33de stays on origin until #292 closes — then delete.
-- Fable pool: ~72% used at s7 start; Professor dispatch (~130k subagent tokens) was
-  the deadline task and it's done — remaining pool through 07-19 is bonus.
+- **main @ 819956d**, clean, pushed. **E14 Shipyard & Refit CODE-COMPLETE.**
+- s11 wave **#272 + #299 shipped** (PRs #301, #300), certified on main: 611 unit /
+  typecheck / lint / build / full Playwright 102/102, postmerge clean. Both took one
+  fix-loop round; both findings were AC items the coders read past, not judgement
+  calls — see the scorecard's s11 note (signal about package shape, not casting).
+- New from the s11 review: **#302** (last vacuous `if (store)` guard, incident-0005
+  pattern), **#303** (auto-draw bound of 24 is 2.4× loose vs `AUTO_DRAW_PER_DAY`).
+- **E13 site-registry decision LOCKED (owner, 2026-07-19)** — Professor F4 resolved:
+  close only the *silent* enumeration (netWorth) with a typed exhaustive registry; the
+  four loud ones stay hand-maintained. Rationale + E15-start re-evaluation trigger in
+  the E13 spec §The site registry; **#100's AC amended** accordingly (newest comment
+  supersedes the body); deferred full-iterator refactor tracked as **#304** (milestone
+  E15) so the trigger has a home.
+- **Incident 0018** filed: `gh auth switch` does not move git's credential cache.
+  Generalized with 0016/0017 — *auto-memory is a working channel, not a home for
+  gotchas*; it reaches neither subagents nor other machines.
 
-## Queue (owner-agreed order, set s5/s6)
+## Queue (owner-agreed order)
 
-1. ~~Professor dispatch~~ — **DONE 2026-07-17 (s7, cast on Fable per owner decision
-   s6; the separate "Fable digest" step was dropped).** Report:
-   `docs/design-notes/professor-construction-review.md` — engine verified sound
-   (determinism, purity, v13, Reserve, ledger grammar, quote/charge); 7 findings
-   routed per its Routing Table: F1+F2 → new issue (HQ Budowa silent no-op + wrong
-   string), F3 → comment on #292, F5 → comment on #290, F4+F7 → grill agenda
-   (E13 site iterator, E15 deliver addressing), F6 → conditional watch.
-2. **Owner-led grill: coder-contract TDD line** (trigger hit at 3 self-reported
-   TDD-order deviations — see scorecard).
-3. ~~#290 + #292 + #293 + #255~~ — **shipped s8/s9** (see State). Remaining from
-   this tier: #272 (barrel) + follow-up #299.
-4. E13 Guild buildings (#100/#101 — skim spec vs code first; **grill agenda: F4
-   ordered site iterator**) → E11 v1 (#232→#233→#234) → E15 (#281→#284, spec
-   approved; **grill agenda: F7 deliver addressing**).
+1. **Owner-led grill: E13.** Agenda ready — (a) skim spec vs code first, since #99
+   shipped the BuildOrder generalization and #100's body may overlap it; (b) Professor
+   **F7** (deliver addressing becomes inexpressible intent once E15 plants coexist with
+   sites — labelled E15 spec, but E13's Storehouse adds the third chain target).
+   The F4 site-iterator question is **already decided** — do not reopen it at the table.
+2. **E13 implementation:** #100 → #101 → #102.
+3. Cheap tails, batchable into any wave: **#302**, **#303**.
+4. Then **E11 v1** (#232→#233→#234) → **E15** (#281→#284, spec approved).
 
 ## Watch items
 
-- **Casting ladder:** coder = Opus was a 5-session owner decision (s4, now 3 sessions
-  in) — but the 2/2 A/B series argues Sonnet for UI/sim-consumer tiers; owner call
-  pending the trial read-out. Reviews stay strong-tier; tier 3 = ONE two-axis subagent
-  (incident 0016).
-- Refit status violet `#a373d6` vs mining `#7e55ab` proximity — owner kept violet;
-  eyeball at playtest (teal `#34b6a3` is the ready alternative, noted in #292).
-- Both #276 arms left market buy/sell rows sim-guarded-only for a locked ship
-  (silent no-op) — in #292 as a conditional item.
+- **`design-notes` LIVE→HIST flips.** The new index (`docs/design-notes/README.md`)
+  marks 11 of 36 notes LIVE. Check in a few sessions whether rows actually get flipped;
+  if not, the ritual didn't take and the index is lying — better to learn that early.
+- **Parked-in-a-lot-with-no-exit.** Writing that index surfaced live work visible
+  nowhere else: four `grill-brief-m4/m5/m6-*` scenarios awaiting their grills,
+  `route-conditionals` (parked, needs its own grill), `e8-followups` (peripheral
+  starvation of remote sole-producer goods, unresolved). None have issues. Worth a
+  sweep when planning M4.
+- **"Named in the AC but skipped"** — if the s11 pattern repeats, the lever is package
+  shape (a checklist of named files), not casting.
+- Refit status violet `#a373d6` vs mining `#7e55ab` proximity — eyeball at playtest
+  (teal `#34b6a3` is the ready alternative).
 - Recurring e2e smell: `dispatchEvent` standing in for real interaction.
-- Fable access: see §Model access above — ends 07-19 23:59 PT, no deadline tasks
-  left; re-check each session whether Anthropic restored Fable to subscriptions.
-- Professor F6: `RefitOrder` mixed stored/derived truth splits if `HOLD_LADDER` is
-  ever tuned under a loaded mid-refit save — raise at the grill only if ladder
-  tuning enters an agenda.
+- Professor F6: `RefitOrder` mixed stored/derived truth splits if `HOLD_LADDER` is ever
+  tuned under a loaded mid-refit save — raise only if ladder tuning enters an agenda.
+- **This machine is the brother's** (Kacper). `gh` is switched to `reteter` for owner
+  sessions and **must be restored to `Darecik`** at the end of work on it — and the
+  restore is two things now: the `gh auth switch` *and* removing any
+  `credential.https://github.com.helper` / gist entries left in the global `.gitconfig`
+  (incident 0018).
