@@ -39,6 +39,13 @@ multiregion. Sibling grill from the same session:
   civilization — an event is an *offer*; ignoring it has zero consequences for route,
   cargo and purse. **Unpark trigger: E3 contracts shipped** (rides E3's offer
   machinery). Own grill at unpark: offer content, spawn/expiry model, region scope.
+
+  > **Superseded 2026-07-15** — farewell-roadmap grill, recorded as a comment on #131 and
+  > propagated back here on 2026-07-19 (sweep F4). The Events gradient places opt-in
+  > encounters at **inter-region crossings and open aether (M6 and post-1.0)**, not in the
+  > region; in-region M4 ships economic events only. **The unpark trigger is now the M6
+  > grill, not E3** — E3 shipped and closed without unparking this, and for four days both
+  > this note and #131's body still named the fired trigger. Original text kept for history.
 - **Phase 3 — intrusive events, pirates** (parked in #131): anything that modifies
   route outcomes. **Unpark trigger (all required): real multiregion exists + explicit
   owner decision to revisit the M3 no-punishment lock + a carrier building per the E9

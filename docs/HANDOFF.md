@@ -107,8 +107,12 @@ extended retro at session end and ranks process tension alongside shipped code.
   Verify with a write, or expect a 403 at push time.
 - Refit status violet `#a373d6` vs mining `#7e55ab` proximity — eyeball at playtest.
 - Recurring e2e smell: `dispatchEvent` standing in for real interaction.
-- **Machine handoff: s12 was the last session on the brother's PC** (Kacper). From s13 the
-  owner is back on their own machine — the `gh` switch dance (`reteter` at start, `Darecik`
-  at close, plus checking for leftover `credential.*` entries in the global `.gitconfig`) no
-  longer applies. Bootstrap notes for any *new* machine (fresh clone, `npm install`,
-  `gh auth login`, no `scripts/setup.ps1` yet — #239) still stand.
+- ~~**Machine handoff: s12 was the last session on the brother's PC** (Kacper). From s13 the
+  owner is back on their own machine — the `gh` switch dance no longer applies.~~
+  **Falsified 2026-07-19 (s13):** s13 ran on Kacper's PC too, and the dance applied in full —
+  `gh auth switch` to `reteter` at open, `Darecik` at close, global `.gitconfig` verified free
+  of `credential.*`. **Struck, not refreshed** (WORKFLOW §Documentation law): a prediction
+  about a future session had been recorded as settled state, and this file went misleading
+  within one session for the second time running (sweep F2). Do not trust a machine-handoff
+  claim until the session actually opens elsewhere. Bootstrap notes for any *new* machine
+  (fresh clone, `npm install`, `gh auth login`, no `scripts/setup.ps1` yet — #239) still stand.
