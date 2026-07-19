@@ -195,10 +195,19 @@ wrong label, F6 a deferral, F7 a spec's status, F11 a brief's input list — six
 all forward-facing. F1 (contradiction), F3 (form) and F10 (ungrounded citation) are other
 classes entirely.
 
-Operational payoff, and the reason this is written down rather than admired: **Pass B should
-prioritise forward-looking text and can nearly skip records.** Binding rule 6 is that
-insight made into a filter. It should make Pass B markedly cheaper than the 2 796-line
-estimate implies — a claim the next session can check.
+Operational payoff, and the reason this is written down rather than admired: binding rule 6
+is this insight made into a filter.
+
+**But scope the payoff honestly — the first draft of this paragraph overreached.** Rule 6
+retires *status* questions, which is what Pass A asked. Pass B asks a **semantic** question:
+do all the documents mean the same thing by a term? A record can be perfectly accurate about
+its date and still contradict today's `CONTEXT.md` about what *Hold* is — that is not
+staleness, it is contradiction, and binding rule 5 says every spec binds regardless of age.
+
+So the saving is real but partial: it lands on `docs/design-notes` (38 files, 2 540 lines,
+mostly dated records that can be read lightly for semantics) and **not** on `docs/specs`
+(2 796 lines, all binding). Expect Pass B to cost roughly what the spec segment costs. A
+claim the next session can check.
 
 ## Stop rule
 
