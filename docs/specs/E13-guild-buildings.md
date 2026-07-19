@@ -81,49 +81,55 @@ Recipe completes.
 
 - `Company.buildings: readonly CompanyBuilding[]`;
   `CompanyBuilding = { type: "storehouse"; variant: GuildId; portId: PortId;
-  store: Record<GoodId, number> }`. The Headquarters keeps its E9 shape
+  store: GoodsStore }` — a Goods store like any other (ADR-0008, shipped by E13.0).
+  Its goods filter and `STOREHOUSE_CAPACITY` clamp live in its `StorePolicy`
+  variant `{ kind: "storehouse"; filter; capacity }`, consumed by `accepts` — **not**
+  as clamps inside the `storeGood` command. The Headquarters keeps its E9 shape
   (`Company.headquarters`) — no refactor of shipped state.
-- `BuildOrder` gains a target: `{ kind: "ship" } | { kind: "building";
-  type: "storehouse"; variant: GuildId; portId: PortId }`; auto-draw buys at the
-  *target* port's market; one active order per Company enforced across both kinds.
+- **Correction (2026-07-19):** this spec previously said `BuildOrder` gains a target
+  kind union. That road was not taken — #99 extracted a shared `ConstructionSite`
+  *engine* and E14's Shipyard kept its own state, so there are parallel holders rather
+  than one tagged order. A commissioned Storehouse follows that E14 precedent: it holds
+  its own construction state and calls the shared engine, with auto-draw buying at the
+  *target* port's market. The one-active-order law is enforced by consuming the existing
+  `hasActiveBuildOrder` helper (`commands.ts:126-137`), which already reads "one per
+  Company — ship or building" and was written to be consumed here.
 - Constants (tuning ≠ spec drift): `STOREHOUSE_RECIPE = { grain: 40, textiles: 20,
   aetherSalt: 10, electronics: 8, timber: 6 }`; `STOREHOUSE_LABOR_FEE = 500`;
   `STOREHOUSE_CAPACITY = 200`; `STOREHOUSE_PERMIT_RANK = 2`.
-- New Commands: `commissionBuilding(type, variant, portId)` (rejected without the
+- New Commands: `commissionGuildBuilding(type, variant, portId)` (rejected without the
   permit rank, on illegal placement, while an order runs, or when the labor fee is
-  unaffordable), `storeGood(shipId, good)`, `withdrawGood(shipId, good)` (docked at the
-  storehouse port; best-effort quantities). `StopOrder` kind union += `"store" |
-  "withdraw"`; the docking phase executes them like the E9 three.
+  unaffordable), `storeGood(shipId, good, target)`, `withdrawGood(shipId, good, source)`
+  (docked at the storehouse port; best-effort quantities). **Name collision, resolved
+  2026-07-19:** `commissionBuilding(thalers, laborFee)` already exists
+  (`building.ts:396`) as the generic "charge the labor fee, open an empty site" helper
+  used by E14 — the guild-building *command* therefore takes a distinct name rather than
+  shadowing it (one identifier, one meaning).
+- **Explicit addressing** (ADR-0008; E13.0 leaves it representable but not selectable).
+  `store`/`withdraw` and `deliver` name their destination as a `StoreRef` instead of
+  relying on a priority chain: E13.0's `resolveDeliveryTarget` is **deleted**, not
+  extended, and `StopOrder` carries the destination. This is what makes "feed the
+  Storehouse" and "feed the construction site" different expressible intents at one
+  port — today they differ only by verb, which E15's provisions chain (3 grain +
+  1 textiles) would break, since the Granary stores the same grain a plant consumes
+  (Professor F7). `StopOrder` kind union += `"store" | "withdraw"`; the docking phase
+  executes them like the E9 three.
 
-### The site registry: exhaustive by type, not by hand (owner decision, 2026-07-19)
+### The site registry — superseded
 
-`ConstructionSite` was generalized in #99, but the **registry of its callers** was not:
-"what is a site" lives in five hand-maintained enumerations — the tick phase list
-(`tick.ts:453-461`), the deliver priority chain (`commands.ts`, deduplicated by #290),
-the netWorth `stores` array (`ledger.ts:211-213`), the rush command trio
-(`rushBuild`/`rushShipyard`/`rushRefit`), and the UI section branches. The Storehouse
-adds a sixth site; E15's Plant will add a seventh (Professor review F4,
-[design-notes/professor-construction-review.md](../design-notes/professor-construction-review.md)).
+The typed site registry decided here on 2026-07-19 was **reopened and rejected the same
+day** at the owner's request, once reading the spec against the code showed it guarded
+the wrong shape: the Storehouse arrives as a *collection*, which a loop already covers,
+so the registry protected nothing E13 ships, while its re-evaluation trigger (E15's Plant
+as a fourth site kind) rested on a premise `docs/specs/E15-processing.md:52` contradicts —
+plants are a collection too.
 
-Four of the five fail **loudly** — a missing tick phase means the site never fills, a
-missing rush means no button, a missing UI branch means no section; all visible in the
-first minutes of play. The netWorth array fails **silently**: a forgotten entry
-under-reports company value with no error, no test failure, and no in-game symptom.
-
-**Decision: close the silent one by type, leave the loud four by hand.** E13 introduces
-a typed site registry consumed by netWorth, shaped so that adding a site *kind* without
-registering it is a **compile error** — a discriminated union plus an exhaustive
-`switch`, not an array (an array accepts a missing element silently, which is the very
-failure being closed). The full ordered-iterator refactor across tick/rush/deliver/UI
-is deliberately **not** done here: its natural moment was the #99 generalization slice,
-that moment has passed, and forcing a four-subsystem refactor into the middle of an
-epic chartered to deliver a storage mechanic buys the loud cases little.
-
-**Re-evaluation trigger (not "someday"):** at **E15 start**, when the Plant makes it
-four concurrent site kinds rather than three. Tracked as its own issue so the trigger
-has a home. Note that the tick phase order is semantically load-bearing — HQ, then
-Shipyard construction, then Refit, from one shared purse (Professor F3) — so
-"ordered" in that refactor is a contract to design, not a detail to preserve.
+Replaced by **[ADR-0008](../adr/0008-one-goods-store.md)**: every place goods can sit is
+one encapsulated Goods store, guarded by a value-neutrality invariant rather than an
+enumeration. The refactor ships as sub-epic **[E13.0](E13.0-goods-store.md)**, before
+#100. Reasoning chain: [design-notes/goods-store-grill-2026-07-19](../design-notes/goods-store-grill-2026-07-19.md).
+The deferred ordered-iterator refactor (#304) keeps its debt but moves its trigger to the
+**M5 grill**, where the Great Work may be a genuine fourth singleton.
 
 ### Ledger & netWorth
 
@@ -131,9 +137,13 @@ Shipyard construction, then Refit, from one shared purse (Professor F3) — so
   no thalers; commissioning reuses `laborFee`; activation reuses `launch`? No —
   buildings get their own `completed` kind (a launch is a ship; one kind per meaning).
 - Daily `netWorth` adds storehouse stores at region-average mid (the E9 formula gains a
-  term; buildings still carry no book value — the honest-curve rule stands). The term is
-  contributed through the typed site registry above, not by hand-appending to the
-  `stores` array.
+  term; buildings still carry no book value — the honest-curve rule stands). The
+  Storehouse registers a `StoreRef`; `computeNetWorth` walks `companyStores` (E13.0), and
+  omissions are caught by the value-neutrality invariant rather than by an enumeration.
+- **Open (OQ8):** does the Storehouse's value join `siteStoreValue` or get its own
+  `NetWorthBreakdown` field? The latter changes the `netWorth` Ledger event shape
+  (`ledger.ts:83-90`) and needs its own version story — decide at the E13 grill before
+  #100 starts.
 
 ### Docs sync
 

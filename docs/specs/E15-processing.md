@@ -171,8 +171,9 @@ plantStall(plant): "starved" | "backlogged" | null           // derived, not sto
 
 - State: extends E13's `CompanyBuilding` union —
   `{ type: "processingPlant"; chain: ChainId; portId: PortId;
-  inputStore: Record<GoodId, number>; outputStore: Record<GoodId, number> }`.
-  **Hard dependency: E13 ships the union + store/withdraw first.**
+  inputStore: GoodsStore; outputStore: GoodsStore }` (ADR-0008).
+  **Hard dependency: E13.0 ships `GoodsStore` + the Transfer primitive; E13 ships
+  explicit addressing + withdraw.**
 - Conversion runs at the **day boundary** (integer batch — deterministic, no RNG),
   ordered before the `netWorth` snapshot so the day's output counts; plant upkeep
   joins the existing upkeep phase (same `min(upkeep, purse − Reserve)` clamp).
@@ -180,13 +181,17 @@ plantStall(plant): "starved" | "backlogged" | null           // derived, not sto
   Headquarters; rejects a second plant at the port; labor fee up front,
   Reserve-checked; creates a ConstructionSite (#99 seam). No manual "process"
   command — the works run themselves.
-- **Deliver targeting rule** (needed once a port can host a site *and* a plant):
-  `deliver(good)` fills, in order — (1) the port's active construction site's
-  remaining need, (2) the local plant's input store if `good` is one of its chain
-  inputs. Deterministic, documented, tested. Withdraw draws from the Company
-  building at the port that holds the good — plant **output store only** (inputs
-  are committed, the E14 no-cancel precedent; no overlap with Storehouse goods in
-  v1 by construction).
+- **Addressing (replaces the deliver targeting rule, 2026-07-19).** The priority chain
+  is **deleted**, not extended: `deliver` names its destination as a `StoreRef` (E13's
+  explicit addressing, ADR-0008). The old rule — site first, then the local plant's
+  input store — resolved the collision only by convention, and this chain makes the
+  collision real: **provisions consume grain (3 grain + 1 textiles), and the Granary
+  stores grain**, so a port hosting both gives the player one good and two legitimately
+  different intents. A convention cannot express that; an address can.
+  The plant's input store rejects non-chain goods through its `accepts` policy; the
+  **output store accepts goods only from the internal daily conversion, never from a
+  ship**, and inputs allow no withdrawal (the E14 no-cancel precedent). Withdraw draws
+  from the named store only.
 - Ledger: `plantBuilt` (thalers = labor fee, grammar law), daily `processed`
   (goods moved, no thalers — the store/withdraw precedent); deliveries and
   withdrawals already have kinds via E13. `netWorth` adds plant stores at mid
@@ -194,7 +199,12 @@ plantStall(plant): "starved" | "backlogged" | null           // derived, not sto
 
 ### Persistence
 
-- SAVE_VERSION 13 (or next free after E13's bump): migration adds market rows for
+- SAVE_VERSION: next free after E13's bump (13 is shipped; E13.0 consumes **no**
+  version — the Goods store is a compile-time alias over the same on-disk shape).
+  Note for whoever bumps: `e2e/fixtures/ledger-scenario.json` is version 12 and is
+  loaded by `e2e/ledger.spec.ts:55`; a bump to 14 drops v12 readability under the
+  one-step-migration precedent, so that fixture must be regenerated in the same PR.
+  Migration adds market rows for
   the new goods at every port (archetype-table equilibria, stock 0) and their
   `priceBias` **without per-port jitter** (re-drawing worldgen jitter inside a
   migration would touch the RNG stream; migrated saves get exact archetype bias —

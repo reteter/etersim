@@ -667,7 +667,12 @@ other kinds correlate to a Route by ship + time window), plus daily net-worth sn
 (thalers + fleet cargo + build-site store, all at mid price; ships and buildings carry
 no book value, so the chart tells the honest investment story: a build is a visible dip,
 then steeper growth). Full retention. One schema, two consumers: the in-game performance
-board (E9) and the Harness (E11).
+board (E9) and the Harness (E11). **Value law** (E13.0 grill, 2026-07-19): company value
+changes **only** through a booked Ledger event. Moving your own goods between Goods stores
+you own is not such an event, so a Transfer is value-neutral — and mechanics that
+legitimately change value on movement (storage fees, spoilage, handling loss) must book an
+explicit kind rather than letting value leak silently. Guarded by a value-neutrality property
+test rather than by an enumeration of stores (ADR-0008).
 _Implementation_: event stream + daily net-worth snapshots shipped in #82 (`ledger.ts`,
 `World.ledger`); events are appended by `applyCommand`/tick phases at the point of
 mutation, full retention, serialized with the save. `routeId` is carried on `trade`
@@ -724,3 +729,21 @@ _Avoid_: time scale, game speed (in identifiers)
 **World** (PL: świat):
 The complete simulation state; serializable and deterministic given seed and player commands.
 _Avoid_: game state, universe
+
+**Goods store** (PL: miejsce na towary):
+Any place goods can sit: a Ship's Cargo (a store that moves), a construction site's
+materials, a Building's contents. One type, `GoodsStore`. Its contents are reachable **only**
+through `amountOf` / `withAdded` / `withRemoved` — nothing in the codebase touches them
+directly (ADR-0008). The receiving store owns the policy: what it accepts (goods filter +
+capacity + remaining need), what happens after receipt (held / consumed at completion /
+consumed daily), and whether withdrawal is allowed. Capacity is never a field on the store —
+a Ship's capacity is its Hold, which Refit mutates, and a construction site has no scalar
+capacity at all.
+_Avoid_: inventory, container, bag, storage; **skład** (that is the Storehouse); dobra
+(a Good is a **towar**)
+
+**Transfer** (PL: przeniesienie towaru):
+One movement of a Good between two Goods stores the Company owns. Value-neutral: moving your
+own goods is not a booked Ledger event (see Ledger), so it never changes company value.
+Distinct from a trade, which crosses the market boundary and does move thalers.
+_Avoid_: przewóz (implies distance — most Transfers happen within one Port), move, shift
