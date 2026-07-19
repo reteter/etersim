@@ -6,7 +6,7 @@ How an idea becomes shipped code in etersim. Written for the model first.
 
 - **User (Jakub)** — product owner; final call on design, scope and merges.
 - **Claude as Designer / Engineer** (docs/personas/) — hats worn in dialogue with the user during grilling and spec writing. Design and architecture are conversations, never delegated.
-- **Claude as Analyst** (docs/personas/ANALYST.md) — after owner playtests: verifies each observation against the codebase (root cause, classification), produces the playtest design note and routes items to the Designer grill, straight Engineer issues, or the parking lot. Diagnoses, never decides.
+- **Claude as Analyst** (docs/personas/ANALYST.md) — after owner playtests: verifies each observation against the codebase (root cause, classification), produces the playtest design note and routes items to the Designer grill, straight Engineer issues, or the parking lot — where a parked item that carries an unpark trigger also gets its issue (§Documentation law: a trigger is a promise). Diagnoses, never decides.
 - **Claude as Orchestrator** — during implementation: breaks the approved spec into issues, delegates self-contained tasks to coder subagents (parallel where independent), closes the tiered wave check (§Verification gates) and integrates.
 - **Coder subagents** (docs/personas/CODER.md; harness def `.claude/agents/coder.md`) — implementation specialists dispatched by the Orchestrator with a self-contained task package; deliver PR-ready feature branches and evidence-based completion reports, never merge.
 - **The Professor** (docs/personas/PROFESSOR.md; harness def `.claude/agents/professor.md`) — read-only architecture reviewer of one named subsystem, invoked by the owner or proposed by the Orchestrator at epic/milestone boundaries; complements the diff-scoped wave check (§Verification gates), findings route to grill/issues/design-notes, never straight into code.
@@ -223,6 +223,28 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
   - **Corollary — a prediction is recorded as a prediction.** Forecasts about future sessions
     ("from s13 the owner is back on their own machine") are written as expectations carrying
     their falsifier, never as settled state.
+- **A trigger is a promise, and promises live in the issue tracker** (owner ruling
+  2026-07-19, sweep F5). A design note may park the *reasoning* for something deferred; it
+  may not be the only record of the *obligation*. If you write an unpark trigger — "revisit
+  at multiregion", "when #N is picked up", "post-E3 hygiene pass" — **file the issue that
+  carries it** and let the note point at the issue. The asymmetry that forces this is
+  structural, not a matter of diligence: `gh issue list` is swept at every session start
+  (§Session rituals), while notes are read one index line at a time and HIST rows are
+  explicitly *"safe to skip"*. A trigger written in prose therefore fires into a document
+  nobody is obliged to open.
+  - **The detector:** every unpark trigger in `docs/design-notes/` names an issue. That is
+    greppable, and it is exactly how sweep F5 found the four that did not.
+  - **The test before marking a note HIST:** if flipping it would hide an obligation, the
+    obligation is in the wrong place — file it, *then* flip.
+  - **The evidence this cost something:** `professor-review-ui-store-2026-07-14` parked three
+    findings behind prose triggers. All three triggers fired and nobody noticed for five
+    days; one of them was a hygiene cleave for `HeadquartersPanel.tsx`, which **grew 23%
+    while parked** (→ #319–#321). The remedy was already written in **#304** — *"the deferral
+    is a decision with a home rather than a note that decays"* — and the symptom already
+    logged in HANDOFF §Watch (*"parked-in-a-lot-with-no-exit … none have issues"*). The
+    knowledge was present twice over; what was missing was the obligation.
+  - **If you are unwilling to file an issue, do not write a trigger.** Record it as an idea
+    with no commitment, which is honest and cheaper than a promise nothing keeps.
 - **Session-close docs exception (owner, 2026-07-16):** the session-close docs-only
   batch (HANDOFF when requested, scorecard rows, incident reports, memory exports)
   commits **directly to `main`** and is pushed immediately — before committing,
@@ -238,7 +260,7 @@ decision session's output), sweep:
 - **CONTEXT.md** — terms locked during the grill: new entries with PL names, updated implementation notes.
 - **docs/PRD.md** — milestone/epic notes, sequencing changes, spec links.
 - **Older specs** — sections the new spec supersedes get a pointer to it, never a silent contradiction; factual corrections are recorded where the wrong claim lives.
-- **docs/design-notes/** — parked items the spec resolves get a "Resolved → spec" blockquote at the top of the item (keep the original text for history).
+- **docs/design-notes/** — parked items the spec resolves get a "Resolved → spec" blockquote at the top of the item (keep the original text for history), **and the issue carrying that item is closed with the same pointer** (§Documentation law: a trigger is a promise — the note holds the reasoning, the issue holds the obligation, so both have to be discharged).
 - **Issues** — retarget/retitle moved issues; post final acceptance criteria as comments (step 4).
 
 The spec's own §Docs sync section lists the expected targets; the sweep verifies

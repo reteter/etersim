@@ -15,6 +15,15 @@ adds a file to `docs/design-notes/` adds its row here in the same commit, and wh
 closes out a note's last open item flips it to HIST. An index nobody is obliged to
 update decays into a second thing to distrust.
 
+**A trigger is a promise, and promises live in the issue tracker** (owner ruling
+2026-07-19, sweep F5). Park the *reasoning* in a note; park the *obligation* in an issue
+carrying the same trigger, and have the note point at it. The asymmetry is the whole
+argument: `gh issue list` is swept every session start, while this index tells readers
+HIST rows are safe to skip — so a trigger written only in prose fires into a document
+nobody is obliged to open. **Before flipping a note to HIST, ask whether the flip would
+hide an obligation; if it would, file it first.** This index is where that question gets
+asked, which is why the rule is restated here rather than only in WORKFLOW.
+
 ## Process, evaluation & tooling
 
 | Note | Status | What it says |

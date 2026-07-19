@@ -22,7 +22,7 @@ Name what kind of work you were asked to do — each kind has a different bar:
 | --- | --- |
 | **Design / grill / spec** | Conversation with the owner; never delegated; one question at a time; output lands in specs + CONTEXT.md + PRD (docs sync sweep, WORKFLOW.md). |
 | **Implementation (issue)** | Approved spec exists; issue is in a milestone; TDD for `src/sim`; feature branch + PR; owner merges. |
-| **Playtest analysis** | Verify each observation against code before classifying; route to grill / issue / parking lot; do not decide design. |
+| **Playtest analysis** | Verify each observation against code before classifying; route to grill / issue / parking lot — a parked item carrying an unpark trigger also gets an issue (WORKFLOW.md §Documentation law: a trigger is a promise); do not decide design. |
 | **Docs-only change** | Branch + PR (exception: the session-close docs batch commits straight to `main` — WORKFLOW.md §Documentation law); sweep for stale cross-references (WORKFLOW.md §Docs sync sweep). |
 
 If the task doesn't fit any row, ask the owner before proceeding.
