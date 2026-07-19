@@ -178,6 +178,16 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
 - **ADRs** (docs/adr/, sequential numbering) record decisions that are hard to reverse, surprising without context, and the result of a real trade-off. One paragraph is enough.
 - **PRD** (docs/PRD.md) owns vision, pillars, scope and roadmap; epics beyond the current milestone are drafts.
 - Decisions recorded in these documents are settled — link to them instead of reopening, unless new facts appear.
+- **Indexed categories carry their index in the same commit.** `docs/incidents/` and
+  `docs/design-notes/` are read through their `README.md` digest, not file by file:
+  adding a note means adding its row (one line: what it is, what it concluded, LIVE or
+  HIST), and closing out a note's last open item means flipping it to HIST. This is the
+  only thing keeping either index alive — an index no one is *obliged* to update decays
+  into a second thing to distrust, and the category silently reverts to
+  unreadable-in-bulk. Volume in an indexed category is nearly free; volume in an
+  unindexed one compounds until nobody reads it (2026-07-19 retro: `design-notes` had
+  reached 36 files and 2358 lines with no digest, while `incidents` stayed absorbable at
+  ~10:1 compression because filing one always included its log line).
 - **Session-close docs exception (owner, 2026-07-16):** the session-close docs-only
   batch (HANDOFF when requested, scorecard rows, incident reports, memory exports)
   commits **directly to `main`** and is pushed immediately — before committing,
