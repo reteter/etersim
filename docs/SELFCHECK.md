@@ -116,7 +116,9 @@ the work is finished, walk the PR-template checklist
 
 **The gates and their depth are defined in one place: WORKFLOW.md §Verification gates
 (tiered).** Classify the change by its risk surface (paths in the diff — escalate up,
-never down), then walk that tier's checks: docs sync sweep, code review (inline /
+never down; the single documented downgrade is the **behavior-preserving exemption** for a
+pure rename or move, WORKFLOW §Verification gates, and it requires stating the evidence),
+then walk that tier's checks: docs sync sweep, code review (inline /
 one cheap-tier subagent / one two-axis strong-tier subagent), E2E (affected specs
 per PR, full run at wave merge and epic close), and spec sync (behavior drifted ⇒
 spec update ships in the same task).

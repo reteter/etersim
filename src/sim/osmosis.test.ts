@@ -47,7 +47,7 @@ const midPrice = (port: Port, good: GoodId): number =>
 describe("osmosisTick", () => {
   it("moves nothing when the relative price gap is at or below the deadband", () => {
     // Small, symmetric offset around equilibrium — gap must land well
-    // under 15% for these stock levels (elasticity 0.75).
+    // under 15% for these stock levels (price-curve exponent 0.75).
     const a = makePort("a", { grain: mg(105) });
     const b = makePort("b", { grain: mg(95) });
     const region = regionOf([a, b], [lane("l1", "a", "b", 5)]);

@@ -111,7 +111,7 @@ tuning; the shape is spec.
 
 - **Shortage as invitation**: an unsupplied consumer port sits at near-zero stock
   and ceiling price — the board *standing invitation* that industry would pay here.
-  Elasticity works normally: flood a market and the price walks down; narrow
+  The price curve works normally: flood a market and the price walks down; narrow
   consumption = bounded absorption = each chain's natural scale ceiling.
 - The Free port stays neutral (E12 lock): no processed-good consumption there.
 

@@ -74,10 +74,13 @@ arbitrage always exists and flows from geography, not scripts.
 Price is a pure function of stock (decided over hidden-pool and random-walk models):
 
 ```
-price(good, port) = basePrice * (equilibrium / max(stock, 1)) ^ elasticity
+price(good, port) = basePrice * (equilibrium / max(stock, 1)) ^ priceCurveExponent
 ```
 
-- `elasticity = 0.75` (global for E2; per-good is a future tuning lever).
+- `priceCurveExponent = 0.75` (global for E2; per-good is a future tuning lever).
+  Written `elasticity` until 2026-07-19; renamed because that word names the *opposite*
+  direction in this glossary — the response of production/consumption flows to price
+  (**Elasticity**, `CONTEXT.md`). Sim constant: `PRICE_CURVE_EXPONENT` (sweep F13, #316).
 - Clamp to `[0.25 × base, 4 × base]`.
 - `equilibrium` per (port, good): `max(100, 10 × daily gross flow)`; initial stock at worldgen
   is equilibrium ± 25% jitter (seeded RNG), so opening prices vary around base.
@@ -355,6 +358,6 @@ runs worldgen and threads the RNG state into the world.
 
 ### Balance tuning levers (implementation-phase, no spec change needed)
 
-Archetype flow tables, `elasticity`, clamp bounds, equilibrium formula, jitter range,
+Archetype flow tables, `priceCurveExponent`, clamp bounds, equilibrium formula, jitter range,
 starting thalers/hold. Anything structural (new good, new archetype, price formula shape)
 is spec drift and updates this file.

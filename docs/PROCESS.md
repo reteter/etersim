@@ -61,7 +61,11 @@ Verification cost follows the diff's **risk surface**, mechanically:
 | 2 | UI only | one cheap-tier review subagent, distilled package |
 | 3 | `src/sim` (the deterministic economy core) / multi-file | one strong-tier, two-axis (Standards + Spec) review subagent over the whole wave |
 
-Escalation is free, downgrading below what the paths dictate is forbidden. On top:
+Escalation is free, downgrading below what the paths dictate is forbidden — with one
+documented exemption: a **pure rename or move** through `src/sim`, changing no logic, no
+constant and no public shape, drops to tier 1, and only while the existing suite passes with
+no assertion changed. The condition is the detector: an edited expectation means it was not a
+pure rename, and the exemption lapses. On top:
 TDD is law for the sim core, full Playwright certification on `main` after every
 wave merge, and **no milestone closes on green metrics alone** — an owner playtest
 is part of every close, because *fun* is the one signal no metric replaces.
