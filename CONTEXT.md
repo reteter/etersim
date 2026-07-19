@@ -144,8 +144,8 @@ fantasy-roadmap grill (2026-07-16); numbers, source geometry and consumption fic
 belong to the M4 grill (docs/design-notes/grill-brief-m4-events-and-ice.md). Decay
 applies everywhere — Holds, markets, building stores — no exceptions (E15 grill).
 Future industrial role: chain-3 input (coolant) of the Processing plant. Polish
-vocabulary law (owner, 2026-07-16): **eteryczny** for nature (eteryczny lód),
-**eterowy** for industrial products (eterowy superprzewodnik) — deliberate asymmetry.
+vocabulary law (owner, 2026-07-16): **eteryczny** for nature (eteryczny lód), and **eterowy**
+for industrial products (eterowy superprzewodnik) — deliberate asymmetry.
 _Avoid_: ether ice, ice (alone, in identifiers)
 
 **Provisions** (PL: prowiant):
@@ -331,8 +331,8 @@ One entry of a Route: a Port plus its orders, each naming its economic effect �
 (good → fill available Hold at ask), **sell** (good → sell all at bid), **deliver** (good →
 transfer cargo to the local build site, up to the recipe's remaining need). buy and sell
 orders may carry an optional **`qty`** ceiling ("up to N", E9.1; absent ⇒ greedy — buy fills
-the Hold, sell empties the good); deliver never takes `qty`. A buy order may also carry a
-**Margin Gate** (`minMargin`, see below). Orders execute best-effort on docking ("do what you
+the Hold, sell empties the good); deliver never takes `qty`. A buy order may also carry
+a **Margin Gate** (`minMargin`, see below). Orders execute best-effort on docking ("do what you
 can and sail on" — no conditions **except** an unmet Margin Gate, which withholds
 stop-advancement, ADR-0007), then the ship departs immediately. A deliver order at a port with
 no active build is a no-op.
@@ -413,8 +413,8 @@ with Refit's semantic field)
 **Processing plant** (PL: przetwórnia):
 The Company's third Building type (E15): a continuous works with a chain fixed at
 construction — one implementation, chain variants (the Storehouse pattern). Own
-finite input and output stores; converts once per world day up to its rate. Fed
-**only by Company deliveries** (the cartel won't supply a competing industry — no
+finite input and output stores; converts once per world day up to its rate.
+Fed **only by Company deliveries** (the cartel won't supply a competing industry — no
 auto-draw in operation; construction auto-draws as usual, the asymmetry is
 deliberate) and drained **only by withdraw** (no auto-sell; the plant never spends
 thalers): value-add is created in the plant, profit is created on the route. At most
