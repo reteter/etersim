@@ -46,8 +46,18 @@ extended retro at session end and ranks process tension alongside shipped code.
 
 ## State
 
-- **main @ 9513500**, clean, single worktree; 611 tests / typecheck / lint green. Everything
-  below is merged — s14 closed with no PR left open.
+- **main @ 1d12850**, clean, single worktree; 611 tests / typecheck / lint green. Everything
+  below is merged.
+- **Closing additions after this file's own refresh** (#329), listed because the line above
+  went stale within the same session: `design-notes/knowing-is-not-binding-2026-07-19.md`
+  (#330) — the standing principle that **a system acts on what obliges it, not on what it
+  knows**, drawn from three s14 failures where the correct knowledge was already written down
+  and changed nothing. Plus **#331** (HANDOFF tsunami — *and first, are this file's
+  foundations right at all?*, since §State and §Queue duplicate `git log` / `gh issue list`
+  while §Watch and the owner framings are held by nothing else), **#332** (detectors for the
+  sweep's four laws — three landed in s14, propagation in s13 — **none of them automated**),
+  and **incident 0021** (a second task's files
+  edited onto the previous PR's branch; SELFCHECK §5 now says pushing a PR ends the task).
 - **The design-surface sweep is the through-line of s13+s14.** Pass A (referential
   integrity) **complete**; Pass B (subject adjudication) **1 of 7 rows** done — Trade &
   economy, verified clean against `src/sim`. Findings F1–F14, all resolved except **F14**,
