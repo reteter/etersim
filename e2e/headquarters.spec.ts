@@ -1,7 +1,8 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { createWorld, generateShipName, GOODS, type Ship, type World } from '../src/sim';
+import { generateShipName, GOODS, type World } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
 import { DEFAULT_SETTINGS, SETTINGS_KEY, SETTINGS_VERSION, type Settings } from '../src/store/settings';
+import { fundedWorld, routeReadyWorld } from './worldFixtures';
 
 /** The first ship's display name (src/sim/world.ts createWorld: `id: "s0"`,
  *  `name: generateShipName(0)`) — ship ids and display names diverged once
@@ -22,26 +23,14 @@ const S0_NAME = generateShipName(0);
 
 const AUTOSAVE_KEY = 'etersim.autosave';
 
-/** A funded World: default worldgen, thalers bumped so founding + a Build
- *  Order + a rush are all affordable within the test. */
-function fundedWorld(seed: string, thalers = 100_000): World {
-  const w = createWorld(seed);
-  return { ...w, company: { ...w.company, thalers } };
-}
-
-/** A funded World with s0 docked at one end of its shortest lane, and a
- *  ready-to-assign two-Stop Route already created (buy grain at `a`, sell
- *  grain at `b`) — the route is still *assigned* through the UI so #85's
- *  ACs (assign, suspend/resume visibility, loop metrics) exercise the real
- *  Command path; only the setup that a player can't reach in reasonable
- *  test time (thalers, ship placement) is hand-built. */
-function routeReadyWorld(seed: string): { world: World; a: string; b: string; laneTicks: number } {
-  const w0 = fundedWorld(seed);
-  const lane = [...w0.region.lanes].sort((x, y) => x.voyageTicks - y.voyageTicks)[0];
-  const ship: Ship = { ...w0.company.ships[0], location: { kind: 'docked', portId: lane.a } };
-  const world: World = { ...w0, company: { ...w0.company, ships: [ship] } };
-  return { world, a: lane.a, b: lane.b, laneTicks: lane.voyageTicks };
-}
+// fundedWorld / routeReadyWorld (a funded World with s0 docked at one end of
+// its shortest lane, ready-to-assign two-Stop Route setup — buy grain at
+// `a`, sell grain at `b`) now live in ./worldFixtures (#272), shared with
+// route-qty-margin-gate.spec.ts. The route itself is still *assigned*
+// through the UI in every test here so #85's ACs (assign, suspend/resume
+// visibility, loop metrics) exercise the real Command path; only the setup
+// a player can't reach in reasonable test time (thalers, ship placement) is
+// hand-built.
 
 function saveJson(world: World): string {
   return JSON.stringify({ version: SAVE_VERSION, world });

@@ -7,6 +7,7 @@ import {
   GOOD_IDS,
   GOODS,
   LABOR_FEE,
+  resolveReferencePort,
   type GoodId,
   type Port,
   type PortId,
@@ -20,13 +21,6 @@ import {
 import { useGameStore } from "../store/gameStore";
 import { deriveStallReason } from "../store/headquartersStall";
 import { computeLoopMetrics } from "../store/routeMetrics";
-// Deviation (flagged in the E9.1 wave-2 completion report): `resolveReferencePort`
-// is correctly shaped per the E9.1 spec but isn't re-exported from the `src/sim`
-// barrel (index.ts) yet — only its type is. Editing src/sim (even the barrel) is
-// out of scope for this UI-only pass, so this imports it by direct subpath
-// instead, exactly the same function the sim's own gate uses (no divergent UI
-// logic). Recommend the Orchestrator fold the re-export into the barrel.
-import { resolveReferencePort } from "../sim/route";
 import { BuildProgress } from "./BuildProgress";
 import { OverlayShell } from "./OverlayShell";
 import { Tabs } from "./Tabs";
