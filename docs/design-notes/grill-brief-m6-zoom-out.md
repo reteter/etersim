@@ -21,7 +21,8 @@ second region's opening, and long inter-region crossings.
   ladder law).
 - The multiregion Price board is a *different* board — the role change is the point.
 - Events gradient level 2: travel hazards on crossings (aether storms, currents) —
-  still no combat (ADR-0004).
+  still no combat ([ADR-0009](../adr/0009-no-direct-combat.md) — corrected 2026-07-19,
+  sweep F10; this brief cited ADR-0004, which never contained the rule).
 - Arcana installment 2 = **scale-up** of M4's Processing machinery: chains whose
   inputs and outputs live in different regions (Arcana split as amended 2026-07-16).
 - Branch offices unlock the buildings mechanic in a new region (E9 grill hook).
