@@ -69,8 +69,15 @@ by something with higher salience. The generalization worth carrying forward:
   `git -c credential.helper= -c credential.helper='!gh auth git-credential' push`
   (first `-c` clears the default helper list, second routes auth through gh's active
   account). Leaves no config behind. `gh auth setup-git` is fine on your own machine.
-- **Detect:** `git ls-remote origin` right after switching accounts — cheapest early
-  tell, before a coder's first push finds it the hard way.
+- **Detect:** ~~`git ls-remote origin` right after switching accounts~~ — **this check
+  does not work; amended 2026-07-19 (s12).** It was run at session start, passed
+  cleanly, and the push still 403'd under the wrong identity. `ls-remote` is a *read*,
+  and on this machine the other account has read access to the repo, so it succeeds
+  under either token. It verifies reachability, never identity — and it fails safe in
+  the wrong direction, handing out confidence precisely in the scenario this incident
+  warns about. There is no cheap read-only tell: **the first write is the test.** Either
+  push through the per-push override by default on a machine you do not own, or expect
+  the 403 and treat it as the signal rather than the surprise.
 - **Contain:** nothing enforces identity at commit time; the account switch/restore
   at session close stays a human ritual step.
 
