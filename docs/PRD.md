@@ -60,8 +60,9 @@ stops being only about profit and becomes the engine of finding out.
 - **Events gradient** — hazards scale with the lens. In-region: economic disturbances
   only (flow shocks, bounty/blight — never a threat to ships). Inter-region crossings:
   travel hazards (aether storms, currents). Open aether (galaxy level): full wilderness —
-  pirates and free traders as opt-in encounters (#131's hooks; ADR-0004's "no direct
-  combat" stands at every level), new civilizations. The old E6 draft dissolves into
+  pirates and free traders as opt-in encounters (#131's hooks;
+  [ADR-0009](adr/0009-no-direct-combat.md)'s "no direct combat" stands at every level),
+  new civilizations. The old E6 draft dissolves into
   this gradient.
 - **Arcana split** (amended 2026-07-16,
   [fantasy-roadmap grill](design-notes/fantasy-roadmap-grill-2026-07-16.md) — the
@@ -105,7 +106,13 @@ events) plus the first zoom-out finale: the Great Work, the second region openin
 the first administrator (§Long-term fantasy). Multiregion proper and everything above
 it on the Lens ladder is post-1.0.
 
-**Out of scope (hard no, see ADR-0004):** multiplayer, backend/accounts, mobile, Steam/desktop packaging, 3D, direct combat (piracy may exist only as an abstract voyage hazard).
+**Out of scope (hard no):** multiplayer, backend/accounts, mobile, Steam/desktop packaging
+([ADR-0004](adr/0004-local-persistence-no-backend.md)); **direct combat**
+([ADR-0009](adr/0009-no-direct-combat.md) — piracy may exist only as an abstract voyage
+hazard); **3D** — a presentation choice with no recorded trade-off, so it carries no ADR
+rather than a retrofitted one. *(Corrected 2026-07-19, sweep F10: this line cited ADR-0004
+for all six items from the foundation commit onward, and that ADR has only ever covered the
+first four.)*
 
 ## Milestones & epics
 
