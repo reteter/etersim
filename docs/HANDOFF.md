@@ -55,7 +55,8 @@ extended retro at session end and ranks process tension alongside shipped code.
   and changed nothing. Plus **#331** (HANDOFF tsunami — *and first, are this file's
   foundations right at all?*, since §State and §Queue duplicate `git log` / `gh issue list`
   while §Watch and the owner framings are held by nothing else), **#332** (detectors for the
-  four s14 laws, none of which is automated), and **incident 0021** (a second task's files
+  sweep's four laws — three landed in s14, propagation in s13 — **none of them automated**),
+  and **incident 0021** (a second task's files
   edited onto the previous PR's branch; SELFCHECK §5 now says pushing a PR ends the task).
 - **The design-surface sweep is the through-line of s13+s14.** Pass A (referential
   integrity) **complete**; Pass B (subject adjudication) **1 of 7 rows** done — Trade &
