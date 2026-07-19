@@ -310,6 +310,25 @@ Playwright 102/102; postmerge CLEAN (arm-A reference branch deleted with #292).
 Third and fourth consecutive zero-fix-loop tier-3 rows; first wave fully under
 the corrected casting rule (reviewer's Opus named explicitly at dispatch).
 
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-19 | #301 | #272 | 3 | 1 (should-fix) + 2 nits | 1 round | pass | Barrel re-exports + `waitingGates` moved to new `src/sim/waiting.ts` (location was an Orchestrator decision, not the coder's). Hard part clean: reviewer verified the move byte-identical by diffing the deleted body against the new file, and audited all 5 old test cases to new homes — zero coverage loss, formatter assertions net *stronger* (old multi-gate case used 3 `toContain` probes and one self-referential interpolation; new one asserts the exact literal). Finding: `HeadquartersPanel.tsx:29` subpath import left unflipped — the file #272 named **first** in its own AC, and after the PR the only remaining subpath import in `src/`. Coder self-flagged an unlisted scope-adjacent file (`FleetList.tsx`), judged minimal and correct. TDD honored red-first (moved test failed on missing module before the impl existed). |
+| 07-19 | #300 | #299 | 3 | 1 (should-fix) + 2 nits | 1 round | pass | Dead `applyDeliveryToSite` removed + `autodraw-refit` weak assertion strengthened (both flagged out of #290's scope). Dead-code premise independently re-grepped by the reviewer before accepting the deletion. Named red evidence supplied unprompted: mutated `autoDrawCapForDayTick` → `expected 30 to be less than or equal to 24`, reverted, green. Finding: `docs/specs/E14…md:90` still named the deleted function (spec-drift law). Fix-loop answer better than the instruction — declined the in-place name swap because the sentence describes the *pre-*#99 HQ-shaped state, kept it historical and added an accurate "As landed" note instead. Nits → #302, #303. |
+
+Wave cert 2026-07-19: main @ 8e2cad3 — 611 unit (41 files) / typecheck / lint /
+build / full Playwright 102/102; postmerge CLEAN (both worktrees removed, 4
+branches pruned). Squash-merge means original SHAs are unreachable, so merged
+content was verified by content probes, not `--contains` (incident 0010).
+
+First fix-loop rounds after four consecutive zero-fix-loop tier-3 rows — both
+one-item, both caught by the reviewer rather than the coders, and notably **both
+were AC items the coders read past** rather than judgement calls: #272 named its
+file explicitly, #299's spec-drift obligation is a standing law. Read as a
+package-comprehension signal, not a capability one — the same two coders each
+produced work the reviewer called clean on the hard parts. Watch whether
+"explicitly named in the AC but skipped" repeats; if it does, the lever is
+package shape (a checklist of named files), not casting.
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at

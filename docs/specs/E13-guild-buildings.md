@@ -95,13 +95,45 @@ Recipe completes.
   storehouse port; best-effort quantities). `StopOrder` kind union += `"store" |
   "withdraw"`; the docking phase executes them like the E9 three.
 
+### The site registry: exhaustive by type, not by hand (owner decision, 2026-07-19)
+
+`ConstructionSite` was generalized in #99, but the **registry of its callers** was not:
+"what is a site" lives in five hand-maintained enumerations — the tick phase list
+(`tick.ts:453-461`), the deliver priority chain (`commands.ts`, deduplicated by #290),
+the netWorth `stores` array (`ledger.ts:211-213`), the rush command trio
+(`rushBuild`/`rushShipyard`/`rushRefit`), and the UI section branches. The Storehouse
+adds a sixth site; E15's Plant will add a seventh (Professor review F4,
+[design-notes/professor-construction-review.md](../design-notes/professor-construction-review.md)).
+
+Four of the five fail **loudly** — a missing tick phase means the site never fills, a
+missing rush means no button, a missing UI branch means no section; all visible in the
+first minutes of play. The netWorth array fails **silently**: a forgotten entry
+under-reports company value with no error, no test failure, and no in-game symptom.
+
+**Decision: close the silent one by type, leave the loud four by hand.** E13 introduces
+a typed site registry consumed by netWorth, shaped so that adding a site *kind* without
+registering it is a **compile error** — a discriminated union plus an exhaustive
+`switch`, not an array (an array accepts a missing element silently, which is the very
+failure being closed). The full ordered-iterator refactor across tick/rush/deliver/UI
+is deliberately **not** done here: its natural moment was the #99 generalization slice,
+that moment has passed, and forcing a four-subsystem refactor into the middle of an
+epic chartered to deliver a storage mechanic buys the loud cases little.
+
+**Re-evaluation trigger (not "someday"):** at **E15 start**, when the Plant makes it
+four concurrent site kinds rather than three. Tracked as its own issue so the trigger
+has a home. Note that the tick phase order is semantically load-bearing — HQ, then
+Shipyard construction, then Refit, from one shared purse (Professor F3) — so
+"ordered" in that refactor is a contract to design, not a detail to preserve.
+
 ### Ledger & netWorth
 
 - Kind union += `store` / `withdraw` (good, qty, portId, shipId) — goods movements,
   no thalers; commissioning reuses `laborFee`; activation reuses `launch`? No —
   buildings get their own `completed` kind (a launch is a ship; one kind per meaning).
 - Daily `netWorth` adds storehouse stores at region-average mid (the E9 formula gains a
-  term; buildings still carry no book value — the honest-curve rule stands).
+  term; buildings still carry no book value — the honest-curve rule stands). The term is
+  contributed through the typed site registry above, not by hand-appending to the
+  `stores` array.
 
 ### Docs sync
 
