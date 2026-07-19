@@ -214,6 +214,31 @@ separate mechanism; the reason second-ship payback is lane-conditional (E9 spec 
 _Avoid_: slippage, price elasticity (that names the production/consumption response, not
 this), demand shock
 
+**Elasticity** (PL: elastyczność):
+The response of a port's **production and consumption rates to price**: production speeds
+up when price is high (scarcity) and slows when it is low (glut); consumption is the mirror.
+Both are linear in the price ratio, equal 1× at Equilibrium stock, and clamp softly rather
+than stopping — a crisis, never a standstill. This is the market's self-correcting law, and
+one of the four goods obey (with Trade osmosis, Flow drift and Storability). **Direction
+matters**: elasticity is *quantity answering price*. The reverse — price answering stock —
+is the price curve's exponent, which is deliberately **not** called elasticity (sweep F13).
+_Implementation_: shipped in #57/#60 ([spec](docs/specs/E8-living-economy.md)) —
+`FLOW_MULT_MIN = 0.25` / `FLOW_MULT_MAX = 1.5` in `src/sim/market.ts`, applied as
+`productionMult` / `consumptionMult` off `priceRatio`; the price curve's own exponent is
+`PRICE_CURVE_EXPONENT`, a separate thing.
+_Avoid_: price elasticity (ambiguous — it reads as the price curve), elasticity of price,
+slippage; do **not** name the price-curve exponent with this word
+
+**Storability** (PL: trwałość):
+The law that a Good **keeps** — stock sits in a Market, a Hold or a Goods store without
+decaying, so buying low and waiting is a real strategy and storage arbitrage is possible.
+Silent for ordinary goods precisely because it never fires; it becomes visible only where
+it is broken. **Aether ice is the exception that defines it** (M4): it perishes daily,
+everywhere, no exceptions — which is why Trade osmosis won't carry it and its gradients
+stay steep. One of the four market laws (with Elasticity, Trade osmosis and Flow drift).
+_Avoid_: shelf life, spoilage (as identifiers); **skład** (that is the Storehouse);
+perishability (name the law by what holds, not by its exception)
+
 **Flow drift** (PL: dryf przepływów):
 A per-port, per-good mean-reverting multiplier on production/consumption rates, stepped
 once per world day from the seeded RNG. Creates transient disequilibria that elasticity

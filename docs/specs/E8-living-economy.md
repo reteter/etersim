@@ -189,10 +189,14 @@ The agreed full-information economic view (fog stays parked for E6):
   rounding as today (walk first, round the total, spread applied before rounding).
   The docstring claim about zero-profit round trips is replaced by the spread
   guarantee: an instant round trip loses ~2×SPREAD of value.
-- `marketTick` applies `flow × elasticityMult(price/effectiveBase) × driftMult`, with
-  `elasticityMult = clamp(ratio, FLOW_MULT_MIN, FLOW_MULT_MAX)` — linear in the price
+- `marketTick` applies `flow × elasticity multiplier(price/effectiveBase) × driftMult`,
+  the multiplier being `clamp(ratio, FLOW_MULT_MIN, FLOW_MULT_MAX)` — linear in the price
   ratio (β = 1): at the 4× ceiling a consumer runs at 0.25×, a producer clamps at 1.5×
   well before. Hard limits unchanged (consumption stops at 0, production at cap).
+  **As shipped** there is no `elasticityMult` identifier: `marketTick` derives the value
+  inline as `productionMult` / `consumptionMult` off `priceRatio(entry)`
+  (`src/sim/market.ts:184-186`). The spec named a symbol the implementation never
+  created — reconciled 2026-07-19 (sweep F13, #316).
 
 ### Region & worldgen (`src/sim/region.ts`, `src/sim/worldgen.ts`, `src/sim/goods.ts`)
 

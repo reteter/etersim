@@ -9,7 +9,11 @@ import { TICKS_PER_DAY, type ArchetypeProfile, type MarketGood, type Port } from
  * consumption move stock every tick, scaled by event modifiers (E6 hook).
  */
 
-const ELASTICITY = 0.75;
+/** Exponent of the price-from-stock curve: how sharply price answers scarcity.
+ *  Deliberately NOT called "elasticity" — in this glossary that word names the
+ *  response of production/consumption flows to price (CONTEXT.md), which is the
+ *  opposite direction and lives below as FLOW_MULT_MIN/MAX (sweep F13). */
+const PRICE_CURVE_EXPONENT = 0.75;
 const PRICE_FLOOR = 0.25; // × effective base
 const PRICE_CEIL = 4; // × effective base
 /** Warehouses hold at most this multiple of equilibrium stock. */
@@ -46,7 +50,7 @@ export function effectiveBase(port: Port, good: GoodId): number {
 /** Marginal mid price at the current stock level, in thalers (float), around
  *  the port's effective `base`. Spread-free: trend snapshots track this. */
 export function price(entry: MarketGood, base: number): number {
-  const raw = base * (entry.equilibrium / Math.max(entry.stock, 1)) ** ELASTICITY;
+  const raw = base * (entry.equilibrium / Math.max(entry.stock, 1)) ** PRICE_CURVE_EXPONENT;
   return Math.min(PRICE_CEIL * base, Math.max(PRICE_FLOOR * base, raw));
 }
 
@@ -149,7 +153,7 @@ export function unitMargin(
  * raw term and its floor/ceiling clamp are both linear in `base`, so the
  * ratio cancels it out — see the "is base-independent" test in
  * market.test.ts for the equivalence to `price(entry, base) / base`. Evaluated
- * as `price(entry, 1)` so the elasticity curve (exponent and floor/ceiling
+ * as `price(entry, 1)` so the price curve (exponent and floor/ceiling
  * clamp) has a single source, letting marketTick derive the multiplier without
  * threading a `Port`/`effectiveBase` through its signature.
  */

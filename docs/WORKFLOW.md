@@ -109,6 +109,22 @@ downgrade below what the paths dictate:
 | 2 | UI only (no `src/sim`) | **One** review subagent on the cheap model tier, given a distilled package (ACs, ADR-0006, area scars) — it never re-derives repo context. Affected e2e specs already ran coder-side. |
 | 3 | `src/sim` / economy / multi-file wave | **One** two-axis (Standards + Spec) review subagent on the strong model tier, reading the whole wave's diffs in one context, package supplied. |
 
+**Behavior-preserving exemption** (owner ruling 2026-07-19, #316). A wave whose `src/sim`
+diff is a **pure rename or move** — no changed logic, no changed constant value, no changed
+public shape — drops to **tier 1**, because the paths overstate the risk and the review has
+nothing to find that the compiler and the suite do not.
+
+The exemption carries its own detector, which is the point: it holds only if **the existing
+suite passes with no assertion changed and no test added or removed**. A rename that
+quietly changed behavior shows up as an edited expectation, and an edited expectation
+withdraws the exemption — escalate back to the paths' tier. Mechanical identifier updates
+that merely follow the rename are fine; changed expected *values* are not.
+
+State the evidence when claiming it: before/after test counts, and that no assertion moved.
+Recorded here rather than taken as a one-off, because a gate waived in conversation is
+invisible to the next session — and the next person meeting this friction would either burn
+a strong-tier review on six lines or skip the gate silently (incident 0017).
+
 The review **package** at every tier names the repo's scar tissue explicitly: the ACs,
 the epic spec, **all ADRs** (by list — an ADR's title may not betray which laws it
 carries; ADR-0007 holds the SAVE_VERSION rule), and `docs/incidents/README.md` §Log.
