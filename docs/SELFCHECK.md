@@ -1,7 +1,8 @@
 # Selfcheck — pre-work checklist for any model
 
-Run this before starting work when the owner says so (typical prompt: *"Zanim
-zaczniesz pracę wykonaj selfcheck zgodnie z docs/SELFCHECK.md"*). It is written for
+Run this **before starting any task** — that is the standing rule (`CLAUDE.md` §Rules) —
+or when the owner asks for it explicitly (typical prompt: *"Zanim zaczniesz pracę
+wykonaj selfcheck zgodnie z docs/SELFCHECK.md"*). It is written for
 **any** model working in this repo — Claude or not, with or without custom skills.
 Assumption: you have already read the repo's `CLAUDE.md`; this checklist operationalizes
 it. Work through the phases in order: §1–§5 **before** touching anything, §6 **before
