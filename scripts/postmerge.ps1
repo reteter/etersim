@@ -100,12 +100,31 @@ foreach ($m in ($mergedHeads | Sort-Object Head -Unique)) {
     if ($LASTEXITCODE -eq 0) {
         if ($NoDelete) { Warn "local branch '$name' still exists (report-only)" }
         elseif ($name -eq $branch) { Warn "local branch '$name' is currently checked out — switch to main, rerun" }
-        else { git branch -D $name --quiet; Ok "deleted local branch '$name' (#$($m.Number))"; $cleaned = $true }
+        else {
+            git branch -D $name --quiet
+            if ($LASTEXITCODE -ne 0) { Fail "could not delete local branch '$name' (#$($m.Number))" }
+            else { Ok "deleted local branch '$name' (#$($m.Number))"; $cleaned = $true }
+        }
     }
 
     if (git ls-remote --heads origin $name) {
         if ($NoDelete) { Warn "remote branch 'origin/$name' still exists (report-only)" }
-        else { git push origin --delete $name --quiet; Ok "deleted leftover remote branch 'origin/$name' (#$($m.Number))"; $cleaned = $true }
+        else {
+            # Incident 0019: never announce a destructive action without checking it
+            # happened. `git push --delete` 403s under a stale credential cache while
+            # gh shows the right account (incident 0018), and the branch survives.
+            git push origin --delete $name --quiet
+            if ($LASTEXITCODE -ne 0) {
+                Fail ("could not delete remote branch 'origin/$name' (#$($m.Number)) — push rejected. " +
+                      "On a multi-account machine this is usually git's credential cache still holding the " +
+                      "other account (incident 0018). Retry with: git -c credential.helper= " +
+                      "-c credential.helper='!gh auth git-credential' push origin --delete $name")
+            }
+            elseif (git ls-remote --heads origin $name) {
+                Fail "remote branch 'origin/$name' still present after a push that reported success (#$($m.Number))"
+            }
+            else { Ok "deleted leftover remote branch 'origin/$name' (#$($m.Number))"; $cleaned = $true }
+        }
     }
 }
 if (-not $cleaned) { Ok 'nothing to clean' }
