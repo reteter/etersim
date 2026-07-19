@@ -188,6 +188,25 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
   unindexed one compounds until nobody reads it (2026-07-19 retro: `design-notes` had
   reached 36 files and 2358 lines with no digest, while `incidents` stayed absorbable at
   ~10:1 compression because filing one always included its log line).
+- **Decisions propagate at the moment they change.** Revising a recorded decision — a
+  trigger, a scope call, a lock, an acceptance criterion — means updating every other
+  document that records *the same decision*, in the same commit (or the same batch of issue
+  edits). Finding them is not a search problem: **walk the citations the document you are
+  editing already carries** — a grill note names its issue, an issue names its grill note, a
+  spec names its ADR. The evidence says pointers were never the missing piece: #131 and
+  `design-notes/route-events-2026-07-14.md` cite each other, and the phase-2 unpark trigger
+  still diverged for four days across two sessions, because a comment revised one side and
+  nobody was obliged to walk the link (sweep F4/F9). **The test:** the commit message or the
+  issue comment names the documents you updated, or states that no other document records
+  the decision. Unstated means unchecked.
+  - **Corollary — a falsified line is struck immediately.** On learning a recorded statement
+    is false, strike it through in place *now* rather than waiting for a full rewrite. A
+    one-line strike is always affordable; "the next refresh will fix it" is how HANDOFF went
+    actively misleading in two consecutive sessions (sweep F2). A strike is not a refresh, so
+    this leaves HANDOFF's owner-request rule intact.
+  - **Corollary — a prediction is recorded as a prediction.** Forecasts about future sessions
+    ("from s13 the owner is back on their own machine") are written as expectations carrying
+    their falsifier, never as settled state.
 - **Session-close docs exception (owner, 2026-07-16):** the session-close docs-only
   batch (HANDOFF when requested, scorecard rows, incident reports, memory exports)
   commits **directly to `main`** and is pushed immediately — before committing,
