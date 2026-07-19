@@ -46,7 +46,13 @@ export {
   type PortId,
   type Region,
 } from "./region";
-export { type Route, type RouteId, type Stop, type StopOrder } from "./route";
+export {
+  resolveReferencePort,
+  type Route,
+  type RouteId,
+  type Stop,
+  type StopOrder,
+} from "./route";
 export {
   autoDrawCapForDayTick,
   AUTO_DRAW_PER_DAY,
@@ -144,8 +150,15 @@ export {
   quoteBuy,
   quoteSell,
   STOCK_CAP_MULTIPLIER,
+  unitMargin,
   type FlowModifiers,
 } from "./market";
+// #272: the pure Margin-Gate derivation half of the "czeka na marżę" status
+// line (E9.1) — moved from src/store/waitingStatus.ts so it lives with the
+// other sim derivations (siteEstimate.ts precedent) instead of importing
+// World/Ship/market through a store-side file. formatWaitingGates (the
+// Polish player-facing string) stays in src/store/waitingStatus.ts.
+export { waitingGates, type WaitingGate } from "./waiting";
 export {
   elapsedToTicks,
   MAX_TICKS_PER_CALL,

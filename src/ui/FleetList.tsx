@@ -1,6 +1,14 @@
-import { cargoUsed, etaTicks, isUnderRefit, type Route, type Ship, type World } from "../sim";
+import {
+  cargoUsed,
+  etaTicks,
+  isUnderRefit,
+  waitingGates,
+  type Route,
+  type Ship,
+  type World,
+} from "../sim";
 import { useGameStore } from "../store/gameStore";
-import { formatWaitingGates, waitingGates } from "../store/waitingStatus";
+import { formatWaitingGates } from "../store/waitingStatus";
 import { ShipIcon } from "./icons";
 import { portName } from "./portName";
 

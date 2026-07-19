@@ -1,12 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
-import { createWorld, GOODS, type Ship, type World } from '../src/sim';
-// e2e is allowed to reach past the barrel for a UI/sim-shared computation
-// check (unlike src/ui, which must go through '../sim') — see completion
-// report deviation note: unitMargin/effectiveBase aren't both in the barrel
-// (effectiveBase is; unitMargin isn't) — imported together here for symmetry
-// with the test's own expected-margin computation.
-import { effectiveBase, unitMargin } from '../src/sim/market';
+import { effectiveBase, GOODS, unitMargin, type Ship, type World } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
+import { routeReadyWorld } from './worldFixtures';
 
 /**
  * E9.1 wave 2 (#263) UI: qty + Margin Gate inputs in the route editor, the
@@ -14,23 +9,11 @@ import { SAVE_VERSION } from '../src/store/persistence';
  * Reuses the save-injection harness pattern from headquarters.spec.ts (a
  * funded World with s0 docked at one end of a lane) since the default
  * starting purse can't found a Headquarters within a test's time budget.
+ * `routeReadyWorld` itself lives in ./worldFixtures (#272), shared with
+ * headquarters.spec.ts.
  */
 
 const AUTOSAVE_KEY = 'etersim.autosave';
-
-function fundedWorld(seed: string, thalers = 100_000): World {
-  const w = createWorld(seed);
-  return { ...w, company: { ...w.company, thalers } };
-}
-
-function routeReadyWorld(seed: string): { world: World; a: string; b: string; c: string } {
-  const w0 = fundedWorld(seed);
-  const lane = [...w0.region.lanes].sort((x, y) => x.voyageTicks - y.voyageTicks)[0];
-  const ship: Ship = { ...w0.company.ships[0], location: { kind: 'docked', portId: lane.a } };
-  const world: World = { ...w0, company: { ...w0.company, ships: [ship] } };
-  const c = world.region.ports.find((p) => p.id !== lane.a && p.id !== lane.b)!.id;
-  return { world, a: lane.a, b: lane.b, c };
-}
 
 function saveJson(world: World): string {
   return JSON.stringify({ version: SAVE_VERSION, world });
