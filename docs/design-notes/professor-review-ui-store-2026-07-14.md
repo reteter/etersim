@@ -82,6 +82,31 @@ One file holds `ConstructionTab`, `StopRow`, `RouteEditor`, `RouteRow`, `nextRou
 - Findings 1 + 7 → queued as the **E3 UI grill** (notice model + UI language), to run
   before the #96/#97 wave; the grill also inherits playtest cluster B
   ([playtest-2026-07-14](playtest-2026-07-14-routes-fleet-ux.md)).
-- Findings 4, 5, 8 → parked in this note. Unpark triggers: #174/#177 pickup
+- ~~Findings 4, 5, 8 → parked in this note. Unpark triggers: #174/#177 pickup
   (fleet-resolution selector), #175 pickup or the Finding-2 refactor
-  (`activeOverlay`), post-E3 hygiene pass (HeadquartersPanel cleave).
+  (`activeOverlay`), post-E3 hygiene pass (HeadquartersPanel cleave).~~
+  **Superseded 2026-07-19 — see below.**
+
+## Parked findings unparked (sweep F5, s14, 2026-07-19)
+
+All three unpark triggers had **fired**, and all three findings were still live in the code
+at `main @ c62bb27`. Owner ruling: take them out of this note and give each an issue.
+
+| Finding | Trigger | Fired | State when unparked | Now |
+| --- | --- | --- | --- | --- |
+| 4 — no fleet-resolution layer | #174/#177 pickup | **yes** — #174 closed 2026-07-15 (#177 still open) | symptom fixed (`App.tsx` no longer renders only `ships[0]`); structural gap open — `PortPanel.tsx:837`, `gameStore.ts:139` | **#319** |
+| 5 — three loose overlay booleans | #175 pickup **or the Finding-2 refactor** | **yes** — the Finding-2 refactor shipped: `OverlayShell.tsx` + `Tabs.tsx` exist, all three overlays use them | `TopBar.tsx:49,58,59` unchanged; the refactor named as the trigger went straight past it | **#320** |
+| 8 — `HeadquartersPanel` cleave | post-E3 hygiene pass | **yes** — E3 closed | file at **605 lines**, up from the 493 recorded here — it grew 23% while parked | **#321** |
+
+**Why this note is now honestly HIST.** Nothing in it waits on anything; the index's promise
+that HIST is safe to skip is true again. It was not true for five days, and the reason is
+worth keeping: **parking a finding in a note creates a stock with no outflow.** An issue has
+an outflow — it appears in `gh issue list`, so someone meets it whether or not they think to
+open the right note. A trigger written in prose has none; it relies on a reader arriving at
+the right paragraph in the right week. Three readers did not, and Finding 8 is the proof
+that the cost is not zero while nobody arrives: the file the hygiene pass was meant to
+shrink grew instead.
+
+The repo had already stated the remedy — **#304**: *"This issue holds the deferred half,
+with its trigger, so the deferral is a decision with a home rather than a note that
+decays."* Written 2026-07-19, five days after this note parked three findings the other way.
