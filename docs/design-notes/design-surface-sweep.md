@@ -57,8 +57,20 @@ concept carries the same name everywhere, so a grep on the term genuinely gather
 that speaks about it. In a repo without an enforced ubiquitous language this method would
 leak badly — the same idea would hide under five names and never collide.
 
-The subject list is therefore closed and known: **81 glossary terms**, plus the process
-subjects below that have no glossary entry.
+~~The subject list is therefore closed and known: **81 glossary terms**, plus the process
+subjects below that have no glossary entry.~~ **False — struck s14, see F13.** The 81
+enumerable entries are a *subset* of the vocabulary, not the whole of it: `CONTEXT.md`
+also glosses terms **inline inside other entries** (`mandate`, `starved`, `labor fee` —
+each with a `(PL: …)` name, none reachable by enumerating line-start entries), and uses
+load-bearing domain words with **no gloss at all** (`elasticity`, `storability`). So the
+subject list is *open*, and anything outside the 81 is invisible to Pass B by construction.
+Pass B therefore carries a second obligation beyond the term list: when a term's entry
+names a neighbouring concept, check whether that concept has an entry of its own.
+
+**Counts are anchored before they are trusted** (incident 0020). Any corpus-wide
+measurement is validated against one term whose answer is known in advance — a
+measurement with no anchor cannot report its own failure, and one silently lossy grep
+turns this whole sweep into a false CLEAN.
 
 ### Pass A — referential integrity (mechanical, enumerable) — **COMPLETE (s13)**
 
@@ -78,16 +90,36 @@ This is the class that produced #304. All six rows worked; findings F4–F11.
 
 Per `CONTEXT.md` section; each term greped across the corpus and its claims read together.
 
-| Section | Terms | Status |
-| --- | --- | --- |
-| World & setting | 17 | pending |
-| Trade & economy | 16 | pending |
-| Player & ships | 11 | pending |
-| Buildings & construction | 11 | pending |
-| Guilds & contracts | 12 | pending |
-| Harness & evaluation | 8 | pending |
-| Simulation | 6 | pending |
-| **Process subjects** (no glossary entry): verification gates, merge/wave ritual, session ritual, model ladder, review depth, documentation law | — | pending — **F1 came from here** |
+**Row order is by adjudicability, not by `CONTEXT.md` order** (owner decision, s14). The
+sections differ in one way that dominates cost: whether a *third arbiter* exists. Where a
+term is implemented, `src/sim` and its 611 tests settle a CONTEXT-vs-spec disagreement
+mechanically. Where it is lore, nothing settles it but judgement — and nobody implements
+against lore, so the yield is lower too. So the code-backed sections go first and
+`World & setting` (the topmost row under the old rule, and the most expensive one without
+an arbiter) goes last.
+
+The mention counts below are the corrected s14 measurement (6 023 total). Read them as an
+**upper bound on reading, not as cost**: a mention is usually a *use* ("the Ship sails to
+the Port"), and only a *claim* — a definition, a rule, a number — can contradict anything.
+
+| Order | Section | Terms | Mentions | Arbiter | Status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Trade & economy | 16 | 906 | `src/sim` | **worked s14** — `_Implementation_` claims verified against code (below); **F13 raised** |
+| 2 | Simulation | 6 | 648 | `src/sim` | pending |
+| 3 | Buildings & construction | 11 | 683 | `src/sim` | pending |
+| 4 | Player & ships | 11 | 1557 | `src/sim` | pending |
+| 5 | Guilds & contracts | 12 | 587 | `src/sim` | pending |
+| 6 | World & setting | 17 | 1046 | none (lore) | pending |
+| 7 | Harness & evaluation | 8 | 596 | none (unbuilt) | pending |
+| — | **Process subjects** (no glossary entry): verification gates, merge/wave ritual, session ritual, model ladder, review depth, documentation law | — | — | — | pending — **F1 came from here** |
+
+**Trade & economy, verified clean (s14).** Every `_Implementation_` line in the section
+makes a checkable claim about the code, and all of them hold: `SPREAD = 0.025`
+(`market.ts:19`), `quoteBuy`/`quoteSell` (`market.ts`), `effectiveBase` + `ARCHETYPE_BIAS`
+× per-port jitter (`market.ts:40`, `region.ts:104`, worldgen), `Port.priceBias`,
+`World.flowDrift` stepped at the day boundary with bounds `[0.7, 1.3]` (`tick.ts:32-33`,
+`driftPhase`), `World.osmosisPulse` + `osmosisTick` (`world.ts:65`, `osmosis.ts:38`).
+The section's defect is not in these claims but in a word they all lean on — F13.
 
 ## Binding rules
 
@@ -147,6 +179,8 @@ an owner call (F5, F10) stay open by design, not by inertia.
 | F8 | status | E14 milestone | Milestone **E14 — Shipyard & Refit is open with 0 open / 8 closed** issues. The tracker contradicts itself about whether the epic is done. | **resolved s13** — milestone E14 closed; the four remaining open milestones (E11, E13, E13.0, E15) all carry real open work. |
 | F9 | structural | decisions revised in issue comments do not flow back | The repo's rule that **the newest AC comment supersedes** (WORKFLOW §4) makes an issue comment a legitimate place to change a decision — but nothing carries that change back to the **design note that originated it**. Two instances, one per direction: **#131** (trigger revised in a comment 2026-07-15; the originating grill note still says E3, F4) and **#304** (trigger premise found void; there the spec, HANDOFF and the note *were* updated in s12 — but only because a human happened to be reading them). The gap is not the comment, it is the absent return path. | **resolved s13** (#313) — landed as **WORKFLOW §Documentation law: "Decisions propagate at the moment they change"**, plus a `CLAUDE.md` line. Key design finding: **cross-references were never the missing piece** — #131 and the grill note cite each other and the trigger still diverged, so the obligation attaches to the moment of revision (walk the citations the edited document already carries; state which you checked — unstated means unchecked). |
 | F10 | referential | PRD's hard-no scope list | `PRD.md:108` reads *"Out of scope (**hard no, see ADR-0004**): multiplayer, backend/accounts, mobile, Steam/desktop packaging, **3D, direct combat**"*, and `PRD.md:63` quotes **"ADR-0004's *no direct combat*"** as standing at every lens level. ADR-0004 is *Local persistence, no backend in v1*; it lists multiplayer, accounts, server sync, leaderboards, mobile, Steam — **no 3D, no combat, and no such phrase to quote**. The decision is presumably real and the owner's, but its cited authority is empty, and "no direct combat" is load-bearing: it governs the Events gradient and neighbours the M3 no-punishment lock that #131 phase 3 is parked behind. Anyone who checks the combat law at its stated source — as this sweep did — finds nothing. | open — either move the scope decision into an ADR that actually holds it, or cite whatever grill did decide it |
+| F12 | method | the sweep's own instrument | The Pass B sizing script counted terms as `$(grep -roiF "$term" $FILES \| wc -l)`. On this machine `grep -i` with `-F` **aborts** (exit 134, core dumped) — but `wc` counted the empty output as `0` and a pipeline's status is its last command's, so **a crash was recorded as a data point**. The measurement saw **26 % of the corpus** (1 575 mentions of a real 6 023) and reported **ten glossary terms as having zero occurrences anywhere**, which reads exactly like a finding about orphaned vocabulary. All ten were artifacts. What caught it was a domain check rather than a tooling one — `Thaler` is the currency, and a currency cannot have zero mentions. Matters beyond the slip: **Pass B is grep-driven end to end**, so a lossy count does not produce a false alarm here, it produces a false **CLEAN** — the same unchecked-exit-code defect as incident 0019 one session earlier, this time aimed at the sweep itself. | **resolved s14** — incident **0020** filed; the method section now requires every corpus-wide count to be anchored against a term whose answer is known in advance, and counts are not read out of a pipeline's tail. |
+| F13 | semantic | `elasticity` (and `storability`) | **The word `elasticity` carries two different meanings in live text, and has no glossary entry to adjudicate between them.** Meaning A, the exponent of the price-from-stock curve: `market.ts:12,49` (`ELASTICITY = 0.75`, `(equilibrium/stock) ** ELASTICITY`), `E2-trade-loop.md:77,80` (same formula, `elasticity = 0.75`), `osmosis.test.ts:50`. Meaning B, the price-elastic multiplier on production/consumption flows: `E8-living-economy.md:192-193,276` (`elasticityMult = clamp(ratio, FLOW_MULT_MIN, FLOW_MULT_MAX)`, "clamps at 0.25/1.5"), `market.test.ts:284`, `market.ts:168,172`. **`src/sim/market.ts` uses both senses in one file** — A at lines 12/49, B at lines 168/172. `CONTEXT.md:214` does adjudicate, and picks **B** (*"price elasticity … names the production/consumption response"*) — while the code's constant named `ELASTICITY` is **A**, against the `CLAUDE.md` law that code identifiers come from the glossary. Same shape, milder: **`storability`**, named at `CONTEXT.md:137` as one of the four "market laws" Aether ice is defined against (*"visibly breaks exactly one"*), with no entry and no code. Two of those four laws are undefined vocabulary. **This is also how the finding was found** — not by sweeping a term, since neither is on the list, but by reading a neighbouring entry. See the struck claim in §Method: the 81 are a subset, so Pass B's coverage gap is structural, not incidental. | open — **owner call**: which meaning keeps the name `elasticity`, and what the other one is called. Then glossary entries for the winner and for `storability`, and the rename lands wherever it lost. Mechanical only after the naming is decided. |
 | F11 | stale copy | M4 grill brief's input list | `grill-brief-m4-workbench.md` names **#255** twice as a parked automation input — in question 6 (*"which of the parked inputs fold in, which stay parked?"*) and in §Inputs. **#255 is closed and shipped** ("route editor table — visible click affordance for empty order cells"). Grill briefs are LIVE by definition and exist to hand a future session the right questions, explicitly *"for whichever orchestrator leads the M4+ grills"* — so this one hands the M4 grill a question that no longer needs deciding. #173, #177 and #227 in the same lists are correctly open. | **resolved s13** — dropped from both lists, with a one-line note in §Inputs recording that it was there and why it went (so the next reader does not re-add it). |
 
 ## What the findings have in common (interpretation, not a finding)
@@ -221,3 +255,10 @@ claim the next session can check.
 The sweep is done when every Pass A row and every Pass B row reads CLEAN or carries findings.
 It is explicitly **resumable**: this table is the state. A session picks the topmost pending
 row, works it, updates the row, and stops wherever it stops.
+
+**Amended s14.** "Topmost" now means topmost in the Pass B table's own **Order** column,
+which is sequenced by adjudicability (see above) rather than by `CONTEXT.md`'s section
+order. The rule is unchanged in spirit — take the next pending row, do not shop around —
+but the sequence it points at was re-derived once the corpus was actually measured. If a
+future session finds a better ordering, it moves the rows and says so here; what it must
+not do is pick a row because it looks appealing today.
