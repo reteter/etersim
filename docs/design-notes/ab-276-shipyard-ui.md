@@ -41,8 +41,13 @@ axes split 3–2 for B (AC fidelity, tests, honesty vs architecture, maintenance
 Tiebreak: **fix asymmetry** — B's regressions are mechanical ports for which A is a
 working reference; A's missing test architecture would need writing from scratch.
 **Owner ratified merge B** → PR #291, `main @ ad37ae0`; violet kept (owner call);
-arm-A strengths → issue #292; reference branch `feat/276-shipyard-ui` @ ddd33de
-pushed to origin post-trial for #292, delete on its close.
+arm-A strengths → issue #292; ~~reference branch `feat/276-shipyard-ui` @ ddd33de pushed
+to origin post-trial for #292, delete on its close.~~ **Discharged 2026-07-20 (s15):**
+#292 closed 2026-07-17, so the clause fell due three days before anyone acted. Arm A now
+lives as the annotated tag **`ab-276-arm-a`** (same commit `ddd33de`); the branch is pruned
+local and remote. Origin turned out to hold no copy, so the tag is the only surviving
+reference — pruning without it would have made the arm-A diff unrecoverable. The three-day
+gap is a confirmed instance on #326: an obligation that lived only in this sentence.
 
 ## Threats to validity
 
