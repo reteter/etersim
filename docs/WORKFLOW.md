@@ -251,6 +251,18 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
   `git status -sb` must show `main` level with `origin/main` (the incident-0006 guard
   was the unpushed local commit, not the missing PR). Anything beyond the close ritual
   still takes branch + PR.
+- **Line breaks are semantic, not width-wrapped** (owner ruling 2026-07-21, #341 grill:
+  `design-notes/markdown-normalizer-grill-2026-07-21.md`). A line breaks at a clause
+  boundary — sentence end, semicolon, an explanatory colon, or an em-dash — plus a
+  100-character soft fallback for any segment between hard separators; never at an
+  arbitrary width. This is a script's job (`scripts/normalize-markdown.mjs`,
+  `npm run docs:normalize`), never a hand-reflow — wrap position anchored to meaning is
+  what makes `^`-anchored greps against docs trustworthy (the laws above and #332's
+  detector set all depend on this). Enforced via `--check` against an allowlist of
+  already-migrated files, not repo-wide; migration reaches full coverage through
+  several segment-scoped, docs-only PRs rather than one pass — a single corpus-wide
+  reflow commit would become the `git blame` origin for every line in every doc,
+  burying the actual last substantive edit under pure formatting.
 
 ### Docs sync sweep (before committing a spec or decision batch)
 
