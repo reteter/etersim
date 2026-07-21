@@ -30,6 +30,10 @@ export {
   type Voyage,
 } from "./ship";
 export { GOOD_IDS, GOODS, type GoodDef, type GoodId } from "./goods";
+// E13.0 (#307, ADR-0008): GoodsStore's opaque contents are reachable only
+// through these accessors — the UI reads via amountOf/totalHeld the same as
+// every other consumer outside goodsStore.ts.
+export { amountOf, totalHeld, type GoodsStore } from "./goodsStore";
 export {
   ARCHETYPE_PROFILES,
   DOCKING_FEE,

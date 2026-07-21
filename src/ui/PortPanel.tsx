@@ -1,5 +1,6 @@
 import { useState, type ComponentType, type SVGProps } from "react";
 import {
+  amountOf,
   cargoUsed,
   computeRefitEstimate,
   computeRefitRushQuote,
@@ -94,8 +95,8 @@ function archetypeLabel(archetype: Port["archetype"]): string {
 
 /** Compact cargo summary for a Harbor hover tooltip, e.g. "Grain 5, Iron 2". */
 function cargoSummary(ship: Ship): string {
-  const held = GOOD_IDS.filter((good) => ship.cargo[good] > 0).map(
-    (good) => `${GOODS[good].name} ${ship.cargo[good]}`,
+  const held = GOOD_IDS.filter((good) => amountOf(ship.cargo, good) > 0).map(
+    (good) => `${GOODS[good].name} ${amountOf(ship.cargo, good)}`,
   );
   return held.length === 0 ? "empty" : held.join(", ");
 }
@@ -183,7 +184,7 @@ function computeBuyMax(entry: MarketGood, base: number, ship: Ship, thalers: num
 
 /** Largest sellable quantity: held cargo, bounded by what `quoteSell` accepts. */
 function computeSellMax(entry: MarketGood, base: number, ship: Ship, good: GoodId): number {
-  const held = ship.cargo[good];
+  const held = amountOf(ship.cargo, good);
   return held > 0 && quoteSell(entry, base, held) !== null ? held : 0;
 }
 
@@ -249,10 +250,10 @@ function MarketRow({
     buyTotal !== null &&
     buyTotal <= thalers &&
     cargoUsed(ship) + clampedQty <= ship.hold;
-  const canSell = clampedQty > 0 && sellTotal !== null && ship.cargo[good] >= clampedQty;
+  const canSell = clampedQty > 0 && sellTotal !== null && amountOf(ship.cargo, good) >= clampedQty;
 
   const GoodIcon = GOOD_ICONS[good];
-  const held = ship.cargo[good];
+  const held = amountOf(ship.cargo, good);
 
   return (
     <div className="market-row">
