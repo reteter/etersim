@@ -106,7 +106,7 @@ the Port"), and only a *claim* — a definition, a rule, a number — can contra
 | --- | --- | --- | --- | --- | --- |
 | 1 | Trade & economy | 16 | 906 | `src/sim` | **worked s14** — `_Implementation_` claims verified against code (below); **F13 raised** |
 | 2 | Simulation | 6 | 648 | `src/sim` (4 terms) / ADR-0008 + E13.0 spec (2 terms) | **worked s15 — CLEAN** (below); no finding |
-| 3 | Buildings & construction | 11 | 683 | `src/sim` | pending |
+| 3 | Buildings & construction | 10 | 683 | `src/sim` (8 built) / E15 spec (2 unbuilt) | **worked s15 — CLEAN** (below); no finding. *Term count corrected 11→10 — see below.* |
 | 4 | Player & ships | 11 | 1557 | `src/sim` | pending |
 | 5 | Guilds & contracts | 12 | 587 | `src/sim` | pending |
 | 6 | World & setting | 17 | 1046 | none (lore) | pending |
@@ -140,6 +140,32 @@ The neighbour-concept check (the F13 obligation) is clean: Storehouse, Hold, Car
 Refit, Ledger, Company and Good each carry their own entry. **Recorded for the next session so
 it does not repeat the trap this one nearly did:** "unbuilt in `src/sim`" is a false finding
 when the glossary is mandated to lead.
+
+**Buildings & construction, verified clean (s15).** Ten terms (the table's "11" was a
+miscount — below), same arbiter split as row 2. **Eight are built and settle against
+`src/sim`:** Reserve (`building.ts:33` `CONSTRUCTION_RESERVE = 500`, enforced at the four
+points the entry names — found/place gates, auto-draw skip `:342`, rush purse cap `:166`),
+Docking fee (`region.ts:87` `DOCKING_FEE` per archetype, `ledger.ts:40` `dockingFee` kind),
+Refit (`shipyard.ts:31` `HOLD_LADDER = [2, 1.5, 1.25]`, "rounded once from base, baseHold 50:
+[100,150,188]" matches the code comment, three rungs = the "hard cap after three"), Build
+Order / Recipe (`SHIP_RECIPE`, labor fee up front), Headquarters, Shipyard, Building
+(roadmap claims match the milestone map: E14 closed, E13/E15 open). **Two are unbuilt —
+Processing and Processing plant (E15) — and their arbiter is the E15 spec, not `src/sim`**,
+the same glossary-first case as row 2: every claim (chain fixed at construction, finite
+in/out stores, one conversion per world day, fed only by deliveries / drained only by
+withdraw, one plant per port, upkeep under the Reserve clamp, the two stalls starved /
+backlogged) holds against `E15-processing.md`. Neighbour-concept check clean: Great Work,
+Guild, Guildhouse, Building permit, Upkeep, Expedition each carry their own entry.
+
+*Count correction, not a finding.* The table said 11; the section holds **10** entries. The
+overcount came from **this pass's own first grep**, not the document: `**processed goods**`
+(L427) is an inline gloss inside the Processing entry that wrapping pushed to line-start, and
+a loose `^\*\*…\*\* \(PL:` pattern counted it as a header. Anchored to the actual convention
+— which ends `):`, and the gloss ends in a comma — it falls out cleanly, and F3's "81 by the
+documented convention" holds at both `e8b6ff4` and HEAD. This is not a new legibility defect;
+it is the exact bold-at-line-start-by-wrap artifact the s15 markdown-normalizer discussion is
+aimed at, and a concrete motivating instance for that issue when it is filed — **not** an F3
+reopening and not a hand-reflow (wrap position is a script's job, owner direction s15).
 
 ## Binding rules
 
