@@ -105,7 +105,7 @@ the Port"), and only a *claim* — a definition, a rule, a number — can contra
 | Order | Section | Terms | Mentions | Arbiter | Status |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Trade & economy | 16 | 906 | `src/sim` | **worked s14** — `_Implementation_` claims verified against code (below); **F13 raised** |
-| 2 | Simulation | 6 | 648 | `src/sim` | pending |
+| 2 | Simulation | 6 | 648 | `src/sim` (4 terms) / ADR-0008 + E13.0 spec (2 terms) | **worked s15 — CLEAN** (below); no finding |
 | 3 | Buildings & construction | 11 | 683 | `src/sim` | pending |
 | 4 | Player & ships | 11 | 1557 | `src/sim` | pending |
 | 5 | Guilds & contracts | 12 | 587 | `src/sim` | pending |
@@ -120,6 +120,26 @@ makes a checkable claim about the code, and all of them hold: `SPREAD = 0.025`
 `World.flowDrift` stepped at the day boundary with bounds `[0.7, 1.3]` (`tick.ts:32-33`,
 `driftPhase`), `World.osmosisPulse` + `osmosisTick` (`world.ts:65`, `osmosis.ts:38`).
 The section's defect is not in these claims but in a word they all lean on — F13.
+
+**Simulation, verified clean (s15).** Six terms, and the row's real lesson is about *which
+arbiter answers*. Four are built and `src/sim` settles them: **Speed** (`speed.ts:7`
+`SPEEDS = ["paused", 1, 10, 100]`, "Pure time arithmetic only" ↔ "purely presentational"),
+**World** (`world.ts:46` carries the entry's exact phrase, "deterministic given seed and
+player commands"), **Command** (`commands.ts:45` — the entry's examples buy/sell/assignRoute
+all exist as `kind`s), and **Tick** (already settled in Pass A against ADR-0003,
+`TICKS_PER_DAY = 24` — not re-litigated). The other two, **Goods store** and **Transfer**, are
+**not in `src/sim` and must not be checked against it** — they are the approved-but-unbuilt
+E13.0 concepts, and the repo's own *glossary-first* law (`CLAUDE.md`: new concept ⇒ entry
+first) makes a present-tense entry ahead of code the intended sequence, not drift. Their
+arbiter is **ADR-0008 + `E13.0-goods-store.md`**, and against it every claim holds: one opaque
+type reachable only through `amountOf`/`withAdded`/`withRemoved`, the receiving store owns the
+policy, capacity is never a store field (it is `Ship.hold`), Transfer is value-neutral because
+only a booked Ledger event moves company value, and "distinct from a trade" is exact precisely
+because unifying `market↔hold` with the primitive is **deferred** (ADR-0008 §Not decided here).
+The neighbour-concept check (the F13 obligation) is clean: Storehouse, Hold, Cargo, Building,
+Refit, Ledger, Company and Good each carry their own entry. **Recorded for the next session so
+it does not repeat the trap this one nearly did:** "unbuilt in `src/sim`" is a false finding
+when the glossary is mandated to lead.
 
 ## Binding rules
 
