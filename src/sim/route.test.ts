@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyCommand } from "./commands";
+import { amountOf } from "./goodsStore";
 import { DOCKING_FEE } from "./region";
 import { effectiveBase, maxAffordableQty, quoteBuy, quoteSell, unitMargin } from "./market";
 import { shortestCourse } from "./pathfinding";
@@ -135,7 +136,7 @@ describe("routed buy — no free goods, equivalence by construction (#80)", () =
 
     const after = tick(start, [{ kind: "assignRoute", shipId, routeId: "r" }]);
     // No transition this tick (started docked at Stop 0) => no fee; buy only.
-    expect(after.company.ships[0].cargo.grain).toBe(q);
+    expect(amountOf(after.company.ships[0].cargo, "grain")).toBe(q);
     expect(after.company.thalers).toBe(120 - cost);
     expect(after.company.thalers).toBeGreaterThanOrEqual(0);
 
@@ -165,7 +166,7 @@ describe("routed buy — no free goods, equivalence by construction (#80)", () =
     const manual = tick(seed("eq2", a, 120), [{ kind: "buy", shipId, good: "grain", qty: q }]);
 
     expect(routed.company.thalers).toBe(manual.company.thalers);
-    expect(routed.company.ships[0].cargo.grain).toBe(manual.company.ships[0].cargo.grain);
+    expect(amountOf(routed.company.ships[0].cargo, "grain")).toBe(amountOf(manual.company.ships[0].cargo, "grain"));
     // The only Ledger difference between the two: the routed trade carries
     // routeId, the manual one does not (equivalence by construction, tagged).
     const routedTrade = routed.ledger.find((e) => e.kind === "trade");
@@ -197,7 +198,7 @@ describe("route assignment & loop execution (#80)", () => {
     // Assign while docked at Stop 0 (A): buys at A this tick, then dwells docked
     // (a routed ship never departs the tick it acts — the intervention window).
     let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "loop" }]);
-    expect(shipOf(w).cargo.grain).toBeGreaterThan(0);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBeGreaterThan(0);
     expect(shipOf(w).location).toEqual({ kind: "docked", portId: a });
     expect(shipOf(w).assignment).toEqual({ routeId: "loop", nextStopIndex: 1, suspended: false });
 
@@ -208,7 +209,7 @@ describe("route assignment & loop execution (#80)", () => {
     // Reach B, sell everything, advance to Stop 0, dwell docked at B.
     let guard = 0;
     while (!(shipOf(w).location.kind === "docked" && dockedAt(w) === b) && guard++ < 500) w = tick(w, []);
-    expect(shipOf(w).cargo.grain).toBe(0);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(0);
     expect(shipOf(w).assignment!.nextStopIndex).toBe(0);
   });
 
@@ -336,7 +337,7 @@ describe("deterministic edge semantics (#80)", () => {
     const world = seed("redir", a, 500, [route]);
     const shipId = shipOf(world).id;
     let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]); // buys at A, dwells
-    const boughtGrain = shipOf(w).cargo.grain;
+    const boughtGrain = amountOf(shipOf(w).cargo, "grain");
     expect(boughtGrain).toBeGreaterThan(0);
     w = tick(w, []); // redirect: now genuinely in flight toward B (Stop 1)
     expect(shipOf(w).location.kind).toBe("underway");
@@ -353,11 +354,11 @@ describe("deterministic edge semantics (#80)", () => {
     ) {
       w = tick(w, []);
     }
-    expect(shipOf(w).cargo.grain).toBe(boughtGrain); // no wrong-port sell at B — redirected onward
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(boughtGrain); // no wrong-port sell at B — redirected onward
     // And it does sell once it reaches the moved Stop at C.
     guard = 0;
     while (!(shipOf(w).location.kind === "docked" && dockedAt(w) === c) && guard++ < 500) w = tick(w, []);
-    expect(shipOf(w).cargo.grain).toBe(0);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(0);
   });
 
   it("clears the assignment once a ship on a deleted Route finishes its Course", () => {
@@ -409,12 +410,12 @@ describe("[A,B,A] co-located drain (#80)", () => {
     // Reach A: this docking executes Stop 2 (buy textiles), advances to Stop 0, dwells.
     guard = 0;
     while (!(shipOf(w).location.kind === "docked" && dockedAt(w) === a) && guard++ < 500) w = tick(w, []);
-    expect(shipOf(w).cargo.textiles).toBeGreaterThan(0); // Stop 2 executed
-    expect(shipOf(w).cargo.grain).toBe(0); // Stop 0 not yet — it drains next dwell tick
+    expect(amountOf(shipOf(w).cargo, "textiles")).toBeGreaterThan(0); // Stop 2 executed
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(0); // Stop 0 not yet — it drains next dwell tick
     expect(shipOf(w).assignment!.nextStopIndex).toBe(0);
     // Next dwell tick at A drains Stop 0 (buy grain), advances to Stop 1.
     w = tick(w, []);
-    expect(shipOf(w).cargo.grain).toBeGreaterThan(0); // Stop 0 executed at the same port
+    expect(amountOf(shipOf(w).cargo, "grain")).toBeGreaterThan(0); // Stop 0 executed at the same port
     expect(shipOf(w).assignment!.nextStopIndex).toBe(1);
     expect(dockedAt(w)).toBe(a); // still dwelling at A
     // Following tick departs for B (Stop 1, a different port).
@@ -473,8 +474,8 @@ describe("shared-purse race in ships[] order (#80)", () => {
       ]);
     const after = run(world);
 
-    const g0 = after.company.ships[0].cargo.grain;
-    const g1 = after.company.ships[1].cargo.grain;
+    const g0 = amountOf(after.company.ships[0].cargo, "grain");
+    const g1 = amountOf(after.company.ships[1].cargo, "grain");
     expect(g0 + g1).toBeGreaterThan(0);
     expect(g0).toBeGreaterThanOrEqual(g1); // s0 races first for the shared purse
     expect(after.company.thalers).toBeGreaterThanOrEqual(0);
@@ -671,7 +672,7 @@ describe("route Stop qty — 'up to N' (#261)", () => {
     const expectedQty = maxAffordableQty(portA.market.grain, effectiveBase(portA, "grain"), STARTING_HOLD, 120);
 
     const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
-    expect(shipOf(after).cargo.grain).toBe(expectedQty);
+    expect(amountOf(shipOf(after).cargo, "grain")).toBe(expectedQty);
   });
 
   it("qty absent ⇒ byte-identical to today, over a scripted multi-loop run: the ENTIRE World is pinned, not one field (a literal pre-#261 diff isn't possible in one tree — a full-world assertion over the ungated run is the achievable form)", () => {
@@ -717,7 +718,7 @@ describe("route Stop qty — 'up to N' (#261)", () => {
     const world = seed("qty-below", a, 5000, [route]);
     const shipId = shipOf(world).id;
     const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
-    expect(shipOf(after).cargo.grain).toBe(3);
+    expect(amountOf(shipOf(after).cargo, "grain")).toBe(3);
   });
 
   it("buy qty exactly at Hold space: clips to Hold, same as greedy (qty === holdSpace)", () => {
@@ -740,7 +741,7 @@ describe("route Stop qty — 'up to N' (#261)", () => {
       100_000,
     );
     const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
-    expect(shipOf(after).cargo.grain).toBe(expectedQty);
+    expect(amountOf(shipOf(after).cargo, "grain")).toBe(expectedQty);
   });
 
   it("buy qty above Hold space: still clipped to Hold, N is only a ceiling", () => {
@@ -763,8 +764,8 @@ describe("route Stop qty — 'up to N' (#261)", () => {
       100_000,
     );
     const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
-    expect(shipOf(after).cargo.grain).toBe(expectedQty);
-    expect(shipOf(after).cargo.grain).toBeLessThanOrEqual(STARTING_HOLD);
+    expect(amountOf(shipOf(after).cargo, "grain")).toBe(expectedQty);
+    expect(amountOf(shipOf(after).cargo, "grain")).toBeLessThanOrEqual(STARTING_HOLD);
   });
 
   it("buy qty above what the purse affords: clipped by affordability, not by N", () => {
@@ -783,7 +784,7 @@ describe("route Stop qty — 'up to N' (#261)", () => {
     const expectedQty = maxAffordableQty(portA.market.grain, effectiveBase(portA, "grain"), 40, 120);
     expect(expectedQty).toBeLessThan(40); // genuinely purse-limited, not N-limited
     const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
-    expect(shipOf(after).cargo.grain).toBe(expectedQty);
+    expect(amountOf(shipOf(after).cargo, "grain")).toBe(expectedQty);
   });
 
   it("sell qty clips to N, carrying the remainder onward (dosing across ports)", () => {
@@ -799,12 +800,12 @@ describe("route Stop qty — 'up to N' (#261)", () => {
     const world = seed("sell-qty", a, 5000, [route]);
     const shipId = shipOf(world).id;
     let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]); // buys 10 @ a, dwells
-    expect(shipOf(w).cargo.grain).toBe(10);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(10);
     w = tick(w, []); // departs toward b
     let guard = 0;
     while (!(shipOf(w).location.kind === "docked" && dockedAt(w) === b) && guard++ < 500) w = tick(w, []);
     // Only 4 sold at b; the other 6 remain aboard (carried onward), never force-sold.
-    expect(shipOf(w).cargo.grain).toBe(6);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(6);
   });
 
   it("sell qty above what's on board: sells everything on board, no error, no negative cargo", () => {
@@ -820,11 +821,11 @@ describe("route Stop qty — 'up to N' (#261)", () => {
     const world = seed("sell-qty-over", a, 5000, [route]);
     const shipId = shipOf(world).id;
     let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
-    expect(shipOf(w).cargo.grain).toBe(5);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(5);
     w = tick(w, []);
     let guard = 0;
     while (!(shipOf(w).location.kind === "docked" && dockedAt(w) === b) && guard++ < 500) w = tick(w, []);
-    expect(shipOf(w).cargo.grain).toBe(0);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(0);
   });
 });
 
@@ -857,11 +858,11 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     const shipId = shipOf(world).id;
 
     let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "gated" }]);
-    expect(shipOf(w).cargo.timber).toBeGreaterThan(0); // sibling ran
-    expect(shipOf(w).cargo.grain).toBe(0); // gated buy withheld
+    expect(amountOf(shipOf(w).cargo, "timber")).toBeGreaterThan(0); // sibling ran
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(0); // gated buy withheld
     expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 0, waiting: true });
 
-    const cargoTimber1 = shipOf(w).cargo.timber;
+    const cargoTimber1 = amountOf(shipOf(w).cargo, "timber");
     const thalers1 = w.company.thalers;
 
     // Poll several more ticks: still docked, gate still unmet.
@@ -869,9 +870,9 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
       w = tick(w, []);
       expect(shipOf(w).location).toEqual({ kind: "docked", portId: a });
       expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 0, waiting: true });
-      expect(shipOf(w).cargo.grain).toBe(0); // still withheld
+      expect(amountOf(shipOf(w).cargo, "grain")).toBe(0); // still withheld
       // The key regression: siblings must NEVER re-run while waiting.
-      expect(shipOf(w).cargo.timber).toBe(cargoTimber1);
+      expect(amountOf(shipOf(w).cargo, "timber")).toBe(cargoTimber1);
       expect(w.company.thalers).toBe(thalers1);
     }
   });
@@ -884,7 +885,7 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
 
     let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "gated" }]);
     expect(shipOf(w).assignment).toMatchObject({ waiting: true });
-    expect(shipOf(w).cargo.grain).toBe(0);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(0);
 
     // Relax the threshold to something guaranteed to already pass, simulating
     // "the market moved" — the gate only cares about a *fresh* evaluation
@@ -905,7 +906,7 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     w = applyCommand(w, { kind: "updateRoute", route: relaxed });
 
     w = tick(w, []); // waiting poll: gate now passes
-    expect(shipOf(w).cargo.grain).toBeGreaterThan(0); // gated buy fired
+    expect(amountOf(shipOf(w).cargo, "grain")).toBeGreaterThan(0); // gated buy fired
     expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 1 }); // advanced
     expect(shipOf(w).assignment?.waiting).toBeUndefined(); // cleared, not stored false
 
@@ -913,11 +914,11 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     // index advanced — the dwell mirrors manual play's quantization), then
     // redirects toward Stop 1 (`b`) next tick without touching cargo/thalers
     // again. Charged once, not once per poll.
-    const cargoAfterFire = shipOf(w).cargo.grain;
+    const cargoAfterFire = amountOf(shipOf(w).cargo, "grain");
     const thalersAfterFire = w.company.thalers;
     w = tick(w, []); // the following tick: redirect only, no execution
     expect(shipOf(w).location.kind).toBe("underway"); // departed toward b
-    expect(shipOf(w).cargo.grain).toBe(cargoAfterFire); // unchanged — no second buy
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(cargoAfterFire); // unchanged — no second buy
     expect(w.company.thalers).toBe(thalersAfterFire); // unchanged — no double-charge
   });
 
@@ -934,7 +935,7 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     const world = seed("gate-inactive", a, 5000, [route]);
     const shipId = shipOf(world).id;
     const after = tick(world, [{ kind: "assignRoute", shipId, routeId: "r" }]);
-    expect(shipOf(after).cargo.grain).toBeGreaterThan(0); // executed despite the absurd threshold
+    expect(amountOf(shipOf(after).cargo, "grain")).toBeGreaterThan(0); // executed despite the absurd threshold
     expect(shipOf(after).assignment?.waiting).toBeUndefined();
     expect(shipOf(after).assignment?.nextStopIndex).toBe(1); // advanced normally
   });
@@ -1015,13 +1016,13 @@ describe("Margin Gate — 'wait until it's worth carrying' (#262)", () => {
     const shipId = shipOf(world).id;
 
     let w = tick(world, [{ kind: "assignRoute", shipId, routeId: "atomic" }]);
-    expect(shipOf(w).cargo.grain).toBe(0); // withheld despite its own gate passing
-    expect(shipOf(w).cargo.timber).toBe(0);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(0); // withheld despite its own gate passing
+    expect(amountOf(shipOf(w).cargo, "timber")).toBe(0);
     expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 0, waiting: true });
 
     w = tick(w, []); // poll: timber's gate still unmet, so the whole group stays withheld
-    expect(shipOf(w).cargo.grain).toBe(0);
-    expect(shipOf(w).cargo.timber).toBe(0);
+    expect(amountOf(shipOf(w).cargo, "grain")).toBe(0);
+    expect(amountOf(shipOf(w).cargo, "timber")).toBe(0);
     expect(shipOf(w).assignment).toMatchObject({ nextStopIndex: 0, waiting: true });
   });
 });
