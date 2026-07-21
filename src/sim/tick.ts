@@ -19,6 +19,7 @@ import { deriveSubstream, nextFloat, nextUint32, type RngState } from "./rng";
 import { resolveReferencePort, type Route, type RouteId, type StopOrder } from "./route";
 import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
 import { runShipyardAutoDraw, runShipyardConstructionAutoDraw } from "./shipyard";
+import { runGuildBuildAutoDraw } from "./storehouse";
 import { replaceShip, snapshotPrices, STARTING_HOLD, type World } from "./world";
 
 export type { Command };
@@ -117,8 +118,15 @@ function executeStop(
       const have = amountOf(ship.cargo, order.good);
       const qty = order.qty === undefined ? have : Math.min(order.qty, have);
       if (qty > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty, routeId });
-    } else {
+    } else if (order.kind === "deliver") {
       w = applyCommand(w, { kind: "deliver", shipId, good: order.good });
+    } else if (order.kind === "store") {
+      // E13 (#100): dispatches the same `storeGood` Command a manual player
+      // order uses (E9 equivalence) — market-free, best-effort, no `qty`
+      // (the `deliver` precedent).
+      w = applyCommand(w, { kind: "storeGood", shipId, good: order.good });
+    } else {
+      w = applyCommand(w, { kind: "withdrawGood", shipId, good: order.good });
     }
   }
   return w;
@@ -460,6 +468,10 @@ export function tick(world: World, commands: readonly Command[]): World {
   // drawing sequentially from the same shared purse — HQ first, so a thin
   // purse's Reserve floor is respected by both in a fixed, deterministic order.
   w = runShipyardAutoDraw(w);
+  // Pending guild Building's own construction (E13, #100): same tick phase,
+  // drawn last from the shared purse — HQ/Shipyard/Refit first, per the
+  // fixed, deterministic order this phase list already commits to.
+  w = runGuildBuildAutoDraw(w);
 
   const ports = w.region.ports.map((port) => ({
     ...port,

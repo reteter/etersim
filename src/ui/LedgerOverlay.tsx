@@ -39,11 +39,18 @@ function transactionShipId(event: TransactionEvent): ShipId | null {
     // (out of #275's sim-only scope wall; flagged in the completion report).
     case "refitStart":
     case "refitComplete":
+    // store/withdraw (E13, #100): both carry a shipId, no dedicated
+    // Storehouse UI treatment here (issue #101, out of this scope wall;
+    // minimal exhaustiveness fix, same precedent as refitStart/refitComplete
+    // above).
+    case "store":
+    case "withdraw":
       return event.shipId;
-    // shipyardBuilt/contractFee/settlement: company-wide events, no single
-    // ship — same precedent as enrollmentFee below (minimal exhaustiveness
-    // fix, no dedicated Kontrakty-tab/Shipyard UI treatment; out of this
-    // sim-only issue's scope wall, flagged in the completion report).
+    // shipyardBuilt/contractFee/settlement/completed: company-wide events,
+    // no single ship — same precedent as enrollmentFee below (minimal
+    // exhaustiveness fix, no dedicated Kontrakty-tab/Shipyard/Storehouse UI
+    // treatment; out of this sim-only issue's scope wall, flagged in the
+    // completion report).
     default:
       return null;
   }
@@ -90,6 +97,13 @@ function transactionDelta(event: TransactionEvent): number | null {
     // precedent as refitComplete/launch).
     case "refitComplete":
     case "shipyardBuilt":
+    // store/withdraw/completed (E13, #100): goods-only movements / a
+    // building activation — no thalers field, same precedent as
+    // delivery/launch above (minimal exhaustiveness fix; issue #101's UI
+    // treatment is out of this scope wall).
+    case "store":
+    case "withdraw":
+    case "completed":
       return null;
   }
 }
@@ -155,6 +169,16 @@ function describeTransaction(event: TransactionEvent, world: World): string {
       return `Refit started for ${shipName(world, event.shipId)} at ${portName(world, event.portId)}`;
     case "refitComplete":
       return `Refit completed for ${shipName(world, event.shipId)}: Hold -> ${event.hold}`;
+    // store/withdraw/completed (E13, #100): minimal, mechanical exhaustiveness
+    // fix (same precedent as every prior LedgerEvent-union extension in this
+    // file) — no dedicated Storehouse UI treatment here (issue #101, out of
+    // this sim-only scope wall; flagged in the completion report).
+    case "store":
+      return `Stored ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+    case "withdraw":
+      return `Withdrew ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+    case "completed":
+      return `Building completed at ${portName(world, event.portId)}`;
   }
 }
 

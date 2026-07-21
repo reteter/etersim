@@ -3,6 +3,7 @@ import {
   createWorld,
   tick,
   totalHeld,
+  TICKS_PER_DAY,
   type ContractOffer,
   type World,
 } from "../sim";
@@ -214,7 +215,55 @@ function shipyardConstructionInProgressWorld(): World {
   return world;
 }
 
+/** A world with an activated, non-empty Granary (agrarian Storehouse) —
+ *  goods stored, plus a completed `Company.buildings` entry — driven past a
+ *  day boundary so its Ledger's `netWorth` event carries a real (nonzero)
+ *  `buildingStoreValue` (E13, #100). Commissioned/rushed/stored through the
+ *  real Commands, not hand-assembled, so the fixture matches what an actual
+ *  save would contain. */
+function storehouseWorld(): World {
+  const base = createWorld("persistence-storehouse");
+  const portId = base.region.ports.find((p) => p.archetype === "agrarian")!.id;
+  const ship = { ...base.company.ships[0], location: { kind: "docked" as const, portId } };
+  let world: World = {
+    ...base,
+    company: {
+      ...base.company,
+      thalers: 500_000,
+      ships: [ship],
+      guilds: { agrarian: { points: 4 } }, // rank 2 — the permit
+    },
+  };
+  world = tick(world, [
+    { kind: "commissionGuildBuilding", type: "storehouse", variant: "agrarian", portId },
+  ]);
+  let guard = 0;
+  while (world.company.guildBuild && guard++ < 500) {
+    world = tick(world, [{ kind: "rushGuildBuild" }]);
+  }
+  world = tick(world, [{ kind: "buy", shipId: "s0", good: "grain", qty: 30 }]);
+  world = tick(world, [{ kind: "storeGood", shipId: "s0", good: "grain" }]);
+  for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // cross a day boundary
+  return world;
+}
+
 describe("persistence", () => {
+  it("round-trips a world with an activated, non-empty Storehouse — Company.buildings and the netWorth event's buildingStoreValue survive identically (E13, #100)", () => {
+    const world = storehouseWorld();
+    // Preconditions: the fixture actually carries what this test claims to
+    // exercise (incident-0005 discipline).
+    expect(world.company.buildings).toHaveLength(1);
+    expect(totalHeld(world.company.buildings[0].store)).toBeGreaterThan(0);
+    const netWorthEvents = world.ledger.filter((e) => e.kind === "netWorth");
+    expect(netWorthEvents.length).toBeGreaterThan(0);
+    expect(netWorthEvents.some((e) => e.kind === "netWorth" && e.buildingStoreValue > 0)).toBe(true);
+
+    const restored = parseWorldJson(exportWorldJson(world));
+    expect(restored).toEqual(world);
+    expect(restored.company.buildings).toEqual(world.company.buildings);
+  });
+
+
   it("round-trips a mid-session world through JSON deep-equal (spec §Testing)", () => {
     const world = midSessionWorld();
     expect(parseWorldJson(exportWorldJson(world))).toEqual(world);
@@ -333,45 +382,60 @@ describe("persistence", () => {
     expect(parsed.version).toBe(SAVE_VERSION);
   });
 
-  describe("v12 -> v13 migration (E14 #286 fix — Shipyard.site)", () => {
-    it("parseWorldJson accepts a v12 world unchanged (identity — Shipyard.site is additive/absent-safe)", () => {
-      const world = e9World(); // no shipyard field at all — the common v12 shape
-      const text = JSON.stringify({ version: 12, world });
+  describe("v13 -> v14 migration (E13, #100 — Company.buildings, netWorth.buildingStoreValue)", () => {
+    /** A v13 save on disk: a world that ticked through at least one day
+     *  boundary (so its Ledger carries a real `netWorth` event), de-shaped
+     *  back to the pre-#100 wire format — no `Company.buildings` at all, and
+     *  no `buildingStoreValue` on any `netWorth` event (the mechanic didn't
+     *  exist yet). */
+    function v13World(): { world: World; hasNetWorthEvent: boolean } {
+      const world = midSessionWorld(); // 250 ticks — crosses several day boundaries
+      const rest: Record<string, unknown> = { ...world.company };
+      delete rest.buildings;
+      const deshapedLedger = world.ledger.map((event) => {
+        if (event.kind !== "netWorth") return event;
+        const evRest: Record<string, unknown> = { ...event };
+        delete evRest.buildingStoreValue;
+        return evRest;
+      });
+      const deshaped = { ...world, company: rest, ledger: deshapedLedger } as unknown as World;
+      return { world: deshaped, hasNetWorthEvent: world.ledger.some((e) => e.kind === "netWorth") };
+    }
+
+    it("parseWorldJson backfills buildings: [] and every netWorth event's buildingStoreValue: 0", () => {
+      const { world, hasNetWorthEvent } = v13World();
+      expect(hasNetWorthEvent).toBe(true); // precondition: the fixture actually carries one
+      const text = JSON.stringify({ version: 13, world });
 
       const migrated = parseWorldJson(text);
 
-      expect(migrated).toEqual(world);
+      expect(migrated.company.buildings).toEqual([]);
+      const netWorthEvents = migrated.ledger.filter((e) => e.kind === "netWorth");
+      expect(netWorthEvents.length).toBeGreaterThan(0);
+      for (const event of netWorthEvents) {
+        expect(event.kind === "netWorth" && event.buildingStoreValue).toBe(0);
+      }
     });
 
-    it("parseWorldJson accepts a v12 world with a built (site-absent) Shipyard unchanged — that's exactly what 'no site' still means", () => {
-      const base = createWorld("v12-built-shipyard");
-      const hqPortId = base.region.ports[0].id;
-      const shipyardPortId = base.region.ports[1].id;
-      let world: World = { ...base, company: { ...base.company, thalers: 10_000 } };
-      world = tick(world, [{ kind: "foundHeadquarters", portId: hqPortId }]);
-      // A v12 save's Shipyard, if present, was always fully built (the old
-      // instant-purchase model) — same shape as `{ portId }` at v13.
-      world = { ...world, company: { ...world.company, shipyard: { portId: shipyardPortId } } };
-      const text = JSON.stringify({ version: 12, world });
-
-      const migrated = parseWorldJson(text);
-
-      expect(migrated).toEqual(world);
-      expect(migrated.company.shipyard).toEqual({ portId: shipyardPortId });
-    });
-
-    it("loadAutosave transparently migrates a v12 slot, so an old save keeps loading (incident 0009 concern)", () => {
+    it("loadAutosave transparently migrates a v13 slot, so an old save keeps loading (incident 0009 concern)", () => {
       const storage = fakeStorage();
-      const world = e9World();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 12, world }));
+      const { world } = v13World();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 13, world }));
 
       const restored = loadAutosave(storage);
       expect(restored).not.toBeNull();
       expect(hasAutosave(storage)).toBe(true);
-      expect(restored).toEqual(world);
+      expect(restored!.company.buildings).toEqual([]);
     });
 
-    it("a save older than v12 (v11) is now rejected — migration is one step, not open-ended", () => {
+    it("a save older than v13 (v12) is now rejected — migration is one step, not open-ended", () => {
+      const storage = fakeStorage();
+      const world = e9World();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 12, world }));
+      expect(loadAutosave(storage)).toBeNull();
+    });
+
+    it("v11 is still rejected", () => {
       const storage = fakeStorage();
       const save = v11Save();
       storage.setItem(AUTOSAVE_KEY, JSON.stringify(save));

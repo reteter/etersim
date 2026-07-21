@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { SHIP_RECIPE } from "./building";
+import type { GoodId } from "./goods";
 import { amountOf, storeOf } from "./goodsStore";
 import { applyCommand } from "./commands";
+import { STOREHOUSE_CAPACITY } from "./storehouse";
 import {
   companyStores,
   moveOwnGoods,
   policyFor,
   readStore,
-  resolveDeliveryTarget,
   writeStore,
   type StoreRef,
 } from "./transfer";
@@ -18,9 +19,37 @@ import { TICKS_PER_DAY } from "./region";
 /**
  * E13.0 (#307, docs/adr/0008-one-goods-store.md; docs/specs/E13.0-goods-store.md
  * §Tech — Transfer): StoreRef, companyStores, readStore, policyFor,
- * writeStore, moveOwnGoods, resolveDeliveryTarget — the thaler-free
- * hold<->site half only (market<->hold stays on applyTrade).
+ * writeStore, moveOwnGoods — the thaler-free hold<->site half only
+ * (market<->hold stays on applyTrade). E13 (#100) extends `StoreRef` with
+ * `guildBuild`/`storehouse`; `resolveDeliveryTarget` — E13.0's
+ * player-invisible scaffold for this deletion — is gone (spec §Tech — "The
+ * delivery chain"), its guard-clause chain now inlined and hand-maintained
+ * as `commands.ts`'s private `resolveDeliverTarget`.
  */
+
+/** A world with a founded Headquarters, an activated Storehouse (Granary,
+ *  variant agrarian) at an agrarian port, and s0 docked there. */
+function withStorehouse(storeContents: Partial<Record<GoodId, number>> = {}): World {
+  const w0 = createWorld("transfer-storehouse-fixture");
+  const agrarianPort = w0.region.ports.find((p) => p.archetype === "agrarian")!;
+  const s0 = { ...w0.company.ships[0], location: { kind: "docked" as const, portId: agrarianPort.id } };
+  const w: World = {
+    ...w0,
+    company: {
+      ...w0.company,
+      ships: [s0],
+      buildings: [
+        {
+          type: "storehouse",
+          variant: "agrarian",
+          portId: agrarianPort.id,
+          store: storeOf(storeContents),
+        },
+      ],
+    },
+  };
+  return w;
+}
 
 /** A world with a founded Headquarters and an active (empty) Build Order,
  *  s0 docked at the HQ port with `cargo` electronics units aboard. */
@@ -167,60 +196,64 @@ describe("transfer", () => {
     });
   });
 
-  describe("resolveDeliveryTarget", () => {
-    it("targets the HQ build site when docked there with cargo it needs", () => {
-      const w = withHqBuildOrder(10);
-      expect(resolveDeliveryTarget(w, w.company.ships[0], "electronics")).toEqual({ kind: "hqBuild" });
+  describe("StoreRef 'storehouse' (E13, #100)", () => {
+    it("companyStores lists one storehouse ref per activated Building, keyed by portId", () => {
+      const w = withStorehouse();
+      const refs = companyStores(w);
+      const portId = w.company.buildings[0].portId;
+      expect(refs).toContainEqual({ kind: "storehouse", portId });
     });
 
-    it("returns null when the ship carries none of the requested good", () => {
-      const w = withHqBuildOrder(0);
-      expect(resolveDeliveryTarget(w, w.company.ships[0], "electronics")).toBeNull();
+    it("readStore/policyFor resolve a storehouse ref to the Building's own store and its filter+capacity policy", () => {
+      const w = withStorehouse({ grain: 12 });
+      const portId = w.company.buildings[0].portId;
+      const ref: StoreRef = { kind: "storehouse", portId };
+      expect(amountOf(readStore(w, ref)!, "grain")).toBe(12);
+      expect(policyFor(w, ref)).toEqual({ kind: "storehouse", filter: ["grain"], capacity: STOREHOUSE_CAPACITY });
     });
 
-    it("returns null once the HQ site's need for that good is already met", () => {
-      const w0 = withHqBuildOrder(10);
-      const filled = moveOwnGoods(w0, { kind: "hold", shipId: "s0" }, { kind: "hqBuild" }, "electronics", "max");
-      // Give s0 more electronics than fits — but recipe need is now 0.
-      const laden = { ...filled.company.ships[0], cargo: storeOf({ electronics: 5 }) };
-      const w = { ...filled, company: { ...filled.company, ships: [laden] } };
-      expect(resolveDeliveryTarget(w, w.company.ships[0], "electronics")).toBeNull();
+    it("readStore/policyFor return null for a portId with no Building", () => {
+      const w = createWorld("transfer-storehouse-none");
+      const ref: StoreRef = { kind: "storehouse", portId: w.region.ports[0].id };
+      expect(readStore(w, ref)).toBeNull();
+      expect(policyFor(w, ref)).toBeNull();
     });
 
-    it("returns null for an undocked (underway) ship", () => {
-      const w = withHqBuildOrder(10);
-      const underway = {
-        ...w.company.ships[0],
-        location: {
-          kind: "underway" as const,
-          course: [],
-          voyageIndex: 0,
-          voyageProgressTicks: 0,
-          destination: w.region.ports[1].id,
-        },
-      };
-      expect(resolveDeliveryTarget(w, underway, "electronics")).toBeNull();
+    it("moveOwnGoods rejects a good outside the Storehouse's filter (Granary: grain only)", () => {
+      const w = withStorehouse();
+      const portId = w.company.buildings[0].portId;
+      const laden = { ...w.company.ships[0], cargo: storeOf({ textiles: 9 }) };
+      const withCargo = { ...w, company: { ...w.company, ships: [laden] } };
+      const moved = moveOwnGoods(
+        withCargo,
+        { kind: "hold", shipId: "s0" },
+        { kind: "storehouse", portId },
+        "textiles",
+        "max",
+      );
+      expect(moved).toBe(withCargo); // rejected entirely — no partial write
     });
 
-    it("matches the same precedence the deliver command exercises end-to-end (HQ -> Shipyard -> Refit)", () => {
-      // A light end-to-end smoke check that resolveDeliveryTarget's answer is
-      // consistent with what `deliver` actually does — the golden-run digest
-      // (e13-0-equivalence.test.ts) is the authoritative behavior-preservation
-      // proof for the full precedence chain across all three sites.
-      const w0 = createWorld("transfer-precedence");
-      const s0 = w0.company.ships[0];
-      if (s0.location.kind !== "docked") throw new Error("fixture: s0 must start docked");
-      let w: World = { ...w0, company: { ...w0.company, thalers: 1_000_000 } };
-      w = applyCommand(w, { kind: "foundHeadquarters", portId: s0.location.portId });
-      w = applyCommand(w, { kind: "placeBuildOrder" });
-      const laden = { ...w.company.ships[0], cargo: storeOf({ grain: 10 }) };
-      w = { ...w, company: { ...w.company, ships: [laden] } };
+    it("moveOwnGoods clamps at STOREHOUSE_CAPACITY", () => {
+      const w = withStorehouse({ grain: STOREHOUSE_CAPACITY - 5 });
+      const portId = w.company.buildings[0].portId;
+      const laden = { ...w.company.ships[0], cargo: storeOf({ grain: 20 }) };
+      const withCargo = { ...w, company: { ...w.company, ships: [laden] } };
+      const moved = moveOwnGoods(
+        withCargo,
+        { kind: "hold", shipId: "s0" },
+        { kind: "storehouse", portId },
+        "grain",
+        "max",
+      );
+      expect(amountOf(readStore(moved, { kind: "storehouse", portId })!, "grain")).toBe(STOREHOUSE_CAPACITY);
+      expect(amountOf(moved.company.ships[0].cargo, "grain")).toBe(15); // 20 - 5 accepted
+    });
 
-      const target = resolveDeliveryTarget(w, w.company.ships[0], "grain");
-      expect(target).toEqual({ kind: "hqBuild" });
-
-      const delivered = applyCommand(w, { kind: "deliver", shipId: "s0", good: "grain" });
-      expect(amountOf(delivered.company.headquarters!.buildOrder!.siteStore, "grain")).toBe(10);
+    it("writeStore is a no-op for a portId with no Building", () => {
+      const w = createWorld("transfer-storehouse-write-noop");
+      const written = writeStore(w, { kind: "storehouse", portId: w.region.ports[0].id }, storeOf({ grain: 1 }));
+      expect(written).toBe(w);
     });
   });
 

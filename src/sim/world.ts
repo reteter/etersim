@@ -10,6 +10,7 @@ import { nextInt, seedRng, type RngState } from "./rng";
 import type { Route } from "./route";
 import { emptyCargo, type Ship } from "./ship";
 import type { Shipyard } from "./shipyard";
+import type { CompanyBuilding, GuildBuildOrder } from "./storehouse";
 import { HEARTLAND, type RegionTemplate } from "./template";
 import { generateRegion } from "./worldgen";
 
@@ -39,6 +40,16 @@ export interface Company {
    *  contract.ts): fulfilment is attributed on the shared sell path (E9
    *  equivalence), settled at the day boundary (`settleContracts`). */
   readonly contracts: readonly ActiveContract[];
+  /** The Company's guild-licensed Buildings (E13, #100, storehouse.ts):
+   *  activated Storehouses, one per port (CompanyBuilding's `portId` is a
+   *  StoreRef's whole address — `transfer.ts`). Empty until the first one
+   *  completes. */
+  readonly buildings: readonly CompanyBuilding[];
+  /** A commissioned-but-not-yet-activated guild Building, if any — one at a
+   *  time (the one-active-order law, `commands.ts`'s `hasActiveBuildOrder`;
+   *  the Shipyard `site`/RefitOrder precedent, not a typed BuildOrder
+   *  target-kind union). */
+  readonly guildBuild?: GuildBuildOrder;
 }
 
 /**
@@ -107,7 +118,14 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     tick: 0,
     rng: rng2,
     region,
-    company: { thalers: STARTING_THALERS, ships: [ship], routes: [], guilds: {}, contracts: [] },
+    company: {
+      thalers: STARTING_THALERS,
+      ships: [ship],
+      routes: [],
+      guilds: {},
+      contracts: [],
+      buildings: [],
+    },
     priceSnapshots: snapshotPrices(region),
     flowDrift: initialFlowDrift(region),
     osmosisPulse: initialOsmosisPulse(region),

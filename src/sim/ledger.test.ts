@@ -171,6 +171,34 @@ describe("computeNetWorth", () => {
     expect(result.total).toBeCloseTo(500 + expectedSiteStoreValue, 6);
   });
 
+  it("hand-computed: an activated Storehouse's own store counts as buildingStoreValue, NOT siteStoreValue (E13, #100, OQ8)", () => {
+    const portA = makePort("A", 100, 100, 1.0);
+    const portB = makePort("B", 100, 100, 1.0);
+    const region: Region = { ports: [portA, portB], lanes: [] };
+
+    const base0 = createWorld(6);
+    const world: World = {
+      ...base0,
+      region,
+      company: {
+        ...base0.company,
+        thalers: 200,
+        ships: [],
+        buildings: [
+          { type: "storehouse", variant: "agrarian", portId: "A", store: storeOf({ grain: 7, textiles: 2 }) },
+        ],
+      },
+    };
+
+    // Both ports at equilibrium with bias 1.0 => mid == basePrice: 7×10 + 2×40.
+    const expectedBuildingStoreValue = 7 * 10 + 2 * 40;
+    const result = computeNetWorth(world);
+    expect(result.buildingStoreValue).toBeCloseTo(expectedBuildingStoreValue, 6);
+    expect(result.siteStoreValue).toBe(0); // NOT folded into siteStoreValue
+    expect(result.cargoValue).toBe(0);
+    expect(result.total).toBeCloseTo(200 + expectedBuildingStoreValue, 6);
+  });
+
   it("ships and buildings carry no book value: an empty fleet with no build is worth exactly its thalers", () => {
     const base0 = createWorld(2);
     const world: World = { ...base0, company: { ...base0.company, thalers: 777, ships: [] } };
@@ -178,6 +206,7 @@ describe("computeNetWorth", () => {
       thalers: 777,
       cargoValue: 0,
       siteStoreValue: 0,
+      buildingStoreValue: 0,
       total: 777,
     });
   });
@@ -493,6 +522,9 @@ const KIND_CATEGORY: Record<LedgerEvent["kind"], LedgerGrammarCategory> = {
   shipyardBuilt: "neither",
   refitStart: "thalers",
   refitComplete: "neither",
+  store: "neither",
+  withdraw: "neither",
+  completed: "neither",
 };
 
 /** Drives a world through every LedgerEvent kind via real Commands and tick
@@ -583,6 +615,45 @@ function scriptedAllKindsWorld(): World {
   for (let i = 0; i < 3 * TICKS_PER_DAY; i++) w = tick(w, []);
 
   w = applyCommand(w, { kind: "enroll", guildId: "agrarian" }); // enrollmentFee
+
+  // Storehouse (E13, #100): commission -> rush to completion (laborFee +
+  // completed) -> dock -> buy grain -> store -> withdraw. Rank rigged
+  // directly (guild points, not through contract settlement) to keep this
+  // already-long scripted run legible.
+  const portAgrarian = base.region.ports.find((p) => p.archetype === "agrarian")!.id;
+  w = {
+    ...w,
+    company: {
+      ...w.company,
+      thalers: 100_000,
+      guilds: { ...w.company.guilds, agrarian: { points: 4 } }, // rank 2 — the permit
+    },
+  };
+  w = applyCommand(w, {
+    kind: "commissionGuildBuilding",
+    type: "storehouse",
+    variant: "agrarian",
+    portId: portAgrarian,
+  });
+  guard = 0;
+  while (w.company.guildBuild && guard++ < 500) {
+    w = applyCommand(w, { kind: "rushGuildBuild" }); // rush
+    if (w.company.guildBuild) w = tick(w, []); // autoDraw
+  }
+  expect(w.company.buildings.length).toBeGreaterThan(0); // precondition: actually activated (completed)
+
+  w = {
+    ...w,
+    company: {
+      ...w.company,
+      ships: w.company.ships.map((s) =>
+        s.id === shipId ? { ...s, location: { kind: "docked" as const, portId: portAgrarian } } : s,
+      ),
+    },
+  };
+  w = applyCommand(w, { kind: "buy", shipId, good: "grain", qty: 10 });
+  w = applyCommand(w, { kind: "storeGood", shipId, good: "grain" }); // store
+  w = applyCommand(w, { kind: "withdrawGood", shipId, good: "grain" }); // withdraw
 
   const activeContract: ActiveContract = {
     id: "grammar-test-contract",

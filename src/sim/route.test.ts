@@ -594,6 +594,30 @@ describe("isValidRoute rejections (E9.1 qty + Margin Gate)", () => {
     expect(applyCommand(createWorld("valid-e91"), { kind: "createRoute", route }).company.routes).toHaveLength(0);
   });
 
+  it("rejects qty on a store order (E13, #100 — same no-qty precedent as deliver)", () => {
+    const route: Route = {
+      id: "x",
+      name: "x",
+      stops: [
+        { portId: a, orders: [{ kind: "store", good: "grain", qty: 5 }] },
+        { portId: b, orders: [] },
+      ],
+    };
+    expect(applyCommand(createWorld("valid-e91"), { kind: "createRoute", route }).company.routes).toHaveLength(0);
+  });
+
+  it("rejects qty on a withdraw order", () => {
+    const route: Route = {
+      id: "x",
+      name: "x",
+      stops: [
+        { portId: a, orders: [{ kind: "withdraw", good: "grain", qty: 5 }] },
+        { portId: b, orders: [] },
+      ],
+    };
+    expect(applyCommand(createWorld("valid-e91"), { kind: "createRoute", route }).company.routes).toHaveLength(0);
+  });
+
   it("rejects qty <= 0", () => {
     const route: Route = {
       id: "x",
