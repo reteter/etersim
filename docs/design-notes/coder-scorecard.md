@@ -344,13 +344,24 @@ spec the same session before dispatch (`markdown-normalizer-grill-2026-07-21.md`
 | 07-21 | #351 | #306 | 3 | 1 (CI-only) | 1 | pass | Golden-run digest (C1) + phase-order snapshot (C4), zero production-code diff. Two-axis Opus review (pre-CI) verified both red-evidence drills genuinely discriminating (not the incident-0005 pattern) via independent re-derivation, not trust; caught and confirmed-fixed a coder self-reported `ports[0]` bug (RNG-drawn home port, not a fixed index); independently verified the repo's first `?raw` import's full typing chain before accepting it as merge-gate-safe. One Orchestrator micro-fix at wave-close (spec's stale `shipyard.test.ts:726` pointer → `:732`, plus a clarifying note that C1's `moveOwnGoods` reference describes #307's not-yet-built function). **Post-review, pre-merge: CI (Linux) caught what neither the coder's worktree nor the reviewer could — a cross-platform float ULP mismatch in the digest's `electronics` fields (`Math.pow`, not bit-identical across platforms) — incident 0023.** One fix-loop round via resume: rounded digest floats to fixed precision (`toFixed(6)`), regenerated the fixture, re-verified both red drills still fire, re-pushed; CI green on re-run. |
 | 07-21 | #350 | #341 | 1 | 0 | 0 | pass | AST-based (`remark`/`remark-gfm`) markdown normalizer + `CONTEXT.md` proof migration. Tier 1 (docs/infra only, no `src/sim`/UI) — session-driver inline review, deliberately thorough given the migration's content-integrity stakes: independently re-derived word-count equality (7069=7069) and a whitespace-normalized full-file diff (byte-identical) rather than trusting the coder's own grep-based count, plus re-counted line-start bold headers (82→82, zero non-header hits) and confirmed the `**processed goods**` artifact that opened #341 no longer leads a line. Tests written after implementation, flagged per contract with two named mutation-based red drills (one caught the coder's own first-draft vacuous test before finalizing). One follow-up filed, not a fix-loop item: `eslint.config.js` has no `files:` block for `scripts/**/*.mjs` (pre-existing gap, → #349). |
 
-Wave not yet merged (both PRs open, awaiting owner review). First tier-1 row
-in this scorecard to get a review this thorough — judgement call: a
-content-integrity migration script's risk isn't well captured by "docs/infra
-only" path-based tiering, so the session driver escalated its own rigor
-without escalating the formal tier (no subagent dispatched, per tier 1's own
-definition — the extra verification was git-plumbing checks, not a review
-subagent).
+Both merged same session. First tier-1 row in this scorecard to get a review
+this thorough — judgement call: a content-integrity migration script's risk
+isn't well captured by "docs/infra only" path-based tiering, so the session
+driver escalated its own rigor without escalating the formal tier (no
+subagent dispatched, per tier 1's own definition — the extra verification
+was git-plumbing checks, not a review subagent).
+
+## E13.0 wave 2 — #307 + #324 (2026-07-21, s16, parallel dispatch)
+
+Two Sonnet coders in parallel isolated worktrees, unrelated issues sharing no
+files (`src/sim`/`src/ui`/`src/store` vs `scripts/check-glossary-anchoring.*`).
+#307 is E13.0's actual refactor, dispatched only after #306 merged and went
+green per the spec's strict issue-cut order — closes the sub-epic.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-21 | #366 | #307 | 3 | 0 (tier-3 review) + 2 (CI) | 2 | pass | GoodsStore + Transfer: opaque type (compiler-proven — an unused `@ts-expect-error` fails `tsc`), `StorePolicy`, `transfer.ts`, ~127-site migration across `src/sim`/`src/ui`/`src/store`, one PR (opaque type breaks a sim-only split). Two-axis Opus review: **MERGE, zero blocking findings on either axis** — independently re-ran every gate, grepped the whole diff for encapsulation escape hatches (found none), and verified both headline claims rather than trusting the report (the C3 invariant test draws its moves from `companyStores(world)`, non-tautological; the C2-caught-a-real-bug claim — FP accumulation order flipping a last bit, same class as incident 0023 — checked and confirmed genuine). Two informational, non-blocking findings: (A) a new test-support module (`e13-0-golden-scenario.ts`) imported `vitest`'s `expect` despite living in `src/sim`'s production module graph — fixed in one round (plain `assertTrue` helper, fail-loud verified by a deliberate corruption-then-revert drill); (B) an unreachable refit null-check divergence, left as-is per the reviewer's own call. **Second fix-loop round, post-review: CI (Linux) hit incident 0023's own predicted recurrence** — a NEW test (#307's C2 byte-identical save round-trip) added after 0023 was fixed, in a task package that didn't cite 0023 by number. Fixed same session (rounded deep-equal, 9dp, drill-verified a real value-swap still fails loudly) → incident 0024, naming the process gap (cite known incidents in task packages, don't wait for the class to reannounce itself). |
+| 07-21 | #365 | #324 | 1 | 0 | 0 | pass | W9 automation (`check-glossary-anchoring.mjs`): glossary-term occurrence counter, anchored per incident 0020 against a known-answer control term ("Thaler") before trusting any zero-occurrence result. Tier 1 (docs/infra + `scripts/`, no `src/sim`/UI) — session-driver inline review: independently re-ran the real script against the repo (82 terms, zero orphans, matches exactly), read the full script + 14 tests. Coder caught its own pre-commit bug (PascalCase/camelCase identifier forms were case-identical under case-insensitive matching, silently double-counting — fixed and re-verified before ever reporting). Coder also caught and *declined* to ship a category-error doc edit (conflating "#324 automates W9" with "#324 automates the anchored-counts law," which a sibling LIVE note explicitly says is not centrally automatable) after an advisor consult — reverted rather than landing a false claim. Rebased at integration to resolve a `package.json`/`world-model-implications.md` conflict against two concurrently-merged PRs; both routing-table rows correctly marked done. |
 
 ## Reading the sample
 
