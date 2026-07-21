@@ -341,3 +341,45 @@ describe("no-dominance guardrail (standard seed): buy-store-sell must not out-ea
     expect(carryProfit).toBeGreaterThan(storeSellProfit);
   });
 });
+
+describe("determinism and byte-equal Ledger over a building script (spec §Testing, C6/E13-guild-buildings.md:168-169)", () => {
+  it("commissionGuildBuilding -> rush -> storeGood -> withdrawGood run twice from one seed yields a byte-identical Ledger and a deep-equal World", () => {
+    const run = (): World => {
+      const w0seed = createWorld("determinism-building-script");
+      const portId = agrarianPort(w0seed);
+      let w = richWithPermit("determinism-building-script", 500_000, portId);
+      w = applyCommand(w, {
+        kind: "commissionGuildBuilding",
+        type: "storehouse",
+        variant: "agrarian",
+        portId,
+      });
+      let guard = 0;
+      while (w.company.guildBuild && guard++ < 500) {
+        w = applyCommand(w, { kind: "rushGuildBuild" });
+        if (w.company.guildBuild) w = tick(w, []);
+      }
+      w = applyCommand(w, { kind: "buy", shipId: "s0", good: "grain", qty: 25 });
+      w = applyCommand(w, { kind: "storeGood", shipId: "s0", good: "grain" });
+      for (let i = 0; i < TICKS_PER_DAY; i++) w = tick(w, []); // cross a day boundary (a netWorth snapshot)
+      w = applyCommand(w, { kind: "withdrawGood", shipId: "s0", good: "grain" });
+      return w;
+    };
+
+    const first = run();
+    const second = run();
+
+    // Precondition (incident-0005 discipline): the script actually produced
+    // every kind under test, so the byte-equal comparison isn't vacuous.
+    for (const kind of ["laborFee", "completed", "store", "withdraw"] as const) {
+      expect(first.ledger.some((e) => e.kind === kind)).toBe(true);
+    }
+
+    // Byte-equal Ledger (spec's literal wording): compare the serialized
+    // Ledger arrays, not just a deep-equal object comparison.
+    expect(JSON.stringify(first.ledger)).toBe(JSON.stringify(second.ledger));
+    // The whole World, for good measure (same precedent as
+    // shipyard.test.ts's "determinism (#275/#286)" describe block).
+    expect(first).toEqual(second);
+  });
+});
