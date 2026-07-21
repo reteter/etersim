@@ -164,7 +164,7 @@ a loose `^\*\*…\*\* \(PL:` pattern counted it as a header. Anchored to the act
 — which ends `):`, and the gloss ends in a comma — it falls out cleanly, and F3's "81 by the
 documented convention" holds at both `e8b6ff4` and HEAD. This is not a new legibility defect;
 it is the exact bold-at-line-start-by-wrap artifact the s15 markdown-normalizer discussion is
-aimed at, and a concrete motivating instance for that issue when it is filed — **not** an F3
+aimed at, and a concrete motivating instance for that issue (now filed as #341) — **not** an F3
 reopening and not a hand-reflow (wrap position is a script's job, owner direction s15).
 
 ## Binding rules
