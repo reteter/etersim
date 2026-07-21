@@ -58,7 +58,9 @@ Thalers 500 → 86,210 by Day 248.
 > early-game ramp and a natural guide. Parked alternatives in
 > [e8-followups.md §1](e8-followups.md) stay parked (verdict recorded there). Nuance the
 > verdict rests on: *"one per region"* is a topology property worldgen does **not**
-> guarantee yet — revisit at a worldgen grill if generated regions oversupply starved rims.
+> guarantee yet — revisit at a worldgen grill if generated regions oversupply starved
+> rims. **Tracked as #359** (filed 2026-07-21, #326 audit) — same watch item as
+> `e8-followups.md §1`, this line was the duplicate.
 > (2) Drift reads healthy: opportunities always exist, only the spreads shift; the natural
 > arc is grain (cheapest) → timber as fast as possible → expensive goods late. No
 > amplitude change needed.

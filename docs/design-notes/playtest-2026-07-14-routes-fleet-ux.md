@@ -29,8 +29,9 @@ CONTEXT.md/WORKFLOW reserve for a grill. Inputs to carry: [route-conditionals
 parking note](route-conditionals.md) (parked 2026-07-09, "its own grill"), the E9
 lock rationale (routes rot visibly, the Ledger makes rot legible), and E3's
 contract layer (contracts already answer *where demand is* — does auto-sell
-duplicate or complement them?). No grill scheduled yet — owner's call on timing
-(candidate: after E3 sim waves, when contract gameplay is feelable).
+duplicate or complement them?). **Unpark trigger tracked as #357** (filed 2026-07-21,
+#326 audit) — owner's call on timing (candidate: after E3 sim waves, when contract
+gameplay is feelable).
 
 ## Grill cluster B — the region's economic surface vs the route editor
 
@@ -40,10 +41,11 @@ execution is illegible in the moment (10 — "sell all" reads as a cargo wipe).
 Common question: what single surface shows "what to haul where, and what my routes
 are doing about it"? E3's Kontrakty tab (#96) is about to make the Price Board the
 region's economic surface — grill B should ride the same wave or immediately after.
+**Unpark trigger tracked as #358** (filed 2026-07-21, #326 audit).
 
 ## Issue log
 
 Filed this session: #173 (skiff easing + toning), #174 (render whole fleet — bug),
 #175 (routes-tab keybind), #176 (overlay scroll — bug), #177 (ShipPanel route
 status + suspend). Comment added to #128 (Budowa names its output). Clusters A/B
-parked here, awaiting owner grill scheduling.
+tracked as #357/#358 (filed 2026-07-21, #326 audit), awaiting owner grill scheduling.
