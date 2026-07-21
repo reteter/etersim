@@ -92,6 +92,7 @@ HIST when its grill happens.
 | [founding-progress-bar-2026-07-14](founding-progress-bar-2026-07-14.md) | HIST | Grill of #134: the idea split into a visible founding savings goal (shipped as #157) and a parked company-investment-policy hook (#134 stays parked for real multiregion). |
 | [pause-cause-note-2026-07-14](pause-cause-note-2026-07-14.md) | HIST | Grill of #130. Outcome: **no hint system exists** — it would violate the E9 law that mechanics arrive with buildings, not tutorials. Reframed to a single pause-cause legibility fix. |
 | [route-events-2026-07-14](route-events-2026-07-14.md) | HIST | Grill of #131: split into three layers with different fates — ambient skiffs shipped now (#161), opt-in encounter offers parked to post-E3 (#131), intrusive events parked to multiregion. |
+| [route-automation-grill-2026-07-21](route-automation-grill-2026-07-21.md) | HIST | Grill of #357 (Cluster A). Split "route automation" into conditional Stops (rejected — reaffirms the E9 frozen-bet lock and the no-wait-in-port lock, same degeneracy shape as E8's autopilot problem) and dynamic auto-sell-at-best (out of scope — already has a home at E9's "supplier ship automation" / PRD Horizon, not a new orphan). Also closes the sibling PRD parked hook "wait-until-full route orders" with the same reasoning. Diagnosis: the playtest signal is a legibility gap, routed to Cluster B (#358, not yet grilled) rather than answered with automation. |
 
 ## Playtests
 

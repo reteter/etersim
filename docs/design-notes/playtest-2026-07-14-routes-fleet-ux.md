@@ -20,18 +20,16 @@ inline.
 | 10 | Changing a ship's route wiped its cargo | **Not a wipe — no code path clears cargo on route commands** (`assignRoute`/`unassignRoute`/`resumeRoute` are pure assignment setters, `commands.ts:115-148`). Mechanism: the next docking executed a Stop `sell` order, which sells the *entire* held quantity (`tick.ts:108-110`, per the locked Stop semantics "sell — sell all at bid"). Works as designed; **legibility gap** — the player had no way to see why. | Grill cluster B footnote (legibility of route order execution; kin of the pause-cause-note pattern, #130). |
 | 11 | Price board needs a readability redesign | Current shape verified: rows=ports × cols=goods, each cell stacks bid/trend/ask, best-ask/best-bid highlights, archetype row tint (`PriceBoardOverlay.tsx:104-164`). Overlaps open #127 (trend legend) and #74 (good icons). | **Grill cluster B**. |
 
-## Grill cluster A — route automation (owner grill required)
+## Grill cluster A — route automation (resolved)
 
 Playtest input: manual producer→consumer wiring is tedious at fleet scale; the owner
 wants "pick producers, then explicit consumers or auto-sell at the region's best
-price". This relitigates the E9 frozen-bet lock **with new facts**, exactly the case
-CONTEXT.md/WORKFLOW reserve for a grill. Inputs to carry: [route-conditionals
-parking note](route-conditionals.md) (parked 2026-07-09, "its own grill"), the E9
-lock rationale (routes rot visibly, the Ledger makes rot legible), and E3's
-contract layer (contracts already answer *where demand is* — does auto-sell
-duplicate or complement them?). **Unpark trigger tracked as #357** (filed 2026-07-21,
-#326 audit) — owner's call on timing (candidate: after E3 sim waves, when contract
-gameplay is feelable).
+price". **Resolved 2026-07-21 (#357):** split into conditional Stops (rejected — lock
+reaffirmed) and dynamic auto-sell-at-best (out of scope, already has a home at E9's
+"supplier ship automation" non-goal / PRD Horizon). Full reasoning:
+[route-automation-grill-2026-07-21.md](route-automation-grill-2026-07-21.md). The
+underlying UX signal is routed to **Grill cluster B** below, not resolved by building
+automation.
 
 ## Grill cluster B — the region's economic surface vs the route editor
 
@@ -47,5 +45,7 @@ region's economic surface — grill B should ride the same wave or immediately a
 
 Filed this session: #173 (skiff easing + toning), #174 (render whole fleet — bug),
 #175 (routes-tab keybind), #176 (overlay scroll — bug), #177 (ShipPanel route
-status + suspend). Comment added to #128 (Budowa names its output). Clusters A/B
-tracked as #357/#358 (filed 2026-07-21, #326 audit), awaiting owner grill scheduling.
+status + suspend). Comment added to #128 (Budowa names its output). Cluster A
+resolved 2026-07-21 (#357, lock reaffirmed — see
+[route-automation-grill-2026-07-21.md](route-automation-grill-2026-07-21.md)); Cluster B
+(#358) still awaiting its own grill.
