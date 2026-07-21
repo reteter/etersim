@@ -1277,6 +1277,63 @@ body {
   color: #a373d6;
 }
 
+/* Budowa tab commission choice (E13, #101) — a two-way toggle between the
+   E9 ship flow and the new guild Building flow; `--active` mirrors the
+   Tabs component's own selected-state treatment (no new color, ADR-0006). */
+.commission-choice {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.menu-btn--active {
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+.building-commission__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
+/* PortPanel Storehouse section (E13, #101) — mirrors the founding-goal bar
+   pattern (own fill color, no reused hue per ADR-0006). */
+.storehouse-section {
+  margin: 0.75rem 0;
+}
+
+.storehouse-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+.storehouse-row__label {
+  font-size: 0.85rem;
+}
+
+.storehouse-row__bar {
+  position: relative;
+  height: 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.storehouse-row__fill {
+  height: 100%;
+  background: #4c9bd6;
+}
+
+.storehouse-row__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .headquarters-progress {
   display: flex;
   flex-direction: column;

@@ -64,15 +64,24 @@ deliver Stops target any port with an active site — a natural generalization o
 building** — scarcity preserved, still no queue. The building activates the moment its
 Recipe completes.
 
-### UX skeleton
+### UX skeleton — as built (#101)
 
 - **Headquarters panel, Budowa tab** grows a commission choice: ship (as in E9) or a
-  permitted building + target port (dropdown limited to legal placements); the same
-  progress/stall/rush UI serves both (one Build Order model, one UI).
-- **PortPanel** at a storehouse port gains a Storehouse section: stored quantity /
-  capacity, plus manual store/withdraw buttons for a docked ship.
-- **Route editor** (E9 Trasy tab) gains store/withdraw chips, shown only for ports with
-  a Company storehouse.
+  permitted building + target port (dropdown limited to legal placements via
+  `isLegalStorehousePlacement`, the building side gated on `hasStorehousePermit`); the
+  same progress/stall/rush UI serves both (one Build Order model, one UI) — each side
+  (`ShipCommission`/`BuildingCommission`, `src/ui/HeadquartersPanel.tsx`) keeps its own
+  commission form mounted (disabled, with a reason) for the whole time its Build Order
+  runs, with that Build Order's progress rendered alongside, mirroring the pre-#101 ship
+  flow exactly.
+- **PortPanel** at a storehouse port gains a Storehouse section (`StorehouseSection`,
+  `src/ui/PortPanel.tsx`): stored quantity / `STOREHOUSE_CAPACITY`, plus manual
+  store/withdraw buttons for a docked ship (disabled-with-reason when there's nothing to
+  move).
+- **Route editor** (E9 Trasy tab) gains store/withdraw chips (`StopRow`,
+  `src/ui/HeadquartersPanel.tsx`), shown only for a Stop whose port hosts a Company
+  storehouse, and only for goods in that Building's own `storehouseFilter` — never a chip
+  that would silently no-op against the Building's goods filter.
 - Map: no new layer in M3 (a small badge on the port disc is a candidate, parked).
 
 ## Tech

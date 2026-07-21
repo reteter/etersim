@@ -23,6 +23,8 @@ import {
   REFIT_LABOR_FEE,
   SHIPYARD_LABOR_FEE,
   SHIPYARD_RECIPE,
+  storehouseFilter,
+  STOREHOUSE_CAPACITY,
   type ConstructionSite,
   type GoodId,
   type GuildId,
@@ -820,6 +822,94 @@ function GuildhouseSection({ world, portId }: { world: World; portId: PortId }) 
 }
 
 /**
+ * Storehouse section (E13, #101, docs/specs/E13-guild-buildings.md — UX
+ * skeleton: "PortPanel at a storehouse port gains a Storehouse section:
+ * stored quantity / capacity, plus manual store/withdraw buttons for a
+ * docked ship"). Renders nothing at a port with no Company `CompanyBuilding`
+ * — mirrors `HeadquartersSection`/`ShipyardSection`'s "nothing to show"
+ * precedent. Only the Building's own goods filter (`storehouseFilter`) gets
+ * a row (E13 ships one variant, the grain-only Granary, but this stays
+ * generic over `GuildId`). Store/withdraw buttons only render docked here —
+ * both Commands are docked-only no-ops otherwise (commands.ts) — and are
+ * individually disabled-with-reason (#124) rather than left clickable
+ * no-ops.
+ */
+function StorehouseSection({
+  world,
+  portId,
+  ship,
+  dockedHere,
+}: {
+  world: World;
+  portId: PortId;
+  ship: Ship;
+  dockedHere: boolean;
+}) {
+  const dispatch = useGameStore((s) => s.dispatch);
+  const building = world.company.buildings.find((b) => b.portId === portId);
+  if (!building) return null;
+
+  const goods = storehouseFilter(building.variant);
+
+  return (
+    <div className="storehouse-section">
+      <h3 className="side-panel__heading">Skład</h3>
+      {goods.map((good) => {
+        const stored = amountOf(building.store, good);
+        const held = amountOf(ship.cargo, good);
+        const holdFull = cargoUsed(ship) >= ship.hold;
+        const canStore = dockedHere && held > 0 && stored < STOREHOUSE_CAPACITY;
+        const canWithdraw = dockedHere && stored > 0 && !holdFull;
+        return (
+          <div key={good} className="storehouse-row">
+            <span className="storehouse-row__label">
+              {GOODS[good].name}: {stored}/{STOREHOUSE_CAPACITY}
+            </span>
+            <div
+              className="storehouse-row__bar"
+              role="progressbar"
+              aria-label={`${GOODS[good].name} storehouse fill`}
+              aria-valuenow={stored}
+              aria-valuemin={0}
+              aria-valuemax={STOREHOUSE_CAPACITY}
+            >
+              <div
+                className="storehouse-row__fill"
+                style={{ width: `${(stored / STOREHOUSE_CAPACITY) * 100}%` }}
+              />
+            </div>
+            {dockedHere && (
+              <div className="storehouse-row__actions">
+                <button
+                  type="button"
+                  className="menu-btn"
+                  disabled={!canStore}
+                  title={canStore ? undefined : held <= 0 ? "Brak towaru w ładowni" : "Skład pełny"}
+                  aria-label={`Store ${GOODS[good].name}`}
+                  onClick={() => dispatch({ kind: "storeGood", shipId: ship.id, good })}
+                >
+                  Złóż
+                </button>
+                <button
+                  type="button"
+                  className="menu-btn"
+                  disabled={!canWithdraw}
+                  title={canWithdraw ? undefined : holdFull ? "Ładownia pełna" : "Skład pusty"}
+                  aria-label={`Withdraw ${GOODS[good].name}`}
+                  onClick={() => dispatch({ kind: "withdrawGood", shipId: ship.id, good })}
+                >
+                  Pobierz
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
  * Contextual panel for a selected port (docs/specs/E2-trade-loop.md — UI
  * layout): the live market table, trading when the ship is docked here,
  * read-only with a sail control otherwise.
@@ -861,6 +951,8 @@ export function PortPanel({ portId }: { portId: PortId }) {
       <HeadquartersSection world={world} portId={port.id} />
 
       <ShipyardSection world={world} portId={port.id} />
+
+      <StorehouseSection world={world} portId={port.id} ship={ship} dockedHere={dockedHere} />
 
       <GuildhouseSection world={world} portId={port.id} />
 

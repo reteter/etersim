@@ -175,3 +175,18 @@ export {
 // randomness outside tick() (ADR-0003). Only the state type leaks out,
 // because World embeds it.
 export type { RngState } from "./rng";
+// E13 (#101, UI-only pass — barrel-export exception per #292's precedent
+// above: pure re-export lines only): the guild Storehouse seams #100 shipped
+// in storehouse.ts but never re-exported, so the Budowa tab/PortPanel/route
+// editor can address them the same way every other sim domain is consumed.
+export {
+  computeGuildBuildRushQuote,
+  hasStorehousePermit,
+  isLegalStorehousePlacement,
+  storehouseFilter,
+  STOREHOUSE_CAPACITY,
+  STOREHOUSE_LABOR_FEE,
+  STOREHOUSE_PERMIT_RANK,
+  STOREHOUSE_RECIPE,
+  type CompanyBuilding,
+} from "./storehouse";
