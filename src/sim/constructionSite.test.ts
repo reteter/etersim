@@ -12,7 +12,8 @@ import {
   SHIP_RECIPE,
   type ConstructionSite,
 } from "./building";
-import { GOOD_IDS } from "./goods";
+import { GOOD_IDS, type GoodId } from "./goods";
+import { amountOf, storeOf } from "./goodsStore";
 import { effectiveBase, maxAffordableQty, quoteBuy } from "./market";
 import { createWorld } from "./world";
 
@@ -28,8 +29,16 @@ import { createWorld } from "./world";
  */
 
 // A recipe deliberately shaped differently from SHIP_RECIPE (which needs all
-// five goods): only two goods, small quantities.
-const CUSTOM_RECIPE: Record<string, number> = { ...emptySiteStore(), grain: 3, timber: 1 };
+// five goods): only two goods, small quantities. `recipe` stays a plain
+// Record<GoodId, number> (ADR-0008 — only stored goods contents are opaque,
+// never a target recipe), so this is a literal, not a GoodsStore.
+const CUSTOM_RECIPE: Record<GoodId, number> = {
+  grain: 3,
+  textiles: 0,
+  aetherSalt: 0,
+  electronics: 0,
+  timber: 1,
+};
 
 function customSite(portId: string, siteStore = emptySiteStore()): ConstructionSite {
   return { recipe: CUSTOM_RECIPE, siteStore, portId };
@@ -37,7 +46,7 @@ function customSite(portId: string, siteStore = emptySiteStore()): ConstructionS
 
 describe("siteRemainingNeed / isSiteComplete (#99)", () => {
   it("computes need against the site's own recipe, not SHIP_RECIPE", () => {
-    const site = customSite("p-anywhere", { ...emptySiteStore(), grain: 1 });
+    const site = customSite("p-anywhere", storeOf({ grain: 1 }));
     expect(siteRemainingNeed(site, "grain")).toBe(2);
     expect(siteRemainingNeed(site, "timber")).toBe(1);
     // SHIP_RECIPE.grain is 100 — if this leaked SHIP_RECIPE, need would be 99.
@@ -45,24 +54,24 @@ describe("siteRemainingNeed / isSiteComplete (#99)", () => {
   });
 
   it("is complete once every recipe good is met, independent of untouched goods", () => {
-    const incomplete = customSite("p-x", { ...emptySiteStore(), grain: 3, timber: 0 });
+    const incomplete = customSite("p-x", storeOf({ grain: 3, timber: 0 }));
     expect(isSiteComplete(incomplete)).toBe(false);
-    const complete = customSite("p-x", { ...emptySiteStore(), grain: 3, timber: 1, electronics: 999 });
+    const complete = customSite("p-x", storeOf({ grain: 3, timber: 1, electronics: 999 }));
     expect(isSiteComplete(complete)).toBe(true);
   });
 });
 
 describe("applyDeliveryToConstructionSite (#99)", () => {
   it("moves min(cargo, remaining need) per the site's own recipe", () => {
-    const site = customSite("p-anywhere", { ...emptySiteStore(), grain: 1 });
-    const { siteStore, moved } = applyDeliveryToConstructionSite(site, { ...emptySiteStore(), grain: 5 }, "grain");
+    const site = customSite("p-anywhere", storeOf({ grain: 1 }));
+    const { siteStore, moved } = applyDeliveryToConstructionSite(site, storeOf({ grain: 5 }), "grain");
     expect(moved).toBe(2); // need was 3 - 1
-    expect(siteStore.grain).toBe(3);
+    expect(amountOf(siteStore, "grain")).toBe(3);
   });
 
   it("moves nothing and returns the same siteStore reference when need is 0", () => {
-    const site = customSite("p-anywhere", { ...emptySiteStore(), grain: 3 });
-    const result = applyDeliveryToConstructionSite(site, { ...emptySiteStore(), grain: 10 }, "grain");
+    const site = customSite("p-anywhere", storeOf({ grain: 3 }));
+    const result = applyDeliveryToConstructionSite(site, storeOf({ grain: 10 }), "grain");
     expect(result.moved).toBe(0);
     expect(result.siteStore).toBe(site.siteStore);
   });
@@ -94,11 +103,11 @@ describe("drawConstructionSite (#99 — generic auto-draw engine)", () => {
     // grain need is 3, cap 2 → buys 2; timber need is 1, cap 2 but need caps it → buys 1.
     const expectGrainQty = Math.min(cap, 3, Math.floor(port.market.grain.stock));
     const expectTimberQty = Math.min(cap, 1, Math.floor(port.market.timber.stock));
-    expect(result.siteStore.grain).toBe(expectGrainQty);
-    expect(result.siteStore.timber).toBe(expectTimberQty);
+    expect(amountOf(result.siteStore, "grain")).toBe(expectGrainQty);
+    expect(amountOf(result.siteStore, "timber")).toBe(expectTimberQty);
     // Untouched goods (recipe 0) never move, even though SHIP_RECIPE wants them.
-    expect(result.siteStore.electronics).toBe(0);
-    expect(result.siteStore.aetherSalt).toBe(0);
+    expect(amountOf(result.siteStore, "electronics")).toBe(0);
+    expect(amountOf(result.siteStore, "aetherSalt")).toBe(0);
 
     for (const event of result.events) {
       expect(event.kind).toBe("autoDraw");
@@ -155,14 +164,14 @@ describe("quoteConstructionSiteRush / applyRushQuoteToSite (#99 — generic rush
       expect(event.kind).toBe("rush");
       if (event.kind === "rush") expect(event.portId).toBe(port.id);
     }
-    expect(result.siteStore.grain).toBe(quote.lines.find((l) => l.good === "grain")?.qty ?? 0);
-    expect(result.siteStore.timber).toBe(quote.lines.find((l) => l.good === "timber")?.qty ?? 0);
+    expect(amountOf(result.siteStore, "grain")).toBe(quote.lines.find((l) => l.good === "grain")?.qty ?? 0);
+    expect(amountOf(result.siteStore, "timber")).toBe(quote.lines.find((l) => l.good === "timber")?.qty ?? 0);
   });
 
   it("is empty with a completed site (no remaining need)", () => {
     const w = createWorld("construction-site-rush-complete");
     const port = w.region.ports[0];
-    const site = customSite(port.id, { ...emptySiteStore(), grain: 3, timber: 1 });
+    const site = customSite(port.id, storeOf({ grain: 3, timber: 1 }));
     expect(quoteConstructionSiteRush(site, port, 1_000_000)).toEqual({ lines: [], total: 0 });
   });
 });
