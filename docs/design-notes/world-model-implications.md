@@ -146,7 +146,14 @@ criterion rather than an afterthought).
 - **From:** `CLAUDE.md` — *"code identifiers use these terms; new concept ⇒ glossary entry first."* A term nothing speaks is either dead vocabulary or a measurement failure.
 - **False if:** a `CONTEXT.md` term with zero occurrences across the corpus and `src/`.
 - **Check:** script, **anchored** against a term whose answer is known in advance (incident 0020).
-- **Status:** **verified s14** — 81 terms, zero orphans. This is the implication that paid for the whole idea: it would have caught the s14 grep failure automatically, as a violated invariant rather than an interesting anomaly someone had to notice. Not yet automated — that is the cheapest open item here.
+- **Status:** **covered** by `npm run check:glossary`
+  (`scripts/check-glossary-anchoring.mjs`, #324, 2026-07-21). Verified s14 by hand — 81
+  terms, zero orphans; the automated run lands in the same neighborhood (82 terms, zero
+  orphans, corpus grown since s14). This is the implication that paid for the whole idea: it
+  would have caught the s14 grep failure automatically, as a violated invariant rather than
+  an interesting anomaly someone had to notice. It is now a repeatable command rather than a
+  one-off hand count; `ci.yml` does not yet call it (out of #324's stated scope — flagged as a
+  suggestion, not done here).
 
 ### W10 — Determinism
 
@@ -159,12 +166,11 @@ criterion rather than an afterthought).
 
 | Status | Count | Which |
 | --- | --- | --- |
-| covered | 3 | W3, W4, W10 |
-| verified, not automated | 1 | W9 |
+| covered | 4 | W3, W4, W9, W10 |
 | open — needs E11 | 3 | W1, W2, W5 |
 | pre-registered — M4 | 3 | W6, W7, W8 |
 
-**Read this as a map, not as a report on the build.** Four of ten have been checked; three
+**Read this as a map, not as a report on the build.** Four of ten are covered; three
 cannot be checked until E11 exists; three describe mechanics that have not shipped.
 
 ## How to add one
@@ -206,7 +212,7 @@ law — *a trigger is a promise, and promises live in the issue tracker*
 | Item | Where it lives now |
 | --- | --- |
 | **W6/W7/W8** → M4 grill brief as acceptance criteria | **#325 — done**, 2026-07-21 |
-| **W9** → anchored script (incident 0020) | **#324** |
+| **W9** → anchored script (incident 0020) | **#324 — done**, 2026-07-21 |
 | **W1/W2/W5** → E11 assertion content | **comment on #234**, not a new issue — the obligation already had a home, so it went there |
 
 Recorded rather than quietly fixed, because the note breaking its own stated rule within a
