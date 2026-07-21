@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { HEADQUARTERS_COST, CONSTRUCTION_RESERVE } from "./building";
 import { applyCommand, MAX_SHIP_NAME_LENGTH } from "./commands";
 import type { ActiveContract, ContractOffer } from "./contract";
+import { amountOf } from "./goodsStore";
 import { RANK_THRESHOLDS, UPKEEP_PER_DAY } from "./guild";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
 import { TICKS_PER_DAY } from "./region";
@@ -90,7 +91,7 @@ describe("buy command", () => {
     const cost = quoteBuy(port.market.grain, effectiveBase(port, "grain"), 10)!;
     const next = tick(world0, [{ kind: "buy", shipId, good: "grain", qty: 10 }]);
     expect(next.company.thalers).toBe(STARTING_THALERS - cost);
-    expect(ship(next).cargo.grain).toBe(10);
+    expect(amountOf(ship(next).cargo, "grain")).toBe(10);
     // stock: -10 from the trade, then one tick of market flows on top
     const portAfter = next.region.ports.find((p) => p.id === port.id)!;
     expect(portAfter.market.grain.stock).toBeLessThanOrEqual(port.market.grain.stock - 10 + 4);
@@ -154,7 +155,7 @@ describe("sell command", () => {
     const revenue = quoteSell(port.market.grain, effectiveBase(port, "grain"), 10)!;
     const next = tick(withCargo, [{ kind: "sell", shipId, good: "grain", qty: 10 }]);
     expect(next.company.thalers).toBe(withCargo.company.thalers + revenue);
-    expect(ship(next).cargo.grain).toBe(0);
+    expect(amountOf(ship(next).cargo, "grain")).toBe(0);
   });
 
   it("appends exactly one trade event for the sell", () => {

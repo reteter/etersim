@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CONSTRUCTION_RESERVE, HEADQUARTERS_COST } from "./building";
 import { applyCommand } from "./commands";
 import { GOOD_IDS, type GoodId } from "./goods";
+import { amountOf } from "./goodsStore";
 import { rankOf } from "./guild";
 import { effectiveBase, maxAffordableQty } from "./market";
 import { ARCHETYPE_PROFILES, TICKS_PER_DAY, type Region } from "./region";
@@ -204,7 +205,7 @@ describe("loss-leader guardrail (#98 — the epic's core promise, encoded loosel
               if (qty > 0) commands.push({ kind: "buy", shipId, good, qty });
               commands.push({ kind: "sailTo", shipId, portId: targetPortId });
             } else if (at === targetPortId) {
-              const have = ship.cargo[good];
+              const have = amountOf(ship.cargo, good);
               if (have > 0) commands.push({ kind: "sell", shipId, good, qty: have });
               commands.push({ kind: "sailTo", shipId, portId: sourcePortId });
             } else {

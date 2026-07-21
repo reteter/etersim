@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GOOD_IDS } from "./goods";
+import { emptyStore } from "./goodsStore";
 import { effectiveBase, quoteBuy } from "./market";
 import { refitRecipe, REFIT_LABOR_FEE, SHIPYARD_LABOR_FEE, SHIPYARD_RECIPE } from "./shipyard";
 import { computeRefitEstimate, computeShipyardEstimate } from "./siteEstimate";
@@ -18,7 +19,7 @@ function shipOf(hold: number, baseHold = 50): Ship {
     name: "s0",
     hold,
     baseHold,
-    cargo: { grain: 0, textiles: 0, aetherSalt: 0, electronics: 0, timber: 0 },
+    cargo: emptyStore(),
     location: { kind: "docked", portId: "a" },
   };
 }

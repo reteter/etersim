@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Command } from "./commands";
 import { GOOD_IDS, type GoodId } from "./goods";
+import { amountOf } from "./goodsStore";
 import { effectiveBase, price, quoteBuy } from "./market";
 import { shortestCourse } from "./pathfinding";
 import { ARCHETYPE_PROFILES, TICKS_PER_DAY, type PortId, type Region } from "./region";
@@ -184,7 +185,7 @@ function botCommands(
   const ship = world.company.ships[0];
   if (ship.location.kind !== "docked") return [];
   const portId = ship.location.portId;
-  const cargo = ship.cargo[GOOD];
+  const cargo = amountOf(ship.cargo, GOOD);
 
   if (portId === producer && cargo === 0) {
     const port = world.region.ports.find((p) => p.id === producer)!;
@@ -258,7 +259,7 @@ function runBot(seed: number, mode: "camp" | "loop", days: number): number {
     location.kind === "docked"
       ? (() => {
           const port = world.region.ports.find((p) => p.id === location.portId)!;
-          return ship.cargo[GOOD] * price(port.market[GOOD], effectiveBase(port, GOOD));
+          return amountOf(ship.cargo, GOOD) * price(port.market[GOOD], effectiveBase(port, GOOD));
         })()
       : 0; // in transit at the cutoff: negligible for a 60-day run, ignored
   const netWorth = world.company.thalers + cargoValue;
