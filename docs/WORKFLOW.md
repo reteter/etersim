@@ -199,16 +199,20 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
 - **ADRs** (docs/adr/, sequential numbering) record decisions that are hard to reverse, surprising without context, and the result of a real trade-off. One paragraph is enough.
 - **PRD** (docs/PRD.md) owns vision, pillars, scope and roadmap; epics beyond the current milestone are drafts.
 - Decisions recorded in these documents are settled — link to them instead of reopening, unless new facts appear.
-- **Indexed categories carry their index in the same commit.** `docs/incidents/` and
-  `docs/design-notes/` are read through their `README.md` digest, not file by file:
-  adding a note means adding its row (one line: what it is, what it concluded, LIVE or
-  HIST), and closing out a note's last open item means flipping it to HIST. This is the
-  only thing keeping either index alive — an index no one is *obliged* to update decays
-  into a second thing to distrust, and the category silently reverts to
+- **Indexed categories carry their index in the same commit.** `docs/incidents/`,
+  `docs/design-notes/` and `docs/specs/` are read through their `README.md` digest, not
+  file by file: adding a note means adding its row (one line: what it is, what it
+  concluded, LIVE or HIST), and closing out a note's last open item means flipping it to
+  HIST. This is the only thing keeping either index alive — an index no one is *obliged*
+  to update decays into a second thing to distrust, and the category silently reverts to
   unreadable-in-bulk. Volume in an indexed category is nearly free; volume in an
   unindexed one compounds until nobody reads it (2026-07-19 retro: `design-notes` had
   reached 36 files and 2358 lines with no digest, while `incidents` stayed absorbable at
-  ~10:1 compression because filing one always included its log line).
+  ~10:1 compression because filing one always included its log line). `docs/specs/` has
+  no LIVE/HIST axis (every spec binds — owner ruling, s13 sweep binding rule 5): adding a
+  spec means adding its row to `docs/specs/README.md` (epic, milestone state, an
+  as-built digest) in the same commit, and resolving a deferral or open item a row names
+  means updating that row in the same commit that resolves it (sweep F7, #309).
 - **Decisions propagate at the moment they change.** Revising a recorded decision — a
   trigger, a scope call, a lock, an acceptance criterion — means updating every other
   document that records *the same decision*, in the same commit (or the same batch of issue

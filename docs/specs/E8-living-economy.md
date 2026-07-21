@@ -166,7 +166,8 @@ price anchors:
 The agreed full-information economic view (fog stays parked for E6):
 
 - **An overlay** in the Options/Credits pattern, opened from a TopBar button and a
-  hotkey (default key ships with the board; configurability belongs to #56).
+  hotkey (default key ships with the board; configurability landed with #56 — see
+  §Tech below, "nothing to reconcile").
 - **Rows = ports** (archetype accent as on the map), **columns = goods**; each cell
   shows **bid/ask** and the trend glyph. 6×5 cells fit comfortably.
 - Per good column, the **cheapest ask** (where to buy) and the **highest bid** (where
