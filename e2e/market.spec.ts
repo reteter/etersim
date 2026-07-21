@@ -132,7 +132,7 @@ test.describe('market: Buy cap reason (#124)', () => {
     await expect(grainRow.locator('.market-row__stock')).toHaveText('12');
   });
 
-  test('empty purse: names "Not enough thalers" near the trade line, Buy disabled', async ({
+  test('empty purse: names the absolute "can\'t afford any" hint near the trade line, Buy disabled (#375)', async ({
     page,
   }) => {
     const world = fundedWorld('market-cap-thalers', 1);
@@ -142,7 +142,7 @@ test.describe('market: Buy cap reason (#124)', () => {
     await openMarket(page, name);
 
     const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
-    await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Not enough thalers');
+    await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Nie stać cię na żaden zakup');
     await expect(grainRow.getByRole('button', { name: 'Buy Grain', exact: true })).toBeDisabled();
   });
 });

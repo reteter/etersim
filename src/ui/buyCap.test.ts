@@ -37,22 +37,33 @@ describe("buyCapReason", () => {
 
 describe("buyCapHint", () => {
   it("names the hold constraint as full at zero remaining space", () => {
-    expect(buyCapHint("hold", 0, 12)).toBe("Hold full");
+    expect(buyCapHint("hold", 0, 12, 0)).toBe("Hold full");
   });
 
   it("quantifies the hold constraint when some space remains", () => {
-    expect(buyCapHint("hold", 5, 12)).toBe("Only 5 hold space left");
+    expect(buyCapHint("hold", 5, 12, 5)).toBe("Only 5 hold space left");
   });
 
   it("names the stock constraint as out of stock at zero", () => {
-    expect(buyCapHint("stock", 20, 0)).toBe("Out of stock");
+    expect(buyCapHint("stock", 20, 0, 0)).toBe("Out of stock");
   });
 
   it("quantifies the stock constraint when some stock remains", () => {
-    expect(buyCapHint("stock", 20, 12)).toBe("Only 12 in stock");
+    expect(buyCapHint("stock", 20, 12, 12)).toBe("Only 12 in stock");
   });
 
-  it("names the thalers constraint with a flat message", () => {
-    expect(buyCapHint("thalers", 20, 12)).toBe("Not enough thalers");
+  it("names the truly-can't-afford-any case with an absolute message (#375)", () => {
+    expect(buyCapHint("thalers", 20, 12, 0)).toBe("Nie stać cię na żaden zakup");
+  });
+
+  it("names the affordable cap when thalers bind but buyMax is still positive (#375)", () => {
+    // Owner playtest at purse ₸23: buyMax > 0 but below the structural cap
+    // must not read as the absolute "can't afford" message.
+    expect(buyCapHint("thalers", 20, 12, 5)).toBe("Kasa ogranicza zakup do 5");
+  });
+
+  it("structural caps keep their existing wording regardless of buyMax (#375)", () => {
+    expect(buyCapHint("hold", 0, 12, 0)).toBe("Hold full");
+    expect(buyCapHint("stock", 20, 0, 0)).toBe("Out of stock");
   });
 });
