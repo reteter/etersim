@@ -68,7 +68,11 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     await marginInput.fill('3');
 
     // Deliver never shows qty — switch the same good's cell to deliver and
-    // confirm neither input remains.
+    // confirm neither input remains. E13 explicit addressing requires a
+    // real destination, so point the Stop at the Headquarters founded by
+    // openTrasyTab before selecting deliver.
+    const headquartersPortId = world.region.ports[0].id;
+    await stopRows.nth(0).locator('select').selectOption(headquartersPortId);
     await stopRows
       .nth(0)
       .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} deliver at Stop 1$`) })
@@ -84,6 +88,7 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
       .nth(0)
       .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} buy at Stop 1$`) })
       .click();
+    await stopRows.nth(0).locator('select').selectOption(a);
     await stopRows.nth(0).getByLabel(`${GOODS.grain.name} qty at Stop 1`).fill('5');
     await stopRows.nth(0).getByLabel(`${GOODS.grain.name} min margin at Stop 1`).fill('3');
 
