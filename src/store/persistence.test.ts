@@ -3,6 +3,7 @@ import {
   createWorld,
   tick,
   totalHeld,
+  TICKS_PER_DAY,
   type ContractOffer,
   type World,
 } from "../sim";
@@ -214,7 +215,55 @@ function shipyardConstructionInProgressWorld(): World {
   return world;
 }
 
+/** A world with an activated, non-empty Granary (agrarian Storehouse) —
+ *  goods stored, plus a completed `Company.buildings` entry — driven past a
+ *  day boundary so its Ledger's `netWorth` event carries a real (nonzero)
+ *  `buildingStoreValue` (E13, #100). Commissioned/rushed/stored through the
+ *  real Commands, not hand-assembled, so the fixture matches what an actual
+ *  save would contain. */
+function storehouseWorld(): World {
+  const base = createWorld("persistence-storehouse");
+  const portId = base.region.ports.find((p) => p.archetype === "agrarian")!.id;
+  const ship = { ...base.company.ships[0], location: { kind: "docked" as const, portId } };
+  let world: World = {
+    ...base,
+    company: {
+      ...base.company,
+      thalers: 500_000,
+      ships: [ship],
+      guilds: { agrarian: { points: 4 } }, // rank 2 — the permit
+    },
+  };
+  world = tick(world, [
+    { kind: "commissionGuildBuilding", type: "storehouse", variant: "agrarian", portId },
+  ]);
+  let guard = 0;
+  while (world.company.guildBuild && guard++ < 500) {
+    world = tick(world, [{ kind: "rushGuildBuild" }]);
+  }
+  world = tick(world, [{ kind: "buy", shipId: "s0", good: "grain", qty: 30 }]);
+  world = tick(world, [{ kind: "storeGood", shipId: "s0", good: "grain" }]);
+  for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []); // cross a day boundary
+  return world;
+}
+
 describe("persistence", () => {
+  it("round-trips a world with an activated, non-empty Storehouse — Company.buildings and the netWorth event's buildingStoreValue survive identically (E13, #100)", () => {
+    const world = storehouseWorld();
+    // Preconditions: the fixture actually carries what this test claims to
+    // exercise (incident-0005 discipline).
+    expect(world.company.buildings).toHaveLength(1);
+    expect(totalHeld(world.company.buildings[0].store)).toBeGreaterThan(0);
+    const netWorthEvents = world.ledger.filter((e) => e.kind === "netWorth");
+    expect(netWorthEvents.length).toBeGreaterThan(0);
+    expect(netWorthEvents.some((e) => e.kind === "netWorth" && e.buildingStoreValue > 0)).toBe(true);
+
+    const restored = parseWorldJson(exportWorldJson(world));
+    expect(restored).toEqual(world);
+    expect(restored.company.buildings).toEqual(world.company.buildings);
+  });
+
+
   it("round-trips a mid-session world through JSON deep-equal (spec §Testing)", () => {
     const world = midSessionWorld();
     expect(parseWorldJson(exportWorldJson(world))).toEqual(world);
