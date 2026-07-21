@@ -35,10 +35,42 @@ import { createWorld, type World } from "./world";
  * stores (Ship.cargo, HQ site, Shipyard site, Refit site), so those fields
  * are out of the refactor's blast radius and adding them would only dilute
  * the digest's signal.
+ *
+ * Cross-platform float formatting: the digest's two float-valued spots
+ * (market stock, `netWorth`'s value fields) go through `fmtFloat` (6 decimal
+ * places), not bare `toString()` — see `fmtFloat`'s own docstring for why
+ * (CI caught this: `**`/`Math.pow` isn't bit-identical across platforms).
  */
 
 const SEED = "e13-0-golden-run";
 const BUDGET = 45_000;
+
+/** Fixed-precision formatting for the digest's few float-valued fields
+ *  (market stock; `computeNetWorth`'s cargoValue/siteStoreValue/total).
+ *  Both flow through `price()` (`market.ts`), which raises a ratio to
+ *  `PRICE_CURVE_EXPONENT` (0.75) — a non-integer exponent, so `**`/`Math.pow`
+ *  is NOT guaranteed bit-identical across platforms/V8 versions (only
+ *  +,-,*,/ are IEEE754-portable). A CI run on a different OS/Node produced a
+ *  digest that differed from this worktree's only in the 15th-16th
+ *  significant digit of exactly these two fields — ULP noise, not a
+ *  behavior difference (confirmed: the C1 mutation drill below moves values
+ *  by orders of magnitude more than 1e-6). 6 decimal places is generous
+ *  headroom over that noise floor while staying far more precise than any
+ *  real divergence this digest is meant to catch (the smallest real
+ *  quantities in this scenario are whole-unit good counts and thaler
+ *  amounts). Every OTHER field in the digest (thalers, qty, tick, hold) is
+ *  an integer by construction (`Math.round` in `quoteBuy`/`quoteSell`,
+ *  `holdLadder`'s rounding) and is left as bare `toString()` — no known
+ *  precedent for cross-platform float-fixture rounding elsewhere in this
+ *  repo (grepped for `toFixed`/`toPrecision`: the one hit,
+ *  `economy.test.ts:278`, formats a *log message*, not a comparison; the
+ *  repo's other "determinism" tests, `tick.test.ts`/`market.test.ts`/
+ *  `shipyard.test.ts`, deep-equal two objects computed in the *same*
+ *  process/platform, which sidesteps this hazard entirely — this fixture,
+ *  compared across machines, is the first to need it). */
+function fmtFloat(n: number): string {
+  return n.toFixed(6);
+}
 
 /** One port x GOOD_IDS walk: the market stock the good sits in at this port
  *  (equilibrium/priceBias are worldgen-invariant for a fixed seed and never
@@ -46,7 +78,7 @@ const BUDGET = 45_000;
  *  no signal). */
 function digestPort(port: Port): string {
   const parts: string[] = [`port:${port.id}`];
-  for (const good of GOOD_IDS) parts.push(`${good}=${port.market[good].stock}`);
+  for (const good of GOOD_IDS) parts.push(`${good}=${fmtFloat(port.market[good].stock)}`);
   return parts.join("|");
 }
 
@@ -91,7 +123,7 @@ function digestLedgerEvent(event: LedgerEvent, index: number): string {
     case "launch":
       return `${head} launch|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}`;
     case "netWorth":
-      return `${head} netWorth|tick=${event.tick}|thalers=${event.thalers}|cargoValue=${event.cargoValue}|siteStoreValue=${event.siteStoreValue}|total=${event.total}`;
+      return `${head} netWorth|tick=${event.tick}|thalers=${event.thalers}|cargoValue=${fmtFloat(event.cargoValue)}|siteStoreValue=${fmtFloat(event.siteStoreValue)}|total=${fmtFloat(event.total)}`;
     case "enrollmentFee":
       return `${head} enrollmentFee|tick=${event.tick}|guildId=${event.guildId}|thalers=${event.thalers}`;
     case "upkeep":
