@@ -1,7 +1,8 @@
-# E13.0 shrink measurement — did the prerequisite make #100 smaller? (interim)
+# E13.0 shrink measurement — did the prerequisite make #100 smaller?
 
-**Date:** 2026-07-21 (E13.0 close). **Status:** LIVE — interim projection; the definitive
-measure is due at **E13 close**, per the bet's own terms.
+**Date:** 2026-07-21 (E13.0 close); **definitive result recorded 2026-07-22 (E13 close).**
+**Status:** HIST — bet **CONFIRMED** and retired. The interim scope projection below is kept
+for provenance; §At E13 close — measured (2026-07-22) carries the definitive finding.
 
 ## The bet being measured
 
@@ -88,13 +89,35 @@ into E13.0, and one whole guard sub-project (the typed site registry) was delete
 visible reduction in **scope and risk**, sourced from the issue's own AC history rather than
 a feeling.
 
-The claim this note does **not** make: that #100's shipped line count is smaller than some
-counterfactual. That number does not exist yet.
+~~The claim this note does **not** make: that #100's shipped line count is smaller than some
+counterfactual. That number does not exist yet.~~ **Superseded 2026-07-22:** the number now
+exists and confirms the claim — see §At E13 close — measured below.
 
-## At E13 close, do this
+## At E13 close — measured (2026-07-22)
 
-Record the merged `#100` PR's diff size (sim + tests), then compare against the pre-E13.0
-projection — which would have carried the `GoodsStore`/`Transfer`/`accepts` abstraction
-**plus** the typed-site-registry guard **plus** per-kind coverage tests, none of which the
-post-E13.0 #100 contains. Only then flip this note to a definitive result (confirm or
-falsify) and retire the bet. Until then it stays LIVE.
+E13 is closed: #100 shipped (#372) and the UI arm #101 (#377) merged. The shipped `#100`
+sim + test diff (`git show --stat 509e2fd -- 'src/sim/**'`):
+
+- **17 files, +1365 / −125.** Of the production side, the one genuinely **new** module is
+  `storehouse.ts` at **+205** LOC; every other production change is a thin wiring seam —
+  `commands.ts` +220 (mostly the store/withdraw commands + their tests' surface),
+  `ledger.ts` +60, `world.ts` +20, `tick.ts` +14, `route.ts` +7, `goodsStorePolicy.ts` +9.
+  The bulk of the diff is **tests** (`storehouse.test.ts` +385, `storeWithdraw.test.ts`
+  +159, `ledger.test.ts` +71, `route.test.ts` +24, plus the E13.0 equivalence/phase-order
+  adjustments).
+
+**The counterfactual.** A pre-E13.0 #100 would have carried, on top of this, the
+`GoodsStore` type, the `Transfer` primitive, the `accepts`/`StorePolicy` machinery, and the
+`computeNetWorth`-over-`companyStores` walk + value-neutrality invariant — **plus** the
+withdrawn typed-site-registry guard sub-project (union + exhaustive switch + per-kind
+coverage tests). **None of those appear in the shipped diff.** `storehouse.ts` consumes
+`GoodsStore`/`Transfer`/`accepts` rather than defining them; there is no site-registry union
+and no per-kind netWorth test anywhere in #100.
+
+**Verdict: CONFIRMED.** The shipped number matches the scope projection: #100's residual
+mechanism cost is ~205 LOC of a module that *wires the Storehouse onto pre-built
+primitives*, not the ~several-hundred-LOC abstraction-plus-guard project the pre-E13.0 body
+implied. E13.0 (ADR-0008) demonstrably absorbed the store abstraction and dissolved the
+omission-guard problem, so #100 arrived smaller in both scope and shipped LOC. The bet
+("E13.0 is supposed to make #100 smaller", HANDOFF §Design sessions are the work) holds on
+shipped evidence, not just direction. Bet retired; this note goes HIST.
