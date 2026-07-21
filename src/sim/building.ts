@@ -1,5 +1,6 @@
 import { GOOD_IDS, type GoodId } from "./goods";
 import { amountOf, emptyStore, withAdded, type GoodsStore } from "./goodsStore";
+import type { GuildId } from "./guild";
 import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
 import { effectiveBase, estimateBuy, maxAffordableQty, quoteBuy } from "./market";
 import type { Port, PortId } from "./region";
@@ -55,6 +56,32 @@ export interface Headquarters {
 export function emptySiteStore(): GoodsStore {
   return emptyStore();
 }
+
+/** A completed guild building owned by the Company (E13). */
+export interface Storehouse {
+  readonly type: "storehouse";
+  readonly variant: GuildId;
+  readonly portId: PortId;
+  readonly store: GoodsStore;
+}
+export interface StorehouseBuild {
+  readonly type: "storehouse";
+  readonly variant: GuildId;
+  readonly portId: PortId;
+  readonly siteStore: GoodsStore;
+}
+export type CompanyBuilding = Storehouse | StorehouseBuild;
+
+export const STOREHOUSE_CAPACITY = 200;
+export const STOREHOUSE_RECIPE: Record<GoodId, number> = {
+  grain: 40,
+  textiles: 20,
+  aetherSalt: 10,
+  electronics: 8,
+  timber: 6,
+};
+export const STOREHOUSE_LABOR_FEE = 500;
+export const STOREHOUSE_PERMIT_RANK = 2;
 
 /** A construction in progress at a port: a target recipe, materials gathered
  *  so far, and where it's being built. Ship construction (the Headquarters)

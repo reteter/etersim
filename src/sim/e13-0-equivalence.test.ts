@@ -110,8 +110,12 @@ function digestLedgerEvent(event: LedgerEvent, index: number): string {
       return `${head} autoDraw|tick=${event.tick}|portId=${event.portId}|good=${event.good}|qty=${event.qty}|thalers=${event.thalers}`;
     case "rush":
       return `${head} rush|tick=${event.tick}|portId=${event.portId}|good=${event.good}|qty=${event.qty}|thalers=${event.thalers}`;
-    case "delivery":
+        case "delivery":
+        case "store":
+        case "withdraw":
       return `${head} delivery|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}|good=${event.good}|qty=${event.qty}`;
+    case "completed":
+      return `${head} completed|tick=${event.tick}|portId=${event.portId}|building=${event.building}`;
     case "laborFee":
       return `${head} laborFee|tick=${event.tick}|thalers=${event.thalers}`;
     case "founding":

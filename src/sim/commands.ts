@@ -5,6 +5,8 @@ import {
   CONSTRUCTION_RESERVE,
   HEADQUARTERS_COST,
   LABOR_FEE,
+  STOREHOUSE_LABOR_FEE,
+  STOREHOUSE_PERMIT_RANK,
   launchIfComplete,
   SHIP_RECIPE,
   type ConstructionSite,
@@ -72,7 +74,10 @@ export type Command =
   | { readonly kind: "foundHeadquarters"; readonly portId: PortId }
   | { readonly kind: "placeBuildOrder" }
   | { readonly kind: "rushBuild" }
-  | { readonly kind: "deliver"; readonly shipId: ShipId; readonly good: GoodId }
+  | { readonly kind: "deliver"; readonly shipId: ShipId; readonly good: GoodId; readonly target?: StoreRef }
+  | { readonly kind: "commissionGuildBuilding"; readonly type: "storehouse"; readonly variant: GuildId; readonly portId: PortId }
+  | { readonly kind: "storeGood"; readonly shipId: ShipId; readonly good: GoodId; readonly target: StoreRef }
+  | { readonly kind: "withdrawGood"; readonly shipId: ShipId; readonly good: GoodId; readonly source: StoreRef }
   // E14 (#275) Shipyard & Refit — the Shipyard's construction commands.
   // commissionShipyard needs no ship (the placeBuildOrder analog — opens the
   // Shipyard's own construction site, #286 fix); rushShipyard rushes that
@@ -134,7 +139,7 @@ function isValidRoute(route: Route): boolean {
  *  `commissionShipyard` below) drifting apart — E13's target-kind union
  *  (#99–#102) should later consume this same helper. */
 function hasActiveBuildOrder(company: World["company"]): boolean {
-  return company.headquarters?.buildOrder !== undefined || company.shipyard?.site !== undefined;
+  return company.headquarters?.buildOrder !== undefined || company.shipyard?.site !== undefined || (company.buildings ?? []).some((building) => "siteStore" in building);
 }
 
 /** The site-specific half of delivering into a resolved `StoreRef` target
@@ -162,6 +167,8 @@ function siteCompletion(
       return shipyard ? { portId: shipyard.portId, completeIfDone: completeRefitIfDone } : null;
     }
     case "hold":
+      return null;
+    case "storehouse":
       return null;
     default: {
       const exhaustive: never = target;
@@ -205,6 +212,39 @@ function applyDelivery(world: World, ship: Ship, good: GoodId, target: StoreRef)
 /** Applies one command, returning the input world unchanged on rejection. */
 export function applyCommand(world: World, command: Command): World {
   switch (command.kind) {
+    case "commissionGuildBuilding": {
+      if (command.type !== "storehouse") return world;
+      if (rankOf(world.company.guilds[command.variant]?.points ?? -1) < STOREHOUSE_PERMIT_RANK) return world;
+      const port = world.region.ports.find((candidate) => candidate.id === command.portId);
+      if (!port || (port.archetype !== "freeport" && port.archetype !== command.variant)) return world;
+      if (hasActiveBuildOrder(world.company) || (world.company.buildings ?? []).some((building) => building.type === "storehouse" && building.portId === command.portId)) return world;
+      const commissioned = commissionBuilding(world.company.thalers, STOREHOUSE_LABOR_FEE);
+      if (!commissioned) return world;
+      const next: World = {
+        ...world,
+        company: {
+          ...world.company,
+          thalers: commissioned.thalers,
+          buildings: [
+            ...(world.company.buildings ?? []),
+            { type: "storehouse", variant: command.variant, portId: command.portId, siteStore: commissioned.siteStore },
+          ],
+        },
+      };
+      return appendLedgerEvent(next, { kind: "laborFee", tick: world.tick, thalers: STOREHOUSE_LABOR_FEE });
+    }
+    case "storeGood":
+    case "withdrawGood": {
+      const ship = world.company.ships.find((candidate) => candidate.id === command.shipId);
+      const buildingRef = command.kind === "storeGood" ? command.target : command.source;
+      if (!ship || ship.location.kind !== "docked" || buildingRef.kind !== "storehouse" || buildingRef.portId !== ship.location.portId) return world;
+      const from: StoreRef = command.kind === "storeGood" ? { kind: "hold", shipId: ship.id } : buildingRef;
+      const to: StoreRef = command.kind === "storeGood" ? buildingRef : { kind: "hold", shipId: ship.id };
+      const before = amountOf(readStore(world, from)!, command.good);
+      const moved = moveOwnGoods(world, from, to, command.good, "max");
+      const qty = before - amountOf(readStore(moved, from)!, command.good);
+      return qty <= 0 ? world : appendLedgerEvent(moved, { kind: command.kind === "storeGood" ? "store" : "withdraw", tick: world.tick, shipId: ship.id, portId: ship.location.portId, good: command.good, qty });
+    }
     case "createRoute": {
       if (!isValidRoute(command.route)) return world;
       if (world.company.routes.some((r) => r.id === command.route.id)) return world;
@@ -368,7 +408,7 @@ export function applyCommand(world: World, command: Command): World {
       if (!ship || ship.location.kind !== "docked") return world;
       const dockedPortId = ship.location.portId;
 
-      const target = resolveDeliveryTarget(world, ship, command.good);
+      const target = command.target ?? resolveDeliveryTarget(world, ship, command.good);
       if (target) {
         const result = applyDelivery(world, ship, command.good, target);
         if (result) return result;

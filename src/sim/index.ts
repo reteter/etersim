@@ -15,6 +15,8 @@ export {
   type World,
 } from "./world";
 export { applyCommand, MAX_SHIP_NAME_LENGTH } from "./commands";
+export { STOREHOUSE_CAPACITY, STOREHOUSE_PERMIT_RANK, STOREHOUSE_RECIPE, type CompanyBuilding } from "./building";
+export { companyStores, readStore, type StoreRef } from "./transfer";
 export { shortestCourse } from "./pathfinding";
 export {
   advanceShip,

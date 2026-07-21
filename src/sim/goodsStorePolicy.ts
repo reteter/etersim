@@ -20,8 +20,8 @@ import { amountOf, totalHeld, type GoodsStore } from "./goodsStore";
  */
 export type StorePolicy =
   | { readonly kind: "hold"; readonly capacity: number }
-  | { readonly kind: "constructionSite"; readonly recipe: Record<GoodId, number> };
-// E13: | { kind: "storehouse"; filter: readonly GoodId[]; capacity: number }
+  | { readonly kind: "constructionSite"; readonly recipe: Record<GoodId, number> }
+  | { readonly kind: "storehouse"; readonly filter: readonly GoodId[]; readonly capacity: number };
 // E15: | { kind: "plantInput"; chain: ChainId; capacity: number }
 //      | { kind: "plantOutput"; good: GoodId; capacity: number }
 
@@ -43,6 +43,10 @@ export function accepts(store: GoodsStore, policy: StorePolicy, good: GoodId, qt
     case "constructionSite": {
       const remaining = Math.max(0, (policy.recipe[good] ?? 0) - amountOf(store, good));
       return Math.min(qty, remaining);
+    }
+    case "storehouse": {
+      if (!policy.filter.includes(good)) return 0;
+      return Math.min(qty, Math.max(0, policy.capacity - totalHeld(store)));
     }
     default: {
       const exhaustive: never = policy;

@@ -73,20 +73,25 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  precedent), kept as a real migration step so "version tracks World
  *  shape" stays honest. Per the one-step-migration precedent, v11 is no
  *  longer readable — only v12 carries forward now. */
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 /** Save envelope versions this adapter can still read, migrating forward to
  *  `SAVE_VERSION` on load — currently just the immediately preceding version;
  *  a save older than that is unreadable, same as every prior bump (v11
  *  dropped here, matching the v9-drop precedent at the previous bump). */
-const READABLE_VERSIONS: ReadonlySet<number> = new Set([12, SAVE_VERSION]);
+const READABLE_VERSIONS: ReadonlySet<number> = new Set([12, 13, SAVE_VERSION]);
 
 /** v12 -> v13 (E14 #286 fix): a documented identity — `Shipyard.site?` is
  *  additive and absent-safe, and every v12 `Shipyard` was already "built"
  *  under the old instant-purchase model, which is exactly what "no `site`"
  *  means at v13. Nothing to backfill. */
-function migrateV12ToV13(rawWorld: unknown): World {
-  return rawWorld as World;
+function migrateV13ToV14(rawWorld: unknown): World {
+  const world = rawWorld as World;
+  return {
+    ...world,
+    company: { ...world.company, buildings: world.company.buildings ?? [] },
+    ledger: world.ledger.map((event) => event.kind === "netWorth" ? { ...event, buildingStoreValue: 0 } : event),
+  } as World;
 }
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
@@ -150,7 +155,8 @@ function deserialize(text: string | null): World | null {
   }
   if (!isReadableEnvelopeShape(parsed)) return null;
   if (parsed.version === SAVE_VERSION) return parsed.world as unknown as World;
-  return migrateV12ToV13(parsed.world); // the only older readable version (v12)
+  if (parsed.version === 12) return parsed.world as unknown as World;
+  return migrateV13ToV14(parsed.world); // the only older readable version (v13)
 }
 
 /**

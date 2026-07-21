@@ -1,10 +1,10 @@
-import { CONSTRUCTION_RESERVE, runBuildSiteAutoDraw } from "./building";
+import { autoDrawCapForDayTick, CONSTRUCTION_RESERVE, drawConstructionSite, isSiteComplete, runBuildSiteAutoDraw, STOREHOUSE_RECIPE } from "./building";
 import { applyCommand, type Command } from "./commands";
 import { refreshContractOffers, settleContracts } from "./contract";
 import { GOOD_IDS, type GoodId } from "./goods";
 import { amountOf } from "./goodsStore";
 import { UPKEEP_PER_DAY } from "./guild";
-import { appendLedgerEvent, computeNetWorth } from "./ledger";
+import { appendLedgerEvent, appendLedgerEvents, computeNetWorth } from "./ledger";
 import { effectiveBase, marketTick, maxAffordableQty, NEUTRAL_MODIFIERS, unitMargin } from "./market";
 import { osmosisTick } from "./osmosis";
 import { shortestCourse } from "./pathfinding";
@@ -117,9 +117,13 @@ function executeStop(
       const have = amountOf(ship.cargo, order.good);
       const qty = order.qty === undefined ? have : Math.min(order.qty, have);
       if (qty > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty, routeId });
-    } else {
-      w = applyCommand(w, { kind: "deliver", shipId, good: order.good });
-    }
+      } else if (order.kind === "deliver") {
+        w = applyCommand(w, { kind: "deliver", shipId, good: order.good, target: order.target });
+      } else if (order.kind === "store" && order.target) {
+        w = applyCommand(w, { kind: "storeGood", shipId, good: order.good, target: order.target });
+      } else if (order.kind === "withdraw" && order.target) {
+        w = applyCommand(w, { kind: "withdrawGood", shipId, good: order.good, source: order.target });
+      }
   }
   return w;
 }
@@ -312,6 +316,21 @@ function runDockingPhase(world: World, before: readonly Ship[], advanced: readon
   return w;
 }
 
+function runStorehouseConstruction(world: World): World {
+  const building = (world.company.buildings ?? []).find((candidate) => "siteStore" in candidate);
+  if (!building || !("siteStore" in building)) return world;
+  const portIndex = world.region.ports.findIndex((port) => port.id === building.portId);
+  if (portIndex < 0) return world;
+  const cap = autoDrawCapForDayTick(world.tick % TICKS_PER_DAY);
+  const result = drawConstructionSite({ recipe: STOREHOUSE_RECIPE, siteStore: building.siteStore, portId: building.portId }, world.region.ports[portIndex], world.company.thalers, cap, world.tick);
+  const completed = isSiteComplete({ recipe: STOREHOUSE_RECIPE, siteStore: result.siteStore });
+  const buildings = (world.company.buildings ?? []).map((candidate) => candidate === building ? (completed ? { type: "storehouse" as const, variant: building.variant, portId: building.portId, store: result.siteStore } : { ...building, siteStore: result.siteStore }) : candidate);
+  const ports = [...world.region.ports]; ports[portIndex] = result.port;
+  let next: World = { ...world, company: { ...world.company, thalers: result.thalers, buildings }, region: { ...world.region, ports } };
+  next = appendLedgerEvents(next, result.events);
+  return completed ? appendLedgerEvent(next, { kind: "completed", tick: world.tick, portId: building.portId, building: "storehouse" }) : next;
+}
+
 /**
  * Daily per-ship upkeep charge (#95, docs/specs/E3-contracts-and-guilds.md —
  * Upkeep): `min(UPKEEP_PER_DAY, max(0, purse - CONSTRUCTION_RESERVE))` per
@@ -460,6 +479,7 @@ export function tick(world: World, commands: readonly Command[]): World {
   // drawing sequentially from the same shared purse — HQ first, so a thin
   // purse's Reserve floor is respected by both in a fixed, deterministic order.
   w = runShipyardAutoDraw(w);
+  w = runStorehouseConstruction(w);
 
   const ports = w.region.ports.map((port) => ({
     ...port,

@@ -72,4 +72,14 @@ describe("goodsStorePolicy", () => {
       expect(accepts(store, policy, "textiles", 5)).toBe(0);
     });
   });
+
+  describe("accepts — storehouse policy", () => {
+    const policy: StorePolicy = { kind: "storehouse", filter: ["grain"], capacity: 200 };
+
+    it("accepts only filtered goods and clamps by the shared capacity", () => {
+      expect(accepts(storeOf({}), policy, "textiles", 10)).toBe(0);
+      expect(accepts(storeOf({ grain: 195 }), policy, "grain", 10)).toBe(5);
+      expect(accepts(storeOf({ grain: 200 }), policy, "grain", 1)).toBe(0);
+    });
+  });
 });

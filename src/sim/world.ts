@@ -1,4 +1,4 @@
-import { generateShipName, type Headquarters } from "./building";
+import { generateShipName, type CompanyBuilding, type Headquarters } from "./building";
 import type { ActiveContract, ContractOffer } from "./contract";
 import type { GoodId } from "./goods";
 import { GOOD_IDS } from "./goods";
@@ -32,6 +32,8 @@ export interface Company {
    *  purchase); `refitOrder` present iff a Refit is active (only possible
    *  once activated). */
   readonly shipyard?: Shipyard;
+  /** Completed guild buildings, in commission order. */
+  readonly buildings?: readonly CompanyBuilding[];
   /** Guild enrollment + progress (E3, guild.ts): enrolled iff the guild's key
    *  is present. Rank is always derived via `rankOf`, never stored here. */
   readonly guilds: Partial<Record<GuildId, { points: number }>>;
@@ -107,7 +109,7 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     tick: 0,
     rng: rng2,
     region,
-    company: { thalers: STARTING_THALERS, ships: [ship], routes: [], guilds: {}, contracts: [] },
+    company: { thalers: STARTING_THALERS, ships: [ship], routes: [], buildings: [], guilds: {}, contracts: [] },
     priceSnapshots: snapshotPrices(region),
     flowDrift: initialFlowDrift(region),
     osmosisPulse: initialOsmosisPulse(region),

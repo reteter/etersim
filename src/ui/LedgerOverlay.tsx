@@ -31,6 +31,8 @@ function transactionShipId(event: TransactionEvent): ShipId | null {
     case "trade":
     case "dockingFee":
     case "delivery":
+    case "store":
+    case "withdraw":
     case "launch":
     case "upkeep":
     // refitStart/refitComplete (E14, #275): minimal, mechanical exhaustiveness
@@ -73,6 +75,8 @@ function transactionDelta(event: TransactionEvent): number | null {
     case "refitStart":
       return -event.thalers;
     case "delivery":
+    case "store":
+    case "withdraw":
     case "launch":
     // enrollmentFee (E3, #92): the event carries no thalers field per the
     // acceptance criteria — a fuller UI treatment (delta, description) is
@@ -90,6 +94,7 @@ function transactionDelta(event: TransactionEvent): number | null {
     // precedent as refitComplete/launch).
     case "refitComplete":
     case "shipyardBuilt":
+    case "completed":
       return null;
   }
 }
@@ -116,6 +121,12 @@ function describeTransaction(event: TransactionEvent, world: World): string {
       return `Rush buy: ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)}`;
     case "delivery":
       return `Delivered ${event.qty} ${GOODS[event.good].name} to the build site at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+    case "store":
+      return `Stored ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+    case "withdraw":
+      return `Withdrew ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+    case "completed":
+      return `Storehouse completed at ${portName(world, event.portId)}`;
     case "laborFee":
       return "Labor fee (build order placed)";
     case "founding":

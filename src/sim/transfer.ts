@@ -1,8 +1,10 @@
 import { SHIP_RECIPE } from "./building";
+import { STOREHOUSE_CAPACITY } from "./building";
 import type { GoodId } from "./goods";
 import { amountOf, withAdded, withRemoved, type GoodsStore } from "./goodsStore";
 import { accepts, type StorePolicy } from "./goodsStorePolicy";
 import { refitRecipe, SHIPYARD_RECIPE, withShipyard } from "./shipyard";
+import type { PortId } from "./region";
 import type { Ship, ShipId } from "./ship";
 import { replaceShip, type World } from "./world";
 
@@ -22,8 +24,8 @@ export type StoreRef =
   | { readonly kind: "hold"; readonly shipId: ShipId }
   | { readonly kind: "hqBuild" }
   | { readonly kind: "shipyardBuild" }
-  | { readonly kind: "refit" };
-// E13: | { kind: "storehouse"; portId } ;  E15: | { kind: "plantInput" | "plantOutput"; portId }
+  | { readonly kind: "refit" }
+  | { readonly kind: "storehouse"; readonly portId: PortId };
 
 /** Every store the Company currently owns, ship holds first (in fleet
  *  order) then whichever construction sites are active — the enumeration
@@ -37,6 +39,9 @@ export function companyStores(world: World): readonly StoreRef[] {
   if (world.company.headquarters?.buildOrder) refs.push({ kind: "hqBuild" });
   if (world.company.shipyard?.site) refs.push({ kind: "shipyardBuild" });
   if (world.company.shipyard?.refitOrder) refs.push({ kind: "refit" });
+  for (const building of world.company.buildings ?? []) {
+    if (building.type === "storehouse" && "store" in building) refs.push({ kind: "storehouse", portId: building.portId });
+  }
   return refs;
 }
 
@@ -54,6 +59,8 @@ export function readStore(world: World, ref: StoreRef): GoodsStore | null {
       return world.company.shipyard?.site?.siteStore ?? null;
     case "refit":
       return world.company.shipyard?.refitOrder?.siteStore ?? null;
+    case "storehouse":
+      { const building = world.company.buildings?.find((candidate) => candidate.type === "storehouse" && candidate.portId === ref.portId); return building && "store" in building ? building.store : null; }
     default: {
       const exhaustive: never = ref;
       throw new Error(`readStore: unhandled StoreRef kind ${JSON.stringify(exhaustive)}`);
@@ -87,6 +94,10 @@ export function policyFor(world: World, ref: StoreRef): StorePolicy | null {
       const ship = world.company.ships.find((s) => s.id === shipyard.refitOrder!.shipId);
       if (!ship) return null;
       return { kind: "constructionSite", recipe: refitRecipe(ship) };
+    }
+    case "storehouse": {
+      const building = world.company.buildings?.find((candidate) => candidate.type === "storehouse" && candidate.portId === ref.portId);
+      return building && "store" in building ? { kind: "storehouse", filter: ["grain"], capacity: STOREHOUSE_CAPACITY } : null;
     }
     default: {
       const exhaustive: never = ref;
@@ -132,6 +143,14 @@ export function writeStore(world: World, ref: StoreRef, next: GoodsStore): World
           shipyard: withShipyard(shipyard, { refitOrder: { ...shipyard.refitOrder, siteStore: next } }),
         },
       };
+    }
+    case "storehouse": {
+      const buildings = world.company.buildings;
+      if (!buildings) return world;
+      const index = buildings.findIndex((building) => building.type === "storehouse" && building.portId === ref.portId);
+      if (index < 0) return world;
+      const replacement = { ...buildings[index], store: next };
+      return { ...world, company: { ...world.company, buildings: [...buildings.slice(0, index), replacement, ...buildings.slice(index + 1)] } };
     }
     default: {
       const exhaustive: never = ref;

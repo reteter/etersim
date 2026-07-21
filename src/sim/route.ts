@@ -1,12 +1,13 @@
 import type { GoodId } from "./goods";
 import type { PortId } from "./region";
+import type { StoreRef } from "./transfer";
 
 /** Stable identifier for a Route template (CONTEXT.md). */
 export type RouteId = string;
 
 /** One order at a Stop: buy/sell/deliver a specific good. */
 export interface StopOrder {
-  readonly kind: "buy" | "sell" | "deliver";
+  readonly kind: "buy" | "sell" | "deliver" | "store" | "withdraw";
   readonly good: GoodId;
   /** "Up to N" ceiling (E9.1, buy & sell only). Absent ⇒ today's greedy
    *  behavior (buy fills the Hold, sell empties the good). */
@@ -14,6 +15,8 @@ export interface StopOrder {
   /** Margin Gate (E9.1, buy only). Absent ⇒ no gate — the buy executes
    *  normally on arrival. See CONTEXT.md — Margin Gate. */
   readonly minMargin?: number;
+  /** Explicit own-store destination/source for non-market goods transfers. */
+  readonly target?: StoreRef;
 }
 
 /** One entry in a Route: a port plus its ordered StopOrders. */

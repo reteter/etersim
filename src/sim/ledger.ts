@@ -69,6 +69,9 @@ export type LedgerEvent =
       readonly good: GoodId;
       readonly qty: number;
     }
+  | { readonly kind: "store" | "withdraw"; readonly tick: number; readonly shipId: ShipId; readonly portId: PortId; readonly good: GoodId; readonly qty: number }
+  | { readonly kind: "completed"; readonly tick: number; readonly portId: PortId; readonly building: "storehouse" }
+  | { readonly kind: "completed"; readonly tick: number; readonly portId: PortId; readonly building: "storehouse" }
   | { readonly kind: "laborFee"; readonly tick: number; readonly thalers: number }
   | {
       readonly kind: "founding";
@@ -88,6 +91,7 @@ export type LedgerEvent =
       readonly thalers: number;
       readonly cargoValue: number;
       readonly siteStoreValue: number;
+      readonly buildingStoreValue: number;
       readonly total: number;
     }
   | {
@@ -189,6 +193,7 @@ export interface NetWorthBreakdown {
   readonly thalers: number;
   readonly cargoValue: number;
   readonly siteStoreValue: number;
+  readonly buildingStoreValue: number;
   readonly total: number;
 }
 
@@ -225,16 +230,18 @@ export function computeNetWorth(world: World): NetWorthBreakdown {
 
   let cargoValue = 0;
   let siteStoreValue = 0;
+  let buildingStoreValue = 0;
   for (const ref of companyStores(world)) {
     const store = readStore(world, ref);
     if (!store) continue;
     for (const good of GOOD_IDS) {
       const value = amountOf(store, good) * mids[good];
       if (ref.kind === "hold") cargoValue += value;
+      else if (ref.kind === "storehouse") buildingStoreValue += value;
       else siteStoreValue += value;
     }
   }
 
   const thalers = world.company.thalers;
-  return { thalers, cargoValue, siteStoreValue, total: thalers + cargoValue + siteStoreValue };
+  return { thalers, cargoValue, siteStoreValue, buildingStoreValue, total: thalers + cargoValue + siteStoreValue + buildingStoreValue };
 }

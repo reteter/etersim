@@ -178,6 +178,7 @@ describe("computeNetWorth", () => {
       thalers: 777,
       cargoValue: 0,
       siteStoreValue: 0,
+      buildingStoreValue: 0,
       total: 777,
     });
   });
@@ -481,7 +482,10 @@ const KIND_CATEGORY: Record<LedgerEvent["kind"], LedgerGrammarCategory> = {
   dockingFee: "thalers",
   autoDraw: "thalers",
   rush: "thalers",
-  delivery: "neither",
+      delivery: "neither",
+      store: "neither",
+      withdraw: "neither",
+      completed: "neither",
   laborFee: "thalers",
   founding: "thalers",
   launch: "neither",
@@ -579,10 +583,29 @@ function scriptedAllKindsWorld(): World {
   }
   expect(w.company.shipyard?.refitOrder).toBeUndefined(); // precondition: actually completed
 
+  // Storehouse completion plus both goods-only transfer events.
+  const granaryPort = w.region.ports.find((port) => port.archetype === "agrarian")!;
+  w = {
+    ...w,
+    company: {
+      ...w.company,
+      thalers: Math.max(w.company.thalers, 20_000),
+      guilds: { ...w.company.guilds, agrarian: { points: 4 } },
+      ships: w.company.ships.map((ship) => ship.id === shipId ? { ...ship, location: { kind: "docked", portId: granaryPort.id } } : ship),
+    },
+  };
+  w = applyCommand(w, { kind: "commissionGuildBuilding", type: "storehouse", variant: "agrarian", portId: granaryPort.id });
+  guard = 0;
+  while ((w.company.buildings ?? []).some((building) => "siteStore" in building) && guard++ < 500) w = tick(w, []);
+  expect((w.company.buildings ?? []).some((building) => "store" in building)).toBe(true);
+  w = applyCommand(w, { kind: "buy", shipId, good: "grain", qty: 1 });
+  w = applyCommand(w, { kind: "storeGood", shipId, good: "grain", target: { kind: "storehouse", portId: granaryPort.id } });
+  w = applyCommand(w, { kind: "withdrawGood", shipId, good: "grain", source: { kind: "storehouse", portId: granaryPort.id } });
+
   // netWorth + upkeep — a few more day boundaries.
   for (let i = 0; i < 3 * TICKS_PER_DAY; i++) w = tick(w, []);
 
-  w = applyCommand(w, { kind: "enroll", guildId: "agrarian" }); // enrollmentFee
+  w = applyCommand(w, { kind: "enroll", guildId: "urban" }); // enrollmentFee
 
   const activeContract: ActiveContract = {
     id: "grammar-test-contract",
