@@ -329,6 +329,29 @@ produced work the reviewer called clean on the hard parts. Watch whether
 "explicitly named in the AC but skipped" repeats; if it does, the lever is
 package shape (a checklist of named files), not casting.
 
+## E13.0 wave — #306 + #341 (2026-07-21, s16, parallel dispatch)
+
+Two Sonnet coders in parallel isolated worktrees, unrelated issues sharing no
+files (`src/sim/e13-0-*` + fixture vs `scripts/normalize-markdown.*` +
+`CONTEXT.md` + `package.json`) — first genuinely independent parallel dispatch
+since the #290/#292 wave (s9). Baseline both branched from: 611 unit tests,
+41 files. #306 is the E13.0 refactor's behavior-preservation cover, dispatched
+strictly ahead of #307 per the spec's issue-cut order. #341 was grilled to a
+spec the same session before dispatch (`markdown-normalizer-grill-2026-07-21.md`).
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-21 | #351 | #306 | 3 | 0 | 0 | pass | Golden-run digest (C1) + phase-order snapshot (C4), zero production-code diff. Two-axis Opus review verified both red-evidence drills genuinely discriminating (not the incident-0005 pattern) via independent re-derivation, not trust; caught and confirmed-fixed a coder self-reported `ports[0]` bug (RNG-drawn home port, not a fixed index); independently verified the repo's first `?raw` import's full typing chain before accepting it as merge-gate-safe. One Orchestrator micro-fix at wave-close (spec's stale `shipyard.test.ts:726` pointer → `:732`, plus a clarifying note that C1's `moveOwnGoods` reference describes #307's not-yet-built function). |
+| 07-21 | #350 | #341 | 1 | 0 | 0 | pass | AST-based (`remark`/`remark-gfm`) markdown normalizer + `CONTEXT.md` proof migration. Tier 1 (docs/infra only, no `src/sim`/UI) — session-driver inline review, deliberately thorough given the migration's content-integrity stakes: independently re-derived word-count equality (7069=7069) and a whitespace-normalized full-file diff (byte-identical) rather than trusting the coder's own grep-based count, plus re-counted line-start bold headers (82→82, zero non-header hits) and confirmed the `**processed goods**` artifact that opened #341 no longer leads a line. Tests written after implementation, flagged per contract with two named mutation-based red drills (one caught the coder's own first-draft vacuous test before finalizing). One follow-up filed, not a fix-loop item: `eslint.config.js` has no `files:` block for `scripts/**/*.mjs` (pre-existing gap, → #349). |
+
+Wave not yet merged (both PRs open, awaiting owner review). First tier-1 row
+in this scorecard to get a review this thorough — judgement call: a
+content-integrity migration script's risk isn't well captured by "docs/infra
+only" path-based tiering, so the session driver escalated its own rigor
+without escalating the formal tier (no subagent dispatched, per tier 1's own
+definition — the extra verification was git-plumbing checks, not a review
+subagent).
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
