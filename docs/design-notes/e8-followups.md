@@ -36,6 +36,8 @@ one such route per region doubles as an early-game ramp and natural guide (owner
 alternatives below **stay parked**. New watch item: worldgen guarantees neither "at most
 one" sole-producer rim per region nor its existence — revisit at a worldgen grill if
 generated regions oversupply premium routes, or if a future playtest flips the feel.
+**Tracked as #359** (filed 2026-07-21, #326 audit) — the same watch item is also stated
+independently in `playtest-2026-07-09-living.md:61`; both point here now.
 
 **Parked alternatives (revisit only if a playtest shows the pinned rim *feels* dead, i.e.
 reintroduces the "algorithm, not a decision" deadness E8 exists to kill):**
