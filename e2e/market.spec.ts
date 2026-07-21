@@ -1,7 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 import {
   createWorld,
+  effectiveBase,
   emptyCargo,
+  quoteBuy,
   type GoodId,
   type MarketGood,
   type World,
@@ -144,6 +146,32 @@ test.describe('market: Buy cap reason (#124)', () => {
     const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
     await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Nie stać cię na żaden zakup');
     await expect(grainRow.getByRole('button', { name: 'Buy Grain', exact: true })).toBeDisabled();
+  });
+
+  test('thin purse: names the affordable cap when thalers bind but buyMax stays positive (#375)', async ({
+    page,
+  }) => {
+    let world = fundedWorld('market-cap-thalers-partial');
+    const { portId, name } = homePort(world);
+    // Ample stock/equilibrium so hold/stock never bind — only thalers can.
+    const entry: MarketGood = { stock: 1000, equilibrium: 1000 };
+    world = withMarketGood(world, portId, 'grain', entry);
+    const port = world.region.ports.find((p) => p.id === portId)!;
+    const base = effectiveBase(port, 'grain');
+    // Exactly afford 5 units of grain — buyMax > 0, thalers still bind
+    // below the (far larger) structural cap.
+    const affordable = 5;
+    const purse = quoteBuy(entry, base, affordable)!;
+    world = { ...world, company: { ...world.company, thalers: purse } };
+
+    await continueWithWorld(page, world);
+    await openMarket(page, name);
+
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    await expect(grainRow.locator('.market-row__cap-hint')).toHaveText(
+      `Kasa ogranicza zakup do ${affordable}`,
+    );
+    await expect(grainRow.getByRole('button', { name: 'Buy Grain', exact: true })).toBeEnabled();
   });
 });
 
