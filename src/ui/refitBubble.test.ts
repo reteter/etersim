@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createWorld, emptyCargo, refitRecipe, type Region, type Ship, type Shipyard } from "../sim";
+import { createWorld, emptyCargo, refitRecipe, storeOf, type Region, type Ship, type Shipyard } from "../sim";
 import { refitBubbleData } from "./refitBubble";
 
 function baseRegion(): Region {
@@ -47,7 +47,7 @@ describe("refitBubbleData", () => {
         shipId: target.id,
         targetHold: 100,
         // Half of grain, none of the rest.
-        siteStore: { grain: Math.floor(recipe.grain / 2), textiles: 0, aetherSalt: 0, electronics: 0, timber: 0 },
+        siteStore: storeOf({ grain: Math.floor(recipe.grain / 2) }),
       },
     };
     const data = refitBubbleData(shipyard, [target], region);
@@ -75,7 +75,7 @@ describe("refitBubbleData", () => {
     const recipe = refitRecipe(target);
     const shipyard: Shipyard = {
       portId: region.ports[0].id,
-      refitOrder: { shipId: target.id, targetHold: 100, siteStore: { ...recipe } },
+      refitOrder: { shipId: target.id, targetHold: 100, siteStore: storeOf(recipe) },
     };
     const data = refitBubbleData(shipyard, [target], region);
     expect(data!.progress).toBe(1);

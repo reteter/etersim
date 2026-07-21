@@ -8,6 +8,7 @@ import {
   type ConstructionSite,
   type RushQuote,
 } from "./building";
+import type { GoodsStore } from "./goodsStore";
 import { appendLedgerEvent, appendLedgerEvents } from "./ledger";
 import { GOOD_IDS, type GoodId } from "./goods";
 import type { PortId } from "./region";
@@ -115,7 +116,7 @@ export const SHIPYARD_LABOR_FEE = 700;
 export interface RefitOrder {
   readonly shipId: ShipId;
   readonly targetHold: number;
-  readonly siteStore: Record<GoodId, number>;
+  readonly siteStore: GoodsStore;
 }
 
 /** The Company's second Building (E14): one per Company, commissioned at a

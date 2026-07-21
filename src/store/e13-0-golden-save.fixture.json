@@ -1,0 +1,3127 @@
+{
+  "version": 13,
+  "world": {
+    "tick": 202,
+    "rng": 2701980925,
+    "region": {
+      "ports": [
+        {
+          "id": "p0",
+          "name": "Duskferry",
+          "archetype": "agrarian",
+          "x": 0.8358379854096291,
+          "y": 0.6471641668357017,
+          "market": {
+            "grain": {
+              "equilibrium": 960,
+              "stock": 1393.3228089726535
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 28.288602319919878
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 37.116086738981096
+            },
+            "electronics": {
+              "equilibrium": 100,
+              "stock": 66.53582339058245
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 82.81545662597371
+            }
+          },
+          "priceBias": {
+            "grain": 0.8089058607630432,
+            "textiles": 1.1574701466411352,
+            "aetherSalt": 1.1236988695326726,
+            "electronics": 1.13344074895489,
+            "timber": 0.9647183305583894
+          }
+        },
+        {
+          "id": "p1",
+          "name": "Brassmoor",
+          "archetype": "verdant",
+          "x": 0.6568694623080011,
+          "y": 0.7673798268291732,
+          "market": {
+            "grain": {
+              "equilibrium": 120,
+              "stock": 91.59339881745036
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 69.08905511823983
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 99.48082797322733
+            },
+            "electronics": {
+              "equilibrium": 100,
+              "stock": 97.30173055766699
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 148.01320944639008
+            }
+          },
+          "priceBias": {
+            "grain": 1.1940734619274735,
+            "textiles": 1.2596313251461833,
+            "aetherSalt": 0.96500739317853,
+            "electronics": 1.022129471390508,
+            "timber": 0.7604461686499416
+          }
+        },
+        {
+          "id": "p2",
+          "name": "Emberdock",
+          "archetype": "mining",
+          "x": 0.081210722412146,
+          "y": 0.5618599392867017,
+          "market": {
+            "grain": {
+              "equilibrium": 180,
+              "stock": 78.53924179123193
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 62.06972356742947
+            },
+            "aetherSalt": {
+              "equilibrium": 200,
+              "stock": 279.8687480744778
+            },
+            "electronics": {
+              "equilibrium": 100,
+              "stock": 110.67287590232728
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 90.42631383294602
+            }
+          },
+          "priceBias": {
+            "grain": 1.3604053319431841,
+            "textiles": 1.1112815205228979,
+            "aetherSalt": 0.7638585037924349,
+            "electronics": 1.2455843019951134,
+            "timber": 0.9712182487128302
+          }
+        },
+        {
+          "id": "p3",
+          "name": "Kruxhaven",
+          "archetype": "industrial",
+          "x": 0.3945891612250204,
+          "y": 0.5921333548111392,
+          "market": {
+            "grain": {
+              "equilibrium": 240,
+              "stock": 105.54419819138496
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 51.54072700531417
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 47.05155815515847
+            },
+            "electronics": {
+              "equilibrium": 120,
+              "stock": 182.97495270109954
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 82.11515326159527
+            }
+          },
+          "priceBias": {
+            "grain": 1.3527329792571252,
+            "textiles": 0.9513304579537362,
+            "aetherSalt": 1.2492775655118749,
+            "electronics": 0.7746129086427391,
+            "timber": 1.1064346073195337
+          }
+        },
+        {
+          "id": "p4",
+          "name": "Coppervale",
+          "archetype": "urban",
+          "x": 0.6785550082910925,
+          "y": 0.3202894360591295,
+          "market": {
+            "grain": {
+              "equilibrium": 300,
+              "stock": 156.20332618183068
+            },
+            "textiles": {
+              "equilibrium": 240,
+              "stock": 372.0466079459418
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 69.80236365466571
+            },
+            "electronics": {
+              "equilibrium": 100,
+              "stock": 78.64398204274876
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 72.08902756117539
+            }
+          },
+          "priceBias": {
+            "grain": 1.2946343283250463,
+            "textiles": 0.8176112909056246,
+            "aetherSalt": 1.1243871450878213,
+            "electronics": 1.2302428338490425,
+            "timber": 1.238565853368491
+          }
+        },
+        {
+          "id": "p5",
+          "name": "Velharrow",
+          "archetype": "industrial",
+          "x": 0.35784027399572566,
+          "y": 0.364101544967695,
+          "market": {
+            "grain": {
+              "equilibrium": 240,
+              "stock": 100.56287843302489
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 90.81039058871227
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 60.85117100928479
+            },
+            "electronics": {
+              "equilibrium": 120,
+              "stock": 194.1246072734852
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 84.02631181693968
+            }
+          },
+          "priceBias": {
+            "grain": 1.3521801192499696,
+            "textiles": 0.9580387389753013,
+            "aetherSalt": 1.2567811560293194,
+            "electronics": 0.825198786407709,
+            "timber": 1.1758430156297979
+          }
+        },
+        {
+          "id": "p6",
+          "name": "Ravenshoal",
+          "archetype": "freeport",
+          "x": 0.6221709504798164,
+          "y": 0.0358079504570783,
+          "market": {
+            "grain": {
+              "equilibrium": 100,
+              "stock": 59.364693095314294
+            },
+            "textiles": {
+              "equilibrium": 100,
+              "stock": 100.09636547293978
+            },
+            "aetherSalt": {
+              "equilibrium": 100,
+              "stock": 91.06570320950199
+            },
+            "electronics": {
+              "equilibrium": 100,
+              "stock": 83.23702908798438
+            },
+            "timber": {
+              "equilibrium": 100,
+              "stock": 91.90136956869645
+            }
+          },
+          "priceBias": {
+            "grain": 1,
+            "textiles": 1,
+            "aetherSalt": 1,
+            "electronics": 1,
+            "timber": 1
+          }
+        }
+      ],
+      "lanes": [
+        {
+          "id": "l0",
+          "a": "p0",
+          "b": "p1",
+          "voyageTicks": 28
+        },
+        {
+          "id": "l1",
+          "a": "p0",
+          "b": "p3",
+          "voyageTicks": 58
+        },
+        {
+          "id": "l2",
+          "a": "p0",
+          "b": "p4",
+          "voyageTicks": 47
+        },
+        {
+          "id": "l3",
+          "a": "p0",
+          "b": "p6",
+          "voyageTicks": 84
+        },
+        {
+          "id": "l4",
+          "a": "p1",
+          "b": "p2",
+          "voyageTicks": 79
+        },
+        {
+          "id": "l5",
+          "a": "p1",
+          "b": "p3",
+          "voyageTicks": 41
+        },
+        {
+          "id": "l6",
+          "a": "p2",
+          "b": "p3",
+          "voyageTicks": 41
+        },
+        {
+          "id": "l7",
+          "a": "p2",
+          "b": "p5",
+          "voyageTicks": 44
+        },
+        {
+          "id": "l8",
+          "a": "p3",
+          "b": "p4",
+          "voyageTicks": 51
+        },
+        {
+          "id": "l9",
+          "a": "p3",
+          "b": "p5",
+          "voyageTicks": 30
+        },
+        {
+          "id": "l10",
+          "a": "p4",
+          "b": "p5",
+          "voyageTicks": 42
+        },
+        {
+          "id": "l11",
+          "a": "p4",
+          "b": "p6",
+          "voyageTicks": 38
+        },
+        {
+          "id": "l12",
+          "a": "p5",
+          "b": "p6",
+          "voyageTicks": 55
+        }
+      ]
+    },
+    "company": {
+      "thalers": 502,
+      "ships": [
+        {
+          "id": "s0",
+          "name": "Aether Wing",
+          "hold": 50,
+          "baseHold": 50,
+          "cargo": {
+            "grain": 0,
+            "textiles": 0,
+            "aetherSalt": 0,
+            "electronics": 0,
+            "timber": 0
+          },
+          "location": {
+            "kind": "docked",
+            "portId": "p0"
+          }
+        },
+        {
+          "id": "s1",
+          "name": "Lumen Trader",
+          "hold": 50,
+          "baseHold": 50,
+          "cargo": {
+            "grain": 0,
+            "textiles": 0,
+            "aetherSalt": 0,
+            "electronics": 0,
+            "timber": 0
+          },
+          "location": {
+            "kind": "docked",
+            "portId": "p3"
+          }
+        }
+      ],
+      "routes": [],
+      "guilds": {},
+      "contracts": [],
+      "headquarters": {
+        "portId": "p3",
+        "buildOrder": {
+          "siteStore": {
+            "grain": 18,
+            "textiles": 16,
+            "aetherSalt": 15,
+            "electronics": 5,
+            "timber": 12
+          }
+        }
+      },
+      "shipyard": {
+        "portId": "p0",
+        "refitOrder": {
+          "shipId": "s0",
+          "targetHold": 100,
+          "siteStore": {
+            "grain": 39,
+            "textiles": 15,
+            "aetherSalt": 15,
+            "electronics": 5,
+            "timber": 12
+          }
+        }
+      }
+    },
+    "priceSnapshots": {
+      "p0": {
+        "grain": 6.146021521705234,
+        "textiles": 114.0408468512295,
+        "aetherSalt": 130.08276939223262,
+        "electronics": 231.33234108918734,
+        "timber": 274.0154445431162
+      },
+      "p1": {
+        "grain": 14.617439340397567,
+        "textiles": 64.96133486239538,
+        "aetherSalt": 57.574575194855164,
+        "electronics": 156.6638165542007,
+        "timber": 142.23587504780096
+      },
+      "p2": {
+        "grain": 24.64033624827247,
+        "textiles": 62.952305646369624,
+        "aetherSalt": 35.93038495119402,
+        "electronics": 172.75288233572877,
+        "timber": 262.0222190701204
+      },
+      "p3": {
+        "grain": 23.84673096387328,
+        "textiles": 58.30158120942407,
+        "aetherSalt": 122.8917853967136,
+        "electronics": 85.58350399312107,
+        "timber": 314.48802048938484
+      },
+      "p4": {
+        "grain": 20.946184911407627,
+        "textiles": 23.68206239888724,
+        "aetherSalt": 86.943749655855,
+        "electronics": 221.0931566947058,
+        "timber": 392.709211851114
+      },
+      "p5": {
+        "grain": 24.993037596225047,
+        "textiles": 41.22068748736944,
+        "aetherSalt": 108.97921401053294,
+        "electronics": 87.14741613523967,
+        "timber": 332.8717679260424
+      },
+      "p6": {
+        "grain": 14.69920345934565,
+        "textiles": 39.77328421716353,
+        "aetherSalt": 64.06697479262232,
+        "electronics": 172.46970146617775,
+        "timber": 265.88447090016916
+      }
+    },
+    "flowDrift": {
+      "p0": {
+        "grain": 1.1925779431661105,
+        "textiles": 0.9928630001187612,
+        "aetherSalt": 1.0739291234707302,
+        "electronics": 1.0816753422988572,
+        "timber": 0.9929503678330938
+      },
+      "p1": {
+        "grain": 1.0185195928481265,
+        "textiles": 1.0425657277373186,
+        "aetherSalt": 1.0904214567481476,
+        "electronics": 1.0719867399923244,
+        "timber": 1.1135897337766363
+      },
+      "p2": {
+        "grain": 0.7823187925964594,
+        "textiles": 0.8393818663664414,
+        "aetherSalt": 1.0014362299958142,
+        "electronics": 0.9201206416671088,
+        "timber": 1.1007879164463845
+      },
+      "p3": {
+        "grain": 1.02721320422691,
+        "textiles": 1.1484077279662421,
+        "aetherSalt": 1.1585972215634803,
+        "electronics": 1.2680658653914891,
+        "timber": 0.9742595160436915
+      },
+      "p4": {
+        "grain": 1.051235674375523,
+        "textiles": 1.0838570214419592,
+        "aetherSalt": 0.9674445104879289,
+        "electronics": 0.988472936308523,
+        "timber": 1.1092131728255767
+      },
+      "p5": {
+        "grain": 1.0670438581853026,
+        "textiles": 1.131236152779576,
+        "aetherSalt": 0.8131529695633504,
+        "electronics": 1.1497607115910147,
+        "timber": 1.0629696696596358
+      },
+      "p6": {
+        "grain": 0.829160454284653,
+        "textiles": 0.828249490391463,
+        "aetherSalt": 1.1959106665704136,
+        "electronics": 1.0904262869600205,
+        "timber": 0.7775563444316981
+      }
+    },
+    "osmosisPulse": {
+      "l0": -25.415234052922443,
+      "l1": -2.2627366568809575,
+      "l2": -10.602528477300464,
+      "l3": -5.421258529269224,
+      "l4": 3.154753788408832,
+      "l5": 14.307521128341584,
+      "l6": 10.677416292198224,
+      "l7": 4.80491013173015,
+      "l8": 4.8919604251219235,
+      "l9": -1.7535210003427313,
+      "l10": -9.720234331636954,
+      "l11": -7.135407264055902,
+      "l12": 0.6783255032168196
+    },
+    "ledger": [
+      {
+        "kind": "founding",
+        "tick": 0,
+        "portId": "p3",
+        "thalers": 2500
+      },
+      {
+        "kind": "laborFee",
+        "tick": 0,
+        "thalers": 800
+      },
+      {
+        "kind": "trade",
+        "tick": 0,
+        "shipId": "s0",
+        "portId": "p3",
+        "good": "electronics",
+        "side": "buy",
+        "qty": 10,
+        "thalers": 1152
+      },
+      {
+        "kind": "trade",
+        "tick": 0,
+        "shipId": "s0",
+        "portId": "p3",
+        "good": "grain",
+        "side": "buy",
+        "qty": 35,
+        "thalers": 471
+      },
+      {
+        "kind": "delivery",
+        "tick": 0,
+        "shipId": "s0",
+        "portId": "p3",
+        "good": "electronics",
+        "qty": 5
+      },
+      {
+        "kind": "delivery",
+        "tick": 0,
+        "shipId": "s0",
+        "portId": "p3",
+        "good": "grain",
+        "qty": 35
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 0,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 14
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 0,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 44
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 0,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 74
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 0,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 255
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 1,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 14
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 1,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 45
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 1,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 75
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 1,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 257
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 2,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 14
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 2,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 45
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 2,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 75
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 2,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 259
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 3,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 14
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 3,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 46
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 3,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 76
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 3,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 261
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 4,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 15
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 4,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 46
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 4,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 77
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 4,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 263
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 5,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 15
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 5,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 46
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 5,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 78
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 5,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 265
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 6,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 15
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 6,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 47
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 6,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 78
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 6,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 267
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 7,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 15
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 7,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 47
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 7,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 79
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 7,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 269
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 8,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 15
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 8,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 48
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 8,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 80
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 8,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 271
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 9,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 15
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 9,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 48
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 9,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 81
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 9,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 273
+      },
+      {
+        "kind": "upkeep",
+        "tick": 24,
+        "shipId": "s0",
+        "thalers": 10
+      },
+      {
+        "kind": "netWorth",
+        "tick": 24,
+        "thalers": 36046,
+        "cargoValue": 796.8572915334609,
+        "siteStoreValue": 5136.422291360611,
+        "total": 41979.27958289407
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 24,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 16
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 24,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 49
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 24,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 84
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 24,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 277
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 25,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 16
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 25,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 49
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 25,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 85
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 25,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 279
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 26,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 16
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 26,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 49
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 26,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 86
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 27,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 16
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 27,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 50
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 27,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 87
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 28,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 16
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 28,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 50
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 28,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 88
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 29,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 16
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 29,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 51
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 29,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 89
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 30,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 16
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 30,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 52
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 30,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 90
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 31,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 16
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 31,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 52
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 31,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 91
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 32,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 16
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 32,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 53
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 32,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 92
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 33,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 17
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 33,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 53
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 33,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 93
+      },
+      {
+        "kind": "upkeep",
+        "tick": 48,
+        "shipId": "s0",
+        "thalers": 10
+      },
+      {
+        "kind": "netWorth",
+        "tick": 48,
+        "thalers": 33926,
+        "cargoValue": 793.1872992714749,
+        "siteStoreValue": 7039.663934343398,
+        "total": 41758.85123361488
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 48,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 17
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 48,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 53
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 49,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 17
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 49,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 54
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 50,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 17
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 50,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 54
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 51,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 17
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 51,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 55
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 52,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 17
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 52,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 56
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 53,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 18
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 53,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 56
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 54,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 18
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 54,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 57
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 55,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 18
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 55,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 58
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 56,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 18
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 56,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 58
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 57,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 18
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 57,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 59
+      },
+      {
+        "kind": "upkeep",
+        "tick": 72,
+        "shipId": "s0",
+        "thalers": 10
+      },
+      {
+        "kind": "netWorth",
+        "tick": 72,
+        "thalers": 33181,
+        "cargoValue": 791.2832978468068,
+        "siteStoreValue": 7774.511874336568,
+        "total": 41746.795172183374
+      },
+      {
+        "kind": "rush",
+        "tick": 72,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 35,
+        "thalers": 713
+      },
+      {
+        "kind": "launch",
+        "tick": 72,
+        "shipId": "s1",
+        "portId": "p3"
+      },
+      {
+        "kind": "trade",
+        "tick": 72,
+        "shipId": "s0",
+        "portId": "p3",
+        "good": "electronics",
+        "side": "sell",
+        "qty": 5,
+        "thalers": 477
+      },
+      {
+        "kind": "upkeep",
+        "tick": 96,
+        "shipId": "s0",
+        "thalers": 10
+      },
+      {
+        "kind": "upkeep",
+        "tick": 96,
+        "shipId": "s1",
+        "thalers": 10
+      },
+      {
+        "kind": "netWorth",
+        "tick": 96,
+        "thalers": 32925,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 32925
+      },
+      {
+        "kind": "upkeep",
+        "tick": 120,
+        "shipId": "s0",
+        "thalers": 10
+      },
+      {
+        "kind": "upkeep",
+        "tick": 120,
+        "shipId": "s1",
+        "thalers": 10
+      },
+      {
+        "kind": "netWorth",
+        "tick": 120,
+        "thalers": 32905,
+        "cargoValue": 0,
+        "siteStoreValue": 0,
+        "total": 32905
+      },
+      {
+        "kind": "dockingFee",
+        "tick": 129,
+        "shipId": "s0",
+        "portId": "p0",
+        "thalers": 8
+      },
+      {
+        "kind": "laborFee",
+        "tick": 130,
+        "thalers": 700
+      },
+      {
+        "kind": "trade",
+        "tick": 130,
+        "shipId": "s0",
+        "portId": "p0",
+        "good": "timber",
+        "side": "buy",
+        "qty": 5,
+        "thalers": 1145
+      },
+      {
+        "kind": "delivery",
+        "tick": 130,
+        "shipId": "s0",
+        "portId": "p0",
+        "good": "timber",
+        "qty": 5
+      },
+      {
+        "kind": "upkeep",
+        "tick": 144,
+        "shipId": "s0",
+        "thalers": 10
+      },
+      {
+        "kind": "upkeep",
+        "tick": 144,
+        "shipId": "s1",
+        "thalers": 10
+      },
+      {
+        "kind": "netWorth",
+        "tick": 144,
+        "thalers": 31032,
+        "cargoValue": 0,
+        "siteStoreValue": 1350.7482871325706,
+        "total": 32382.74828713257
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 144,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 144,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 63
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 144,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 80
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 144,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 196
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 144,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 234
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 145,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 145,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 64
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 145,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 81
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 145,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 198
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 145,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 235
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 146,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 146,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 65
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 146,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 82
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 146,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 200
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 146,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 237
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 147,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 147,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 65
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 147,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 83
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 147,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 201
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 147,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 239
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 148,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 148,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 66
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 148,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 84
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 148,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 203
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 148,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 240
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 149,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 149,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 67
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 149,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 84
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 149,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 205
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 149,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 242
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 150,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 150,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 68
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 150,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 85
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 150,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 207
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 150,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 244
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 151,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 151,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 69
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 151,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 86
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 151,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 209
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 151,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 246
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 152,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 152,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 70
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 152,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 87
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 152,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 211
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 152,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 247
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 153,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 153,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 70
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 153,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 88
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 153,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 213
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 153,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 249
+      },
+      {
+        "kind": "rush",
+        "tick": 154,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 50,
+        "thalers": 318
+      },
+      {
+        "kind": "rush",
+        "tick": 154,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 30,
+        "thalers": 2730
+      },
+      {
+        "kind": "rush",
+        "tick": 154,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 20,
+        "thalers": 1999
+      },
+      {
+        "kind": "rush",
+        "tick": 154,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 5,
+        "thalers": 1099
+      },
+      {
+        "kind": "rush",
+        "tick": 154,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 5,
+        "thalers": 1275
+      },
+      {
+        "kind": "shipyardBuilt",
+        "tick": 154,
+        "portId": "p0"
+      },
+      {
+        "kind": "trade",
+        "tick": 154,
+        "shipId": "s0",
+        "portId": "p0",
+        "good": "grain",
+        "side": "buy",
+        "qty": 20,
+        "thalers": 130
+      },
+      {
+        "kind": "laborFee",
+        "tick": 154,
+        "thalers": 800
+      },
+      {
+        "kind": "refitStart",
+        "tick": 154,
+        "shipId": "s0",
+        "portId": "p0",
+        "thalers": 500
+      },
+      {
+        "kind": "delivery",
+        "tick": 154,
+        "shipId": "s0",
+        "portId": "p0",
+        "good": "grain",
+        "qty": 20
+      },
+      {
+        "kind": "upkeep",
+        "tick": 168,
+        "shipId": "s0",
+        "thalers": 10
+      },
+      {
+        "kind": "upkeep",
+        "tick": 168,
+        "shipId": "s1",
+        "thalers": 10
+      },
+      {
+        "kind": "netWorth",
+        "tick": 168,
+        "thalers": 16138,
+        "cargoValue": 0,
+        "siteStoreValue": 354.91796958413136,
+        "total": 16492.91796958413
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 23
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 54
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 110
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p3",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 88
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 295
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 111
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 115
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 226
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 168,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 260
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 23
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 54
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 112
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p3",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 88
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 297
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 113
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 116
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 228
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 169,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 262
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 24
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 55
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 113
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p3",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 89
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 300
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 115
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 118
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 231
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 170,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 264
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 24
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 56
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 115
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p3",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 89
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 302
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 117
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 120
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 233
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 171,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 267
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 24
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 56
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 116
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p3",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 89
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 305
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 119
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 122
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p0",
+        "good": "electronics",
+        "qty": 1,
+        "thalers": 236
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 172,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 269
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 173,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 24
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 173,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 57
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 173,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 118
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 173,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 308
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 173,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 173,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 121
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 173,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 124
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 173,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 271
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 174,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 24
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 174,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 58
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 174,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 120
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 174,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 310
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 174,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 174,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 123
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 174,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 126
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 174,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 273
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 175,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 24
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 175,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 58
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 175,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 121
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 175,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 313
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 175,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 175,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 126
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 175,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 128
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 175,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 275
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 176,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 24
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 176,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 59
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 176,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 123
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 176,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 316
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 176,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 176,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 128
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 176,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 130
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 176,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 278
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 177,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 25
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 177,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 60
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 177,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 125
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 177,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 319
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 177,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 177,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 130
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 177,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 132
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 177,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 280
+      },
+      {
+        "kind": "upkeep",
+        "tick": 192,
+        "shipId": "s0",
+        "thalers": 10
+      },
+      {
+        "kind": "upkeep",
+        "tick": 192,
+        "shipId": "s1",
+        "thalers": 10
+      },
+      {
+        "kind": "netWorth",
+        "tick": 192,
+        "thalers": 4284,
+        "cargoValue": 0,
+        "siteStoreValue": 10911.222523174933,
+        "total": 15195.222523174933
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 192,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 24
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 192,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 60
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 192,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 126
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 192,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 322
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 192,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 192,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 117
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 192,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 133
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 192,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 281
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 193,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 25
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 193,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 60
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 193,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 128
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 193,
+        "portId": "p3",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 325
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 193,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 193,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 119
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 193,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 136
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 193,
+        "portId": "p0",
+        "good": "timber",
+        "qty": 1,
+        "thalers": 283
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 194,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 25
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 194,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 61
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 194,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 130
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 194,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 194,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 121
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 194,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 138
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 195,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 25
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 195,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 62
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 195,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 132
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 195,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 195,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 123
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 195,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 141
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 196,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 25
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 196,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 63
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 196,
+        "portId": "p3",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 134
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 196,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 196,
+        "portId": "p0",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 126
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 196,
+        "portId": "p0",
+        "good": "aetherSalt",
+        "qty": 1,
+        "thalers": 143
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 197,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 25
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 197,
+        "portId": "p3",
+        "good": "textiles",
+        "qty": 1,
+        "thalers": 64
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 197,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 198,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 25
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 198,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 199,
+        "portId": "p3",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 26
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 199,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      },
+      {
+        "kind": "autoDraw",
+        "tick": 200,
+        "portId": "p0",
+        "good": "grain",
+        "qty": 1,
+        "thalers": 6
+      }
+    ],
+    "contractOffers": [
+      {
+        "id": "agrarian:p0:textiles",
+        "guildId": "agrarian",
+        "portId": "p0",
+        "good": "textiles",
+        "quotaPerPeriod": 70,
+        "periodDays": 8,
+        "minPeriods": 4,
+        "feePerPeriod": 140,
+        "tier": 2,
+        "requiredRank": 1,
+        "basis": {
+          "sourcePortId": "p4",
+          "roundTripTicks": 94,
+          "expectedTrips": 2
+        }
+      },
+      {
+        "id": "industrial:p5:grain",
+        "guildId": "industrial",
+        "portId": "p5",
+        "good": "grain",
+        "quotaPerPeriod": 70,
+        "periodDays": 15,
+        "minPeriods": 6,
+        "feePerPeriod": 210,
+        "tier": 4,
+        "requiredRank": 4,
+        "basis": {
+          "sourcePortId": "p0",
+          "roundTripTicks": 176,
+          "expectedTrips": 2
+        }
+      },
+      {
+        "id": "mining:p2:grain",
+        "guildId": "mining",
+        "portId": "p2",
+        "good": "grain",
+        "quotaPerPeriod": 70,
+        "periodDays": 17,
+        "minPeriods": 6,
+        "feePerPeriod": 210,
+        "tier": 4,
+        "requiredRank": 1,
+        "basis": {
+          "sourcePortId": "p0",
+          "roundTripTicks": 198,
+          "expectedTrips": 2
+        }
+      },
+      {
+        "id": "agrarian:p0:aetherSalt",
+        "guildId": "agrarian",
+        "portId": "p0",
+        "good": "aetherSalt",
+        "quotaPerPeriod": 70,
+        "periodDays": 17,
+        "minPeriods": 6,
+        "feePerPeriod": 210,
+        "tier": 4,
+        "requiredRank": 4,
+        "basis": {
+          "sourcePortId": "p2",
+          "roundTripTicks": 198,
+          "expectedTrips": 2
+        }
+      },
+      {
+        "id": "industrial:p3:grain",
+        "guildId": "industrial",
+        "portId": "p3",
+        "good": "grain",
+        "quotaPerPeriod": 70,
+        "periodDays": 10,
+        "minPeriods": 4,
+        "feePerPeriod": 140,
+        "tier": 2,
+        "requiredRank": 1,
+        "basis": {
+          "sourcePortId": "p0",
+          "roundTripTicks": 116,
+          "expectedTrips": 2
+        }
+      }
+    ]
+  }
+}

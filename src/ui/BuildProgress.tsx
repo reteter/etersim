@@ -1,4 +1,4 @@
-import { GOOD_IDS, GOODS, SHIP_RECIPE, type GoodId } from "../sim";
+import { amountOf, GOOD_IDS, GOODS, SHIP_RECIPE, type GoodId, type GoodsStore } from "../sim";
 
 /**
  * Per-good progress bar for an active construction site (docs/specs/E9 —
@@ -15,13 +15,13 @@ export function BuildProgress({
   siteStore,
   recipe = SHIP_RECIPE,
 }: {
-  siteStore: Record<GoodId, number>;
+  siteStore: GoodsStore;
   recipe?: Record<GoodId, number>;
 }) {
   return (
     <div className="headquarters-progress">
       {GOOD_IDS.map((good) => {
-        const have = siteStore[good] ?? 0;
+        const have = amountOf(siteStore, good);
         // Defensive (#292): a caller's recipe (e.g. a Refit's ladder step)
         // isn't guaranteed to carry every GoodId at a positive quantity —
         // don't rely on the full-recipe invariant holding forever.

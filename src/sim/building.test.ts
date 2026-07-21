@@ -12,7 +12,8 @@ import {
   LABOR_FEE,
   SHIP_RECIPE,
 } from "./building";
-import { GOOD_IDS } from "./goods";
+import { GOOD_IDS, type GoodId } from "./goods";
+import { amountOf, storeOf, withAdded } from "./goodsStore";
 import { effectiveBase, quoteBuy } from "./market";
 import { TICKS_PER_DAY } from "./region";
 import { cargoUsed, type Ship } from "./ship";
@@ -121,8 +122,8 @@ describe("auto-draw (#81)", () => {
     const store = w.company.headquarters!.buildOrder?.siteStore;
     if (store) {
       for (const good of GOOD_IDS) {
-        expect(store[good]).toBeLessThanOrEqual(AUTO_DRAW_PER_DAY);
-        expect(store[good]).toBeLessThanOrEqual(SHIP_RECIPE[good]);
+        expect(amountOf(store, good)).toBeLessThanOrEqual(AUTO_DRAW_PER_DAY);
+        expect(amountOf(store, good)).toBeLessThanOrEqual(SHIP_RECIPE[good]);
       }
     }
     expect(w.company.thalers).toBeGreaterThanOrEqual(0);
@@ -134,7 +135,7 @@ describe("auto-draw (#81)", () => {
       const drawnQty = autoDrawEvents
         .filter((e) => e.kind === "autoDraw" && e.good === good)
         .reduce((sum, e) => sum + (e.kind === "autoDraw" ? e.qty : 0), 0);
-      expect(drawnQty).toBe(store?.[good] ?? 0);
+      expect(drawnQty).toBe(store ? amountOf(store, good) : 0);
     }
   });
 
@@ -147,7 +148,7 @@ describe("auto-draw (#81)", () => {
     expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE);
     for (let t = 0; t < TICKS_PER_DAY; t++) w = tick(w, []);
     expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE);
-    for (const good of GOOD_IDS) expect(w.company.headquarters!.buildOrder!.siteStore[good]).toBe(0);
+    for (const good of GOOD_IDS) expect(amountOf(w.company.headquarters!.buildOrder!.siteStore, good)).toBe(0);
     expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(false); // no movement, no event
   });
 
@@ -171,7 +172,7 @@ describe("deliver (#81)", () => {
     const portId = hqPortId(w0);
     let w = applyCommand(w0, { kind: "foundHeadquarters", portId });
     // Give s0 a full hold of electronics (need is only 5).
-    const laden: Ship = { ...shipOf(w), cargo: { ...shipOf(w).cargo, electronics: 50 } };
+    const laden: Ship = { ...shipOf(w), cargo: withAdded(shipOf(w).cargo, "electronics", 50) };
     w = {
       ...w,
       company: {
@@ -181,8 +182,8 @@ describe("deliver (#81)", () => {
       },
     };
     const after = applyCommand(w, { kind: "deliver", shipId: laden.id, good: "electronics" });
-    expect(after.company.headquarters!.buildOrder!.siteStore.electronics).toBe(SHIP_RECIPE.electronics);
-    expect(after.company.ships[0].cargo.electronics).toBe(50 - SHIP_RECIPE.electronics);
+    expect(amountOf(after.company.headquarters!.buildOrder!.siteStore, "electronics")).toBe(SHIP_RECIPE.electronics);
+    expect(amountOf(after.company.ships[0].cargo, "electronics")).toBe(50 - SHIP_RECIPE.electronics);
     expect(after.ledger.length).toBe(w.ledger.length + 1);
     expect(after.ledger[after.ledger.length - 1]).toEqual({
       kind: "delivery",
@@ -202,7 +203,7 @@ describe("deliver (#81)", () => {
       ...w,
       company: {
         ...w.company,
-        ships: [{ ...shipOf(w), cargo: { ...shipOf(w).cargo, timber: 10 } }],
+        ships: [{ ...shipOf(w), cargo: withAdded(shipOf(w).cargo, "timber", 10) }],
         headquarters: { portId: other, buildOrder: { siteStore: emptySiteStore() } },
       },
     };
@@ -214,8 +215,8 @@ describe("deliver (#81)", () => {
     const w0 = rich("deliver3", HEADQUARTERS_COST + 10);
     const portId = hqPortId(w0);
     let w = applyCommand(w0, { kind: "foundHeadquarters", portId });
-    const full = { ...emptySiteStore(), ...SHIP_RECIPE }; // recipe already complete for electronics
-    const laden: Ship = { ...shipOf(w), cargo: { ...shipOf(w).cargo, electronics: 5 } };
+    const full = storeOf(SHIP_RECIPE); // recipe already complete for electronics
+    const laden: Ship = { ...shipOf(w), cargo: withAdded(shipOf(w).cargo, "electronics", 5) };
     w = {
       ...w,
       company: {
@@ -241,9 +242,11 @@ describe("rush (#81)", () => {
     const port = before.region.ports.find((p) => p.id === portId)!;
 
     // Expected: each good bought min(need, floor(stock)) at its quoteBuy.
+    // A plain Record accumulator, not a GoodsStore — this is a test-local
+    // expected value, never itself part of any World state.
     let expectedCost = 0;
     let expectedEventCount = 0;
-    const expectedStore = emptySiteStore();
+    const expectedStore: Partial<Record<GoodId, number>> = {};
     for (const good of GOOD_IDS) {
       const entry = port.market[good];
       const q = Math.min(SHIP_RECIPE[good], Math.floor(entry.stock));
@@ -258,7 +261,7 @@ describe("rush (#81)", () => {
     // If the recipe didn't complete, the build order still exists to inspect.
     if (after.company.headquarters!.buildOrder) {
       for (const good of GOOD_IDS) {
-        expect(after.company.headquarters!.buildOrder!.siteStore[good]).toBe(expectedStore[good]);
+        expect(amountOf(after.company.headquarters!.buildOrder!.siteStore, good)).toBe(expectedStore[good] ?? 0);
       }
     }
     expect(after.company.thalers).toBe(before.company.thalers - expectedCost);
@@ -411,8 +414,8 @@ describe("launch (#81)", () => {
     const portId = hqPortId(w0);
     let w = applyCommand(w0, { kind: "foundHeadquarters", portId });
     // Site one electronics short of the full recipe; ship holds the last unit.
-    const nearlyDone = { ...emptySiteStore(), ...SHIP_RECIPE, electronics: SHIP_RECIPE.electronics - 1 };
-    const laden: Ship = { ...shipOf(w), cargo: { ...shipOf(w).cargo, electronics: 5 } };
+    const nearlyDone = storeOf({ ...SHIP_RECIPE, electronics: SHIP_RECIPE.electronics - 1 });
+    const laden: Ship = { ...shipOf(w), cargo: withAdded(shipOf(w).cargo, "electronics", 5) };
     w = {
       ...w,
       company: {

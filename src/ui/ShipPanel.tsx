@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  amountOf,
   cargoUsed,
   etaTicks,
   GOOD_IDS,
@@ -70,7 +71,7 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
 
   const name = (id: PortId) => portName(world.region, id);
   const used = cargoUsed(ship);
-  const loaded = GOOD_IDS.filter((good) => ship.cargo[good] > 0);
+  const loaded = GOOD_IDS.filter((good) => amountOf(ship.cargo, good) > 0);
   const location = ship.location;
 
   // Opens the named Port's panel — the same `select` action the map's port
@@ -114,7 +115,7 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
           {loaded.map((good) => (
             <li key={good} className="hold__item">
               <span>{GOODS[good].name}</span>
-              <span>{ship.cargo[good]}</span>
+              <span>{amountOf(ship.cargo, good)}</span>
             </li>
           ))}
         </ul>

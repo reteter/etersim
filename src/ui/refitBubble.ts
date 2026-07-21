@@ -1,4 +1,5 @@
 import {
+  amountOf,
   GOOD_IDS,
   refitRecipe,
   type GoodId,
@@ -53,7 +54,7 @@ export function refitBubbleData(
   let required = 0;
   const remaining: RefitBubbleRemaining[] = [];
   for (const good of GOOD_IDS) {
-    const have = refitOrder.siteStore[good] ?? 0;
+    const have = amountOf(refitOrder.siteStore, good);
     const need = recipe[good];
     filled += Math.min(have, need);
     required += need;

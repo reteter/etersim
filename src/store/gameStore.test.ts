@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  amountOf,
   createWorld,
   effectiveBase,
   etaTicks,
@@ -82,10 +83,10 @@ describe("gameStore", () => {
 
     const after = store().world!;
     expect(after.company.thalers).toBe(world.company.thalers - cost);
-    expect(after.company.ships[0].cargo.grain).toBe(5);
+    expect(amountOf(after.company.ships[0].cargo, "grain")).toBe(5);
 
     store().advance(MS_PER_TICK_AT_1X); // must not re-apply
-    expect(store().world!.company.ships[0].cargo.grain).toBe(5);
+    expect(amountOf(store().world!.company.ships[0].cargo, "grain")).toBe(5);
   });
 
   it("dispatch applies immediately even while paused", () => {
@@ -93,7 +94,7 @@ describe("gameStore", () => {
     const shipId = store().world!.company.ships[0].id;
     store().setSpeed("paused");
     store().dispatch({ kind: "buy", shipId, good: "grain", qty: 1 });
-    expect(store().world!.company.ships[0].cargo.grain).toBe(1);
+    expect(amountOf(store().world!.company.ships[0].cargo, "grain")).toBe(1);
   });
 
   it("rejects an invalid command, leaving world unchanged", () => {

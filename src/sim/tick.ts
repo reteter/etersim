@@ -2,6 +2,7 @@ import { CONSTRUCTION_RESERVE, runBuildSiteAutoDraw } from "./building";
 import { applyCommand, type Command } from "./commands";
 import { refreshContractOffers, settleContracts } from "./contract";
 import { GOOD_IDS, type GoodId } from "./goods";
+import { amountOf } from "./goodsStore";
 import { UPKEEP_PER_DAY } from "./guild";
 import { appendLedgerEvent, computeNetWorth } from "./ledger";
 import { effectiveBase, marketTick, maxAffordableQty, NEUTRAL_MODIFIERS, unitMargin } from "./market";
@@ -113,7 +114,7 @@ function executeStop(
       );
       if (qty > 0) w = applyCommand(w, { kind: "buy", shipId, good: order.good, qty, routeId });
     } else if (order.kind === "sell") {
-      const have = ship.cargo[order.good];
+      const have = amountOf(ship.cargo, order.good);
       const qty = order.qty === undefined ? have : Math.min(order.qty, have);
       if (qty > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty, routeId });
     } else {

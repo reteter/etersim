@@ -1,9 +1,11 @@
 import { GOOD_IDS, type GoodId } from "./goods";
+import { amountOf } from "./goodsStore";
 import type { GuildId } from "./guild";
 import { effectiveBase, price } from "./market";
 import type { PortId, Region } from "./region";
 import type { RouteId } from "./route";
 import type { ShipId } from "./ship";
+import { companyStores, readStore } from "./transfer";
 import type { World } from "./world";
 
 /**
@@ -197,25 +199,40 @@ export interface NetWorthBreakdown {
  * fix), all goods valued at the region-average mid price. Ships and buildings
  * carry no book value by design — the company-value chart tells the honest
  * investment story (a build is a visible dip, then steeper growth).
+ *
+ * E13.0 (#307, ADR-0008): walks `companyStores(world)` instead of a
+ * hand-written stores array (the F4 silent-failure site, Professor review —
+ * a forgotten entry here under-reported company value with no error, no
+ * failing test, no in-game symptom). `cargoValue`/`siteStoreValue` stay
+ * their pre-#307 shapes (a `hold` ref feeds the former, every other kind the
+ * latter) — reshaping the breakdown itself is E13's job, not this one.
+ *
+ * Accumulates each good's term **directly into the running total**, not via
+ * an intermediate per-store sum — floating-point addition is not
+ * associative, and grouping terms per store before folding them into
+ * `cargoValue`/`siteStoreValue` produced a byte-identical-save regression
+ * (C2, `persistence.test.ts`) that the digest test (C1) couldn't see, since
+ * its `fmtFloat` rounds to 6 decimals and the drift was in the 15th digit —
+ * the same ULP class as incident 0023. This loop's term order exactly
+ * matches the pre-#307 two-separate-loops shape: every ship's cargo (in
+ * fleet order, GOOD_IDS order) folds into `cargoValue`, then every active
+ * site's store (HQ, Shipyard, Refit — `companyStores`'s fixed order) folds
+ * into `siteStoreValue`, one addition per good, same as before.
  */
 export function computeNetWorth(world: World): NetWorthBreakdown {
   const mids = {} as Record<GoodId, number>;
   for (const good of GOOD_IDS) mids[good] = regionAverageMid(world.region, good);
 
   let cargoValue = 0;
-  for (const ship of world.company.ships) {
-    for (const good of GOOD_IDS) cargoValue += ship.cargo[good] * mids[good];
-  }
-
   let siteStoreValue = 0;
-  const stores = [
-    world.company.headquarters?.buildOrder?.siteStore,
-    world.company.shipyard?.site?.siteStore,
-    world.company.shipyard?.refitOrder?.siteStore,
-  ];
-  for (const store of stores) {
+  for (const ref of companyStores(world)) {
+    const store = readStore(world, ref);
     if (!store) continue;
-    for (const good of GOOD_IDS) siteStoreValue += (store[good] ?? 0) * mids[good];
+    for (const good of GOOD_IDS) {
+      const value = amountOf(store, good) * mids[good];
+      if (ref.kind === "hold") cargoValue += value;
+      else siteStoreValue += value;
+    }
   }
 
   const thalers = world.company.thalers;

@@ -1,4 +1,5 @@
 import { GOOD_IDS, type GoodId } from "./goods";
+import { amountOf, emptyStore, withAdded, type GoodsStore } from "./goodsStore";
 import { appendLedgerEvent, appendLedgerEvents, type LedgerEvent } from "./ledger";
 import { effectiveBase, estimateBuy, maxAffordableQty, quoteBuy } from "./market";
 import type { Port, PortId } from "./region";
@@ -42,7 +43,7 @@ export const LABOR_FEE = 800;
 export const AUTO_DRAW_PER_DAY = 10;
 
 export interface BuildOrder {
-  readonly siteStore: Record<GoodId, number>;
+  readonly siteStore: GoodsStore;
 }
 
 export interface Headquarters {
@@ -50,10 +51,9 @@ export interface Headquarters {
   readonly buildOrder?: BuildOrder;
 }
 
-export function emptySiteStore(): Record<GoodId, number> {
-  const store = {} as Record<GoodId, number>;
-  for (const good of GOOD_IDS) store[good] = 0;
-  return store;
+/** Thin wrapper kept for existing call sites (ADR-0008 consequence). */
+export function emptySiteStore(): GoodsStore {
+  return emptyStore();
 }
 
 /** A construction in progress at a port: a target recipe, materials gathered
@@ -62,7 +62,7 @@ export function emptySiteStore(): Record<GoodId, number> {
  *  (E14 spec — "#99 first: the construction-site seam"). */
 export interface ConstructionSite {
   readonly recipe: Record<GoodId, number>;
-  readonly siteStore: Record<GoodId, number>;
+  readonly siteStore: GoodsStore;
   readonly portId: PortId;
 }
 
@@ -72,22 +72,22 @@ export function siteRemainingNeed(
   site: Pick<ConstructionSite, "recipe" | "siteStore">,
   good: GoodId,
 ): number {
-  return Math.max(0, site.recipe[good] - (site.siteStore[good] ?? 0));
+  return Math.max(0, site.recipe[good] - amountOf(site.siteStore, good));
 }
 
 /** Whether every good in `site`'s recipe has been fully gathered. Pure. */
 export function isSiteComplete(site: Pick<ConstructionSite, "recipe" | "siteStore">): boolean {
   for (const good of GOOD_IDS) {
-    if ((site.siteStore[good] ?? 0) < site.recipe[good]) return false;
+    if (amountOf(site.siteStore, good) < site.recipe[good]) return false;
   }
   return true;
 }
 
-export function remainingNeed(siteStore: Record<GoodId, number>, good: GoodId): number {
+export function remainingNeed(siteStore: GoodsStore, good: GoodId): number {
   return siteRemainingNeed({ recipe: SHIP_RECIPE, siteStore }, good);
 }
 
-export function isRecipeComplete(siteStore: Record<GoodId, number>): boolean {
+export function isRecipeComplete(siteStore: GoodsStore): boolean {
   return isSiteComplete({ recipe: SHIP_RECIPE, siteStore });
 }
 
@@ -118,22 +118,21 @@ export function autoDrawCapForDayTick(dayTick: number): number {
 }
 
 /** Move min(cargo, remaining need) of one good into a site's siteStore, per
- *  its recipe. Pure; shared by the deliver command (commands.ts) for both
- *  the Headquarters build site and construction sites in general. */
+ *  its recipe. Pure. Superseded as `deliver`'s own move by
+ *  `transfer.ts`'s `resolveDeliveryTarget` + `moveOwnGoods` (E13.0 #307), but
+ *  kept — and still directly unit-tested (`constructionSite.test.ts`) — as
+ *  the generic engine's own read-only "what would a delivery of `good` do"
+ *  primitive. */
 export function applyDeliveryToConstructionSite(
   site: Pick<ConstructionSite, "recipe" | "siteStore">,
-  cargo: Record<GoodId, number>,
+  cargo: GoodsStore,
   good: GoodId,
-): { readonly siteStore: Record<GoodId, number>; readonly moved: number } {
+): { readonly siteStore: GoodsStore; readonly moved: number } {
   const need = siteRemainingNeed(site, good);
-  const have = cargo[good] ?? 0;
+  const have = amountOf(cargo, good);
   const moved = Math.min(need, have);
   if (moved <= 0) return { siteStore: site.siteStore, moved: 0 };
-  const next: Record<GoodId, number> = {
-    ...site.siteStore,
-    [good]: (site.siteStore[good] ?? 0) + moved,
-  };
-  return { siteStore: next, moved };
+  return { siteStore: withAdded(site.siteStore, good, moved), moved };
 }
 
 /** One good's line in a rush preview: how many units, at what total cost. */
@@ -185,7 +184,7 @@ export function quoteConstructionSiteRush(
  *  spend, and the Ledger events the caller should append. Pure; shared shape
  *  for `runBuildSiteAutoDraw` and `rushBuild` (commands.ts). */
 export interface SiteDrawResult {
-  readonly siteStore: Record<GoodId, number>;
+  readonly siteStore: GoodsStore;
   readonly port: Port;
   readonly thalers: number;
   readonly events: readonly LedgerEvent[];
@@ -210,7 +209,7 @@ export function applyRushQuoteToSite(
   for (const line of quote.lines) {
     const entry = nextPort.market[line.good];
     purse -= line.thalers;
-    siteStore = { ...siteStore, [line.good]: (siteStore[line.good] ?? 0) + line.qty };
+    siteStore = withAdded(siteStore, line.good, line.qty);
     nextPort = {
       ...nextPort,
       market: { ...nextPort.market, [line.good]: { ...entry, stock: entry.stock - line.qty } },
@@ -342,7 +341,7 @@ export function drawConstructionSite(
     if (cost === null || cost > purse - CONSTRUCTION_RESERVE) continue; // stall silently at the Reserve (#122)
 
     purse -= cost;
-    siteStore = { ...siteStore, [good]: (siteStore[good] ?? 0) + buyQty };
+    siteStore = withAdded(siteStore, good, buyQty);
     nextPort = {
       ...nextPort,
       market: { ...nextPort.market, [good]: { ...entry, stock: entry.stock - buyQty } },
@@ -389,7 +388,7 @@ export function runBuildSiteAutoDraw(world: World): World {
  *  Reserve. `placeBuildOrder` (ship construction, commands.ts) is the first
  *  caller; future Shipyard/guild-building commands share this shape. */
 export interface CommissionResult {
-  readonly siteStore: Record<GoodId, number>;
+  readonly siteStore: GoodsStore;
   readonly thalers: number;
 }
 

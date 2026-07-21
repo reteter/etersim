@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CONSTRUCTION_RESERVE, HEADQUARTERS_COST, SHIP_RECIPE } from "./building";
 import { applyCommand } from "./commands";
 import { GOOD_IDS } from "./goods";
+import { amountOf, storeOf, withAdded } from "./goodsStore";
 import type { Route } from "./route";
 import { emptyCargo, isRouteActive, type Ship } from "./ship";
 import {
@@ -257,7 +258,7 @@ describe("Shipyard construction auto-draw/deliver/rush (#286)", () => {
     // guarded `if (store)`, which would pass vacuously (and silently stop
     // checking anything) if the site had already cleared (incident 0005).
     expect(store).toBeDefined();
-    for (const good of GOOD_IDS) expect(store![good]).toBeLessThanOrEqual(24);
+    for (const good of GOOD_IDS) expect(amountOf(store!, good)).toBeLessThanOrEqual(24);
     expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(true);
   });
 
@@ -267,7 +268,7 @@ describe("Shipyard construction auto-draw/deliver/rush (#286)", () => {
     expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE);
     for (let t = 0; t < 24; t++) w = tick(w, []);
     expect(w.company.thalers).toBe(CONSTRUCTION_RESERVE);
-    for (const good of GOOD_IDS) expect(w.company.shipyard!.site!.siteStore[good]).toBe(0);
+    for (const good of GOOD_IDS) expect(amountOf(w.company.shipyard!.site!.siteStore, good)).toBe(0);
   });
 
   it("deliver fills the Shipyard's own site from a docked Company ship", () => {
@@ -279,15 +280,15 @@ describe("Shipyard construction auto-draw/deliver/rush (#286)", () => {
       ...w1,
       company: {
         ...w1.company,
-        ships: w1.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: { ...s.cargo, timber: 20 } } : s)),
+        ships: w1.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: withAdded(s.cargo, "timber", 20) } : s)),
       },
     };
     const dockedLaden = dockShipAt(laden, portId, shipId);
     const need = SHIPYARD_RECIPE.timber;
     const after = applyCommand(dockedLaden, { kind: "deliver", shipId, good: "timber" });
     const moved = Math.min(need, 20);
-    expect(after.company.shipyard!.site!.siteStore.timber).toBe(moved);
-    expect(after.company.ships.find((s) => s.id === shipId)!.cargo.timber).toBe(20 - moved);
+    expect(amountOf(after.company.shipyard!.site!.siteStore, "timber")).toBe(moved);
+    expect(amountOf(after.company.ships.find((s) => s.id === shipId)!.cargo, "timber")).toBe(20 - moved);
     expect(after.ledger[after.ledger.length - 1]).toEqual({
       kind: "delivery",
       tick: dockedLaden.tick,
@@ -317,7 +318,7 @@ describe("Shipyard construction auto-draw/deliver/rush (#286)", () => {
     // world — the fixture only needs a same-port HQ site that's already
     // full on timber, not a real second build-to-completion.
     w = applyCommand(w, { kind: "commissionShipyard", portId: samePortId });
-    const hqSiteStore = { ...emptyCargo(), timber: SHIP_RECIPE.timber };
+    const hqSiteStore = storeOf({ timber: SHIP_RECIPE.timber });
     w = { ...w, company: { ...w.company, headquarters: { portId: samePortId, buildOrder: { siteStore: hqSiteStore } } } };
 
     const shipId = w.company.ships[0].id;
@@ -325,16 +326,16 @@ describe("Shipyard construction auto-draw/deliver/rush (#286)", () => {
       ...w,
       company: {
         ...w.company,
-        ships: w.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: { ...s.cargo, timber: 50 } } : s)),
+        ships: w.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: withAdded(s.cargo, "timber", 50) } : s)),
       },
     };
     const dockedLaden = dockShipAt(laden, samePortId, shipId);
     const need = SHIPYARD_RECIPE.timber;
 
     const after = applyCommand(dockedLaden, { kind: "deliver", shipId, good: "timber" });
-    expect(after.company.shipyard!.site!.siteStore.timber).toBe(need);
-    expect(after.company.headquarters!.buildOrder!.siteStore.timber).toBe(SHIP_RECIPE.timber); // untouched
-    expect(after.company.ships.find((s) => s.id === shipId)!.cargo.timber).toBe(50 - need);
+    expect(amountOf(after.company.shipyard!.site!.siteStore, "timber")).toBe(need);
+    expect(amountOf(after.company.headquarters!.buildOrder!.siteStore, "timber")).toBe(SHIP_RECIPE.timber); // untouched
+    expect(amountOf(after.company.ships.find((s) => s.id === shipId)!.cargo, "timber")).toBe(50 - need);
   });
 
   it("computeShipyardRushQuote previews exactly what rushShipyard charges", () => {
@@ -611,13 +612,13 @@ describe("deliver to the refit site (#275)", () => {
     const shipyardPortId = w0.company.shipyard!.portId;
     // Active HQ build at the SAME port, already full on electronics (need 0)
     // but incomplete overall — the pre-fix code swallowed the delivery here.
-    const hqSiteStore = { ...emptyCargo(), electronics: SHIP_RECIPE.electronics };
+    const hqSiteStore = storeOf({ electronics: SHIP_RECIPE.electronics });
     const ferry: Ship = {
       id: "ferry",
       name: "Ferry",
       hold: 50,
       baseHold: 50,
-      cargo: { ...emptyCargo(), electronics: 50 },
+      cargo: storeOf({ electronics: 50 }),
       location: { kind: "docked", portId: shipyardPortId },
     };
     const w: World = {
@@ -632,9 +633,9 @@ describe("deliver to the refit site (#275)", () => {
     const need = refitRecipe(targetShip).electronics;
 
     const after = applyCommand(w, { kind: "deliver", shipId: "ferry", good: "electronics" });
-    expect(after.company.shipyard!.refitOrder!.siteStore.electronics).toBe(need);
-    expect(after.company.headquarters!.buildOrder!.siteStore.electronics).toBe(SHIP_RECIPE.electronics);
-    expect(after.company.ships.find((s) => s.id === "ferry")!.cargo.electronics).toBe(50 - need);
+    expect(amountOf(after.company.shipyard!.refitOrder!.siteStore, "electronics")).toBe(need);
+    expect(amountOf(after.company.headquarters!.buildOrder!.siteStore, "electronics")).toBe(SHIP_RECIPE.electronics);
+    expect(amountOf(after.company.ships.find((s) => s.id === "ferry")!.cargo, "electronics")).toBe(50 - need);
   });
 
   it("moves min(cargo, remaining need) into the RefitOrder's siteStore from any Company ship", () => {
@@ -647,7 +648,7 @@ describe("deliver to the refit site (#275)", () => {
       name: "Ferry",
       hold: 50,
       baseHold: 50,
-      cargo: { ...emptyCargo(), electronics: 50 },
+      cargo: storeOf({ electronics: 50 }),
       location: { kind: "docked", portId: shipyardPortId },
     };
     const w = { ...w0, company: { ...w0.company, ships: [...w0.company.ships, ferry] } };
@@ -655,8 +656,8 @@ describe("deliver to the refit site (#275)", () => {
     const need = refitRecipe(targetShip).electronics;
 
     const after = applyCommand(w, { kind: "deliver", shipId: "ferry", good: "electronics" });
-    expect(after.company.shipyard!.refitOrder!.siteStore.electronics).toBe(need);
-    expect(after.company.ships.find((s) => s.id === "ferry")!.cargo.electronics).toBe(50 - need);
+    expect(amountOf(after.company.shipyard!.refitOrder!.siteStore, "electronics")).toBe(need);
+    expect(amountOf(after.company.ships.find((s) => s.id === "ferry")!.cargo, "electronics")).toBe(50 - need);
     expect(after.ledger[after.ledger.length - 1]).toEqual({
       kind: "delivery",
       tick: w.tick,
@@ -676,11 +677,11 @@ describe("deliver to the refit site (#275)", () => {
       ...w0,
       company: {
         ...w0.company,
-        ships: w0.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: { ...s.cargo, timber: 20 } } : s)),
+        ships: w0.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: withAdded(s.cargo, "timber", 20) } : s)),
       },
     };
     const after = applyCommand(laden, { kind: "deliver", shipId, good: "timber" });
-    expect(after.company.shipyard!.refitOrder!.siteStore.timber).toBeGreaterThan(0);
+    expect(amountOf(after.company.shipyard!.refitOrder!.siteStore, "timber")).toBeGreaterThan(0);
   });
 
   it("is a no-op away from the Shipyard port and with no active RefitOrder", () => {
@@ -690,7 +691,7 @@ describe("deliver to the refit site (#275)", () => {
       ...w0,
       company: {
         ...w0.company,
-        ships: w0.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: { ...s.cargo, timber: 20 } } : s)),
+        ships: w0.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: withAdded(s.cargo, "timber", 20) } : s)),
       },
     };
     expect(applyCommand(laden, { kind: "deliver", shipId, good: "timber" })).toBe(laden);
@@ -709,7 +710,7 @@ describe("Shipyard auto-draw (#275)", () => {
     // guarded `if (store)`, which would pass vacuously (and silently stop
     // checking anything) if the site had already cleared (incident 0005).
     expect(store).toBeDefined();
-    for (const good of GOOD_IDS) expect(store![good]).toBeLessThanOrEqual(24);
+    for (const good of GOOD_IDS) expect(amountOf(store!, good)).toBeLessThanOrEqual(24);
     expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(true);
   });
 
@@ -726,7 +727,7 @@ describe("Shipyard auto-draw (#275)", () => {
     let stepped = w;
     for (let t = 0; t < 24; t++) stepped = tick(stepped, []);
     expect(stepped.company.thalers).toBe(CONSTRUCTION_RESERVE);
-    for (const good of GOOD_IDS) expect(stepped.company.shipyard!.refitOrder!.siteStore[good]).toBe(0);
+    for (const good of GOOD_IDS) expect(amountOf(stepped.company.shipyard!.refitOrder!.siteStore, good)).toBe(0);
   });
 
   it("both HQ build and Shipyard refit auto-draw in the same tick, sharing (and respecting) the purse", () => {
@@ -756,8 +757,10 @@ describe("Shipyard auto-draw (#275)", () => {
       w = tick(w, []);
       expect(w.company.thalers).toBeGreaterThanOrEqual(CONSTRUCTION_RESERVE);
     }
-    const hqDrawn = GOOD_IDS.some((g) => (w.company.headquarters?.buildOrder?.siteStore[g] ?? 0) > 0);
-    const yardDrawn = GOOD_IDS.some((g) => (w.company.shipyard?.refitOrder?.siteStore[g] ?? 0) > 0);
+    const hqStore = w.company.headquarters?.buildOrder?.siteStore;
+    const yardStore = w.company.shipyard?.refitOrder?.siteStore;
+    const hqDrawn = GOOD_IDS.some((g) => hqStore !== undefined && amountOf(hqStore, g) > 0);
+    const yardDrawn = GOOD_IDS.some((g) => yardStore !== undefined && amountOf(yardStore, g) > 0);
     expect(hqDrawn).toBe(true);
     expect(yardDrawn).toBe(true);
   });
@@ -848,7 +851,7 @@ describe("Refit completion (#275)", () => {
       ...w0,
       company: {
         ...w0.company,
-        ships: w0.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: { ...s.cargo, grain: 3 } } : s)),
+        ships: w0.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: withAdded(s.cargo, "grain", 3) } : s)),
       },
     };
     let after = w;
@@ -857,7 +860,7 @@ describe("Refit completion (#275)", () => {
       after = applyCommand(after, { kind: "rushRefit" });
       if (after.company.shipyard!.refitOrder) after = tick(after, []);
     }
-    expect(after.company.ships.find((s) => s.id === shipId)!.cargo.grain).toBe(3);
+    expect(amountOf(after.company.ships.find((s) => s.id === shipId)!.cargo, "grain")).toBe(3);
   });
 });
 

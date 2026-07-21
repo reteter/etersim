@@ -4,12 +4,14 @@ import {
   createWorld,
   CONSTRUCTION_RESERVE,
   effectiveBase,
+  emptyStore,
   GOOD_IDS,
   HEADQUARTERS_COST,
   LABOR_FEE,
   quoteBuy,
   SHIP_RECIPE,
   SHIPYARD_RECIPE,
+  storeOf,
   tick,
   type ConstructionSite,
   type World,
@@ -65,7 +67,7 @@ describe("deriveStallReason", () => {
   it("is null once the site store fully covers the recipe (no remaining need)", () => {
     let w = foundedAndPlaced("stall-complete", 1_000_000);
     const headquarters = w.company.headquarters!;
-    const full = { ...SHIP_RECIPE };
+    const full = storeOf(SHIP_RECIPE);
     w = {
       ...w,
       tick: 0,
@@ -136,7 +138,7 @@ describe("deriveSiteStallReason", () => {
       tick: 0,
       company: {
         ...w.company,
-        shipyard: { portId: shipyard.portId, site: { siteStore: { ...SHIPYARD_RECIPE } } },
+        shipyard: { portId: shipyard.portId, site: { siteStore: storeOf(SHIPYARD_RECIPE) } },
       },
     };
     expect(deriveSiteStallReason(w, shipyardSite(w))).toBeNull();
@@ -146,7 +148,7 @@ describe("deriveSiteStallReason", () => {
     const w = commissionedShipyard("site-stall-noport", 1_000_000);
     const bogusSite: ConstructionSite = {
       recipe: SHIPYARD_RECIPE,
-      siteStore: { grain: 0, textiles: 0, aetherSalt: 0, electronics: 0, timber: 0 },
+      siteStore: emptyStore(),
       portId: "nope" as never,
     };
     expect(deriveSiteStallReason({ ...w, tick: 0 }, bogusSite)).toBeNull();

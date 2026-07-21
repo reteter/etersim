@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   createWorld,
   tick,
+  totalHeld,
   type ContractOffer,
   type World,
 } from "../sim";
+import { runGoldenScenario } from "../sim/e13-0-golden-scenario";
+import goldenSaveFixture from "./e13-0-golden-save.fixture.json?raw";
 import {
   AUTOSAVE_KEY,
   clearAutosave,
@@ -238,7 +241,7 @@ describe("persistence", () => {
     // freshly-opened empty one).
     expect(world.company.shipyard?.site).toBeUndefined(); // activated
     expect(world.company.shipyard?.refitOrder).toBeDefined();
-    const anyDrawn = Object.values(world.company.shipyard!.refitOrder!.siteStore).some((qty) => qty > 0);
+    const anyDrawn = totalHeld(world.company.shipyard!.refitOrder!.siteStore) > 0;
     expect(anyDrawn).toBe(true);
     const restored = parseWorldJson(exportWorldJson(world));
     expect(restored).toEqual(world);
@@ -250,7 +253,7 @@ describe("persistence", () => {
     // Preconditions: the fixture actually landed with the Shipyard's own
     // site still active (not yet built) and having gathered something.
     expect(world.company.shipyard?.site).toBeDefined();
-    const anyDrawn = Object.values(world.company.shipyard!.site!.siteStore).some((qty) => qty > 0);
+    const anyDrawn = totalHeld(world.company.shipyard!.site!.siteStore) > 0;
     expect(anyDrawn).toBe(true);
     const restored = parseWorldJson(exportWorldJson(world));
     expect(restored).toEqual(world);
@@ -382,4 +385,48 @@ describe("persistence", () => {
       expect(loadAutosave(storage)).toBeNull();
     });
   });
+
+  // E13.0 (#307, docs/specs/E13.0-goods-store.md §Testing, C2): byte-identical
+  // save round-trip. `e13-0-golden-save.fixture.json` was generated on `main`
+  // @ b3ae530 (pre-#307, the GoodsStore refactor) on a Windows machine by
+  // running the exact same golden scenario (`e13-0-equivalence.test.ts`'s C1
+  // fixture) through `exportWorldJson` and committing the output verbatim —
+  // the same generate-once-on-main discipline C1's digest fixture uses.
+  // `GoodsStore` is a compile-time-only brand over the same on-disk
+  // `Record<GoodId, number>` (ADR-0008/spec §Persistence), so the refactored
+  // `exportWorldJson` output for the identical scenario must match this
+  // fixture — deep-equal, not a raw string compare: `market.ts`'s price
+  // curve uses `** PRICE_CURVE_EXPONENT` (a non-integer exponent), and
+  // `Math.pow`/`**` is not guaranteed bit-identical across platforms/Node/V8
+  // versions the way `+ - * /` are (the exact mechanism behind incident 0023,
+  // which hit the C1 digest fixture the same way). CI (Linux) reproduced the
+  // same failure class here — bare `toBe` on the raw JSON string compared
+  // platform ULP noise (`182.97495270109954` vs `...57`, last 1-2
+  // significant digits) rather than behavior. `exportWorldJson`'s own output
+  // stays full-precision (it's the real save/load format a player's save
+  // goes through) — only this comparison rounds, via `roundFloats`, both
+  // sides parsed back to objects so the rounding never touches the actual
+  // save format. Still the one test that would catch e.g. `storeOf` filling
+  // in the wrong `GOOD_IDS` order — that kind of bug lands a wrong value at
+  // a completely different (non-ULP) digit and stays caught after rounding.
+  it("exports the golden scenario byte-identical (mod. cross-platform float ULP) to the pre-refactor fixture (E13.0 #307, spec C2)", () => {
+    const json = exportWorldJson(runGoldenScenario());
+    expect(roundFloats(JSON.parse(json))).toEqual(roundFloats(JSON.parse(goldenSaveFixture)));
+  });
 });
+
+/** Recursively rounds every number leaf to `decimals` places (default 9 —
+ *  tight enough that a real divergence (wrong good, wrong store, dropped a
+ *  delivery) still lands a large, obvious mismatch at a completely different
+ *  digit, loose enough to absorb `Math.pow`/`**`'s ~15th-significant-digit
+ *  cross-platform ULP noise, incident 0023's exact mechanism). Applied to
+ *  both sides of the C2 comparison above so the comparison — not
+ *  `exportWorldJson`'s real output — is where the tolerance lives. */
+function roundFloats(value: unknown, decimals = 9): unknown {
+  if (typeof value === "number") return Number(value.toFixed(decimals));
+  if (Array.isArray(value)) return value.map((v) => roundFloats(v, decimals));
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, roundFloats(v, decimals)]));
+  }
+  return value;
+}

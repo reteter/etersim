@@ -9,7 +9,8 @@ import { shortestCourse } from "./pathfinding";
 import { TICKS_PER_DAY, type MarketGood, type Port, type Region } from "./region";
 import type { Route } from "./route";
 import { GOOD_IDS, type GoodId } from "./goods";
-import { emptyCargo, type Ship } from "./ship";
+import { amountOf, storeOf } from "./goodsStore";
+import type { Ship } from "./ship";
 import { tick } from "./tick";
 import { createWorld, type World } from "./world";
 
@@ -88,7 +89,7 @@ describe("computeNetWorth", () => {
     const base0 = createWorld(1);
     const laden: Ship = {
       ...base0.company.ships[0],
-      cargo: { ...emptyCargo(), grain: 20, timber: 2 },
+      cargo: storeOf({ grain: 20, timber: 2 }),
       location: { kind: "docked", portId: "A" },
     };
     const world: World = {
@@ -100,7 +101,7 @@ describe("computeNetWorth", () => {
         ships: [laden],
         headquarters: {
           portId: "A",
-          buildOrder: { siteStore: { ...emptyCargo(), textiles: 5, aetherSalt: 3 } },
+          buildOrder: { siteStore: storeOf({ textiles: 5, aetherSalt: 3 }) },
         },
       },
     };
@@ -132,7 +133,7 @@ describe("computeNetWorth", () => {
         ships: [ship],
         shipyard: {
           portId: "A",
-          refitOrder: { shipId: ship.id, targetHold: 100, siteStore: { ...emptyCargo(), textiles: 4, timber: 1 } },
+          refitOrder: { shipId: ship.id, targetHold: 100, siteStore: storeOf({ textiles: 4, timber: 1 }) },
         },
       },
     };
@@ -158,7 +159,7 @@ describe("computeNetWorth", () => {
         thalers: 500,
         shipyard: {
           portId: "A",
-          site: { siteStore: { ...emptyCargo(), grain: 6, aetherSalt: 2 } },
+          site: { siteStore: storeOf({ grain: 6, aetherSalt: 2 }) },
         },
       },
     };
@@ -185,7 +186,7 @@ describe("computeNetWorth", () => {
     const base0 = createWorld(3);
     const underwayShip: Ship = {
       ...base0.company.ships[0],
-      cargo: { ...emptyCargo(), grain: 10 },
+      cargo: storeOf({ grain: 10 }),
       location: {
         kind: "underway",
         course: [],
@@ -224,7 +225,7 @@ describe("Ledger wiring — exactly one event per mutation (scripted manual run)
     w = tick(w, [{ kind: "sailTo", shipId, portId: b }]);
     let guard = 0;
     while (w.company.ships[0].location.kind !== "docked" && guard++ < 500) w = tick(w, []);
-    const cargoAtB = w.company.ships[0].cargo.grain;
+    const cargoAtB = amountOf(w.company.ships[0].cargo, "grain");
     expect(cargoAtB).toBeGreaterThan(0);
     w = tick(w, [{ kind: "sell", shipId, good: "grain", qty: cargoAtB }]);
 
