@@ -15,8 +15,9 @@ read `git log` and `gh issue list` directly — this file no longer claims them.
 Written for any model in any harness;
 Claude Code's per-machine auto-memory is the day-to-day working channel.
 
-_Last update: 2026-07-21 s16 (owner-requested) — the #331 tsunami:
-§State deleted, §Queue reduced to its order, §Watch to its non-derivable items._
+_Last update: 2026-07-21 s18 (owner-requested) — E13.0 close: §Queue cut to the
+go-forward order (the E13.0, OQ8, and docs-vs-docs-sweep items retired as done),
+§Pointers to resumable state removed (the design-surface sweep it pointed at closed s16)._
 
 ## Design sessions are the work (owner framing, 2026-07-19)
 
@@ -54,30 +55,13 @@ auto-memory and `git log`, not here.
 The *order* is the standing owner agreement, not a re-planning.
 Statuses are **not** listed here — run `gh issue list` for what is open.
 
-1. **Docs-vs-docs sweep** — in progress.
-   Whether it continues before E13.0 is an **owner call** each time it comes up;
-   its resumable state is a pointer, not a status (see below).
-2. **#306 → #307** (E13.0). Strict order:
-   the golden-run digest must merge and be green **before** any store code changes.
-3. **E13 grill — one open decision, OQ8:**
-   does the Storehouse's value join `siteStoreValue`
-   or get its own `NetWorthBreakdown` field?
-   The latter changes the `netWorth` Ledger event shape.
-   Decide before #100 starts
-   (`specs/E13.0-goods-store.md:298`, `specs/E13-guild-buildings.md:143`).
-4. **E13 implementation:** #100 → #101 → #102
-   (#100 should be visibly smaller after E13.0 — measure it, per the bet above).
-5. **Cheap tails:** #302, #303.
-6. Then **E11 v1** (#232 → #234) → **E15** (#281 → #284;
+1. **E13 implementation:** #100 → #101 → #102
+   (#100 should be visibly smaller after E13.0 — the interim scope-delta measure is
+   `design-notes/e13-0-shrink-measurement-2026-07-21.md`; the definitive LOC measure is
+   still due at E13 close, per the bet above).
+2. **Cheap tails:** #302, #303.
+3. Then **E11 v1** (#232 → #234) → **E15** (#281 → #284;
    its spec depends on E13.0 + E13).
-
-## Pointers to resumable state
-
-- **The design-surface sweep resumes from its own ledger.**
-  `design-notes/design-surface-sweep.md` **is** the resumable state:
-  take the topmost pending row in its Order column.
-  How many rows are done and which findings are open live *in that file*,
-  never mirrored here.
 
 ## Watch — non-derivable only
 
