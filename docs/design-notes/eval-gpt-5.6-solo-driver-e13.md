@@ -3,6 +3,11 @@
 **Date:** 2026-07-21 (s18). **Status:** LIVE — pre-registered; frozen before either arm
 starts. **Baseline:** `main @ d5bac94` (post-E13.0). **Tracked by:** #369.
 
+> This document is the **worked example**. The reusable, generalized procedure — isolation
+> (temporal vs clean-room clone), the byte-identical ruler-prompt rule, the ruler-measures /
+> Orchestrator-adjudicates split, and the leak/concurrency gotchas — lives in
+> [`delegation-eval-playbook.md`](delegation-eval-playbook.md), distilled from this run.
+
 **This document is pre-registration.** Everything below the line "═ FROZEN ═" was written
 **before GPT 5.6 touched #100 and before either arm produced code**, so the rubric and the
 decision rule cannot be reshaped around the results. Results and the verdict are appended

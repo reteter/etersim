@@ -83,6 +83,13 @@ defect has reached `main`** (the one content escape was a merge-procedure error,
 incident 0010, relanded the same day). The scorecard is the substrate for model
 A/B decisions — which model codes, which reviews — made on data, not vibes.
 
+When a *whole loop* is delegated to a foreign model and measured (the GPT-5.6
+solo-driver evals), the method itself is codified: the
+**[delegation-eval playbook](design-notes/delegation-eval-playbook.md)** — pre-registration,
+isolation, a byte-identical ruler prompt reused per arm, and a strict
+ruler-measures / orchestrator-adjudicates split whose one law is *a ruler finding is
+an input to verify, not a verdict, and skepticism must be symmetric.*
+
 **[The incident log](incidents/)** — a blameless register of **22** process failures
 and near-misses (as of 2026-07-21). Its key design choice: every incident is rated
 twice, **outcome** (what actually happened) *separately from* **failure-mode class**
