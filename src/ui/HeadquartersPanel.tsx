@@ -313,7 +313,7 @@ function BuildingCommission({ world }: { world: World }) {
           </p>
           <BuildProgress siteStore={guildBuild.siteStore} recipe={STOREHOUSE_RECIPE} />
           <p className="side-panel__hint">
-            Auto-draw: up to {AUTO_DRAW_PER_DAY} units/good/day from the building's own port.
+            Auto-pobór: do {AUTO_DRAW_PER_DAY} jedn./towar dziennie z własnego portu budynku.
           </p>
           {stallReason && <p className="headquarters-stall">{STALL_LABEL[stallReason]}</p>}
           <button
