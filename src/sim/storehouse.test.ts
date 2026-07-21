@@ -53,4 +53,5 @@ describe("Storehouse (#100)", () => {
     expect(amountOf(routed.company.ships[0].cargo, "grain")).toBe(amountOf(manual.company.ships[0].cargo, "grain"));
     expect(amountOf(granaryStore(routed), "grain")).toBe(amountOf(granaryStore(manual), "grain"));
   });
+
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createWorld,
+  storeOf,
   tick,
   totalHeld,
   type ContractOffer,
@@ -215,6 +216,18 @@ function shipyardConstructionInProgressWorld(): World {
 }
 
 describe("persistence", () => {
+  it("round-trips an active Storehouse in Company.buildings", () => {
+    const base = createWorld("storehouse-save");
+    const port = base.region.ports.find((candidate) => candidate.archetype === "agrarian")!;
+    const world: World = {
+      ...base,
+      company: {
+        ...base.company,
+        buildings: [{ type: "storehouse", variant: "agrarian", portId: port.id, store: storeOf({ grain: 42 }) }],
+      },
+    };
+    expect(parseWorldJson(exportWorldJson(world)).company.buildings).toEqual(world.company.buildings);
+  });
   it("round-trips a mid-session world through JSON deep-equal (spec §Testing)", () => {
     const world = midSessionWorld();
     expect(parseWorldJson(exportWorldJson(world))).toEqual(world);
