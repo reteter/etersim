@@ -534,7 +534,7 @@ describe("resolveReferencePort (E9.1, pure — no World/market)", () => {
       name: "r",
       stops: [
         stop("a", [{ kind: "buy", good: "grain" }]),
-        stop("b", [{ kind: "deliver", good: "grain" }]),
+        stop("b", [{ kind: "deliver", good: "grain", target: { kind: "hqBuild" } }]),
       ],
     };
     expect(resolveReferencePort(route, 0, "grain")).toBeNull();
@@ -587,7 +587,7 @@ describe("isValidRoute rejections (E9.1 qty + Margin Gate)", () => {
       id: "x",
       name: "x",
       stops: [
-        { portId: a, orders: [{ kind: "deliver", good: "grain", qty: 5 }] },
+        { portId: a, orders: [{ kind: "deliver", good: "grain", target: { kind: "hqBuild" }, qty: 5 }] },
         { portId: b, orders: [] },
       ],
     };
@@ -635,7 +635,7 @@ describe("isValidRoute rejections (E9.1 qty + Margin Gate)", () => {
       id: "x",
       name: "x",
       stops: [
-        { portId: a, orders: [{ kind: "deliver", good: "grain", minMargin: 5 }] },
+        { portId: a, orders: [{ kind: "deliver", good: "grain", target: { kind: "hqBuild" }, minMargin: 5 }] },
         { portId: b, orders: [] },
       ],
     };

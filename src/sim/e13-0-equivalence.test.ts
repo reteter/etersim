@@ -112,6 +112,9 @@ function digestLedgerEvent(event: LedgerEvent, index: number): string {
       return `${head} rush|tick=${event.tick}|portId=${event.portId}|good=${event.good}|qty=${event.qty}|thalers=${event.thalers}`;
     case "delivery":
       return `${head} delivery|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}|good=${event.good}|qty=${event.qty}`;
+    case "store":
+    case "withdraw":
+      return `${head} ${event.kind}|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}|good=${event.good}|qty=${event.qty}`;
     case "laborFee":
       return `${head} laborFee|tick=${event.tick}|thalers=${event.thalers}`;
     case "founding":
@@ -119,7 +122,9 @@ function digestLedgerEvent(event: LedgerEvent, index: number): string {
     case "launch":
       return `${head} launch|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}`;
     case "netWorth":
-      return `${head} netWorth|tick=${event.tick}|thalers=${event.thalers}|cargoValue=${fmtFloat(event.cargoValue)}|siteStoreValue=${fmtFloat(event.siteStoreValue)}|total=${fmtFloat(event.total)}`;
+      return `${head} netWorth|tick=${event.tick}|thalers=${event.thalers}|cargoValue=${fmtFloat(event.cargoValue)}|siteStoreValue=${fmtFloat(event.siteStoreValue)}|buildingStoreValue=${fmtFloat(event.buildingStoreValue)}|total=${fmtFloat(event.total)}`;
+    case "completed":
+      return `${head} completed|tick=${event.tick}|type=${event.type}|variant=${event.variant}|portId=${event.portId}`;
     case "enrollmentFee":
       return `${head} enrollmentFee|tick=${event.tick}|guildId=${event.guildId}|thalers=${event.thalers}`;
     case "upkeep":

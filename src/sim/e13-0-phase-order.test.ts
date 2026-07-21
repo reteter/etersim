@@ -5,8 +5,8 @@ import { DAY_BOUNDARY_PHASES } from "./tick";
 /**
  * E13.0 (#306, docs/specs/E13.0-goods-store.md §Testing, C4) — phase order is
  * semantically load-bearing (Professor F3): the tick site-runner sequence
- * (HQ build site, then the Shipyard's own construction, then Refit — all
- * three drawing from the same shared purse) and `DAY_BOUNDARY_PHASES` must
+ * (HQ build site, Shipyard construction, guild-building construction, then
+ * Refit — all drawing from the same shared purse) and `DAY_BOUNDARY_PHASES` must
  * both stay pinned as ordered string arrays, so a future edit that
  * accidentally reorders either is caught at the structural level, not just
  * (or not at all, if the reorder happens not to perturb C1's scripted
@@ -32,6 +32,7 @@ const SITE_RUNNERS = [
   "runDockingPhase",
   "runBuildSiteAutoDraw",
   "runShipyardConstructionAutoDraw",
+  "runGuildBuildAutoDraw",
   "runShipyardAutoDraw",
 ] as const;
 
@@ -48,11 +49,12 @@ function actualSiteRunnerOrder(source: string): string[] {
 }
 
 describe("E13.0 phase-order snapshot (#306, spec C4)", () => {
-  it("tick's site-runner sequence is HQ build, then Shipyard construction, then Refit — one shared purse (Professor F3)", () => {
+  it("tick's site-runner sequence pins guild-building construction before Refit", () => {
     expect(actualSiteRunnerOrder(tickSource)).toEqual([
       "runDockingPhase",
       "runBuildSiteAutoDraw",
       "runShipyardConstructionAutoDraw",
+      "runGuildBuildAutoDraw",
       "runShipyardAutoDraw",
     ]);
   });

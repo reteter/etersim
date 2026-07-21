@@ -1,4 +1,4 @@
-import type { World } from "../sim";
+import type { StopOrder, StoreRef, World } from "../sim";
 
 /**
  * Persistence adapter (ADR-0004): the only place that touches localStorage.
@@ -72,21 +72,57 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  ("activated"); `migrateV12ToV13` is a documented identity (the v10->v11
  *  precedent), kept as a real migration step so "version tracks World
  *  shape" stays honest. Per the one-step-migration precedent, v11 is no
- *  longer readable — only v12 carries forward now. */
-export const SAVE_VERSION = 13;
+ *  longer readable — only v12 carries forward now.
+ *  v14: E13 adds `Company.buildings`, explicit StoreRef addressing on
+ *  deliver Stops, and `NetWorthBreakdown.buildingStoreValue`. v13 saves
+ *  predate Storehouses, so the new collection and field backfill empty/zero. */
+export const SAVE_VERSION = 14;
 
 /** Save envelope versions this adapter can still read, migrating forward to
  *  `SAVE_VERSION` on load — currently just the immediately preceding version;
  *  a save older than that is unreadable, same as every prior bump (v11
  *  dropped here, matching the v9-drop precedent at the previous bump). */
-const READABLE_VERSIONS: ReadonlySet<number> = new Set([12, SAVE_VERSION]);
+const READABLE_VERSIONS: ReadonlySet<number> = new Set([13, SAVE_VERSION]);
 
-/** v12 -> v13 (E14 #286 fix): a documented identity — `Shipyard.site?` is
- *  additive and absent-safe, and every v12 `Shipyard` was already "built"
- *  under the old instant-purchase model, which is exactly what "no `site`"
- *  means at v13. Nothing to backfill. */
-function migrateV12ToV13(rawWorld: unknown): World {
-  return rawWorld as World;
+/** Reconstruct the implicit destination used by a legacy v13 delivery order.
+ *  v13 routes could only deliver to construction sites, so the old priority
+ *  (Headquarters, then Shipyard build/refit) is unambiguous for valid saves. */
+function legacyDeliveryTarget(world: World, portId: string): StoreRef {
+  if (world.company.headquarters?.portId === portId) return { kind: "hqBuild" };
+  if (world.company.shipyard?.portId === portId) {
+    return world.company.shipyard.site ? { kind: "shipyardBuild" } : { kind: "refit" };
+  }
+  return { kind: "hqBuild" };
+}
+
+function migrateV13ToV14(rawWorld: unknown): World {
+  const world = rawWorld as World;
+  const routes = world.company.routes.map((route) => ({
+    ...route,
+    stops: route.stops.map((stop) => ({
+      ...stop,
+      orders: stop.orders.map((order) => {
+        const legacy = order as unknown as { kind: string; target?: StoreRef };
+        return legacy.kind === "deliver" && legacy.target === undefined
+          ? {
+              ...legacy,
+              target: legacyDeliveryTarget(world, stop.portId),
+            } as StopOrder
+          : order;
+      }),
+    })),
+  }));
+  return {
+    ...world,
+    company: {
+      ...world.company,
+      routes,
+      buildings: world.company.buildings ?? [],
+    },
+    ledger: world.ledger.map((event) =>
+      event.kind === "netWorth" ? { ...event, buildingStoreValue: 0 } : event,
+    ),
+  };
 }
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
@@ -150,7 +186,7 @@ function deserialize(text: string | null): World | null {
   }
   if (!isReadableEnvelopeShape(parsed)) return null;
   if (parsed.version === SAVE_VERSION) return parsed.world as unknown as World;
-  return migrateV12ToV13(parsed.world); // the only older readable version (v12)
+  return migrateV13ToV14(parsed.world); // the only older readable version (v13)
 }
 
 /**

@@ -285,7 +285,7 @@ describe("Shipyard construction auto-draw/deliver/rush (#286)", () => {
     };
     const dockedLaden = dockShipAt(laden, portId, shipId);
     const need = SHIPYARD_RECIPE.timber;
-    const after = applyCommand(dockedLaden, { kind: "deliver", shipId, good: "timber" });
+    const after = applyCommand(dockedLaden, { kind: "deliver", shipId, good: "timber", target: { kind: "shipyardBuild" } });
     const moved = Math.min(need, 20);
     expect(amountOf(after.company.shipyard!.site!.siteStore, "timber")).toBe(moved);
     expect(amountOf(after.company.ships.find((s) => s.id === shipId)!.cargo, "timber")).toBe(20 - moved);
@@ -332,7 +332,7 @@ describe("Shipyard construction auto-draw/deliver/rush (#286)", () => {
     const dockedLaden = dockShipAt(laden, samePortId, shipId);
     const need = SHIPYARD_RECIPE.timber;
 
-    const after = applyCommand(dockedLaden, { kind: "deliver", shipId, good: "timber" });
+    const after = applyCommand(dockedLaden, { kind: "deliver", shipId, good: "timber", target: { kind: "shipyardBuild" } });
     expect(amountOf(after.company.shipyard!.site!.siteStore, "timber")).toBe(need);
     expect(amountOf(after.company.headquarters!.buildOrder!.siteStore, "timber")).toBe(SHIP_RECIPE.timber); // untouched
     expect(amountOf(after.company.ships.find((s) => s.id === shipId)!.cargo, "timber")).toBe(50 - need);
@@ -632,7 +632,7 @@ describe("deliver to the refit site (#275)", () => {
     const targetShip = w.company.ships.find((s) => s.id === w.company.shipyard!.refitOrder!.shipId)!;
     const need = refitRecipe(targetShip).electronics;
 
-    const after = applyCommand(w, { kind: "deliver", shipId: "ferry", good: "electronics" });
+    const after = applyCommand(w, { kind: "deliver", shipId: "ferry", good: "electronics", target: { kind: "refit" } });
     expect(amountOf(after.company.shipyard!.refitOrder!.siteStore, "electronics")).toBe(need);
     expect(amountOf(after.company.headquarters!.buildOrder!.siteStore, "electronics")).toBe(SHIP_RECIPE.electronics);
     expect(amountOf(after.company.ships.find((s) => s.id === "ferry")!.cargo, "electronics")).toBe(50 - need);
@@ -655,7 +655,7 @@ describe("deliver to the refit site (#275)", () => {
     const targetShip = w.company.ships.find((s) => s.id === targetShipId)!;
     const need = refitRecipe(targetShip).electronics;
 
-    const after = applyCommand(w, { kind: "deliver", shipId: "ferry", good: "electronics" });
+    const after = applyCommand(w, { kind: "deliver", shipId: "ferry", good: "electronics", target: { kind: "refit" } });
     expect(amountOf(after.company.shipyard!.refitOrder!.siteStore, "electronics")).toBe(need);
     expect(amountOf(after.company.ships.find((s) => s.id === "ferry")!.cargo, "electronics")).toBe(50 - need);
     expect(after.ledger[after.ledger.length - 1]).toEqual({
@@ -680,7 +680,7 @@ describe("deliver to the refit site (#275)", () => {
         ships: w0.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: withAdded(s.cargo, "timber", 20) } : s)),
       },
     };
-    const after = applyCommand(laden, { kind: "deliver", shipId, good: "timber" });
+    const after = applyCommand(laden, { kind: "deliver", shipId, good: "timber", target: { kind: "refit" } });
     expect(amountOf(after.company.shipyard!.refitOrder!.siteStore, "timber")).toBeGreaterThan(0);
   });
 
@@ -694,7 +694,7 @@ describe("deliver to the refit site (#275)", () => {
         ships: w0.company.ships.map((s) => (s.id === shipId ? { ...s, cargo: withAdded(s.cargo, "timber", 20) } : s)),
       },
     };
-    expect(applyCommand(laden, { kind: "deliver", shipId, good: "timber" })).toBe(laden);
+    expect(applyCommand(laden, { kind: "deliver", shipId, good: "timber", target: { kind: "refit" } })).toBe(laden);
   });
 });
 

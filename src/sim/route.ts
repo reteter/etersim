@@ -1,20 +1,46 @@
 import type { GoodId } from "./goods";
 import type { PortId } from "./region";
+import type { StoreRef } from "./transfer";
 
 /** Stable identifier for a Route template (CONTEXT.md). */
 export type RouteId = string;
 
-/** One order at a Stop: buy/sell/deliver a specific good. */
-export interface StopOrder {
-  readonly kind: "buy" | "sell" | "deliver";
-  readonly good: GoodId;
-  /** "Up to N" ceiling (E9.1, buy & sell only). Absent ⇒ today's greedy
-   *  behavior (buy fills the Hold, sell empties the good). */
-  readonly qty?: number;
-  /** Margin Gate (E9.1, buy only). Absent ⇒ no gate — the buy executes
-   *  normally on arrival. See CONTEXT.md — Margin Gate. */
-  readonly minMargin?: number;
-}
+/** One order at a Stop. Goods movements that are not market trades carry an
+ *  explicit Company-store address (E13/ADR-0008). */
+export type StopOrder =
+  | {
+      readonly kind: "buy";
+      readonly good: GoodId;
+      readonly qty?: number;
+      readonly minMargin?: number;
+    }
+  | {
+      readonly kind: "sell";
+      readonly good: GoodId;
+      readonly qty?: number;
+      readonly minMargin?: number;
+    }
+  | {
+      readonly kind: "deliver";
+      readonly good: GoodId;
+      readonly target: StoreRef;
+      readonly qty?: number;
+      readonly minMargin?: number;
+    }
+  | {
+      readonly kind: "store";
+      readonly good: GoodId;
+      readonly target: StoreRef;
+      readonly qty?: number;
+      readonly minMargin?: number;
+    }
+  | {
+      readonly kind: "withdraw";
+      readonly good: GoodId;
+      readonly source: StoreRef;
+      readonly qty?: number;
+      readonly minMargin?: number;
+    };
 
 /** One entry in a Route: a port plus its ordered StopOrders. */
 export interface Stop {

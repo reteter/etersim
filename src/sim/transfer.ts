@@ -4,6 +4,8 @@ import { amountOf, withAdded, withRemoved, type GoodsStore } from "./goodsStore"
 import { accepts, type StorePolicy } from "./goodsStorePolicy";
 import { refitRecipe, SHIPYARD_RECIPE, withShipyard } from "./shipyard";
 import type { Ship, ShipId } from "./ship";
+import { STOREHOUSE_RECIPE, storehousePolicy } from "./storehouse";
+import type { PortId } from "./region";
 import { replaceShip, type World } from "./world";
 
 /**
@@ -22,8 +24,9 @@ export type StoreRef =
   | { readonly kind: "hold"; readonly shipId: ShipId }
   | { readonly kind: "hqBuild" }
   | { readonly kind: "shipyardBuild" }
-  | { readonly kind: "refit" };
-// E13: | { kind: "storehouse"; portId } ;  E15: | { kind: "plantInput" | "plantOutput"; portId }
+  | { readonly kind: "refit" }
+  | { readonly kind: "guildBuild" }
+  | { readonly kind: "storehouse"; readonly portId: PortId };
 
 /** Every store the Company currently owns, ship holds first (in fleet
  *  order) then whichever construction sites are active — the enumeration
@@ -37,6 +40,10 @@ export function companyStores(world: World): readonly StoreRef[] {
   if (world.company.headquarters?.buildOrder) refs.push({ kind: "hqBuild" });
   if (world.company.shipyard?.site) refs.push({ kind: "shipyardBuild" });
   if (world.company.shipyard?.refitOrder) refs.push({ kind: "refit" });
+  if (world.company.guildBuildOrder) refs.push({ kind: "guildBuild" });
+  for (const building of world.company.buildings) {
+    refs.push({ kind: "storehouse", portId: building.portId });
+  }
   return refs;
 }
 
@@ -54,6 +61,12 @@ export function readStore(world: World, ref: StoreRef): GoodsStore | null {
       return world.company.shipyard?.site?.siteStore ?? null;
     case "refit":
       return world.company.shipyard?.refitOrder?.siteStore ?? null;
+    case "guildBuild":
+      return world.company.guildBuildOrder?.siteStore ?? null;
+    case "storehouse":
+      return world.company.buildings.find(
+        (building) => building.type === "storehouse" && building.portId === ref.portId,
+      )?.store ?? null;
     default: {
       const exhaustive: never = ref;
       throw new Error(`readStore: unhandled StoreRef kind ${JSON.stringify(exhaustive)}`);
@@ -87,6 +100,16 @@ export function policyFor(world: World, ref: StoreRef): StorePolicy | null {
       const ship = world.company.ships.find((s) => s.id === shipyard.refitOrder!.shipId);
       if (!ship) return null;
       return { kind: "constructionSite", recipe: refitRecipe(ship) };
+    }
+    case "guildBuild":
+      return world.company.guildBuildOrder
+        ? { kind: "constructionSite", recipe: STOREHOUSE_RECIPE }
+        : null;
+    case "storehouse": {
+      const building = world.company.buildings.find(
+        (candidate) => candidate.type === "storehouse" && candidate.portId === ref.portId,
+      );
+      return building ? storehousePolicy(building.variant) : null;
     }
     default: {
       const exhaustive: never = ref;
@@ -133,6 +156,30 @@ export function writeStore(world: World, ref: StoreRef, next: GoodsStore): World
         },
       };
     }
+    case "guildBuild": {
+      const order = world.company.guildBuildOrder;
+      if (!order) return world;
+      return {
+        ...world,
+        company: { ...world.company, guildBuildOrder: { ...order, siteStore: next } },
+      };
+    }
+    case "storehouse": {
+      if (!world.company.buildings.some(
+        (building) => building.type === "storehouse" && building.portId === ref.portId,
+      )) return world;
+      return {
+        ...world,
+        company: {
+          ...world.company,
+          buildings: world.company.buildings.map((building) =>
+            building.type === "storehouse" && building.portId === ref.portId
+              ? { ...building, store: next }
+              : building,
+          ),
+        },
+      };
+    }
     default: {
       const exhaustive: never = ref;
       throw new Error(`writeStore: unhandled StoreRef kind ${JSON.stringify(exhaustive)}`);
@@ -172,45 +219,4 @@ export function moveOwnGoods(
 
   const afterFrom = writeStore(world, from, withRemoved(fromStore, good, moved));
   return writeStore(afterFrom, to, withAdded(toStore, good, moved));
-}
-
-/**
- * The `deliver` guard-clause chain (`commands.ts`, pre-#307:
- * `commands.ts:337-439`), extracted as one pure function: where would
- * delivering `good` from `ship`'s cargo land, following the SAME precedence
- * as before (HQ build site -> Shipyard's own construction -> Refit site),
- * `null` when nothing at the docked port would accept it right now (no
- * cargo to offer, or every active site's need for this good is already met)
- * — matching the pre-#307 "moved <= 0 falls through" behavior exactly.
- *
- * Deliberately does NOT hardcode this chain inside `moveOwnGoods` (the
- * load-bearing detail of the E13.0/E13 split, spec §Tech — "The delivery
- * chain"): E13 later *deletes* this function and lets the player name the
- * `StoreRef` directly — a one-function deletion instead of chain surgery.
- *
- * Does not itself resolve a site's pending completion for a zero-need
- * delivery (e.g. `launchIfComplete`) — that "same zero-need completion
- * resolution" (`commands.ts:435-437` pre-#307) is presence-based, not
- * need-based, and stays hand-maintained in `commands.ts`'s `deliver` case.
- */
-export function resolveDeliveryTarget(world: World, ship: Ship, good: GoodId): StoreRef | null {
-  if (ship.location.kind !== "docked") return null;
-  const dockedPortId = ship.location.portId;
-  const have = amountOf(ship.cargo, good);
-  if (have <= 0) return null;
-
-  const candidates: StoreRef[] = [];
-  const hq = world.company.headquarters;
-  if (hq && hq.buildOrder && hq.portId === dockedPortId) candidates.push({ kind: "hqBuild" });
-  const shipyard = world.company.shipyard;
-  if (shipyard && shipyard.site && shipyard.portId === dockedPortId) candidates.push({ kind: "shipyardBuild" });
-  if (shipyard && shipyard.refitOrder && shipyard.portId === dockedPortId) candidates.push({ kind: "refit" });
-
-  for (const ref of candidates) {
-    const store = readStore(world, ref);
-    const policy = policyFor(world, ref);
-    if (!store || !policy) continue;
-    if (accepts(store, policy, good, have) > 0) return ref;
-  }
-  return null;
 }

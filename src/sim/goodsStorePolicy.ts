@@ -20,8 +20,8 @@ import { amountOf, totalHeld, type GoodsStore } from "./goodsStore";
  */
 export type StorePolicy =
   | { readonly kind: "hold"; readonly capacity: number }
-  | { readonly kind: "constructionSite"; readonly recipe: Record<GoodId, number> };
-// E13: | { kind: "storehouse"; filter: readonly GoodId[]; capacity: number }
+  | { readonly kind: "constructionSite"; readonly recipe: Record<GoodId, number> }
+  | { readonly kind: "storehouse"; readonly filter: readonly GoodId[]; readonly capacity: number };
 // E15: | { kind: "plantInput"; chain: ChainId; capacity: number }
 //      | { kind: "plantOutput"; good: GoodId; capacity: number }
 
@@ -29,9 +29,9 @@ export type StorePolicy =
  * The single home for goods filter + capacity + remaining need: given a
  * proposed `qty` of `good` offered to `store` under `policy`, returns how
  * much would actually be accepted right now (never more than `qty`, never
- * negative). Pure; callers (`transfer.ts`'s `moveOwnGoods`,
- * `resolveDeliveryTarget`) use the returned amount both to decide whether a
- * site accepts a good at all (`> 0`) and to clamp the actual transfer.
+ * negative). Pure; `transfer.ts`'s `moveOwnGoods` uses the returned amount
+ * both to decide whether a target accepts a good at all (`> 0`) and to clamp
+ * the actual transfer.
  */
 export function accepts(store: GoodsStore, policy: StorePolicy, good: GoodId, qty: number): number {
   if (qty <= 0) return 0;
@@ -42,6 +42,11 @@ export function accepts(store: GoodsStore, policy: StorePolicy, good: GoodId, qt
     }
     case "constructionSite": {
       const remaining = Math.max(0, (policy.recipe[good] ?? 0) - amountOf(store, good));
+      return Math.min(qty, remaining);
+    }
+    case "storehouse": {
+      if (!policy.filter.includes(good)) return 0;
+      const remaining = Math.max(0, policy.capacity - totalHeld(store));
       return Math.min(qty, remaining);
     }
     default: {

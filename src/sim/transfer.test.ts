@@ -7,7 +7,6 @@ import {
   moveOwnGoods,
   policyFor,
   readStore,
-  resolveDeliveryTarget,
   writeStore,
   type StoreRef,
 } from "./transfer";
@@ -18,7 +17,7 @@ import { TICKS_PER_DAY } from "./region";
 /**
  * E13.0 (#307, docs/adr/0008-one-goods-store.md; docs/specs/E13.0-goods-store.md
  * §Tech — Transfer): StoreRef, companyStores, readStore, policyFor,
- * writeStore, moveOwnGoods, resolveDeliveryTarget — the thaler-free
+ * writeStore and moveOwnGoods — the thaler-free
  * hold<->site half only (market<->hold stays on applyTrade).
  */
 
@@ -167,46 +166,8 @@ describe("transfer", () => {
     });
   });
 
-  describe("resolveDeliveryTarget", () => {
-    it("targets the HQ build site when docked there with cargo it needs", () => {
-      const w = withHqBuildOrder(10);
-      expect(resolveDeliveryTarget(w, w.company.ships[0], "electronics")).toEqual({ kind: "hqBuild" });
-    });
-
-    it("returns null when the ship carries none of the requested good", () => {
-      const w = withHqBuildOrder(0);
-      expect(resolveDeliveryTarget(w, w.company.ships[0], "electronics")).toBeNull();
-    });
-
-    it("returns null once the HQ site's need for that good is already met", () => {
-      const w0 = withHqBuildOrder(10);
-      const filled = moveOwnGoods(w0, { kind: "hold", shipId: "s0" }, { kind: "hqBuild" }, "electronics", "max");
-      // Give s0 more electronics than fits — but recipe need is now 0.
-      const laden = { ...filled.company.ships[0], cargo: storeOf({ electronics: 5 }) };
-      const w = { ...filled, company: { ...filled.company, ships: [laden] } };
-      expect(resolveDeliveryTarget(w, w.company.ships[0], "electronics")).toBeNull();
-    });
-
-    it("returns null for an undocked (underway) ship", () => {
-      const w = withHqBuildOrder(10);
-      const underway = {
-        ...w.company.ships[0],
-        location: {
-          kind: "underway" as const,
-          course: [],
-          voyageIndex: 0,
-          voyageProgressTicks: 0,
-          destination: w.region.ports[1].id,
-        },
-      };
-      expect(resolveDeliveryTarget(w, underway, "electronics")).toBeNull();
-    });
-
-    it("matches the same precedence the deliver command exercises end-to-end (HQ -> Shipyard -> Refit)", () => {
-      // A light end-to-end smoke check that resolveDeliveryTarget's answer is
-      // consistent with what `deliver` actually does — the golden-run digest
-      // (e13-0-equivalence.test.ts) is the authoritative behavior-preservation
-      // proof for the full precedence chain across all three sites.
+  describe("explicit delivery addressing", () => {
+    it("delivers only to the named StoreRef", () => {
       const w0 = createWorld("transfer-precedence");
       const s0 = w0.company.ships[0];
       if (s0.location.kind !== "docked") throw new Error("fixture: s0 must start docked");
@@ -216,11 +177,19 @@ describe("transfer", () => {
       const laden = { ...w.company.ships[0], cargo: storeOf({ grain: 10 }) };
       w = { ...w, company: { ...w.company, ships: [laden] } };
 
-      const target = resolveDeliveryTarget(w, w.company.ships[0], "grain");
-      expect(target).toEqual({ kind: "hqBuild" });
-
-      const delivered = applyCommand(w, { kind: "deliver", shipId: "s0", good: "grain" });
+      const delivered = applyCommand(w, {
+        kind: "deliver",
+        shipId: "s0",
+        good: "grain",
+        target: { kind: "hqBuild" },
+      });
       expect(amountOf(delivered.company.headquarters!.buildOrder!.siteStore, "grain")).toBe(10);
+      expect(applyCommand(w, {
+        kind: "deliver",
+        shipId: "s0",
+        good: "grain",
+        target: { kind: "shipyardBuild" },
+      })).toBe(w);
     });
   });
 

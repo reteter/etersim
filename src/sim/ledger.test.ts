@@ -178,6 +178,7 @@ describe("computeNetWorth", () => {
       thalers: 777,
       cargoValue: 0,
       siteStoreValue: 0,
+      buildingStoreValue: 0,
       total: 777,
     });
   });
@@ -482,10 +483,13 @@ const KIND_CATEGORY: Record<LedgerEvent["kind"], LedgerGrammarCategory> = {
   autoDraw: "thalers",
   rush: "thalers",
   delivery: "neither",
+  store: "neither",
+  withdraw: "neither",
   laborFee: "thalers",
   founding: "thalers",
   launch: "neither",
   netWorth: "thalers",
+  completed: "neither",
   enrollmentFee: "thalers",
   upkeep: "thalers",
   contractFee: "thalers",
@@ -532,7 +536,7 @@ function scriptedAllKindsWorld(): World {
 
   w = applyCommand(w, { kind: "foundHeadquarters", portId: portA }); // founding
   w = applyCommand(w, { kind: "placeBuildOrder" }); // laborFee
-  w = applyCommand(w, { kind: "deliver", shipId, good: "grain" }); // delivery
+  w = applyCommand(w, { kind: "deliver", shipId, good: "grain", target: { kind: "hqBuild" } }); // delivery
 
   // rush — a deliberately small budget buys only a partial line, leaving the
   // rest of the recipe for auto-draw (both kinds must fire from one build).
@@ -583,6 +587,48 @@ function scriptedAllKindsWorld(): World {
   for (let i = 0; i < 3 * TICKS_PER_DAY; i++) w = tick(w, []);
 
   w = applyCommand(w, { kind: "enroll", guildId: "agrarian" }); // enrollmentFee
+
+  // completed + store + withdraw — commission and activate the Granary,
+  // then move owned grain through its standing GoodsStore in both directions.
+  const granaryPort = w.region.ports.find((port) => port.archetype === "agrarian")!;
+  w = {
+    ...w,
+    company: {
+      ...w.company,
+      thalers: w.company.thalers + 100_000,
+      guilds: { ...w.company.guilds, agrarian: { points: 4 } },
+    },
+  };
+  w = applyCommand(w, {
+    kind: "commissionGuildBuilding",
+    type: "storehouse",
+    variant: "agrarian",
+    portId: granaryPort.id,
+  });
+  guard = 0;
+  while (w.company.guildBuildOrder && guard++ < 500) {
+    w = applyCommand(w, { kind: "rushGuildBuilding" });
+    if (w.company.guildBuildOrder) w = tick(w, []);
+  }
+  expect(w.company.guildBuildOrder).toBeUndefined();
+  w = {
+    ...w,
+    company: {
+      ...w.company,
+      ships: w.company.ships.map((ship) =>
+        ship.id === shipId
+          ? {
+              ...ship,
+              cargo: storeOf({ grain: 4 }),
+              location: { kind: "docked" as const, portId: granaryPort.id },
+            }
+          : ship,
+      ),
+    },
+  };
+  const storehouseRef = { kind: "storehouse" as const, portId: granaryPort.id };
+  w = applyCommand(w, { kind: "storeGood", shipId, good: "grain", target: storehouseRef });
+  w = applyCommand(w, { kind: "withdrawGood", shipId, good: "grain", source: storehouseRef });
 
   const activeContract: ActiveContract = {
     id: "grammar-test-contract",

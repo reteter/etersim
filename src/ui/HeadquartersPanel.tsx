@@ -16,6 +16,7 @@ import {
   type ShipId,
   type Stop,
   type StopOrder,
+  type StoreRef,
   type World,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
@@ -160,6 +161,7 @@ function StopRow({
   stop,
   index,
   route,
+  world,
   ports,
   onChange,
   onRemove,
@@ -170,6 +172,7 @@ function StopRow({
    *  needs the full Stop list to scan for the next sell-stop, wrapping the
    *  loop from `index`. */
   route: Route;
+  world: World;
   ports: readonly Port[];
   onChange: (next: Stop) => void;
   onRemove: () => void;
@@ -178,9 +181,26 @@ function StopRow({
     stop.orders.find((o) => o.good === good)?.kind ?? null;
   const orderOf = (good: GoodId): StopOrder | undefined =>
     stop.orders.find((o) => o.good === good);
-  const setOrder = (good: GoodId, kind: StopOrder["kind"]) => {
+  const deliveryTarget = (portId: PortId): StoreRef | null => {
+    if (world.company.headquarters?.portId === portId) return { kind: "hqBuild" };
+    if (world.company.shipyard?.portId === portId) {
+      if (world.company.shipyard.site) return { kind: "shipyardBuild" };
+      if (world.company.shipyard.refitOrder) return { kind: "refit" };
+    }
+    if (world.company.guildBuildOrder?.portId === portId) return { kind: "guildBuild" };
+    return null;
+  };
+  const setOrder = (good: GoodId, kind: (typeof ORDER_KINDS)[number]) => {
     const withoutGood = stop.orders.filter((o) => o.good !== good);
-    const next = kindOf(good) === kind ? withoutGood : [...withoutGood, { kind, good }];
+    if (kindOf(good) === kind) {
+      onChange({ ...stop, orders: withoutGood });
+      return;
+    }
+    const nextOrder: StopOrder | null = kind === "deliver"
+      ? deliveryTarget(stop.portId) && { kind, good, target: deliveryTarget(stop.portId)! }
+      : { kind, good };
+    if (!nextOrder) return;
+    const next = [...withoutGood, nextOrder];
     onChange({ ...stop, orders: next });
   };
   /** Patches the good's existing order (qty and/or minMargin) in place —
@@ -234,7 +254,20 @@ function StopRow({
         className="stop-row__port"
         aria-label={`Stop ${index + 1} port`}
         value={stop.portId}
-        onChange={(e) => onChange({ ...stop, portId: e.target.value as PortId })}
+        onChange={(e) => {
+          const portId = e.target.value as PortId;
+          const target = deliveryTarget(portId);
+          const orders: StopOrder[] = [];
+          for (const order of stop.orders) {
+            if (order.kind !== "deliver") orders.push(order);
+            else if (target) orders.push({ ...order, target });
+          }
+          onChange({
+            ...stop,
+            portId,
+            orders,
+          });
+        }}
       >
         {ports.map((p) => (
           <option key={p.id} value={p.id}>
@@ -358,6 +391,7 @@ function RouteEditor({
           stop={stop}
           index={i}
           route={draft}
+          world={world}
           ports={ports}
           onChange={(next) =>
             onChange({ ...draft, stops: draft.stops.map((s, j) => (j === i ? next : s)) })

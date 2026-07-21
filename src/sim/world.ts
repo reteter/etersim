@@ -10,6 +10,7 @@ import { nextInt, seedRng, type RngState } from "./rng";
 import type { Route } from "./route";
 import { emptyCargo, type Ship } from "./ship";
 import type { Shipyard } from "./shipyard";
+import type { CompanyBuilding, GuildBuildOrder } from "./storehouse";
 import { HEARTLAND, type RegionTemplate } from "./template";
 import { generateRegion } from "./worldgen";
 
@@ -32,6 +33,10 @@ export interface Company {
    *  purchase); `refitOrder` present iff a Refit is active (only possible
    *  once activated). */
   readonly shipyard?: Shipyard;
+  /** Active guild Buildings plus the Company's single pending guild-building
+   *  construction (E13). */
+  readonly buildings: readonly CompanyBuilding[];
+  readonly guildBuildOrder?: GuildBuildOrder;
   /** Guild enrollment + progress (E3, guild.ts): enrolled iff the guild's key
    *  is present. Rank is always derived via `rankOf`, never stored here. */
   readonly guilds: Partial<Record<GuildId, { points: number }>>;
@@ -107,7 +112,14 @@ export function createWorld(seed: number | string, template: RegionTemplate = HE
     tick: 0,
     rng: rng2,
     region,
-    company: { thalers: STARTING_THALERS, ships: [ship], routes: [], guilds: {}, contracts: [] },
+    company: {
+      thalers: STARTING_THALERS,
+      ships: [ship],
+      routes: [],
+      buildings: [],
+      guilds: {},
+      contracts: [],
+    },
     priceSnapshots: snapshotPrices(region),
     flowDrift: initialFlowDrift(region),
     osmosisPulse: initialOsmosisPulse(region),

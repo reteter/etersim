@@ -101,6 +101,18 @@ export {
   type RefitOrder,
   type Shipyard,
 } from "./shipyard";
+export {
+  computeGuildBuildRushQuote,
+  GRANARY_VARIANT,
+  STOREHOUSE_CAPACITY,
+  STOREHOUSE_LABOR_FEE,
+  STOREHOUSE_PERMIT_RANK,
+  STOREHOUSE_RECIPE,
+  type CompanyBuilding,
+  type GuildBuildOrder,
+  type GuildBuildingType,
+} from "./storehouse";
+export { type StoreRef } from "./transfer";
 // #292: the Shipyard commission/Refit estimate seam, moved into src/sim so it
 // can never hand-drift from `computeBuildEstimate` above (was a UI-layer copy
 // in src/ui/siteEstimate.ts).

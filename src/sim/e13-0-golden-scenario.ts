@@ -84,7 +84,7 @@ export function runGoldenScenario(): World {
   assertTrue(amountOf(s0Loaded, "electronics") === 10, "expected 10 electronics aboard after the buy");
   assertTrue(amountOf(s0Loaded, "grain") === 35, "expected 35 grain aboard after the buy");
 
-  w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "electronics" });
+  w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "electronics", target: { kind: "hqBuild" } });
   // The surplus actually landed: site takes only the recipe's need (5), the
   // rest (5) stays aboard — this is exactly what a dropped `min` would break.
   assertTrue(
@@ -96,7 +96,7 @@ export function runGoldenScenario(): World {
     "s0 must retain the 5-unit electronics surplus after delivery",
   );
 
-  w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "grain" });
+  w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "grain", target: { kind: "hqBuild" } });
   assertTrue(
     amountOf(w.company.headquarters!.buildOrder!.siteStore, "grain") === 35,
     "HQ site must hold all 35 delivered grain",
@@ -146,7 +146,7 @@ export function runGoldenScenario(): World {
     amountOf(w.company.ships.find((s) => s.id === "s0")!.cargo, "timber") === 5,
     "expected 5 timber aboard after the buy",
   );
-  w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "timber" });
+  w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "timber", target: { kind: "shipyardBuild" } });
   assertTrue(
     amountOf(w.company.shipyard!.site!.siteStore, "timber") === 5,
     "Shipyard site must hold the delivered 5 timber",
@@ -185,7 +185,7 @@ export function runGoldenScenario(): World {
 
   // Deliver directly into the Refit site too (the third of the "three
   // sites"), then let both draw concurrently via pure auto-draw.
-  w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "grain" });
+  w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "grain", target: { kind: "refit" } });
   assertTrue(
     amountOf(w.company.shipyard!.refitOrder!.siteStore, "grain") === 20,
     "Refit site must hold the delivered 20 grain",

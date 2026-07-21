@@ -32,8 +32,8 @@ function qtyMap(seedIndex: number, salt: number): Partial<Record<GoodId, number>
   return map;
 }
 
-/** A World with four active stores — both ships' holds, the HQ build site,
- *  and an active Refit — each populated with a seed-varied nonzero quantity
+/** A World with five active stores — both ships' holds, the HQ build site,
+ *  an active Refit, and a Storehouse — populated with nonzero quantities
  *  of every good, so `companyStores` walks a real, non-trivial set and
  *  every (from, to, good) triple in the property loop below actually moves
  *  something. Hand-built (not driven through `applyCommand`) because the
@@ -71,6 +71,12 @@ function scriptedWorld(seedIndex: number): World {
         portId: shipyardPortId,
         refitOrder: { shipId: "s1", targetHold: 100, siteStore: storeOf(qtyMap(seedIndex, 4)) },
       },
+      buildings: [{
+        type: "storehouse",
+        variant: "agrarian",
+        portId: base.region.ports[2].id,
+        store: storeOf({ grain: qtyMap(seedIndex, 5).grain }),
+      }],
     },
   };
 }
@@ -85,7 +91,7 @@ describe("value-neutrality invariant (E13.0 #307, spec C3)", () => {
       const stores = companyStores(w);
       // Sanity precondition (incident-0005 discipline): the fixture actually
       // has several active stores, so the double loop below isn't vacuous.
-      expect(stores.length).toBeGreaterThanOrEqual(4);
+      expect(stores.length).toBeGreaterThanOrEqual(5);
       const before = computeNetWorth(w).total;
 
       for (const from of stores) {

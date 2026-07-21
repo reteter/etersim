@@ -19,6 +19,7 @@ import { deriveSubstream, nextFloat, nextUint32, type RngState } from "./rng";
 import { resolveReferencePort, type Route, type RouteId, type StopOrder } from "./route";
 import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
 import { runShipyardAutoDraw, runShipyardConstructionAutoDraw } from "./shipyard";
+import { runGuildBuildAutoDraw } from "./storehouse";
 import { replaceShip, snapshotPrices, STARTING_HOLD, type World } from "./world";
 
 export type { Command };
@@ -117,8 +118,17 @@ function executeStop(
       const have = amountOf(ship.cargo, order.good);
       const qty = order.qty === undefined ? have : Math.min(order.qty, have);
       if (qty > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty, routeId });
+    } else if (order.kind === "deliver") {
+      w = applyCommand(w, { kind: "deliver", shipId, good: order.good, target: order.target });
+    } else if (order.kind === "store") {
+      w = applyCommand(w, { kind: "storeGood", shipId, good: order.good, target: order.target });
     } else {
-      w = applyCommand(w, { kind: "deliver", shipId, good: order.good });
+      w = applyCommand(w, {
+        kind: "withdrawGood",
+        shipId,
+        good: order.good,
+        source: order.source,
+      });
     }
   }
   return w;
@@ -456,6 +466,7 @@ export function tick(world: World, commands: readonly Command[]): World {
   // with the Refit site below — a Refit cannot be active before the
   // Shipyard itself has built).
   w = runShipyardConstructionAutoDraw(w);
+  w = runGuildBuildAutoDraw(w);
   // Shipyard's Refit site (E14 #275): same tick phase as the HQ build site,
   // drawing sequentially from the same shared purse — HQ first, so a thin
   // purse's Reserve floor is respected by both in a fixed, deterministic order.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createWorld,
+  storeOf,
   tick,
   totalHeld,
   type ContractOffer,
@@ -150,26 +151,6 @@ function v9SaveWithContractOffer(): { version: 9; world: World } {
   };
 }
 
-/** A v11 save (post-E9.1, pre-E14): a world whose ships carry no `baseHold`
- *  at all — the exact shape a v11 save on disk actually had. Kept only to
- *  prove v11 is now rejected outright (#286 fix dropped the v11->v12 hop,
- *  same precedent as v9/v10's drop at the previous bumps). */
-function v11Save(): { version: 11; world: World } {
-  const world = e9World();
-  const deshaped = {
-    ...world,
-    company: {
-      ...world.company,
-      ships: world.company.ships.map((ship) => {
-        const rest: Record<string, unknown> = { ...ship };
-        delete rest.baseHold;
-        return rest;
-      }),
-    },
-  } as unknown as World;
-  return { version: 11, world: deshaped };
-}
-
 /** Drives a commissioned Shipyard's own construction site to activation via
  *  rush + tick, then starts and partially fills a Refit — a Headquarters, a
  *  fully-built Shipyard, and a partially-filled RefitOrder (E14 #275/#286). */
@@ -260,6 +241,26 @@ describe("persistence", () => {
     expect(restored.company.shipyard).toEqual(world.company.shipyard);
   });
 
+  it("round-trips Company.buildings and Storehouse GoodsStore contents", () => {
+    const base = createWorld("storehouse-save");
+    const portId = base.region.ports[0].id;
+    const world: World = {
+      ...base,
+      company: {
+        ...base.company,
+        buildings: [{
+          type: "storehouse",
+          variant: "agrarian",
+          portId,
+          store: storeOf({ grain: 37 }),
+        }],
+      },
+    };
+    const restored = parseWorldJson(exportWorldJson(world));
+    expect(restored).toEqual(world);
+    expect(restored.company.buildings).toEqual(world.company.buildings);
+  });
+
   it("round-trips a mid-wait Margin Gate ship through the real persistence layer (E9.1 — waiting is load-bearing state, ADR-0007)", () => {
     const world = gateWaitingWorld();
     // Precondition: the fixture actually landed in the waiting state.
@@ -333,48 +334,69 @@ describe("persistence", () => {
     expect(parsed.version).toBe(SAVE_VERSION);
   });
 
-  describe("v12 -> v13 migration (E14 #286 fix — Shipyard.site)", () => {
-    it("parseWorldJson accepts a v12 world unchanged (identity — Shipyard.site is additive/absent-safe)", () => {
-      const world = e9World(); // no shipyard field at all — the common v12 shape
-      const text = JSON.stringify({ version: 12, world });
+  describe("v13 -> v14 migration (E13 Storehouse)", () => {
+    it("backfills Company.buildings and buildingStoreValue on existing netWorth events", () => {
+      let world = midSessionWorld();
+      for (let i = 0; i < 24; i++) world = tick(world, []);
+      const raw = JSON.parse(JSON.stringify(world));
+      delete raw.company.buildings;
+      delete raw.company.guildBuildOrder;
+      for (const event of raw.ledger) {
+        if (event.kind === "netWorth") delete event.buildingStoreValue;
+      }
+      const migrated = parseWorldJson(JSON.stringify({ version: 13, world: raw }));
 
-      const migrated = parseWorldJson(text);
-
-      expect(migrated).toEqual(world);
+      expect(migrated.company.buildings).toEqual([]);
+      for (const event of migrated.ledger) {
+        if (event.kind === "netWorth") expect(event.buildingStoreValue).toBe(0);
+      }
     });
 
-    it("parseWorldJson accepts a v12 world with a built (site-absent) Shipyard unchanged — that's exactly what 'no site' still means", () => {
-      const base = createWorld("v12-built-shipyard");
-      const hqPortId = base.region.ports[0].id;
-      const shipyardPortId = base.region.ports[1].id;
-      let world: World = { ...base, company: { ...base.company, thalers: 10_000 } };
-      world = tick(world, [{ kind: "foundHeadquarters", portId: hqPortId }]);
-      // A v12 save's Shipyard, if present, was always fully built (the old
-      // instant-purchase model) — same shape as `{ portId }` at v13.
-      world = { ...world, company: { ...world.company, shipyard: { portId: shipyardPortId } } };
-      const text = JSON.stringify({ version: 12, world });
-
-      const migrated = parseWorldJson(text);
-
-      expect(migrated).toEqual(world);
-      expect(migrated.company.shipyard).toEqual({ portId: shipyardPortId });
-    });
-
-    it("loadAutosave transparently migrates a v12 slot, so an old save keeps loading (incident 0009 concern)", () => {
+    it("loadAutosave transparently migrates a v13 slot", () => {
       const storage = fakeStorage();
-      const world = e9World();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 12, world }));
+      const raw = JSON.parse(JSON.stringify(midSessionWorld()));
+      delete raw.company.buildings;
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 13, world: raw }));
 
       const restored = loadAutosave(storage);
       expect(restored).not.toBeNull();
       expect(hasAutosave(storage)).toBe(true);
-      expect(restored).toEqual(world);
+      expect(restored?.company.buildings).toEqual([]);
     });
 
-    it("a save older than v12 (v11) is now rejected — migration is one step, not open-ended", () => {
+    it("backfills explicit StoreRef targets on legacy deliver Stops", () => {
+      const base = createWorld("v13-deliver-target");
+      const hqPortId = base.region.ports[0].id;
+      const otherPortId = base.region.ports[1].id;
+      const raw = JSON.parse(JSON.stringify({
+        ...base,
+        company: {
+          ...base.company,
+          buildings: undefined,
+          headquarters: { portId: hqPortId },
+          routes: [{
+            id: "legacy-deliver",
+            name: "legacy",
+            stops: [
+              { portId: hqPortId, orders: [{ kind: "deliver", good: "grain" }] },
+              { portId: otherPortId, orders: [] },
+            ],
+          }],
+        },
+      }));
+
+      const migrated = parseWorldJson(JSON.stringify({ version: 13, world: raw }));
+
+      expect(migrated.company.routes[0].stops[0].orders[0]).toEqual({
+        kind: "deliver",
+        good: "grain",
+        target: { kind: "hqBuild" },
+      });
+    });
+
+    it("a save older than v13 (v12) is rejected — migration is one step", () => {
       const storage = fakeStorage();
-      const save = v11Save();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify(save));
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 12, world: midSessionWorld() }));
       expect(loadAutosave(storage)).toBeNull();
     });
 

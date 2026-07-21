@@ -5,6 +5,7 @@ import { effectiveBase, price } from "./market";
 import type { PortId, Region } from "./region";
 import type { RouteId } from "./route";
 import type { ShipId } from "./ship";
+import type { GuildBuildingType } from "./storehouse";
 import { companyStores, readStore } from "./transfer";
 import type { World } from "./world";
 
@@ -69,6 +70,14 @@ export type LedgerEvent =
       readonly good: GoodId;
       readonly qty: number;
     }
+  | {
+      readonly kind: "store" | "withdraw";
+      readonly tick: number;
+      readonly shipId: ShipId;
+      readonly portId: PortId;
+      readonly good: GoodId;
+      readonly qty: number;
+    }
   | { readonly kind: "laborFee"; readonly tick: number; readonly thalers: number }
   | {
       readonly kind: "founding";
@@ -88,7 +97,15 @@ export type LedgerEvent =
       readonly thalers: number;
       readonly cargoValue: number;
       readonly siteStoreValue: number;
+      readonly buildingStoreValue: number;
       readonly total: number;
+    }
+  | {
+      readonly kind: "completed";
+      readonly tick: number;
+      readonly type: GuildBuildingType;
+      readonly variant: GuildId;
+      readonly portId: PortId;
     }
   | {
       readonly kind: "enrollmentFee";
@@ -189,6 +206,7 @@ export interface NetWorthBreakdown {
   readonly thalers: number;
   readonly cargoValue: number;
   readonly siteStoreValue: number;
+  readonly buildingStoreValue: number;
   readonly total: number;
 }
 
@@ -203,9 +221,9 @@ export interface NetWorthBreakdown {
  * E13.0 (#307, ADR-0008): walks `companyStores(world)` instead of a
  * hand-written stores array (the F4 silent-failure site, Professor review —
  * a forgotten entry here under-reported company value with no error, no
- * failing test, no in-game symptom). `cargoValue`/`siteStoreValue` stay
- * their pre-#307 shapes (a `hold` ref feeds the former, every other kind the
- * latter) — reshaping the breakdown itself is E13's job, not this one.
+ * failing test, no in-game symptom). A `hold` feeds `cargoValue`, a standing
+ * Storehouse feeds `buildingStoreValue`, and active construction stores feed
+ * `siteStoreValue`.
  *
  * Accumulates each good's term **directly into the running total**, not via
  * an intermediate per-store sum — floating-point addition is not
@@ -216,8 +234,9 @@ export interface NetWorthBreakdown {
  * the same ULP class as incident 0023. This loop's term order exactly
  * matches the pre-#307 two-separate-loops shape: every ship's cargo (in
  * fleet order, GOOD_IDS order) folds into `cargoValue`, then every active
- * site's store (HQ, Shipyard, Refit — `companyStores`'s fixed order) folds
- * into `siteStoreValue`, one addition per good, same as before.
+ * site's store (HQ, Shipyard, Refit, guild build — `companyStores`'s fixed
+ * order) folds into `siteStoreValue`, followed by standing Storehouses in
+ * `buildingStoreValue`, one addition per good.
  */
 export function computeNetWorth(world: World): NetWorthBreakdown {
   const mids = {} as Record<GoodId, number>;
@@ -225,16 +244,24 @@ export function computeNetWorth(world: World): NetWorthBreakdown {
 
   let cargoValue = 0;
   let siteStoreValue = 0;
+  let buildingStoreValue = 0;
   for (const ref of companyStores(world)) {
     const store = readStore(world, ref);
     if (!store) continue;
     for (const good of GOOD_IDS) {
       const value = amountOf(store, good) * mids[good];
       if (ref.kind === "hold") cargoValue += value;
+      else if (ref.kind === "storehouse") buildingStoreValue += value;
       else siteStoreValue += value;
     }
   }
 
   const thalers = world.company.thalers;
-  return { thalers, cargoValue, siteStoreValue, total: thalers + cargoValue + siteStoreValue };
+  return {
+    thalers,
+    cargoValue,
+    siteStoreValue,
+    buildingStoreValue,
+    total: thalers + cargoValue + siteStoreValue + buildingStoreValue,
+  };
 }
