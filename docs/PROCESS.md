@@ -114,9 +114,10 @@ forward:
    from per-machine memory; travels with the repo to any harness.
 4. **Per-machine auto-memory** (Claude Code) — the day-to-day working channel:
    session state, owner preferences, machine quirks. Probabilistic recall, local.
-5. **[`HANDOFF.md`](HANDOFF.md)** — an exportable session-state snapshot for *any*
-   model in *any* harness, updated on owner request; its date stamp is the
-   freshness contract.
+5. **[`HANDOFF.md`](HANDOFF.md)** — the cross-harness export for *any* model in
+   *any* harness, updated on owner request. Carries only what `git log` / `gh`
+   cannot derive — owner-agreed order, owner framings, resumable-state pointers;
+   its date stamp is the freshness contract for that non-derivable half.
 
 The rule of thumb: a lesson is born in the incident log, gets promoted to
 `CLAUDE.md` only if it must be present in every session, and lives in
