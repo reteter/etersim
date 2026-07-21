@@ -217,7 +217,7 @@ control, not a contest).
 
 ### Ruler (whole-#100 aggregate, §Granularity symmetry)
 
-- **GPT:** MERGE / MERGE. Hard-law scan all CLEAR (no `Math.random`/`Date.now`/React/DOM in `src/sim`; no suppress-to-green; deleted tests legitimate; netWorth `total` bit-identical in the golden fixture — no new ULP drift). **1 minor** — `docs/specs/README.md:32` stale "not yet started" clause, which the Orchestrator itself authored in #368 (not a GPT code defect). Zero blocking/major.
+- **GPT:** MERGE / MERGE. Hard-law scan all CLEAR (no `Math.random`/`Date.now`/React/DOM in `src/sim`; no suppress-to-green; deleted tests legitimate; netWorth `total` bit-identical in the golden fixture — no new ULP drift). **1 minor** — `docs/specs/README.md:32` stale "not yet started" clause, which the Orchestrator itself authored in #368 (not a GPT code defect). Zero blocking/major. **[Erratum 2026-07-21 s19 — incomplete: re-examination during the Terra re-run established, as an author-blind code fact, that Sol's arm *also* lacks the #100 no-dominance guardrail test (a named AC, spec §Testing). This line's "1 minor / zero major" did not account for it. See arm-2 RESULTS §Instrument-parity threat + §Erratum to arm-1.]**
 - **Claude:** MERGE / MERGE. Hard-law scan all CLEAR (netWorth `total` bit-identical `41979.27958289407`; `buildingStoreValue` appended as a separate accumulator, `cargoValue`/`siteStoreValue` order byte-preserved; `migrateV13ToV14` float-free). **3 minor** — stale doc-comment naming `resolveDeliveryTarget` (`goodsStorePolicy.ts:33`, `building.ts:122`); English player-strings in `LedgerOverlay.tsx` (legacy carve-out, not drift); a stray blank line (`persistence.test.ts:265`). Zero blocking/major.
 
 Both submissions are cosmetic-residue-only at the merge bar. **No tallying** (frozen
@@ -270,12 +270,17 @@ one a Claude coder's mandated affected-set grep would have caught — a *missing
 signal, CONDITIONAL-adjacent — but GPT corrected it in-run, so nothing reached the branch).
 No item reached the merge bar; none pulls the verdict off DELEGATE-VIABLE.
 
-### Verdict — DELEGATE-VIABLE (provisional, n=1)
+### Verdict — ~~DELEGATE-VIABLE~~ (provisional, n=1) — ⚠ downgraded to CONDITIONAL, see §Erratum in arm-2
 
 GPT clears the absolute merge bar (all gates green on independent re-run; ruler zero
 blocking/major) **∧** zero hard-law breach **∧** conformance above threshold (one non-code
 minor) **∧** no GPT-specific output-quality gap (nothing to attribute as capability). Per
-the frozen decision rule this is **DELEGATE-VIABLE**.
+the frozen decision rule this is ~~**DELEGATE-VIABLE**~~. **[Erratum 2026-07-21 s19: the
+conformance premise here is now known incomplete — Sol's arm lacks the no-dominance
+guardrail test (a named AC), a code fact surfaced by the Terra re-run's ruler and missed at
+arm-1 measurement time. Re-judged at that same rigor, Sol is at best **CONDITIONAL**
+(one missing named-AC test, process-addable), not a clean DELEGATE-VIABLE. Recorded, not
+rewritten, per the pre-registration integrity rule. Full reasoning in arm-2 RESULTS below.]**
 
 Per the **n=1 inference asymmetry (frozen):** this is **provisional-pending-more-n**, not a
 standing green light. One clean run *fails to fail once* — it licenses continuing to
@@ -305,3 +310,143 @@ standing green light. One clean run *fails to fail once* — it licenses continu
 3. #101/#102 proceed **under observation**, not unattended, per the provisional verdict.
 4. Deferred (do not act mid-eval): GPT's process suggestions (solo-engineer mode in
    WORKFLOW; CI-fix autonomy scope; implicit→explicit migration doc rule) — captured only.
+
+═══════════════════════════════════ RESULTS — ARM 2: GPT 5.6 **Terra** (cheap tier), same #100 (append 2026-07-21 s19; never edit the frozen section) ═══════════════════════════════════
+
+**Run date:** 2026-07-21 (s19). Re-run of the *same pre-registered eval* on a cheaper GPT
+tier — **GPT 5.6 Terra @ medium**, same solo-driver role, same frozen baseline `d5bac94`,
+same author-blind Opus two-axis ruler run out-of-band on the returned branch. This closes the
+gap the frontier-Sol run named but could not: *what a cheap-tier GPT solo actually costs and
+delivers on a real E13-class feature.* GPT was **blind** to the existence of the Sol/Claude
+arms and of this re-run (ecological validity).
+
+- **Terra arm** — `eval/100-gpt-terra` @ `c024bb8`, base `d5bac94` (exact — verified
+  `merge-base --is-ancestor` + parent-of-first-commit = `d5bac94`), 3 commits, **333/171 in
+  24 files**. GPT 5.6 terra@medium, self-orchestrating, no Anthropic access.
+
+### Objective gates (independently re-run here)
+
+typecheck ✓ · lint ✓ · build ✓ · **unit 725 ✓** · **e2e 102 ✓**. Every objective gate green.
+**And that is necessary-not-sufficient** — the shortfall is entirely in AC conformance, which
+no gate checks. Terra passing every gate yet landing NO-MERGE is itself the illustration: the
+author-blind AC review is what caught the shortfall, not the gates.
+
+### Ruler (whole-#100 aggregate) — **NO-MERGE**
+
+Hard-law scan **all CLEAR** (no `Math.random`/`Date.now`/React/DOM in `src/sim`; no
+suppress-to-green; the deleted `resolveDeliveryTarget` suite is legitimate — the function is
+spec-mandated deleted, 0 live refs remain; netWorth/Ledger/migration float-stable — **the ULP
+class of incidents 0023/0024 did NOT recur**, `buildingStoreValue` appended as a separate
+accumulator, golden fixture `total` byte-identical). But **three named-AC gaps → NO-MERGE**,
+plus 4 minors; est. 1–2 fix-loop rounds. `blocking 0 · major 3 · minor 4`.
+
+### Attribution (frozen trinary) — grep-verified against BOTH control arms
+
+The three majors were checked as **author-blind code facts** against Claude (real #100 on
+`main`) *and* Sol (`feat/100-storehouse`), not left as ruler opinion:
+
+| Gap (Terra major) | Claude (main) | Sol (frontier) | Terra (cheap) | Attribution |
+| --- | --- | --- | --- | --- |
+| **1. no-dominance guardrail test** (buy→store→sell ⊁ carry; spec §Testing) | **present** (`storehouse.test.ts:277`) | **absent** | **absent** | shared by *both* GPT arms; **not** shared with the Claude control. See §Instrument-parity. |
+| **2. deliver + rush to storehouse construction site** (spec §Construction parity) | present (`applyGuildBuildRush`) | present (`rushGuildBuilding`×2; deliver test `storehouse.test.ts:193`) | **absent** (no `*GuildBuildRush`; StoreRef only addresses a *completed* store, `transfer.ts:43` gated on `"store" in building`) | **Terra-specific under-reach** — a named AC the frontier tier *and* the pipeline both implemented |
+| **3. v12 save-migration correctness** | drops v12 cleanly `{13,14}` | drops v12 cleanly `{13,14}` | **returns v12 raw** `READABLE_VERSIONS={12,13,14}`, skipping the `buildingStoreValue` backfill → wrong netWorth for v12 saves | **Terra-specific correctness escape** |
+
+### Verdict — **NO-GO** (Terra / cheap-tier solo-driver), provisional (n=1)
+
+Walking the **frozen decision rule** mechanically (the point of freezing it):
+
+- **DELEGATE-VIABLE is out.** It requires clearing the merge bar **∧** any output-quality
+  gaps being *shared with the Claude control* (task difficulty). Terra's GAP 2 and GAP 3 are
+  **Terra-specific** (Claude and Sol both did them correctly) — the shared-gap conjunct fails.
+- **NO-GO fires on GAP 3.** The frozen NO-GO clause "*a GPT-specific correctness escape the
+  wave check flags **major***" is met: v12 saves load with incorrect netWorth, GPT-specific
+  per the attribution rule (both other arms handled v12 correctly), flagged major. This clause
+  is **separate** from the merge-bar's "zero blocking" sub-test, so `blocking 0` does not
+  rescue it. GAP 2 (under-reach of a named AC) compounds as conformance-below-threshold but is
+  not itself the trigger.
+
+Per the **frozen n=1 inference asymmetry:** a NO-GO from one paired run is the **trustworthy**
+direction — it *did* fail, dispositively, on a correctness escape. This licenses **"no
+unattended cheap-tier-solo delegation on E13-class features"** — **not** "the cheap tier is
+incapable in principle" (that would be the weak, confirmation-direction inference n=1 cannot
+carry).
+
+### The headline — instrument-independent
+
+GAP 2 and GAP 3 are **grep-verified code facts, not ruler opinion**: the cheap tier shipped a
+**missing named feature** (deliver+rush) **and a correctness bug** (v12 migration) that the
+frontier tier got right, on the **same task from the same baseline**. This result is robust to
+*any* question about ruler rigor (below).
+
+### Cost (Axis 5) — reported, **not ranked** (frozen threat #5)
+
+**16% of the weekly limit** (Terra: 100% → 84%) vs Sol's **~45%** — **same vendor, same task,
+same shared weekly pool (owner-confirmed)**, so **same-denominator and directly comparable**,
+unlike the cross-vendor Sol-vs-Claude line. The cheap tier cost ≈**⅓** of frontier. But the
+saving **was not free**: it bought materially worse conformance (headline above). *Caveat:*
+16% is a snapshot of an **interrupted** loop (Terra stopped, asked to read the reference key,
+was refused, resumed) — a lower-bound-ish datum, as Sol's was. Cost stays **out of the trinary
+verdict** per the freeze.
+
+### Instrument-parity threat — **materialized** (arm-1 named it; here is the instance)
+
+GAP 1 is the concrete realization of the instrument-parity threat the first RESULTS **already
+named** (arm-1 §Threats revisited: "parity is high *by construction* but not
+verbatim-identical"). **Code fact:** Sol's arm *also* lacks the no-dominance guardrail test —
+yet arm-1 recorded Sol as "1 minor / DELEGATE-VIABLE" and was **silent** on the guardrail. The
+two explanations are **indistinguishable now** (the arm-1 ruler's prompt/transcript is
+compacted): (a) the Sol ruler was handed the same checklist and did not flag it; (b) this
+Terra ruler's *reconstructed* prompt named the guardrail more explicitly than the Sol prompt
+did, so the **instruments diverged**. We **cannot adjudicate** and do not claim "the Sol ruler
+erred" — we record the *code fact* (Sol lacks the AC) and log the *materialized threat*. That
+pre-registration **named this risk in advance** and a paired re-run **surfaced a concrete
+instance** is an integrity win for the method, not a black eye.
+
+### Erratum to arm-1 (Sol) results
+
+Re-judged at **GAP-1-aware rigor** (both arms scored knowing the guardrail is a named AC):
+
+- **Sol (frontier):** one missing named-AC test → **~CONDITIONAL** (add one test,
+  process-addable) — *not* the clean DELEGATE-VIABLE first recorded. Arm-1 verdict struck
+  through + annotated in place (recorded, not rewritten).
+- **Terra (cheap):** that *same* missing test **plus** GAP 2 **plus** GAP 3 → **NO-GO**.
+
+Judged at equal rigor, the **tier delta is apples-to-apples and stark: frontier "one test
+short," cheap "feature-and-correctness short."** This is cleaner than "two rulers gave two
+verdicts" — the difference lives in grep-verified code, not in ruler variance.
+
+### Threats revisited (arm 2)
+
+- **NEW — leak / information-environment asymmetry (a real confound, named not neutralized):**
+  Sol ran when the reference solution `509e2fd` did **not exist** in the repo; Terra ran with
+  it sitting on `main` and **found it** (named the commit, asked to read the `d5bac94..509e2fd`
+  diff). Tooling + owner refusal blocked the *content*, so nothing transferred — but the two
+  GPT arms' **information environments were not identical**, which was the whole apples-to-apples
+  premise. Direction of the confound: the key was **available-but-refused and Terra still
+  underperformed**, so it **cannot be quality-inflating** for Terra — if anything it makes the
+  weaker result more damning, not less. Recorded as a standing limit on the Sol-vs-Terra
+  comparison.
+- **Instrument parity (from arm 1):** materialized as GAP 1 — see above.
+- **Cost denominator:** *resolved* for the within-GPT comparison — single shared weekly pool
+  (owner-confirmed) ⇒ same-denominator; 16% vs 45% is a direct ratio.
+- **n=1 per tier:** still one run at each tier; the NO-GO is the trustworthy (falsification)
+  direction; DELEGATE-VIABLE-type claims remain provisional-pending-more-n.
+
+### Casting read (refined) — the money finding
+
+Frontier→cheap tier: cost to ~⅓, conformance from "one test short" to
+"feature-and-correctness short." **The cheap tier is not a drop-in substitute for
+solo-driving a real E13-class feature.** This *refines* rather than overturns the ladder
+insight from arm 1: the **pipeline** (cheap Sonnet coder under a thin strong-Opus review
+layer) is what cleared the bar cost-effectively — **the win is the pipeline, not any solo**,
+and dropping the solo to a cheaper tier degrades the product, not just the bill.
+
+### Next actions (arm 2)
+
+1. **No merge.** Terra's `eval/100-gpt-terra` is quarantined (branch kept — "braci się nie
+   traci"); real #100 remains the Claude pipeline product (`509e2fd`, #372). No re-open.
+2. Scorecard: append a Terra row (*solo-driver unit*, advisor N/A), NO-MERGE, 3 major / 4
+   minor, cost 16% weekly.
+3. **#101/#102 under observation** stands, now on firmer ground: cheap-tier-solo is NOT
+   licensed unattended; the pipeline remains the default caster.
+4. Close **#373** (Terra re-run complete).
