@@ -1,3 +1,4 @@
+import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
@@ -83,6 +84,19 @@ export default tseslint.config(
           message: "Determinism: no wall-clock time inside src/sim (CLAUDE.md).",
         },
       ],
+    },
+  },
+  {
+    // #349: scripts/*.mjs (e.g. normalize-markdown.mjs) had no matching
+    // `files:` block, so eslint silently skipped them entirely — plain Node
+    // ESM, not part of any tsconfig, so the TS-aware `**/*.{ts,tsx}` block
+    // above doesn't reach them either.
+    files: ["scripts/**/*.mjs"],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: globals.node,
     },
   },
 );
