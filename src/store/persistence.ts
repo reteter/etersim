@@ -72,21 +72,49 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  ("activated"); `migrateV12ToV13` is a documented identity (the v10->v11
  *  precedent), kept as a real migration step so "version tracks World
  *  shape" stays honest. Per the one-step-migration precedent, v11 is no
- *  longer readable — only v12 carries forward now. */
-export const SAVE_VERSION = 13;
+ *  longer readable — only v12 carries forward now.
+ *  v14: E13 (#100) adds `Company.buildings`/`Company.guildBuild` (the guild
+ *  Storehouse track) and the `netWorth` Ledger event's `buildingStoreValue`
+ *  field (docs/specs/E13-guild-buildings.md — Ledger & netWorth, OQ8). A v13
+ *  save has no guild Buildings at all (the mechanic didn't exist), so
+ *  `migrateV13ToV14` backfills `buildings: []` onto `Company` and
+ *  `buildingStoreValue: 0` onto every `netWorth` event — a fact for a
+ *  Storehouse-free save, not an approximation (same precedent as the v9->v10
+ *  `requiredRank` backfill). Per the one-step-migration precedent, v12 is no
+ *  longer readable — only v13 carries forward now. */
+export const SAVE_VERSION = 14;
 
 /** Save envelope versions this adapter can still read, migrating forward to
  *  `SAVE_VERSION` on load — currently just the immediately preceding version;
- *  a save older than that is unreadable, same as every prior bump (v11
- *  dropped here, matching the v9-drop precedent at the previous bump). */
-const READABLE_VERSIONS: ReadonlySet<number> = new Set([12, SAVE_VERSION]);
+ *  a save older than that is unreadable, same as every prior bump (v12
+ *  dropped here, matching the v11-drop precedent at the previous bump). */
+const READABLE_VERSIONS: ReadonlySet<number> = new Set([13, SAVE_VERSION]);
 
 /** v12 -> v13 (E14 #286 fix): a documented identity — `Shipyard.site?` is
  *  additive and absent-safe, and every v12 `Shipyard` was already "built"
  *  under the old instant-purchase model, which is exactly what "no `site`"
- *  means at v13. Nothing to backfill. */
-function migrateV12ToV13(rawWorld: unknown): World {
-  return rawWorld as World;
+ *  means at v13. Nothing to backfill. Kept only as `migrateV13ToV14`'s
+ *  historical sibling comment — no longer reachable (v12 is no longer a
+ *  READABLE_VERSIONS member). */
+
+/** v13 -> v14 (E13, #100): backfills `buildings: []` onto `Company` (a v13
+ *  save never had a guild Building) and `buildingStoreValue: 0` onto every
+ *  `netWorth` Ledger event (a v13 net-worth snapshot never counted one). Both
+ *  are lossless facts, not approximations — the v9->v10 `requiredRank`
+ *  backfill precedent. `Company.guildBuild` stays absent (optional, same as
+ *  a v13 save already had no pending order). */
+function migrateV13ToV14(rawWorld: unknown): World {
+  const world = rawWorld as {
+    company: { buildings?: unknown };
+    ledger: readonly { kind: string; buildingStoreValue?: number }[];
+  };
+  return {
+    ...world,
+    company: { ...world.company, buildings: world.company.buildings ?? [] },
+    ledger: world.ledger.map((event) =>
+      event.kind === "netWorth" ? { ...event, buildingStoreValue: event.buildingStoreValue ?? 0 } : event,
+    ),
+  } as unknown as World;
 }
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
@@ -150,7 +178,7 @@ function deserialize(text: string | null): World | null {
   }
   if (!isReadableEnvelopeShape(parsed)) return null;
   if (parsed.version === SAVE_VERSION) return parsed.world as unknown as World;
-  return migrateV12ToV13(parsed.world); // the only older readable version (v12)
+  return migrateV13ToV14(parsed.world); // the only older readable version (v13)
 }
 
 /**

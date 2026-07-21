@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "world": {
     "tick": 202,
     "rng": 2701980925,
@@ -405,7 +405,8 @@
             "timber": 12
           }
         }
-      }
+      },
+      "buildings": []
     },
     "priceSnapshots": {
       "p0": {
@@ -904,7 +905,8 @@
         "thalers": 36046,
         "cargoValue": 796.8572915334609,
         "siteStoreValue": 5136.422291360611,
-        "total": 41979.27958289407
+        "total": 41979.27958289407,
+        "buildingStoreValue": 0
       },
       {
         "kind": "autoDraw",
@@ -1174,7 +1176,8 @@
         "thalers": 33926,
         "cargoValue": 793.1872992714749,
         "siteStoreValue": 7039.663934343398,
-        "total": 41758.85123361488
+        "total": 41758.85123361488,
+        "buildingStoreValue": 0
       },
       {
         "kind": "autoDraw",
@@ -1348,7 +1351,8 @@
         "thalers": 33181,
         "cargoValue": 791.2832978468068,
         "siteStoreValue": 7774.511874336568,
-        "total": 41746.795172183374
+        "total": 41746.795172183374,
+        "buildingStoreValue": 0
       },
       {
         "kind": "rush",
@@ -1392,7 +1396,8 @@
         "thalers": 32925,
         "cargoValue": 0,
         "siteStoreValue": 0,
-        "total": 32925
+        "total": 32925,
+        "buildingStoreValue": 0
       },
       {
         "kind": "upkeep",
@@ -1412,7 +1417,8 @@
         "thalers": 32905,
         "cargoValue": 0,
         "siteStoreValue": 0,
-        "total": 32905
+        "total": 32905,
+        "buildingStoreValue": 0
       },
       {
         "kind": "dockingFee",
@@ -1462,7 +1468,8 @@
         "thalers": 31032,
         "cargoValue": 0,
         "siteStoreValue": 1350.7482871325706,
-        "total": 32382.74828713257
+        "total": 32382.74828713257,
+        "buildingStoreValue": 0
       },
       {
         "kind": "autoDraw",
@@ -1957,7 +1964,8 @@
         "thalers": 16138,
         "cargoValue": 0,
         "siteStoreValue": 354.91796958413136,
-        "total": 16492.91796958413
+        "total": 16492.91796958413,
+        "buildingStoreValue": 0
       },
       {
         "kind": "autoDraw",
@@ -2697,7 +2705,8 @@
         "thalers": 4284,
         "cargoValue": 0,
         "siteStoreValue": 10911.222523174933,
-        "total": 15195.222523174933
+        "total": 15195.222523174933,
+        "buildingStoreValue": 0
       },
       {
         "kind": "autoDraw",

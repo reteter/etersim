@@ -45,6 +45,13 @@ function scriptedWorld(seedIndex: number): World {
   const base = createWorld(`value-neutrality-${seedIndex}`);
   const hqPortId = base.region.ports[0].id;
   const shipyardPortId = base.region.ports[1].id;
+  // E13 (#100): a third port for an activated Storehouse (its own contents,
+  // `storehouse` StoreRef kind) plus a pending guild Building construction
+  // site (`guildBuild` StoreRef kind) — both must land in `companyStores`
+  // for the invariant to actually exercise them (spec §Testing: "verify the
+  // pair gets exercised, don't assume").
+  const guildBuildPortId = base.region.ports[2].id;
+  const storehousePortId = base.region.ports[3].id;
 
   const s0: Ship = {
     ...base.company.ships[0],
@@ -71,6 +78,22 @@ function scriptedWorld(seedIndex: number): World {
         portId: shipyardPortId,
         refitOrder: { shipId: "s1", targetHold: 100, siteStore: storeOf(qtyMap(seedIndex, 4)) },
       },
+      guildBuild: {
+        type: "storehouse",
+        variant: "agrarian",
+        portId: guildBuildPortId,
+        siteStore: storeOf(qtyMap(seedIndex, 5)),
+      },
+      buildings: [
+        {
+          type: "storehouse",
+          variant: "agrarian",
+          portId: storehousePortId,
+          // Granary filter is grain-only — seed every good anyway (rejected
+          // goods are a value-neutral no-op too, still worth exercising).
+          store: storeOf(qtyMap(seedIndex, 6)),
+        },
+      ],
     },
   };
 }
@@ -84,8 +107,11 @@ describe("value-neutrality invariant (E13.0 #307, spec C3)", () => {
       const w = scriptedWorld(seedIndex);
       const stores = companyStores(w);
       // Sanity precondition (incident-0005 discipline): the fixture actually
-      // has several active stores, so the double loop below isn't vacuous.
-      expect(stores.length).toBeGreaterThanOrEqual(4);
+      // has several active stores, so the double loop below isn't vacuous —
+      // 6 today: 2 holds, hqBuild, refit, guildBuild, storehouse (E13, #100).
+      expect(stores.length).toBeGreaterThanOrEqual(6);
+      expect(stores.some((s) => s.kind === "guildBuild")).toBe(true);
+      expect(stores.some((s) => s.kind === "storehouse")).toBe(true);
       const before = computeNetWorth(w).total;
 
       for (const from of stores) {

@@ -4,9 +4,12 @@ import type { PortId } from "./region";
 /** Stable identifier for a Route template (CONTEXT.md). */
 export type RouteId = string;
 
-/** One order at a Stop: buy/sell/deliver a specific good. */
+/** One order at a Stop: buy/sell/deliver/store/withdraw a specific good.
+ *  `store`/`withdraw` (E13, #100, CONTEXT.md) transfer between a Ship's
+ *  Cargo and a Company Building's own store at the docked port —
+ *  market-free, best-effort, never take `qty` (the `deliver` precedent). */
 export interface StopOrder {
-  readonly kind: "buy" | "sell" | "deliver";
+  readonly kind: "buy" | "sell" | "deliver" | "store" | "withdraw";
   readonly good: GoodId;
   /** "Up to N" ceiling (E9.1, buy & sell only). Absent ⇒ today's greedy
    *  behavior (buy fills the Hold, sell empties the good). */

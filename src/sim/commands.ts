@@ -13,6 +13,7 @@ import {
 import type { ActiveContract } from "./contract";
 import type { GoodId } from "./goods";
 import { amountOf, withAdded } from "./goodsStore";
+import { accepts } from "./goodsStorePolicy";
 import { ENROLLMENT_FEE, POINTS_BREACH_OR_RESIGN, rankOf, type GuildId } from "./guild";
 import { appendLedgerEvent, appendLedgerEvents } from "./ledger";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
@@ -33,9 +34,17 @@ import {
   withShipyard,
   type RefitOrder,
 } from "./shipyard";
+import {
+  completeGuildBuildIfDone,
+  computeGuildBuildRushQuote,
+  hasStorehousePermit,
+  isLegalStorehousePlacement,
+  STOREHOUSE_LABOR_FEE,
+  STOREHOUSE_RECIPE,
+} from "./storehouse";
 import type { Route, RouteId } from "./route";
 import { cargoUsed, isRouteActive, type Ship, type ShipId } from "./ship";
-import { moveOwnGoods, readStore, resolveDeliveryTarget, type StoreRef } from "./transfer";
+import { moveOwnGoods, policyFor, readStore, type StoreRef } from "./transfer";
 import { replaceShip, type World } from "./world";
 
 /**
@@ -82,6 +91,20 @@ export type Command =
   | { readonly kind: "rushShipyard" }
   | { readonly kind: "commissionRefit"; readonly shipId: ShipId }
   | { readonly kind: "rushRefit" }
+  // E13 (#100): the guild-licensed Building track — commission a Storehouse
+  // (rank/placement-gated, `type` generic per spec's data-only variant
+  // hook; E13 ships only "storehouse"), rush its construction, and the two
+  // manual Stop-order twins (`storeGood`/`withdrawGood`, docked at the
+  // Building's port; best-effort, market-free — the deliver precedent).
+  | {
+      readonly kind: "commissionGuildBuilding";
+      readonly type: "storehouse";
+      readonly variant: GuildId;
+      readonly portId: PortId;
+    }
+  | { readonly kind: "rushGuildBuild" }
+  | { readonly kind: "storeGood"; readonly shipId: ShipId; readonly good: GoodId }
+  | { readonly kind: "withdrawGood"; readonly shipId: ShipId; readonly good: GoodId }
   // #54 (folded into E9/#83): player-editable ship display name. Launch names
   // are generator-suggested (building.ts); this is the ShipPanel rename affordance.
   | { readonly kind: "renameShip"; readonly shipId: ShipId; readonly name: string }
@@ -115,7 +138,7 @@ function isValidRoute(route: Route): boolean {
       if (seen.has(order.good)) return false;
       seen.add(order.good);
       if (order.qty !== undefined) {
-        if (order.kind === "deliver") return false;
+        if (order.kind === "deliver" || order.kind === "store" || order.kind === "withdraw") return false;
         if (!Number.isInteger(order.qty) || order.qty <= 0) return false;
       }
       if (order.minMargin !== undefined && order.kind !== "buy") return false;
@@ -130,11 +153,16 @@ function isValidRoute(route: Route): boolean {
  *  itself under construction. A RefitOrder is neither a new ship nor a new
  *  building (it upgrades an existing hull) and keeps its own
  *  one-per-Shipyard scarcity, so it is deliberately excluded here. One place
- *  documenting the law instead of two inline checks (`placeBuildOrder` and
- *  `commissionShipyard` below) drifting apart — E13's target-kind union
- *  (#99–#102) should later consume this same helper. */
+ *  documenting the law instead of inline checks (`placeBuildOrder`,
+ *  `commissionShipyard`, `commissionGuildBuilding` below) drifting apart.
+ *  E13 (#100) extends the law to guild Buildings — `company.guildBuild` is
+ *  a third term, same rule ("one active Build Order per Company"). */
 function hasActiveBuildOrder(company: World["company"]): boolean {
-  return company.headquarters?.buildOrder !== undefined || company.shipyard?.site !== undefined;
+  return (
+    company.headquarters?.buildOrder !== undefined ||
+    company.shipyard?.site !== undefined ||
+    company.guildBuild !== undefined
+  );
 }
 
 /** The site-specific half of delivering into a resolved `StoreRef` target
@@ -161,13 +189,55 @@ function siteCompletion(
       const shipyard = world.company.shipyard;
       return shipyard ? { portId: shipyard.portId, completeIfDone: completeRefitIfDone } : null;
     }
+    case "guildBuild": {
+      const order = world.company.guildBuild;
+      return order ? { portId: order.portId, completeIfDone: completeGuildBuildIfDone } : null;
+    }
     case "hold":
+    case "storehouse":
       return null;
     default: {
       const exhaustive: never = target;
       throw new Error(`siteCompletion: unhandled StoreRef kind ${JSON.stringify(exhaustive)}`);
     }
   }
+}
+
+/** The `deliver` guard-clause chain (E13.0 #307's `resolveDeliveryTarget`,
+ *  deleted per spec §Tech — "The delivery chain": explicit `StoreRef`
+ *  addressing means `deliver` keeps hand-maintaining its own precedence
+ *  rather than a shared, player-selectable seam): where would delivering
+ *  `good` from `ship`'s cargo land, following the SAME precedence as before
+ *  (HQ build site -> Shipyard's own construction -> Refit site), `null`
+ *  when nothing at the docked port would accept it right now. Deliberately
+ *  does NOT consider an activated Storehouse — that verb is `storeGood`,
+ *  not `deliver` (Professor F7: verb separates "feed the Storehouse" from
+ *  "feed the construction site"). The guild Building's own construction
+ *  site (`guildBuild`) IS a `deliver` target, same as the other three
+ *  sites, appended last (own-building precedent: Headquarters/Shipyard
+ *  construction sites were already deliver targets before it). */
+function resolveDeliverTarget(world: World, ship: Ship, good: GoodId): StoreRef | null {
+  if (ship.location.kind !== "docked") return null;
+  const dockedPortId = ship.location.portId;
+  const have = amountOf(ship.cargo, good);
+  if (have <= 0) return null;
+
+  const candidates: StoreRef[] = [];
+  const hq = world.company.headquarters;
+  if (hq && hq.buildOrder && hq.portId === dockedPortId) candidates.push({ kind: "hqBuild" });
+  const shipyard = world.company.shipyard;
+  if (shipyard && shipyard.site && shipyard.portId === dockedPortId) candidates.push({ kind: "shipyardBuild" });
+  if (shipyard && shipyard.refitOrder && shipyard.portId === dockedPortId) candidates.push({ kind: "refit" });
+  const guildBuild = world.company.guildBuild;
+  if (guildBuild && guildBuild.portId === dockedPortId) candidates.push({ kind: "guildBuild" });
+
+  for (const ref of candidates) {
+    const store = readStore(world, ref);
+    const policy = policyFor(world, ref);
+    if (!store || !policy) continue;
+    if (accepts(store, policy, good, have) > 0) return ref;
+  }
+  return null;
 }
 
 /** Delivers `good` from `ship`'s cargo into a resolved `target` site: moves
@@ -356,10 +426,10 @@ export function applyCommand(world: World, command: Command): World {
       return launchIfComplete(appendLedgerEvents(rushed, result.events));
     }
     case "deliver": {
-      // E13.0 (#307): the guard-clause chain (HQ -> Shipyard's own
-      // construction -> Refit) is extracted into `resolveDeliveryTarget`
-      // (`transfer.ts`) — pure, and the load-bearing seam E13 later deletes
-      // to let the player name the target directly. `deliver` itself is now
+      // E13 (#100): `resolveDeliveryTarget` (E13.0 #307) is deleted per
+      // spec §Tech — "The delivery chain"; its guard-clause chain moves
+      // in-line as `resolveDeliverTarget` above (this file), extended with
+      // the guild Building's own construction site. `deliver` itself stays
       // "resolve -> moveOwnGoods", plus the SAME zero-need completion tail
       // as before (presence-based, not need-based — kept hand-maintained
       // here per the spec's explicit call-out, not folded into the
@@ -368,7 +438,7 @@ export function applyCommand(world: World, command: Command): World {
       if (!ship || ship.location.kind !== "docked") return world;
       const dockedPortId = ship.location.portId;
 
-      const target = resolveDeliveryTarget(world, ship, command.good);
+      const target = resolveDeliverTarget(world, ship, command.good);
       if (target) {
         const result = applyDelivery(world, ship, command.good, target);
         if (result) return result;
@@ -387,12 +457,15 @@ export function applyCommand(world: World, command: Command): World {
       // correctness gap: a co-active Refit's completion is already resolved
       // from its own delivery/auto-draw/rush call sites, so this branch
       // never needing to reach it is effectively unreachable in practice
-      // (#290 spec micro-nit).
+      // (#290 spec micro-nit). Same reasoning extends to a co-active guild
+      // Building construction (orthogonal to HQ/Shipyard's one-order law).
       const hq = world.company.headquarters;
       const shipyard = world.company.shipyard;
+      const guildBuild = world.company.guildBuild;
       if (hq && hq.buildOrder && hq.portId === dockedPortId) return launchIfComplete(world);
       if (shipyard && shipyard.site && shipyard.portId === dockedPortId) return completeShipyardIfDone(world);
       if (shipyard && shipyard.refitOrder && shipyard.portId === dockedPortId) return completeRefitIfDone(world);
+      if (guildBuild && guildBuild.portId === dockedPortId) return completeGuildBuildIfDone(world);
       return world;
     }
     case "commissionShipyard": {
@@ -548,6 +621,129 @@ export function applyCommand(world: World, command: Command): World {
         region: { ...world.region, ports },
       };
       return completeRefitIfDone(appendLedgerEvents(rushed, result.events));
+    }
+    case "commissionGuildBuilding": {
+      // The Building permit (CONTEXT.md): rank-gated on the variant's own
+      // guild — enrollment is implied (rankOf(0) < STOREHOUSE_PERMIT_RANK
+      // for an unenrolled guild). Placement: that guild's archetype, or the
+      // Free port (spec — "Placement: geography with teeth"). Scarcity: the
+      // one-active-order law, extended to guild Buildings (`hasActiveBuildOrder`).
+      // Reuses `commissionBuilding` (building.ts, #99) for the reserve-gated
+      // fee charge and the empty siteStore — the commissionShipyard/
+      // commissionRefit precedent.
+      if (hasActiveBuildOrder(world.company)) return world;
+      if (!hasStorehousePermit(world, command.variant)) return world;
+      if (!isLegalStorehousePlacement(world, command.variant, command.portId)) return world;
+      // StoreRef's `storehouse` kind addresses a Building by portId alone
+      // (spec §Tech — explicit addressing) — at most one Company Building
+      // per port, so a second commission at an already-occupied port is
+      // rejected here rather than left ambiguous.
+      if (world.company.buildings.some((b) => b.portId === command.portId)) return world;
+      const commissioned = commissionBuilding(world.company.thalers, STOREHOUSE_LABOR_FEE);
+      if (!commissioned) return world; // the labor fee may not dip into the Reserve (#122)
+      const order = {
+        type: command.type,
+        variant: command.variant,
+        portId: command.portId,
+        siteStore: commissioned.siteStore,
+      };
+      const placed: World = {
+        ...world,
+        company: { ...world.company, thalers: commissioned.thalers, guildBuild: order },
+      };
+      return appendLedgerEvent(placed, {
+        kind: "laborFee",
+        tick: world.tick,
+        thalers: STOREHOUSE_LABOR_FEE,
+      });
+    }
+    case "rushGuildBuild": {
+      const order = world.company.guildBuild;
+      if (!order) return world;
+      const portIdx = world.region.ports.findIndex((p) => p.id === order.portId);
+      if (portIdx < 0) return world;
+
+      // computeGuildBuildRushQuote (storehouse.ts) is the single source of
+      // "what would rushing buy right now" — the `computeRushQuote` pattern.
+      const quote = computeGuildBuildRushQuote(world);
+      if (quote.lines.length === 0) return world;
+
+      const site: ConstructionSite = {
+        recipe: STOREHOUSE_RECIPE,
+        siteStore: order.siteStore,
+        portId: order.portId,
+      };
+      const result = applyRushQuoteToSite(
+        site,
+        world.region.ports[portIdx],
+        world.company.thalers,
+        quote,
+        world.tick,
+      );
+      const ports = [...world.region.ports];
+      ports[portIdx] = result.port;
+
+      const rushed: World = {
+        ...world,
+        company: {
+          ...world.company,
+          thalers: result.thalers,
+          guildBuild: { ...order, siteStore: result.siteStore },
+        },
+        region: { ...world.region, ports },
+      };
+      return completeGuildBuildIfDone(appendLedgerEvents(rushed, result.events));
+    }
+    case "storeGood": {
+      // Market-free, best-effort (spec — "what fits / what's there"; the
+      // `deliver` precedent). Addressed by the ship's own docked port
+      // (explicit `StoreRef` addressing, spec §Tech) — a Company Building
+      // at any other port is not a target. `moveOwnGoods` (transfer.ts)
+      // does the actual clamp (capacity + goods filter, via the
+      // storehouse `StorePolicy`, never a clamp here).
+      const ship = world.company.ships.find((s) => s.id === command.shipId);
+      if (!ship || ship.location.kind !== "docked") return world;
+      const portId = ship.location.portId;
+      const target: StoreRef = { kind: "storehouse", portId };
+
+      const holdRef: StoreRef = { kind: "hold", shipId: ship.id };
+      const before = amountOf(readStore(world, holdRef)!, command.good);
+      const movedWorld = moveOwnGoods(world, holdRef, target, command.good, "max");
+      const moved = before - amountOf(readStore(movedWorld, holdRef)!, command.good);
+      if (moved <= 0) return world;
+
+      return appendLedgerEvent(movedWorld, {
+        kind: "store",
+        tick: world.tick,
+        shipId: ship.id,
+        portId,
+        good: command.good,
+        qty: moved,
+      });
+    }
+    case "withdrawGood": {
+      // The `storeGood` inverse: Building's own store -> the docked ship's
+      // Cargo (still market-free, best-effort, hold-capacity clamped by the
+      // `hold` StorePolicy — no clamp here).
+      const ship = world.company.ships.find((s) => s.id === command.shipId);
+      if (!ship || ship.location.kind !== "docked") return world;
+      const portId = ship.location.portId;
+      const source: StoreRef = { kind: "storehouse", portId };
+
+      const holdRef: StoreRef = { kind: "hold", shipId: ship.id };
+      const before = amountOf(readStore(world, holdRef)!, command.good);
+      const movedWorld = moveOwnGoods(world, source, holdRef, command.good, "max");
+      const moved = amountOf(readStore(movedWorld, holdRef)!, command.good) - before;
+      if (moved <= 0) return world;
+
+      return appendLedgerEvent(movedWorld, {
+        kind: "withdraw",
+        tick: world.tick,
+        shipId: ship.id,
+        portId,
+        good: command.good,
+        qty: moved,
+      });
     }
     case "buy": {
       const ship = world.company.ships.find((s) => s.id === command.shipId);

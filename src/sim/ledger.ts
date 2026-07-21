@@ -88,6 +88,12 @@ export type LedgerEvent =
       readonly thalers: number;
       readonly cargoValue: number;
       readonly siteStoreValue: number;
+      /** Value of goods sitting in an activated Company Building (E13, #100,
+       *  SAVE_VERSION 14, `migrateV13ToV14` backfills 0 on older saves) —
+       *  generic (not `storehouseValue`): E15's Plant reuses this same
+       *  field rather than a second shape change (spec §Ledger & netWorth,
+       *  OQ8). */
+      readonly buildingStoreValue: number;
       readonly total: number;
     }
   | {
@@ -154,6 +160,40 @@ export type LedgerEvent =
       readonly shipId: ShipId;
       readonly portId: PortId;
       readonly hold: number;
+    }
+  | {
+      /** Goods moved from a Ship's Cargo into a Company Building's own
+       *  store (E13, #100, CONTEXT.md — Stop order kinds "store"/
+       *  "withdraw"). Market-free (the goods are already the Company's, the
+       *  `deliver` precedent) — no `thalers`. */
+      readonly kind: "store";
+      readonly tick: number;
+      readonly shipId: ShipId;
+      readonly portId: PortId;
+      readonly good: GoodId;
+      readonly qty: number;
+    }
+  | {
+      /** The `store` command's inverse: goods moved from a Company
+       *  Building's store back into a Ship's Cargo. */
+      readonly kind: "withdraw";
+      readonly tick: number;
+      readonly shipId: ShipId;
+      readonly portId: PortId;
+      readonly good: GoodId;
+      readonly qty: number;
+    }
+  | {
+      /** A guild Building's own construction completed and it activated
+       *  (E13, #100) — the Building analog of `launch` (a launch is a ship;
+       *  one kind per meaning). Moves no thalers (the labor fee was already
+       *  logged by `laborFee` at commission time; materials by their own
+       *  autoDraw/delivery/rush events). `buildingType` is a closed union of
+       *  one today (Storehouse); E15's Plant would add a sibling value. */
+      readonly kind: "completed";
+      readonly tick: number;
+      readonly portId: PortId;
+      readonly buildingType: "storehouse";
     };
 
 /** Appends one event to the Ledger. The single seam every mutation point
@@ -189,6 +229,11 @@ export interface NetWorthBreakdown {
   readonly thalers: number;
   readonly cargoValue: number;
   readonly siteStoreValue: number;
+  /** Value of goods sitting in an activated Company Building, at
+   *  region-average mid — the `cargoValue`/`siteStoreValue` sibling for the
+   *  `storehouse` StoreRef kind (E13, #100, spec §Ledger & netWorth, OQ8).
+   *  Generic, not `storehouseValue` — E15's Plant reuses this field. */
+  readonly buildingStoreValue: number;
   readonly total: number;
 }
 
@@ -225,16 +270,29 @@ export function computeNetWorth(world: World): NetWorthBreakdown {
 
   let cargoValue = 0;
   let siteStoreValue = 0;
+  // E13 (#100): a third accumulator, kept structurally separate from the two
+  // above rather than folded into `siteStoreValue` — the loop's shape (and
+  // every term's accumulation order) is otherwise byte-for-byte the pre-#100
+  // walk; see the class comment above and incident 0023/#307's ULP
+  // regression this guards against.
+  let buildingStoreValue = 0;
   for (const ref of companyStores(world)) {
     const store = readStore(world, ref);
     if (!store) continue;
     for (const good of GOOD_IDS) {
       const value = amountOf(store, good) * mids[good];
       if (ref.kind === "hold") cargoValue += value;
+      else if (ref.kind === "storehouse") buildingStoreValue += value;
       else siteStoreValue += value;
     }
   }
 
   const thalers = world.company.thalers;
-  return { thalers, cargoValue, siteStoreValue, total: thalers + cargoValue + siteStoreValue };
+  return {
+    thalers,
+    cargoValue,
+    siteStoreValue,
+    buildingStoreValue,
+    total: thalers + cargoValue + siteStoreValue + buildingStoreValue,
+  };
 }

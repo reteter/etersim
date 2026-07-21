@@ -119,7 +119,7 @@ function digestLedgerEvent(event: LedgerEvent, index: number): string {
     case "launch":
       return `${head} launch|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}`;
     case "netWorth":
-      return `${head} netWorth|tick=${event.tick}|thalers=${event.thalers}|cargoValue=${fmtFloat(event.cargoValue)}|siteStoreValue=${fmtFloat(event.siteStoreValue)}|total=${fmtFloat(event.total)}`;
+      return `${head} netWorth|tick=${event.tick}|thalers=${event.thalers}|cargoValue=${fmtFloat(event.cargoValue)}|siteStoreValue=${fmtFloat(event.siteStoreValue)}|buildingStoreValue=${fmtFloat(event.buildingStoreValue)}|total=${fmtFloat(event.total)}`;
     case "enrollmentFee":
       return `${head} enrollmentFee|tick=${event.tick}|guildId=${event.guildId}|thalers=${event.thalers}`;
     case "upkeep":
@@ -134,6 +134,17 @@ function digestLedgerEvent(event: LedgerEvent, index: number): string {
       return `${head} refitStart|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}|thalers=${event.thalers}`;
     case "refitComplete":
       return `${head} refitComplete|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}|hold=${event.hold}`;
+    // store/withdraw/completed (E13, #100): never emitted by
+    // `runGoldenScenario` (no Storehouse in that scenario, by design — C1's
+    // scope is the E13.0 refactor, not E13's new mechanics), but the
+    // exhaustive switch still needs a case so the digest walk keeps
+    // compiling against the extended LedgerEvent union.
+    case "store":
+      return `${head} store|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}|good=${event.good}|qty=${event.qty}`;
+    case "withdraw":
+      return `${head} withdraw|tick=${event.tick}|shipId=${event.shipId}|portId=${event.portId}|good=${event.good}|qty=${event.qty}`;
+    case "completed":
+      return `${head} completed|tick=${event.tick}|portId=${event.portId}|buildingType=${event.buildingType}`;
     default: {
       const exhaustive: never = event;
       throw new Error(`e13-0-equivalence digest: unhandled Ledger event kind ${JSON.stringify(exhaustive)}`);
@@ -154,6 +165,15 @@ export function digestWorld(world: World): string {
   lines.push(digestStore("hqBuildSite", world.company.headquarters?.buildOrder?.siteStore));
   lines.push(digestStore("shipyardSite", world.company.shipyard?.site?.siteStore));
   lines.push(digestStore("refitSite", world.company.shipyard?.refitOrder?.siteStore));
+  // E13 (#100): the pending guild Building's own construction site, plus
+  // every activated Building's own store — never populated by
+  // `runGoldenScenario` (C1's scope is the E13.0 refactor), but walked here
+  // so a future digest run that DOES touch a Storehouse can't silently omit
+  // it (the F4 discipline this digest already follows for the other sites).
+  lines.push(digestStore("guildBuildSite", world.company.guildBuild?.siteStore));
+  for (const building of world.company.buildings) {
+    lines.push(digestStore(`storehouse:${building.portId}:${building.variant}`, building.store));
+  }
 
   world.ledger.forEach((event, index) => lines.push(digestLedgerEvent(event, index)));
 

@@ -333,45 +333,60 @@ describe("persistence", () => {
     expect(parsed.version).toBe(SAVE_VERSION);
   });
 
-  describe("v12 -> v13 migration (E14 #286 fix — Shipyard.site)", () => {
-    it("parseWorldJson accepts a v12 world unchanged (identity — Shipyard.site is additive/absent-safe)", () => {
-      const world = e9World(); // no shipyard field at all — the common v12 shape
-      const text = JSON.stringify({ version: 12, world });
+  describe("v13 -> v14 migration (E13, #100 — Company.buildings, netWorth.buildingStoreValue)", () => {
+    /** A v13 save on disk: a world that ticked through at least one day
+     *  boundary (so its Ledger carries a real `netWorth` event), de-shaped
+     *  back to the pre-#100 wire format — no `Company.buildings` at all, and
+     *  no `buildingStoreValue` on any `netWorth` event (the mechanic didn't
+     *  exist yet). */
+    function v13World(): { world: World; hasNetWorthEvent: boolean } {
+      const world = midSessionWorld(); // 250 ticks — crosses several day boundaries
+      const rest: Record<string, unknown> = { ...world.company };
+      delete rest.buildings;
+      const deshapedLedger = world.ledger.map((event) => {
+        if (event.kind !== "netWorth") return event;
+        const evRest: Record<string, unknown> = { ...event };
+        delete evRest.buildingStoreValue;
+        return evRest;
+      });
+      const deshaped = { ...world, company: rest, ledger: deshapedLedger } as unknown as World;
+      return { world: deshaped, hasNetWorthEvent: world.ledger.some((e) => e.kind === "netWorth") };
+    }
+
+    it("parseWorldJson backfills buildings: [] and every netWorth event's buildingStoreValue: 0", () => {
+      const { world, hasNetWorthEvent } = v13World();
+      expect(hasNetWorthEvent).toBe(true); // precondition: the fixture actually carries one
+      const text = JSON.stringify({ version: 13, world });
 
       const migrated = parseWorldJson(text);
 
-      expect(migrated).toEqual(world);
+      expect(migrated.company.buildings).toEqual([]);
+      const netWorthEvents = migrated.ledger.filter((e) => e.kind === "netWorth");
+      expect(netWorthEvents.length).toBeGreaterThan(0);
+      for (const event of netWorthEvents) {
+        expect(event.kind === "netWorth" && event.buildingStoreValue).toBe(0);
+      }
     });
 
-    it("parseWorldJson accepts a v12 world with a built (site-absent) Shipyard unchanged — that's exactly what 'no site' still means", () => {
-      const base = createWorld("v12-built-shipyard");
-      const hqPortId = base.region.ports[0].id;
-      const shipyardPortId = base.region.ports[1].id;
-      let world: World = { ...base, company: { ...base.company, thalers: 10_000 } };
-      world = tick(world, [{ kind: "foundHeadquarters", portId: hqPortId }]);
-      // A v12 save's Shipyard, if present, was always fully built (the old
-      // instant-purchase model) — same shape as `{ portId }` at v13.
-      world = { ...world, company: { ...world.company, shipyard: { portId: shipyardPortId } } };
-      const text = JSON.stringify({ version: 12, world });
-
-      const migrated = parseWorldJson(text);
-
-      expect(migrated).toEqual(world);
-      expect(migrated.company.shipyard).toEqual({ portId: shipyardPortId });
-    });
-
-    it("loadAutosave transparently migrates a v12 slot, so an old save keeps loading (incident 0009 concern)", () => {
+    it("loadAutosave transparently migrates a v13 slot, so an old save keeps loading (incident 0009 concern)", () => {
       const storage = fakeStorage();
-      const world = e9World();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 12, world }));
+      const { world } = v13World();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 13, world }));
 
       const restored = loadAutosave(storage);
       expect(restored).not.toBeNull();
       expect(hasAutosave(storage)).toBe(true);
-      expect(restored).toEqual(world);
+      expect(restored!.company.buildings).toEqual([]);
     });
 
-    it("a save older than v12 (v11) is now rejected — migration is one step, not open-ended", () => {
+    it("a save older than v13 (v12) is now rejected — migration is one step, not open-ended", () => {
+      const storage = fakeStorage();
+      const world = e9World();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 12, world }));
+      expect(loadAutosave(storage)).toBeNull();
+    });
+
+    it("v11 is still rejected", () => {
       const storage = fakeStorage();
       const save = v11Save();
       storage.setItem(AUTOSAVE_KEY, JSON.stringify(save));
