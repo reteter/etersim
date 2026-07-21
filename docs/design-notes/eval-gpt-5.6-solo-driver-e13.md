@@ -469,6 +469,15 @@ depth differs, and the difference lives in **grep-verified code, not ruler varia
   the ruler's off-by-~40 line cites) demoted it to benign type-laxity and the verdict to
   CONDITIONAL. The lesson is the eval's own thesis turned on itself: a ruler finding is an
   **input to verify**, not a verdict — the human-in-the-loop check is part of the instrument.
+- **NEW — skepticism symmetry (verify what *helps* the model too):** the same distrust was then
+  applied to the finding that *protected* the grade. The ruler's **"hard-law scan all CLEAR"**
+  (an auto-NO-GO trigger if wrong) was **independently re-verified by grep** — no
+  `Math.random`/`Date.now` added under `src/sim`, no React/DOM in `src/sim`, on both the diff and
+  the tip: confirmed CLEAR. Remaining asymmetries, recorded not chased: the **4 minors** are
+  ruler-reported, **not** independently confirmed (they do not move the verdict); and the
+  Sol-vs-Terra comparison is **gap-anchored on Terra** (we checked whether Sol has the three
+  things Terra was dinged for — we did not symmetrically hunt Sol's *own* gaps), so
+  "Sol = the shallower CONDITIONAL" is bounded by that.
 
 ### Casting read (refined) — the money finding
 
