@@ -108,7 +108,7 @@ the Port"), and only a *claim* — a definition, a rule, a number — can contra
 | 2 | Simulation | 6 | 648 | `src/sim` (4 terms) / ADR-0008 + E13.0 spec (2 terms) | **worked s15 — CLEAN** (below); no finding |
 | 3 | Buildings & construction | 10 | 683 | `src/sim` (8 built) / E15 spec (2 unbuilt) | **worked s15 — CLEAN** (below); no finding. *Term count corrected 11→10 — see below.* |
 | 4 | Player & ships | 11 | 1557 | `src/sim` (9 built) / UI+store (2) / E13 spec (store/withdraw, unbuilt) | **worked s16 — CLEAN** (below); no finding |
-| 5 | Guilds & contracts | 12 | 587 | `src/sim` | pending |
+| 5 | Guilds & contracts | 12 | 587 | `src/sim` (built) / UI (Guildhouse, board) / E13 spec (permit, Storehouse) | **worked s16 — CLEAN** (below); no finding |
 | 6 | World & setting | 17 | 1046 | none (lore) | pending |
 | 7 | Harness & evaluation | 8 | 596 | none (unbuilt) | pending |
 | — | **Process subjects** (no glossary entry): verification gates, merge/wave ritual, session ritual, model ladder, review depth, documentation law | — | — | — | pending — **F1 came from here** |
@@ -201,6 +201,32 @@ anchored** (the row-3 lesson): the section holds exactly 11 convention entries a
 bold-at-line-start wrap artifact** — the naive header grep and the true count agree here.
 Neighbour-concept check (the F13 obligation) clean: Lane, Port, Harbor, Storehouse, Command,
 Thaler, Good, Upkeep, Headquarters and Goods store each carry their own entry.
+
+**Guilds & contracts, verified clean (s16).** Twelve terms, and the row-4 lesson applied from the
+start — the section's dense behavioural claims read line-by-line, not name-matched. **Desperation
+clause**, the row's richest claim: `stampRequiredRanks` (`contract.ts:142-163`) picks each guild's
+winner by lowest `tier`, ties broken by deepest `shortfall`, stamps it `requiredRank = 1` and every
+sibling `requiredRank = tier`, over the full open-offer set each refresh (called at `:318`) — *"the
+clause migrates with the board"* exactly, idempotent by construction. **Upkeep**'s formula is
+`Math.min(UPKEEP_PER_DAY, Math.max(0, thalers − CONSTRUCTION_RESERVE))` verbatim (`tick.ts:327`) —
+the entry's *"never crosses the Reserve"* is the `max(0, …)` clamp itself, not prose. **Settlement
+period**'s *"between Upkeep and offer refresh, fees inside the day's netWorth point"* is the phase
+array `DAY_BOUNDARY_PHASES` (`tick.ts:419`) in literal order: `upkeep → settleContracts →
+refreshOffers → netWorth`. **Enrollment** gates on a founded Headquarters and `ENROLLMENT_FEE` ₸400
+(`commands.ts:648-650`), granting `points: 0` = Rank 1; **acceptContract** gates on `requiredRank`,
+not `tier` (`commands.ts:676`, the #226 desperation seam), enrollment checked and `consecutiveMisses`
+tracked for the two-miss breach. Constants hold: `RANK_THRESHOLDS = [0,4,10,18]` (four steps),
+`POINTS_SETTLED/MISSED/BREACH_OR_RESIGN = 1/−1/−3` — and *"resign = breach parity"* is not a claim to
+re-check but a single shared constant. Ledger kinds `enrollmentFee` / `upkeep` /
+`settlement(met|missed|breached|resigned)` all present (`ledger.ts:92,98,111-120`). **Correctly not
+`src/sim`'s to answer** (the row-2 trap): Guildhouse and Contract board are UI (`GuildhouseSection`,
+`KontraktyTab`), and Building permit + Storehouse are **E13-unbuilt** — glossary-first, arbiter the
+E13 spec (E13 ships one Storehouse variant, the Granary). One consistency-with-roadmap note, not a
+finding: `pickSource` (`contract.ts:179`), the contract feasibility engine, is the same round-trip
+recompute #322 is parked to memoize — expected, not drift. **Count anchored**: exactly 12 convention
+entries, no wrap artifact. Neighbour-concept check (F13) clean: Port archetype, Economic archetype,
+Free port, Equilibrium, Build Order, Reserve and Ledger each carry an entry; `netWorth` is glossed
+inline in the Ledger entry.
 
 ## Binding rules
 
