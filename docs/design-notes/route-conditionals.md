@@ -1,10 +1,11 @@
-# Route order conditionals — "hold the sale until …" (parked, needs its own grill)
+# Route order conditionals — "hold the sale until …" (resolved, do not implement)
 
 Raised by the owner during the M3/E3 grill (2026-07-09), while locking guild contract
-mechanics. Status: **parked — do not implement**; revisit in a dedicated grill.
-**Unpark trigger tracked as #357** (filed 2026-07-21, #326 audit) — this note carried the
-trigger in prose only, with no issue and no milestone home, which is exactly what the
-trigger-is-a-promise law (WORKFLOW §Documentation law) exists to catch.
+mechanics. **Resolved 2026-07-21 (#357 grill): lock reaffirmed, no design change** — see
+[route-automation-grill-2026-07-21.md](route-automation-grill-2026-07-21.md) for the full
+reasoning (breaks the no-wait-in-port lock, reproduces E8's autopilot degeneracy, and E3's
+contract quota already covers the adjacent need on contract-bound routes). Kept below for
+history; do not re-litigate without new facts.
 
 ## The ask
 

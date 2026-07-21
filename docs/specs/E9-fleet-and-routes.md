@@ -16,7 +16,9 @@ paid for through docking fees and a full Ledger with an in-game performance boar
 
 Explicit non-goals: **flat cash ship purchase** (never built — construction replaced it
 at the grill, superseding the PRD wording "ship purchase is v2's money sink"); route
-wait/price conditionals (PRD: route rot *is* the gameplay); additional building types,
+wait/price conditionals (PRD: route rot *is* the gameplay — **reaffirmed 2026-07-21
+against fresh playtest evidence**, [route-automation-grill-2026-07-21](../design-notes/route-automation-grill-2026-07-21.md));
+additional building types,
 build queue, assembly time, Headquarters relocation/demolition, hull classes (M3 as
 locked 2026-07-09 ships guild building types via E13; the rest stays parked);
 branch offices per region + region administrator (multi-region hooks, PRD Beyond);

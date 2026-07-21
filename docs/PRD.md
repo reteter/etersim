@@ -200,7 +200,10 @@ Orchestration is progression, not a replacement for manual trade.
 **Parked hooks (deliberately out of v2):** ship upkeep / crew wages (E9's docking fee
 ships the first running-cost slice; ship upkeep is spec'd in E3 — approved 2026-07-09;
 crew wages stay parked);
-wait-until-full route orders; build queue, shipyard assembly time and Headquarters
+wait-until-full route orders (**resolved 2026-07-21, #357 grill: rejected, not just
+parked** — breaks the no-wait-in-port lock the same way price-conditional Stops would;
+see [route-automation-grill-2026-07-21.md](design-notes/route-automation-grill-2026-07-21.md));
+build queue, shipyard assembly time and Headquarters
 relocation (E9 grill); real orbital motion (long-crossings candidate, M6+ — aether
 currents over a moving system; formerly "E5 candidate"); information fog on remote
 prices (Events-gradient candidate, post-1.0 — events can cut the telegraph; formerly
