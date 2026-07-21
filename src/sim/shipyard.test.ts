@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CONSTRUCTION_RESERVE, HEADQUARTERS_COST, SHIP_RECIPE } from "./building";
+import { AUTO_DRAW_PER_DAY, CONSTRUCTION_RESERVE, HEADQUARTERS_COST, SHIP_RECIPE } from "./building";
 import { applyCommand } from "./commands";
 import { GOOD_IDS } from "./goods";
 import { amountOf, storeOf, withAdded } from "./goodsStore";
@@ -258,7 +258,7 @@ describe("Shipyard construction auto-draw/deliver/rush (#286)", () => {
     // guarded `if (store)`, which would pass vacuously (and silently stop
     // checking anything) if the site had already cleared (incident 0005).
     expect(store).toBeDefined();
-    for (const good of GOOD_IDS) expect(amountOf(store!, good)).toBeLessThanOrEqual(24);
+    for (const good of GOOD_IDS) expect(amountOf(store!, good)).toBeLessThanOrEqual(AUTO_DRAW_PER_DAY);
     expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(true);
   });
 
@@ -710,7 +710,7 @@ describe("Shipyard auto-draw (#275)", () => {
     // guarded `if (store)`, which would pass vacuously (and silently stop
     // checking anything) if the site had already cleared (incident 0005).
     expect(store).toBeDefined();
-    for (const good of GOOD_IDS) expect(amountOf(store!, good)).toBeLessThanOrEqual(24);
+    for (const good of GOOD_IDS) expect(amountOf(store!, good)).toBeLessThanOrEqual(AUTO_DRAW_PER_DAY);
     expect(w.ledger.some((e) => e.kind === "autoDraw")).toBe(true);
   });
 

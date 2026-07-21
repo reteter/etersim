@@ -120,11 +120,14 @@ describe("auto-draw (#81)", () => {
     w = applyCommand(w, { kind: "placeBuildOrder" });
     for (let t = 0; t < TICKS_PER_DAY; t++) w = tick(w, []);
     const store = w.company.headquarters!.buildOrder?.siteStore;
-    if (store) {
-      for (const good of GOOD_IDS) {
-        expect(amountOf(store, good)).toBeLessThanOrEqual(AUTO_DRAW_PER_DAY);
-        expect(amountOf(store, good)).toBeLessThanOrEqual(SHIP_RECIPE[good]);
-      }
+    // timber (need 12) exceeds AUTO_DRAW_PER_DAY, so the recipe cannot
+    // complete within one day — assert it exists rather than a guarded
+    // `if (store)`, which would pass vacuously (and silently stop checking
+    // anything) if the site had already cleared (incident 0005).
+    expect(store).toBeDefined();
+    for (const good of GOOD_IDS) {
+      expect(amountOf(store!, good)).toBeLessThanOrEqual(AUTO_DRAW_PER_DAY);
+      expect(amountOf(store!, good)).toBeLessThanOrEqual(SHIP_RECIPE[good]);
     }
     expect(w.company.thalers).toBeGreaterThanOrEqual(0);
 
@@ -135,7 +138,7 @@ describe("auto-draw (#81)", () => {
       const drawnQty = autoDrawEvents
         .filter((e) => e.kind === "autoDraw" && e.good === good)
         .reduce((sum, e) => sum + (e.kind === "autoDraw" ? e.qty : 0), 0);
-      expect(drawnQty).toBe(store ? amountOf(store, good) : 0);
+      expect(drawnQty).toBe(amountOf(store!, good));
     }
   });
 
