@@ -1,5 +1,4 @@
 import {
-  applyDeliveryToConstructionSite,
   applyRushQuoteToSite,
   commissionBuilding,
   computeRushQuote,
@@ -13,6 +12,7 @@ import {
 } from "./building";
 import type { ActiveContract } from "./contract";
 import type { GoodId } from "./goods";
+import { amountOf, withAdded } from "./goodsStore";
 import { ENROLLMENT_FEE, POINTS_BREACH_OR_RESIGN, rankOf, type GuildId } from "./guild";
 import { appendLedgerEvent, appendLedgerEvents } from "./ledger";
 import { effectiveBase, quoteBuy, quoteSell } from "./market";
@@ -35,6 +35,7 @@ import {
 } from "./shipyard";
 import type { Route, RouteId } from "./route";
 import { cargoUsed, isRouteActive, type Ship, type ShipId } from "./ship";
+import { moveOwnGoods, readStore, resolveDeliveryTarget, type StoreRef } from "./transfer";
 import { replaceShip, type World } from "./world";
 
 /**
@@ -136,45 +137,65 @@ function hasActiveBuildOrder(company: World["company"]): boolean {
   return company.headquarters?.buildOrder !== undefined || company.shipyard?.site !== undefined;
 }
 
-/** Attempts to deliver `good` from `ship`'s cargo into one active
- *  construction `site`, returning the resolved World when the site accepted
- *  the delivery attempt — whether or not any material actually moved, since
- *  a zero-need delivery still must resolve a pending completion (the
- *  existing "a completed recipe still resolves even with a zero-need
- *  delivery" contract) — or `null` when nothing moved, so the caller can
- *  fall through to the next same-port site in the chain. `writeSite` writes
- *  the updated `siteStore` back onto `world.company` (each site lives at a
- *  different path: `headquarters.buildOrder`, `shipyard.site`,
- *  `shipyard.refitOrder`); `completeIfDone` is that site's own completion
- *  check (`launchIfComplete` / `completeShipyardIfDone` /
- *  `completeRefitIfDone`).
- *
- *  The one shape the three near-identical deliver blocks below (HQ,
- *  Shipyard's own construction, Refit) share — so a fourth (E13 Storehouse /
- *  E15 Plant deliver order) adds a call here instead of a fourth
- *  near-identical block (#290). */
-function tryDeliver(
+/** The site-specific half of delivering into a resolved `StoreRef` target
+ *  (E13.0 #307 — `resolveDeliveryTarget`/`moveOwnGoods`, `transfer.ts`):
+ *  which port to tag the `delivery` Ledger event with, and that site's own
+ *  completion check (`launchIfComplete` / `completeShipyardIfDone` /
+ *  `completeRefitIfDone`). `null` under the same "doesn't currently resolve"
+ *  conditions `readStore`/`writeStore` use. `target.kind` is never `"hold"`
+ *  here — `resolveDeliveryTarget` only ever returns a site ref. */
+function siteCompletion(
   world: World,
-  ship: Ship,
-  good: GoodId,
-  site: ConstructionSite,
-  writeSite: (world: World, siteStore: Record<GoodId, number>) => World,
-  completeIfDone: (world: World) => World,
-): World | null {
-  const { siteStore, moved } = applyDeliveryToConstructionSite(site, ship.cargo, good);
+  target: StoreRef,
+): { readonly portId: PortId; readonly completeIfDone: (world: World) => World } | null {
+  switch (target.kind) {
+    case "hqBuild": {
+      const hq = world.company.headquarters;
+      return hq ? { portId: hq.portId, completeIfDone: launchIfComplete } : null;
+    }
+    case "shipyardBuild": {
+      const shipyard = world.company.shipyard;
+      return shipyard ? { portId: shipyard.portId, completeIfDone: completeShipyardIfDone } : null;
+    }
+    case "refit": {
+      const shipyard = world.company.shipyard;
+      return shipyard ? { portId: shipyard.portId, completeIfDone: completeRefitIfDone } : null;
+    }
+    case "hold":
+      return null;
+    default: {
+      const exhaustive: never = target;
+      throw new Error(`siteCompletion: unhandled StoreRef kind ${JSON.stringify(exhaustive)}`);
+    }
+  }
+}
+
+/** Delivers `good` from `ship`'s cargo into a resolved `target` site: moves
+ *  min(cargo, remaining need) via `moveOwnGoods` (`transfer.ts`), appends a
+ *  `delivery` Ledger event for the qty actually moved, then resolves that
+ *  site's own completion — or `null` when nothing moved, so the caller can
+ *  fall through to the zero-need completion tail (the existing "a completed
+ *  recipe still resolves even with a zero-need delivery" contract). The
+ *  moved qty is read back as a before/after diff on the ship's own hold
+ *  rather than duplicating `moveOwnGoods`'s internal clamp math — the single
+ *  source of "how much actually moved" stays inside `transfer.ts`. */
+function applyDelivery(world: World, ship: Ship, good: GoodId, target: StoreRef): World | null {
+  const info = siteCompletion(world, target);
+  if (!info) return null;
+
+  const holdRef: StoreRef = { kind: "hold", shipId: ship.id };
+  const before = amountOf(readStore(world, holdRef)!, good);
+  const movedWorld = moveOwnGoods(world, holdRef, target, good, "max");
+  const after = amountOf(readStore(movedWorld, holdRef)!, good);
+  const moved = before - after;
   if (moved <= 0) return null;
 
-  const delivered: Ship = {
-    ...ship,
-    cargo: { ...ship.cargo, [good]: ship.cargo[good] - moved },
-  };
-  const withDelivery = writeSite(replaceShip(world, delivered), siteStore);
-  return completeIfDone(
-    appendLedgerEvent(withDelivery, {
+  return info.completeIfDone(
+    appendLedgerEvent(movedWorld, {
       kind: "delivery",
       tick: world.tick,
       shipId: ship.id,
-      portId: site.portId,
+      portId: info.portId,
       good,
       qty: moved,
     }),
@@ -335,86 +356,21 @@ export function applyCommand(world: World, command: Command): World {
       return launchIfComplete(appendLedgerEvents(rushed, result.events));
     }
     case "deliver": {
+      // E13.0 (#307): the guard-clause chain (HQ -> Shipyard's own
+      // construction -> Refit) is extracted into `resolveDeliveryTarget`
+      // (`transfer.ts`) — pure, and the load-bearing seam E13 later deletes
+      // to let the player name the target directly. `deliver` itself is now
+      // "resolve -> moveOwnGoods", plus the SAME zero-need completion tail
+      // as before (presence-based, not need-based — kept hand-maintained
+      // here per the spec's explicit call-out, not folded into the
+      // primitive).
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship || ship.location.kind !== "docked") return world;
       const dockedPortId = ship.location.portId;
 
-      // Guard-clause chain, not hoisted `Boolean(...)` flags (#290 —
-      // Standards review: readability regression vs the pre-#289 guards):
-      // each site's own `if (x && x.y && ...)` condition both gates entry
-      // and narrows `x`/`x.y` for TypeScript within that block, so no site
-      // here needs a `!` non-null assertion. The tail below re-derives the
-      // same conditions rather than trusting stored flags — `world`/`hq`/
-      // `shipyard`/`dockedPortId` are all consts unchanged since these
-      // checks (nothing above returns without also returning from the whole
-      // command), so re-evaluating is exactly as safe as a hoisted boolean
-      // and reads as plainly as the check above it.
-      const hq = world.company.headquarters;
-      if (hq && hq.buildOrder && hq.portId === dockedPortId) {
-        const result = tryDeliver(
-          world,
-          ship,
-          command.good,
-          { recipe: SHIP_RECIPE, siteStore: hq.buildOrder.siteStore, portId: hq.portId },
-          (w, siteStore) => ({
-            ...w,
-            company: { ...w.company, headquarters: { portId: hq.portId, buildOrder: { siteStore } } },
-          }),
-          launchIfComplete,
-        );
-        if (result) return result;
-        // The HQ build needs none of this good: fall through to a same-port
-        // Shipyard construction site or refit site instead of swallowing the
-        // delivery (#286 audit finding, owner call 2026-07-16, generalized
-        // to the Shipyard's own site by #286's fix).
-      }
-
-      // The Shipyard's own construction site (E14 #286 fix): commissioning
-      // opens a ConstructionSite like any building — `deliver` targets it
-      // while the Shipyard is at this port and still under construction.
-      // Checked second: a same-port Headquarters build claims the delivery
-      // first, per good.
-      const shipyard = world.company.shipyard;
-      if (shipyard && shipyard.site && shipyard.portId === dockedPortId) {
-        const result = tryDeliver(
-          world,
-          ship,
-          command.good,
-          { recipe: SHIPYARD_RECIPE, siteStore: shipyard.site.siteStore, portId: shipyard.portId },
-          (w, siteStore) => ({
-            ...w,
-            company: { ...w.company, shipyard: withShipyard(shipyard, { site: { siteStore } }) },
-          }),
-          completeShipyardIfDone,
-        );
-        if (result) return result;
-      }
-
-      // The Shipyard's active Refit site (E14 #275): any Company ship may
-      // deliver, not only the ship under refit — the target ship stays
-      // locked in port, but bringing materials is exactly how the site
-      // fills. Checked third: a same-port HQ build or Shipyard construction
-      // site claims the delivery first, per good — when neither needs the
-      // good, the delivery falls through to here (#286 audit finding,
-      // generalized to three same-port sites).
-      if (shipyard && shipyard.refitOrder && shipyard.portId === dockedPortId) {
-        const refitOrder = shipyard.refitOrder;
-        const targetShip = world.company.ships.find((s) => s.id === refitOrder.shipId);
-        if (!targetShip) return world; // defensive — shouldn't happen with a valid World
-        const result = tryDeliver(
-          world,
-          ship,
-          command.good,
-          { recipe: refitRecipe(targetShip), siteStore: refitOrder.siteStore, portId: shipyard.portId },
-          (w, siteStore) => ({
-            ...w,
-            company: {
-              ...w.company,
-              shipyard: withShipyard(shipyard, { refitOrder: { ...refitOrder, siteStore } }),
-            },
-          }),
-          completeRefitIfDone,
-        );
+      const target = resolveDeliveryTarget(world, ship, command.good);
+      if (target) {
+        const result = applyDelivery(world, ship, command.good, target);
         if (result) return result;
       }
 
@@ -432,6 +388,8 @@ export function applyCommand(world: World, command: Command): World {
       // from its own delivery/auto-draw/rush call sites, so this branch
       // never needing to reach it is effectively unreachable in practice
       // (#290 spec micro-nit).
+      const hq = world.company.headquarters;
+      const shipyard = world.company.shipyard;
       if (hq && hq.buildOrder && hq.portId === dockedPortId) return launchIfComplete(world);
       if (shipyard && shipyard.site && shipyard.portId === dockedPortId) return completeShipyardIfDone(world);
       if (shipyard && shipyard.refitOrder && shipyard.portId === dockedPortId) return completeRefitIfDone(world);
@@ -610,7 +568,7 @@ export function applyCommand(world: World, command: Command): World {
       const dockedAt = ship.location.portId;
       const port = world.region.ports.find((p) => p.id === dockedAt)!;
       if (!Number.isInteger(command.qty) || command.qty <= 0) return world;
-      if (ship.cargo[command.good] < command.qty) return world;
+      if (amountOf(ship.cargo, command.good) < command.qty) return world;
       const total = quoteSell(port.market[command.good], effectiveBase(port, command.good), command.qty);
       if (total === null) return world;
       return applyTrade(world, ship, port, command.good, command.qty, total, command.routeId);
@@ -754,7 +712,7 @@ function applyTrade(
 ): World {
   const tradedShip: Ship = {
     ...ship,
-    cargo: { ...ship.cargo, [good]: ship.cargo[good] - stockDelta },
+    cargo: withAdded(ship.cargo, good, -stockDelta),
   };
   const tradedPort: Port = {
     ...port,

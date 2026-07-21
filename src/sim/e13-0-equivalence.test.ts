@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { EXPECTED_GOLDEN_DIGEST } from "./e13-0-golden-digest.fixture";
 import { runGoldenScenario } from "./e13-0-golden-scenario";
-import { GOOD_IDS, type GoodId } from "./goods";
+import { GOOD_IDS } from "./goods";
+import { amountOf, type GoodsStore } from "./goodsStore";
 import type { LedgerEvent } from "./ledger";
 import type { Port } from "./region";
 import type { Ship } from "./ship";
@@ -81,17 +82,17 @@ function digestPort(port: Port): string {
  *  lives here — `refitComplete` changes `hold`, not cargo). */
 function digestShip(ship: Ship): string {
   const parts: string[] = [`ship:${ship.id}`, `hold=${ship.hold}`, `baseHold=${ship.baseHold}`];
-  for (const good of GOOD_IDS) parts.push(`${good}=${ship.cargo[good]}`);
+  for (const good of GOOD_IDS) parts.push(`${good}=${amountOf(ship.cargo, good)}`);
   return parts.join("|");
 }
 
 /** One store's walk, with a present/absent sentinel: a store missing from
  *  the World entirely must digest differently than one present-but-empty
  *  (both would otherwise walk to the identical all-zero GOOD_IDS line). */
-function digestStore(label: string, store: Record<GoodId, number> | undefined): string {
+function digestStore(label: string, store: GoodsStore | undefined): string {
   if (!store) return `${label}:absent`;
   const parts = [`${label}:present`];
-  for (const good of GOOD_IDS) parts.push(`${good}=${store[good] ?? 0}`);
+  for (const good of GOOD_IDS) parts.push(`${good}=${amountOf(store, good)}`);
   return parts.join("|");
 }
 

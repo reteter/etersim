@@ -1,4 +1,4 @@
-import { GOOD_IDS, type GoodId } from "./goods";
+import { emptyStore, totalHeld, type GoodsStore } from "./goodsStore";
 import type { RouteId } from "./route";
 import type { LaneId, PortId, Region } from "./region";
 
@@ -56,21 +56,21 @@ export interface Ship {
    *  computed from (E14 spec — "The Hold ladder"); never changes after
    *  launch. */
   readonly baseHold: number;
-  /** Cargo aboard, zero-filled for every good (deterministic iteration). */
-  readonly cargo: Record<GoodId, number>;
+  /** Cargo aboard — a GoodsStore (CONTEXT.md: Goods store; ADR-0008). */
+  readonly cargo: GoodsStore;
   readonly location: ShipLocation;
   /** Route assignment, if any (E9). */
   readonly assignment?: ShipAssignment;
 }
 
-export function emptyCargo(): Record<GoodId, number> {
-  const cargo = {} as Record<GoodId, number>;
-  for (const good of GOOD_IDS) cargo[good] = 0;
-  return cargo;
+/** Thin wrapper kept for existing call sites (ADR-0008 consequence: the diff
+ *  stays small, barrel exports intact). */
+export function emptyCargo(): GoodsStore {
+  return emptyStore();
 }
 
 export function cargoUsed(ship: Ship): number {
-  return GOOD_IDS.reduce((sum, good) => sum + ship.cargo[good], 0);
+  return totalHeld(ship.cargo);
 }
 
 /** Total voyage duration of a course, in ticks — the sum of its lanes'

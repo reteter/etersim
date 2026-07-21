@@ -1,5 +1,6 @@
 import { expect } from "vitest";
 import { applyCommand } from "./commands";
+import { amountOf } from "./goodsStore";
 import { TICKS_PER_DAY } from "./region";
 import { tick } from "./tick";
 import { createWorld, type World } from "./world";
@@ -66,17 +67,19 @@ export function runGoldenScenario(): World {
   // clear the Hold cap (a grain qty large enough to overflow it, as an
   // earlier draft of this scenario did, silently no-ops the buy).
   w = applyCommand(w, { kind: "buy", shipId: "s0", good: "grain", qty: 35 });
-  expect(w.company.ships.find((s) => s.id === "s0")!.cargo).toMatchObject({ electronics: 10, grain: 35 });
+  const s0Loaded = w.company.ships.find((s) => s.id === "s0")!.cargo;
+  expect(amountOf(s0Loaded, "electronics")).toBe(10);
+  expect(amountOf(s0Loaded, "grain")).toBe(35);
 
   w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "electronics" });
   // The surplus actually landed: site takes only the recipe's need (5), the
   // rest (5) stays aboard — this is exactly what a dropped `min` would break.
-  expect(w.company.headquarters?.buildOrder?.siteStore.electronics).toBe(5);
-  expect(w.company.ships.find((s) => s.id === "s0")!.cargo.electronics).toBe(5);
+  expect(amountOf(w.company.headquarters!.buildOrder!.siteStore, "electronics")).toBe(5);
+  expect(amountOf(w.company.ships.find((s) => s.id === "s0")!.cargo, "electronics")).toBe(5);
 
   w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "grain" });
-  expect(w.company.headquarters?.buildOrder?.siteStore.grain).toBe(35);
-  expect(w.company.ships.find((s) => s.id === "s0")!.cargo.grain).toBe(0);
+  expect(amountOf(w.company.headquarters!.buildOrder!.siteStore, "grain")).toBe(35);
+  expect(amountOf(w.company.ships.find((s) => s.id === "s0")!.cargo, "grain")).toBe(0);
 
   // >=3 world days of pure auto-draw (no rush) — the AC's explicit
   // requirement, not just "however many ticks completion happens to take".
@@ -93,7 +96,7 @@ export function runGoldenScenario(): World {
   // Sell the electronics surplus left over from the HQ delivery (trade/sell
   // coverage), still docked at the HQ port.
   const s0AfterLaunch = w.company.ships.find((s) => s.id === "s0")!;
-  const leftoverElectronics = s0AfterLaunch.cargo.electronics;
+  const leftoverElectronics = amountOf(s0AfterLaunch.cargo, "electronics");
   if (leftoverElectronics > 0) {
     w = applyCommand(w, { kind: "sell", shipId: "s0", good: "electronics", qty: leftoverElectronics });
   }
@@ -110,10 +113,10 @@ export function runGoldenScenario(): World {
   expect(w.company.shipyard?.site).toBeDefined();
 
   w = applyCommand(w, { kind: "buy", shipId: "s0", good: "timber", qty: 5 });
-  expect(w.company.ships.find((s) => s.id === "s0")!.cargo.timber).toBe(5);
+  expect(amountOf(w.company.ships.find((s) => s.id === "s0")!.cargo, "timber")).toBe(5);
   w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "timber" });
-  expect(w.company.shipyard?.site?.siteStore.timber).toBe(5);
-  expect(w.company.ships.find((s) => s.id === "s0")!.cargo.timber).toBe(0);
+  expect(amountOf(w.company.shipyard!.site!.siteStore, "timber")).toBe(5);
+  expect(amountOf(w.company.ships.find((s) => s.id === "s0")!.cargo, "timber")).toBe(0);
 
   for (let i = 0; i < TICKS_PER_DAY; i++) w = tick(w, []);
   w = applyCommand(w, { kind: "rushShipyard" });
@@ -128,7 +131,7 @@ export function runGoldenScenario(): World {
   // (`shipyard.ts` — `isUnderRefit`). Buying after commissioning would
   // silently no-op here.
   w = applyCommand(w, { kind: "buy", shipId: "s0", good: "grain", qty: 20 });
-  expect(w.company.ships.find((s) => s.id === "s0")!.cargo.grain).toBe(20);
+  expect(amountOf(w.company.ships.find((s) => s.id === "s0")!.cargo, "grain")).toBe(20);
 
   // The F3 shared-purse race: a second HQ build order (now legal — the
   // Shipyard itself is built) placed concurrently with a Refit, both drawing
@@ -142,8 +145,8 @@ export function runGoldenScenario(): World {
   // Deliver directly into the Refit site too (the third of the "three
   // sites"), then let both draw concurrently via pure auto-draw.
   w = applyCommand(w, { kind: "deliver", shipId: "s0", good: "grain" });
-  expect(w.company.shipyard?.refitOrder?.siteStore.grain).toBe(20);
-  expect(w.company.ships.find((s) => s.id === "s0")!.cargo.grain).toBe(0);
+  expect(amountOf(w.company.shipyard!.refitOrder!.siteStore, "grain")).toBe(20);
+  expect(amountOf(w.company.ships.find((s) => s.id === "s0")!.cargo, "grain")).toBe(0);
   for (let i = 0; i < 2 * TICKS_PER_DAY; i++) w = tick(w, []);
 
   return w;
