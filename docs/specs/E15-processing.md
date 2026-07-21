@@ -195,7 +195,11 @@ plantStall(plant): "starved" | "backlogged" | null           // derived, not sto
 - Ledger: `plantBuilt` (thalers = labor fee, grammar law), daily `processed`
   (goods moved, no thalers — the store/withdraw precedent); deliveries and
   withdrawals already have kinds via E13. `netWorth` adds plant stores at mid
-  (buildings themselves keep no book value — the honest-dip law).
+  (buildings themselves keep no book value — the honest-dip law), folded into the
+  generic `buildingStoreValue` field E13 introduces for the Storehouse (OQ8, decided
+  2026-07-21) — no netWorth shape change or version bump needed at E15 for this;
+  `docs/specs/E13-guild-buildings.md` §Ledger & netWorth,
+  [design-notes/oq8-buildingStoreValue-grill-2026-07-21](../design-notes/oq8-buildingStoreValue-grill-2026-07-21.md).
 
 ### Persistence
 
