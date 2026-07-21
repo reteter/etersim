@@ -197,4 +197,111 @@ assessment" is honored in the **falsification** direction, where the power actua
 
 ═══════════════════════════════════ RESULTS (append below; never edit the frozen section) ═══════════════════════════════════
 
-_Pending — GPT arm not yet run._
+**Run date:** 2026-07-21 (s18). Both arms delivered; both measured by the same Opus
+two-axis ruler out-of-band, author-blind, against the absolute merge bar.
+
+- **GPT arm** — `feat/100-storehouse` (draft PR #371), base `d5bac94`, 2 commits, ~1268/267 in 32 files. Frontier `gpt-5.6` solo@medium (self-orchestrating). *Casting note: frontier was an accidental slip — a solo-driver role bundles orchestration, so frontier is defensible, but it makes the cost line a **frontier-solo** datum, not cheap-tier-solo.*
+- **Claude arm** — `eval/100-claude` @ `1496972`, base `d5bac94` (exact — predates this doc, no answer-key leak), 3 commits (incl. an internal wave-check must-fix `1496972`), 1541/176 in 22 files. Opus orchestrator + Sonnet coder + Opus tier-3 wave check (the normal pipeline).
+
+### Objective gates (independently re-run here, both arms)
+
+| Gate | GPT | Claude |
+| --- | --- | --- |
+| typecheck / lint / build | ✓ / ✓ / ✓ | ✓ / ✓ / ✓ |
+| unit | 732 ✓ | 753 ✓ |
+| e2e | 102 ✓ | 102 ✓ |
+
+Both clear every objective gate on an independent re-run. **This — both arms clearing the
+absolute bar — is itself the calibration result** (the frozen design names Claude the
+control, not a contest).
+
+### Ruler (whole-#100 aggregate, §Granularity symmetry)
+
+- **GPT:** MERGE / MERGE. Hard-law scan all CLEAR (no `Math.random`/`Date.now`/React/DOM in `src/sim`; no suppress-to-green; deleted tests legitimate; netWorth `total` bit-identical in the golden fixture — no new ULP drift). **1 minor** — `docs/specs/README.md:32` stale "not yet started" clause, which the Orchestrator itself authored in #368 (not a GPT code defect). Zero blocking/major.
+- **Claude:** MERGE / MERGE. Hard-law scan all CLEAR (netWorth `total` bit-identical `41979.27958289407`; `buildingStoreValue` appended as a separate accumulator, `cargoValue`/`siteStoreValue` order byte-preserved; `migrateV13ToV14` float-free). **3 minor** — stale doc-comment naming `resolveDeliveryTarget` (`goodsStorePolicy.ts:33`, `building.ts:122`); English player-strings in `LedgerOverlay.tsx` (legacy carve-out, not drift); a stray blank line (`persistence.test.ts:265`). Zero blocking/major.
+
+Both submissions are cosmetic-residue-only at the merge bar. **No tallying** (frozen
+method): 1-vs-3 minors, 22-vs-32 files, 732-vs-753 tests are not a quality ranking — every
+residual on both sides is doc-staleness / whitespace / a tracked legacy-string carve-out.
+
+### Head-to-head — Axis 1–5
+
+| Axis | GPT (solo-driver unit) | Claude (pipeline) |
+| --- | --- | --- |
+| 1. Contract conformance (headline) | 0 hard-law; 1 minor (gate/ruler-caught, not a code defect) | 0 hard-law; 0 gate-caught miss |
+| 2. Output quality (ruler) | MERGE/MERGE, 1 minor | MERGE/MERGE, 3 minor |
+| 3. Incident generation | 2 minor self-filed (0025 PowerShell friction, 0026 e2e-affected near-miss) | 0 |
+| 4. Autonomy / self-orchestration | full solo loop; monolithic single-feat-commit decomposition | pipeline: 3 commits incl. self-caught wave-check must-fix |
+| 5. Cost (reported, **not ranked** — threat #5) | ~45% of the weekly frontier limit | fit inside a single 5h rolling window; subagents hard-counted **476,472 tok** (Sonnet coder 362,906 / Opus reviewer 113,566), driver ~55k (snapshot ⇒ lower bound), total ~531,900 |
+
+### Cost (Axis 5) — reported, denominators disclosed
+
+Per **frozen threat #5, cost is not ranked into the verdict.** Reported as a directional
+finding: GPT's single-feature run consumed **~45% of a week's frontier allowance**; the
+entire Claude pipeline (coder impl+fix-loop + Opus review + orchestration) **fit inside one
+5h rolling window**. The two meters have **different denominators** (cross-vendor weekly-%
+vs Anthropic token counts) — no ratio is computed. But the magnitude gap (≈half-a-week vs
+sub-5h-window) is robust to that uncertainty and points one way.
+
+The correct reading is **casting, not capability**: this is *frontier-solo* vs
+*cheap-coder + thin-strong-reviewer pipeline*. The pipeline put the bulk of spend on a
+**cheap** coder (Sonnet 363k) under a **thin** Opus review layer (114k) and matched the
+merge-bar output far more cheaply. That **validates the casting ladder** (don't cast
+frontier for coding) — it does **not** establish what a *cheap-tier* GPT solo would cost
+(untested). The elevation of Axis 5 is honored as a casting signal, deliberately kept out
+of the trinary delegate-viability verdict where the freeze forbids it.
+
+### The internal-review asymmetry (the sharpest finding)
+
+The Claude branch was pre-scrubbed by the same instrument class now serving as the ruler
+(its own wave check, commit `1496972`), so we **predicted the ruler would find fewer issues
+in Claude's arm**. It did not — Claude shows 3 minors to GPT's 1, all cosmetic on both
+sides. The review layer GPT's harness **cannot** cast **did not surface as a quality gap at
+the merge bar**, because GPT-solo left nothing substantive for a strong reviewer to catch.
+That is the strongest DELEGATE-VIABLE signal available from this run: a solo driver with no
+strong-reviewer layer cleared the same absolute bar as the full pipeline.
+
+### Attribution (frozen trinary)
+
+No GPT-specific **output-quality** gap exists to attribute — GPT's single ruler-minor is a
+docs-index line the Orchestrator authored, not GPT code. The Axis-3 items are GPT-specific
+but **self-caught and self-filed before delivery** (0026, the e2e-affected omission, is the
+one a Claude coder's mandated affected-set grep would have caught — a *missing-pipeline-layer*
+signal, CONDITIONAL-adjacent — but GPT corrected it in-run, so nothing reached the branch).
+No item reached the merge bar; none pulls the verdict off DELEGATE-VIABLE.
+
+### Verdict — DELEGATE-VIABLE (provisional, n=1)
+
+GPT clears the absolute merge bar (all gates green on independent re-run; ruler zero
+blocking/major) **∧** zero hard-law breach **∧** conformance above threshold (one non-code
+minor) **∧** no GPT-specific output-quality gap (nothing to attribute as capability). Per
+the frozen decision rule this is **DELEGATE-VIABLE**.
+
+Per the **n=1 inference asymmetry (frozen):** this is **provisional-pending-more-n**, not a
+standing green light. One clean run *fails to fail once* — it licenses continuing to
+#101/#102 **under observation**, not unattended delegation. The falsification the owner's
+"strong assessment" pointed at — "GPT can't solo-drive a real feature to the merge bar" —
+**did not occur**; that is where the n=1 power actually sits, and it is real evidence.
+
+### Threats revisited
+
+- **#5 cost** — honored: reported, denominators disclosed, kept out of the verdict.
+- **New — instrument parity:** both ruler prompts were authored by the Orchestrator from
+  this frozen ruler definition (same axes, same `blocking/major/minor` ladder, same
+  absolute-bar framing, same AC list from `E13-guild-buildings.md`) — parity is high *by
+  construction* but **not verbatim-identical**. Residual instrument variance between arms is
+  a named limit, recorded rather than papered over.
+- **#4 same-vendor reviewer** — still live; owner spot-audit of GPT-arm findings outstanding
+  (GPT's one minor is Orchestrator-authored docs, so the audit surface is thin).
+
+### Next actions
+
+1. **Merge arm:** both are merge-bar-equivalent; recommend merging the **Claude pipeline
+   product** (`eval/100-claude`) as real #100 — it is what the repo normally ships and the
+   cost-efficient path — quarantining GPT's `feat/100-storehouse` (#371) as the reference
+   arm. Carry the one-line `docs/specs/README.md:32` fix in the merge. *(Owner decision;
+   pending.)*
+2. Scorecard rows per arm — GPT rows marked *solo-driver unit*, advisor column N/A.
+3. #101/#102 proceed **under observation**, not unattended, per the provisional verdict.
+4. Deferred (do not act mid-eval): GPT's process suggestions (solo-engineer mode in
+   WORKFLOW; CI-fix autonomy scope; implicit→explicit migration doc rule) — captured only.
