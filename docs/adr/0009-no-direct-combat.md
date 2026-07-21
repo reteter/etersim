@@ -43,7 +43,9 @@ This is a hard no with a **documented reversal path**, inherited from route-even
 Reopening requires **all** of:
 
 1. real multiregion exists;
-2. an explicit owner decision to revisit the M3 no-punishment lock;
+2. an explicit owner decision to revisit the **no-modification rule** locked at the
+   2026-07-14 route-events grill (fork 1 — events never modify routes, cargo or purse), of
+   which this combat ban is one instance;
 3. a carrier building per the E9 law (e.g. an Escort dock) — mechanics arrive with buildings;
 4. its own grill.
 

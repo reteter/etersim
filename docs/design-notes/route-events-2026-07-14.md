@@ -13,7 +13,7 @@ multiregion. Sibling grill from the same session:
 
 | Fork | Options | Choice | Why |
 | --- | --- | --- | --- |
-| 1. Character (what may touch the player) | opt-in + ambient / intrusive mechanics / reject | **opt-in + ambient** — events never interrupt or modify player routes, cargo or purse. Owner addendum: active at region-view scale (with future multiregion, rendered per viewed region) | pillar 4 (routes are legible loops) and the M3 no-punishment lock stay untouched; the fresh-eyes job was "life", not "hazard" |
+| 1. Character (what may touch the player) | opt-in + ambient / intrusive mechanics / reject | **opt-in + ambient** — events never interrupt or modify player routes, cargo or purse. Owner addendum: active at region-view scale (with future multiregion, rendered per viewed region) | pillar 4 (routes are legible loops) stays untouched and no punitive mechanic enters (the choice above *is* that rule); the fresh-eyes job was "life", not "hazard" |
 | 2. Packaging | phased / one small epic now / everything behind multiregion | **phased: ambient now, opt-in after E3** | E3 already builds the offer machinery — generator, causal expiry, accept/resign (#93/#94/#96); a wandering merchant's offer is that machinery's cousin, building it earlier duplicates it |
 | 3. Ambient content | flows-as-ships replacing pulses / ships alongside pulses / decorative random traffic | **NPC ships = Trade osmosis flows, replacing the pulses** | the playtester already misread the pulses as small ships (#72 / playtest item 1) — the misreading becomes the design; life that is also economic signal (pillar 4); one glyph = one meaning; sim-time anchoring solves #72's wall-clock complaint in the same stroke |
 | 4. Pirates / intrusive events | park with trigger / reject permanently / grill non-punitive pirates now | **parked with a hard trigger** (see Phase 3) | keeps the "lane risk" design space alive without letting the first punitive mechanic enter casually; nothing on the roadmap needs it now |
@@ -48,5 +48,13 @@ multiregion. Sibling grill from the same session:
   > this note and #131's body still named the fired trigger. Original text kept for history.
 - **Phase 3 — intrusive events, pirates** (parked in #131): anything that modifies
   route outcomes. **Unpark trigger (all required): real multiregion exists + explicit
-  owner decision to revisit the M3 no-punishment lock + a carrier building per the E9
-  law (e.g. an Escort dock) + its own grill.**
+  owner decision to revisit the fork-1 no-modification rule above (events never modify
+  routes, cargo or purse) + a carrier building per the E9 law (e.g. an Escort dock) + its
+  own grill.**
+
+> **Name struck 2026-07-20 (sweep F14).** Earlier text called the fork-1 rule *"the M3
+> no-punishment lock"* here, at the fork-1 row, and in [ADR-0009](../adr/0009-no-direct-combat.md)'s
+> reversal path. Nothing ever defined a lock under that name and M3 never locked one — the
+> real, defined constraint is fork 1 of *this* grill (2026-07-14, not M3). Misattributed
+> authority, same class as sweep F10; the name is replaced by the constraint everywhere it
+> appeared. Do not reintroduce it.
