@@ -349,34 +349,63 @@ The three majors were checked as **author-blind code facts** against Claude (rea
 | --- | --- | --- | --- | --- |
 | **1. no-dominance guardrail test** (buy→store→sell ⊁ carry; spec §Testing) | **present** (`storehouse.test.ts:277`) | **absent** | **absent** | shared by *both* GPT arms; **not** shared with the Claude control. See §Instrument-parity. |
 | **2. deliver + rush to storehouse construction site** (spec §Construction parity) | present (`applyGuildBuildRush`) | present (`rushGuildBuilding`×2; deliver test `storehouse.test.ts:193`) | **absent** (no `*GuildBuildRush`; StoreRef only addresses a *completed* store, `transfer.ts:43` gated on `"store" in building`) | **Terra-specific under-reach** — a named AC the frontier tier *and* the pipeline both implemented |
-| **3. v12 save-migration correctness** | drops v12 cleanly `{13,14}` | drops v12 cleanly `{13,14}` | **returns v12 raw** `READABLE_VERSIONS={12,13,14}`, skipping the `buildingStoreValue` backfill → wrong netWorth for v12 saves | **Terra-specific correctness escape** |
+| **3. v12 save-migration** | drops v12 cleanly `{13,14}` | drops v12 cleanly `{13,14}` | **keeps v12 readable** `{12,13,14}` and **returns it raw** (`persistence.ts` deserialize: `if (version===12) return world`), skipping `migrateV13ToV14`'s `buildings:[]` + historical `buildingStoreValue:0` backfill | **Terra-specific — but runtime-benign** (see verdict): a discipline deviation (kept v12 against the one-step precedent Claude+Sol followed) + a type-inconsistency, *not* a correctness escape |
 
-### Verdict — **NO-GO** (Terra / cheap-tier solo-driver), provisional (n=1)
+### Verdict — **CONDITIONAL / delegate-with-guardrails** (Terra / cheap-tier solo-driver), provisional (n=1)
+
+> **Verification note (why not NO-GO).** The ruler filed GAP 3 as a "correctness escape" —
+> which, on the frozen rule, would have fired NO-GO. Its `file:line` cites for that finding
+> were off by ~40 (`:123`/`:146` vs the branch's actual `:82`/`:140`), so per the advisor's
+> flag the behavioral consequence was traced by hand rather than taken on the ruler's word.
+> **Result: GAP 3 is runtime-benign.** A v12 save returned raw leaves `company.buildings`
+> `undefined` and historical netWorth events without `buildingStoreValue` — but *every*
+> consumer is guarded: reads (`companyStores`, `transfer.ts` `?? []`) and writes
+> (`commissionGuildBuilding`, `commands.ts` `[...(buildings ?? []), …]`) both coalesce to
+> `[]`; the live netWorth breakdown is **recomputed** (`ledger.ts:233-246`), not read from the
+> save; and the historical consumer (`LedgerOverlay` chart) reads only the stored `.total`,
+> never `buildingStoreValue`. No crash, no wrong netWorth, no wrong display. GAP 3 is a
+> **discipline deviation + type-inconsistency**, not a correctness escape. *(This near-miss —
+> almost stamping NO-GO on an unverified ruler claim — is itself the eval's method working: a
+> ruler finding is an input to verify, not a verdict.)*
 
 Walking the **frozen decision rule** mechanically (the point of freezing it):
 
-- **DELEGATE-VIABLE is out.** It requires clearing the merge bar **∧** any output-quality
-  gaps being *shared with the Claude control* (task difficulty). Terra's GAP 2 and GAP 3 are
-  **Terra-specific** (Claude and Sol both did them correctly) — the shared-gap conjunct fails.
-- **NO-GO fires on GAP 3.** The frozen NO-GO clause "*a GPT-specific correctness escape the
-  wave check flags **major***" is met: v12 saves load with incorrect netWorth, GPT-specific
-  per the attribution rule (both other arms handled v12 correctly), flagged major. This clause
-  is **separate** from the merge-bar's "zero blocking" sub-test, so `blocking 0` does not
-  rescue it. GAP 2 (under-reach of a named AC) compounds as conformance-below-threshold but is
-  not itself the trigger.
+- **DELEGATE-VIABLE is out.** It requires conformance ≥ threshold **∧** any output-quality gaps
+  being *shared with the Claude control*. Terra's GAP 2 (a **named feature absent** —
+  deliver+rush) is **Terra-specific** (Claude *and* Sol implemented it) → conformance below
+  threshold **and** the shared-gap conjunct fails.
+- **NO-GO does not fire.** Its triggers are a hard-law breach (none — scan CLEAR), a
+  GPT-specific *correctness escape* flagged major (none — GAP 3 is benign per the note above;
+  GAP 2 is a missing feature, not a wrong-behavior escape), or a failure class no gate would
+  catch before `main` (none — the author-blind AC review caught all three; a mandated
+  affected-AC checklist would too).
+- **CONDITIONAL is where it lands.** Terra clears the blocking-defined merge bar (`blocking 0`,
+  gates green) but carries **three GPT-specific, process-addable gaps**: add the no-dominance
+  guardrail test (GAP 1), implement deliver+rush for the construction site (GAP 2), and
+  drop-or-properly-migrate v12 (GAP 3). All are exactly the "*missing named AC / missing
+  pipeline layer*" cases the frozen rule routes to **delegate-with-guardrails**.
 
-Per the **frozen n=1 inference asymmetry:** a NO-GO from one paired run is the **trustworthy**
-direction — it *did* fail, dispositively, on a correctness escape. This licenses **"no
-unattended cheap-tier-solo delegation on E13-class features"** — **not** "the cheap tier is
-incapable in principle" (that would be the weak, confirmation-direction inference n=1 cannot
-carry).
+The ruler's **NO-MERGE** stands at the *diff* level — this branch should not merge as-is;
+est. 1–2 fix-loop rounds. That is distinct from the *delegate* verdict: the bundle is
+CONDITIONAL (viable **with** a guardrail — a mandated affected-AC checklist that would have
+caught the missing feature, or a review layer), not NO-GO.
+
+Per the **frozen n=1 inference asymmetry:** a CONDITIONAL from one run is provisional; the
+gaps it names are addable, but n=1 cannot confirm reliability. What n=1 *does* carry here is
+the **falsification that did occur** — "cheap-tier GPT-solo will produce a clean,
+merge-ready #100 unaided" is **false** (it produced a NO-MERGE diff with a missing named
+feature) — while "cheap tier is incapable in principle" is the weak, unsupported direction.
 
 ### The headline — instrument-independent
 
-GAP 2 and GAP 3 are **grep-verified code facts, not ruler opinion**: the cheap tier shipped a
-**missing named feature** (deliver+rush) **and a correctness bug** (v12 migration) that the
-frontier tier got right, on the **same task from the same baseline**. This result is robust to
-*any* question about ruler rigor (below).
+The tier-degradation finding is carried by **grep-verified code facts, not ruler opinion**:
+the cheap tier left a **named feature entirely absent** (deliver+rush to the storehouse
+construction site — GAP 2, Terra-specific) and shipped an **incorrect (though runtime-benign)
+v12 migration** (GAP 3) that the frontier tier *and* the pipeline both got right, on the
+**same task from the same baseline**. Even after GAP 3 is (correctly) demoted from "correctness
+escape" to "type-laxity", **GAP 2 alone** — a missing named feature — makes "the cheap tier
+delivered materially less conformance on the same task" robust to *any* question about ruler
+rigor (below).
 
 ### Cost (Axis 5) — reported, **not ranked** (frozen threat #5)
 
@@ -409,11 +438,14 @@ Re-judged at **GAP-1-aware rigor** (both arms scored knowing the guardrail is a 
 - **Sol (frontier):** one missing named-AC test → **~CONDITIONAL** (add one test,
   process-addable) — *not* the clean DELEGATE-VIABLE first recorded. Arm-1 verdict struck
   through + annotated in place (recorded, not rewritten).
-- **Terra (cheap):** that *same* missing test **plus** GAP 2 **plus** GAP 3 → **NO-GO**.
+- **Terra (cheap):** that *same* missing test **plus** GAP 2 (a missing named **feature**)
+  **plus** GAP 3 (an incorrect-but-benign v12 migration) → **CONDITIONAL**, but a *deeper*
+  CONDITIONAL than Sol's — three addable gaps incl. an absent feature, vs Sol's one absent test.
 
-Judged at equal rigor, the **tier delta is apples-to-apples and stark: frontier "one test
-short," cheap "feature-and-correctness short."** This is cleaner than "two rulers gave two
-verdicts" — the difference lives in grep-verified code, not in ruler variance.
+Judged at equal rigor, the **tier delta is apples-to-apples: frontier "one test short," cheap
+"a test + a feature + a migration short."** Both land in delegate-with-guardrails, but the
+depth differs, and the difference lives in **grep-verified code, not ruler variance** — GAP 2
+(the missing feature) is a code fact independent of which ruler read which arm.
 
 ### Threats revisited (arm 2)
 
@@ -429,8 +461,14 @@ verdicts" — the difference lives in grep-verified code, not in ruler variance.
 - **Instrument parity (from arm 1):** materialized as GAP 1 — see above.
 - **Cost denominator:** *resolved* for the within-GPT comparison — single shared weekly pool
   (owner-confirmed) ⇒ same-denominator; 16% vs 45% is a direct ratio.
-- **n=1 per tier:** still one run at each tier; the NO-GO is the trustworthy (falsification)
-  direction; DELEGATE-VIABLE-type claims remain provisional-pending-more-n.
+- **n=1 per tier:** still one run at each tier; the *falsification* that did occur (cheap-tier
+  solo did **not** produce a clean merge-ready #100 unaided) is the trustworthy direction;
+  both the CONDITIONAL labels and any DELEGATE-VIABLE-type claim remain provisional-pending-more-n.
+- **NEW — ruler-finding-taken-on-faith (a method near-miss, recorded):** GAP 3 was almost
+  stamped NO-GO on the ruler's "correctness escape" label; hand-tracing the code (prompted by
+  the ruler's off-by-~40 line cites) demoted it to benign type-laxity and the verdict to
+  CONDITIONAL. The lesson is the eval's own thesis turned on itself: a ruler finding is an
+  **input to verify**, not a verdict — the human-in-the-loop check is part of the instrument.
 
 ### Casting read (refined) — the money finding
 
@@ -447,6 +485,8 @@ and dropping the solo to a cheaper tier degrades the product, not just the bill.
    traci"); real #100 remains the Claude pipeline product (`509e2fd`, #372). No re-open.
 2. Scorecard: append a Terra row (*solo-driver unit*, advisor N/A), NO-MERGE, 3 major / 4
    minor, cost 16% weekly.
-3. **#101/#102 under observation** stands, now on firmer ground: cheap-tier-solo is NOT
-   licensed unattended; the pipeline remains the default caster.
-4. Close **#373** (Terra re-run complete).
+3. **#101 under observation** stands (#102 already closed by the s19 Orchestrator thread —
+   the no-dominance guardrail shipped with the Claude arm, `storehouse.test.ts:277`):
+   cheap-tier-solo is CONDITIONAL, viable only *with* a guardrail (a mandated affected-AC
+   checklist, or a review layer); the pipeline remains the default caster.
+4. Close **#373** (Terra re-run complete). *(Done — see erratum, verdict corrected NO-GO→CONDITIONAL after code verification.)*

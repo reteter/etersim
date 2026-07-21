@@ -376,7 +376,7 @@ advisor column N/A — and do **not** enter the Sonnet coder trend sample.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 07-21 | #372 | #100 | 3 | 3 (minor) | 1 | pass | **Pipeline arm** (Opus orch + Sonnet coder + Opus tier-3 wave check). Author-blind out-of-band ruler: **MERGE / MERGE, zero blocking/major**; 3 cosmetic minors (stale `resolveDeliveryTarget` doc-comment, English ledger strings under the legacy carve-out, a stray blank line). Hard-law scan all CLEAR — netWorth `total` **bit-identical** in the golden save (`buildingStoreValue` appended as a separate accumulator, `cargoValue`/`siteStoreValue` order byte-preserved), `migrateV13ToV14` float-free: **the incident 0023/0024 ULP class did not recur**. One internal fix-loop round (pinned `runGuildBuildAutoDraw` in the C4 phase-order snapshot + byte-equal Ledger over a building script). Built ON the E13.0 primitives (store/withdraw via `Transfer`; capacity/filter in `accepts`, not clamped in the command). Gates on independent re-run: 753 unit / 102 e2e / typecheck / lint / build green. Merged as real #100. |
 | 07-21 | #371* | #100 | 3 | 1 (minor) | 0 | pass | *__solo-driver unit__ — GPT 5.6 sol@medium in its own harness, **no advisor/pipeline layer** (advisor N/A). Same author-blind ruler: **MERGE / MERGE, zero blocking/major**; 1 minor (`docs/specs/README.md:32` stale clause the Orchestrator itself authored — not GPT code). Objective gates green on independent re-run (732 unit / 102 e2e). Axis 3: **2 minor incidents self-filed** (0025 PowerShell expanded-replacement capture, 0026 route-editor e2e-affected near-miss — both self-corrected in-run, nothing reached the branch). Axis 4: full solo loop, monolithic single-feat-commit decomposition. Cost ≈45% of the weekly **frontier** limit (reported, not ranked — frozen threat #5). Quarantined, not merged (#371 closed). **[Erratum 2026-07-21 s19: the "1 minor / MERGE" here is incomplete — the Terra re-run established as an author-blind code fact that Sol's arm *also* lacks the #100 no-dominance guardrail test (a named AC). Re-judged at that rigor Sol is ~CONDITIONAL, one missing named-AC test. See the Terra row + eval §Erratum.]** |
-| 07-21 | #373* | #100 | 3 | 3 major / 4 minor | 0 (no-merge) | **fail (NO-MERGE)** | *__solo-driver unit__ — GPT 5.6 **terra@medium** (cheap tier), own harness, **no advisor/pipeline layer** (advisor N/A). Same author-blind ruler: **NO-MERGE**. Hard-law scan all CLEAR (ULP class 0023/0024 did **not** recur; `resolveDeliveryTarget` legitimately deleted). Objective gates green on independent re-run (725 unit / 102 e2e / typecheck / lint / build) — **green-but-not-sufficient**; the shortfall is AC conformance no gate checks. Three majors, attribution grep-verified vs *both* control arms: (1) no-dominance guardrail test **absent** — shared with Sol; (2) deliver+rush to storehouse construction **absent** — Terra-specific under-reach (Claude + Sol both have it); (3) v12 migration returns raw (`{12,13,14}`, missing `buildingStoreValue` backfill) → **Terra-specific correctness escape** (Claude + Sol drop v12 cleanly). Cost **16% of the weekly limit** — same shared pool as Sol, so 16% vs 45% is same-denominator (≈⅓); reported, not ranked (threat #5). Info-environment confound: reference key `509e2fd` was on `main`; Terra found it, asked to read it, refused — available-but-refused, still underperformed. Quarantined (branch kept), not merged; #373 closed. |
+| 07-21 | #373* | #100 | 3 | 3 major / 4 minor | 1–2 (est.) | pass (gates) / **NO-MERGE** (ruler) | *__solo-driver unit__ — GPT 5.6 **terra@medium** (cheap tier), own harness, **no advisor/pipeline layer** (advisor N/A). **Verdict: CONDITIONAL** (delegate-with-guardrails), provisional n=1. Author-blind ruler: **NO-MERGE** at the diff level. Hard-law scan all CLEAR (ULP class 0023/0024 did **not** recur; `resolveDeliveryTarget` legitimately deleted). Objective gates green on independent re-run (725 unit / 102 e2e / typecheck / lint / build) — **green-but-not-sufficient**; the shortfall is AC conformance no gate checks. Three majors, attribution grep-verified vs *both* control arms: (1) no-dominance guardrail test **absent** — shared with Sol; (2) deliver+rush to storehouse construction **absent** — Terra-specific under-reach, a missing named **feature** (Claude + Sol both have it); (3) v12 migration returns raw (`{12,13,14}`, missing `buildingStoreValue` backfill) — **Terra-specific but runtime-benign** (all `buildings` reads/writes guard `?? []`, live netWorth recomputed, chart reads stored `.total` not the missing field): a discipline+type deviation, **not** the correctness escape the ruler first labelled — hand-verified after its line cites came up ~40 off, which is what kept the verdict off NO-GO. Cost **16% of the weekly limit** — same shared pool as Sol, so 16% vs 45% is same-denominator (≈⅓); reported, not ranked (threat #5). Info-environment confound: reference key `509e2fd` was on `main`; Terra found it, asked to read it, refused — available-but-refused, still underperformed. Quarantined (branch kept), not merged; #373 closed. |
 
 **Verdict — two arms, one task:**
 
@@ -384,18 +384,23 @@ advisor column N/A — and do **not** enter the Sonnet coder trend sample.
   (one missing named-AC test, process-addable). *Falsifies* "GPT can't solo-drive
   a real feature near the merge bar" — it got close; a clean pass is weak evidence
   regardless.
-- **Terra (cheap, 16% wk):** **NO-GO**, provisional (n=1). Two Terra-specific majors
-  the frontier tier got right — a missing named feature **and** a correctness escape
-  (v12 migration). Per the frozen n=1 asymmetry a NO-GO is the *trustworthy*
-  (falsification) direction: it *did* fail, dispositively. Licenses "no unattended
-  cheap-tier-solo on E13-class features," not "cheap tier incapable in principle."
+- **Terra (cheap, 16% wk):** **CONDITIONAL** (delegate-with-guardrails), provisional (n=1) —
+  a *deeper* CONDITIONAL than Sol: a missing test (GAP 1) **+ a missing named feature**
+  (deliver+rush, GAP 2, Terra-specific) **+ an incorrect-but-benign v12 migration** (GAP 3).
+  Ruler NO-MERGE at the diff level; est. 1–2 fix-loop rounds. *Not* NO-GO: the ruler's
+  "correctness escape" on GAP 3 was hand-verified benign (guarded `buildings`, recomputed
+  netWorth) after its line cites ran ~40 off — a near-miss where the eval's own thesis (verify
+  the finding, don't trust the label) caught the driver. Per frozen n=1 asymmetry the
+  *falsification* that did occur — cheap-tier-solo did **not** produce a clean merge-ready #100
+  unaided — is the trustworthy direction.
 
-**The money finding (instrument-independent, grep-verified):** dropping frontier→cheap
-cut cost to ~⅓ but degraded conformance from "one test short" to
-"feature-and-correctness short." **The win is the pipeline** (cheap Sonnet coder under
+**The money finding (instrument-independent, grep-verified):** dropping frontier→cheap cut
+cost to ~⅓ but degraded conformance from "one test short" to "a test + a **feature** + a
+migration short." Carried by GAP 2 (a missing named feature, code fact) — robust even after
+GAP 3 is demoted from escape to laxity. **The win is the pipeline** (cheap Sonnet coder under
 a thin strong-Opus review layer cleared the bar cost-effectively) — **not any solo**;
-cheapening the solo degrades the product, not just the bill. Cost stays outside the
-trinary verdict (frozen threat #5).
+cheapening the solo degrades the product, not just the bill. Cost stays outside the trinary
+verdict (frozen threat #5).
 
 ## Reading the sample
 
