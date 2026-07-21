@@ -107,7 +107,7 @@ the Port"), and only a *claim* — a definition, a rule, a number — can contra
 | 1 | Trade & economy | 16 | 906 | `src/sim` | **worked s14** — `_Implementation_` claims verified against code (below); **F13 raised** |
 | 2 | Simulation | 6 | 648 | `src/sim` (4 terms) / ADR-0008 + E13.0 spec (2 terms) | **worked s15 — CLEAN** (below); no finding |
 | 3 | Buildings & construction | 10 | 683 | `src/sim` (8 built) / E15 spec (2 unbuilt) | **worked s15 — CLEAN** (below); no finding. *Term count corrected 11→10 — see below.* |
-| 4 | Player & ships | 11 | 1557 | `src/sim` | pending |
+| 4 | Player & ships | 11 | 1557 | `src/sim` (9 built) / UI+store (2) / E13 spec (store/withdraw, unbuilt) | **worked s16 — CLEAN** (below); no finding |
 | 5 | Guilds & contracts | 12 | 587 | `src/sim` | pending |
 | 6 | World & setting | 17 | 1046 | none (lore) | pending |
 | 7 | Harness & evaluation | 8 | 596 | none (unbuilt) | pending |
@@ -166,6 +166,41 @@ documented convention" holds at both `e8b6ff4` and HEAD. This is not a new legib
 it is the exact bold-at-line-start-by-wrap artifact the s15 markdown-normalizer discussion is
 aimed at, and a concrete motivating instance for that issue (now filed as #341) — **not** an F3
 reopening and not a hand-reflow (wrap position is a script's job, owner direction s15).
+
+**Player & ships, verified clean (s16).** Eleven terms, the heaviest row by mention (1 557)
+but among the lightest by *claim* — most of that volume is uses ("the Ship sails to the
+Port"), not definitions. Every sim-checkable `_Implementation_` line holds. **Ship**:
+`generateShipName` (`building.ts:109`) is keyed by ship count with no RNG draw, and
+`building.test.ts:449` pins the cosmetic pool as cyclic (`generateShipName(10) ===
+generateShipName(0)`) — exactly the ADR-0003 "no sim RNG draw" the entry claims — while
+`renameShip` is a real Command (`commands.ts:86,726`). **Route**: the ship-side tuple the
+entry names, `(routeId, next Stop index, suspended?, waiting?)`, is `ship.ts:32-35` verbatim;
+assignability — *"≥2 Stops over ≥2 distinct ports"* — is enforced at `commands.ts:106-123`,
+its own comment (`:98`) quoting the entry back; the docking-phase route pass is `runRouteForShip`,
+**defined** at `tick.ts:237` (not merely referenced). The two behavioural claims read, not just
+name-matched: *"an index left out of range wraps to Stop 0"* is `commands.ts:250`
+(`… < route.stops.length ? asn.nextStopIndex : 0`), and *"a manual order suspends the Route, which
+stays assigned"* is `commands.ts:529,626` (`{ ...assignment, suspended: true }`, "the plan stays
+assigned"), advancement itself wrapping via `(stopIndex + 1) % stops.length` (`tick.ts:209`).
+**Course**: `shortestCourse` (`pathfinding.ts:11`),
+`courseTicks` (`ship.ts:79`) and `Ship.location.course` (`ship.ts:19`) are all present — the E9
+rename landed. **Margin Gate** — the row's richest falsifiable claim, so read line by line:
+`resolveReferencePort` (`route.ts:41-55`) scans `(currentStopIndex + offset) % n` forward, so the
+reference is *"the next sell-stop for that good in route order, wrapping the loop"* exactly; it
+matches on `kind === "sell"` only, so *"deliver is never a reference"* holds by construction; and it
+returns `null` when none is found, which is the entry's *"no sell-stop ⇒ the gate is inactive"*.
+`unitMargin` (`market.ts:137`) and the buy-only `minMargin` guard (`commands.ts:120`) round it out,
+ADR-0007 the cited authority. **Two classes are correctly not `src/sim`'s to answer, and checking them against it
+would be the row-2 trap:** **Fleet** and **Controlled Ship** are UI/store concepts
+(`FleetList.tsx`, the store's `controlledShipId`), and **Stop**'s `store`/`withdraw` order kinds
+are **E13-unbuilt** — glossary-first, arbiter the E13 spec. Two dated records verified as such
+rather than as drift (binding rule 6): `coursePreview.ts` is a UI file and is one
+(`src/ui/coursePreview.ts`), and the *"SAVE_VERSION 11"* on Margin Gate describes what E9.1
+shipped — current is 13 (`persistence.ts:76`), consistent rather than contradictory. **Count
+anchored** (the row-3 lesson): the section holds exactly 11 convention entries and **no
+bold-at-line-start wrap artifact** — the naive header grep and the true count agree here.
+Neighbour-concept check (the F13 obligation) clean: Lane, Port, Harbor, Storehouse, Command,
+Thaler, Good, Upkeep, Headquarters and Goods store each carry their own entry.
 
 ## Binding rules
 
