@@ -109,7 +109,7 @@ the Port"), and only a *claim* — a definition, a rule, a number — can contra
 | 3 | Buildings & construction | 10 | 683 | `src/sim` (8 built) / E15 spec (2 unbuilt) | **worked s15 — CLEAN** (below); no finding. *Term count corrected 11→10 — see below.* |
 | 4 | Player & ships | 11 | 1557 | `src/sim` (9 built) / UI+store (2) / E13 spec (store/withdraw, unbuilt) | **worked s16 — CLEAN** (below); no finding |
 | 5 | Guilds & contracts | 12 | 587 | `src/sim` (built) / UI (Guildhouse, board) / E13 spec (permit, Storehouse) | **worked s16 — CLEAN** (below); no finding |
-| 6 | World & setting | 17 | 1046 | none (lore) | pending |
+| 6 | World & setting | 17 | 1046 | PRD/specs/briefs (lore core) / `src/sim` (E10+E12 built) | **worked s16 — CLEAN** (below); no finding |
 | 7 | Harness & evaluation | 8 | 596 | none (unbuilt) | pending |
 | — | **Process subjects** (no glossary entry): verification gates, merge/wave ritual, session ritual, model ladder, review depth, documentation law | — | — | — | pending — **F1 came from here** |
 
@@ -227,6 +227,27 @@ recompute #322 is parked to memoize — expected, not drift. **Count anchored**:
 entries, no wrap artifact. Neighbour-concept check (F13) clean: Port archetype, Economic archetype,
 Free port, Equilibrium, Build Order, Reserve and Ledger each carry an entry; `netWorth` is glossed
 inline in the Ledger entry.
+
+**World & setting, verified clean (s16).** Seventeen terms, and the **first row with no `src/sim`
+arbiter for its core** — the load-bearing terms are lore (Aether, Lens ladder, Great Work, Dispatch,
+Administrator), so the adjudication is CONTEXT-vs-PRD/specs/briefs, and the only finding this row
+could yield is a lore *contradiction* across those documents. There is none. The highest-entropy
+claim — the Lens ladder's *"four self-similar levels, Region → Multiregion → Galaxy → the Unknown"* —
+is the PRD's own table verbatim (`PRD.md:42-45`), down to the per-level delegate mechanic (Galaxy →
+governors, the very word the Administrator entry reserves). The **Law of the Great Work** reads almost
+word-for-word against `PRD.md:55-57` (*"commissioned by that level's institutions — Region: the Guilds
+via Contracts"*), the Expedition its Region-level working name and 1.0's ending. **Administrator** (M6,
+guild-convent nomination, verbal mandate, *"E11's Policy is the embryo"*) is consistent with the PRD
+zoom-out finale and with the Policy entry that does exist (`CONTEXT.md:669`); **Dispatch**'s gazette
+*Głos Eteru* is the same name the PRD uses (`:352`). All three inline citations resolve
+(`grill-brief-m4-events-and-ice.md`, `grill-brief-m6-zoom-out.md`, `E10-orrery-view.md`). The **built**
+minority spot-checks clean against code: Free port's *"price bias exactly 1.0, exactly one per region"*
+is `region.ts:112` (the all-1.0 row) + `worldgen.ts:61,81` (one freeport slot); Economic archetype's
+`PortArchetype = EconomicArchetype | "freeport"` is `region.ts:40`; Orrery view and Orbit ring are
+E10, epic complete. **Count anchored**: exactly 17 convention entries, no wrap artifact.
+Neighbour-concept check (F13) clean: Policy carries an entry, `mandate` is an inline `(PL:)` gloss (one
+of the §Method examples), and the ladder levels Multiregion / Galaxy / the Unknown are defined within
+the Lens ladder entry itself, not orphaned.
 
 ## Binding rules
 
