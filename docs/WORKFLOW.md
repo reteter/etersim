@@ -122,6 +122,11 @@ quietly changed behavior shows up as an edited expectation, and an edited expect
 withdraws the exemption — escalate back to the paths' tier. Mechanical identifier updates
 that merely follow the rename are fine; changed expected *values* are not.
 
+`npm run check:behavior-preserving <baseRef> [headRef]` (`scripts/check-behavior-preserving.mjs`,
+#332) helps verify this: it hard-fails on any test file added or deleted, and surfaces every
+changed assertion line in a modified test file for a human to read. It is a surfacer, not a
+verdict — it cannot itself tell a moved expected value from a syntax-only edit.
+
 State the evidence when claiming it: before/after test counts, and that no assertion moved.
 Recorded here rather than taken as a one-off, because a gate waived in conversation is
 invisible to the next session — and the next person meeting this friction would either burn
@@ -241,8 +246,9 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
   (§Session rituals), while notes are read one index line at a time and HIST rows are
   explicitly *"safe to skip"*. A trigger written in prose therefore fires into a document
   nobody is obliged to open.
-  - **The detector:** every unpark trigger in `docs/design-notes/` names an issue. That is
-    greppable, and it is exactly how sweep F5 found the four that did not.
+  - **The detector:** every unpark trigger in `docs/design-notes/` names an issue, checked
+    by `npm run check:triggers` (`scripts/check-unpark-triggers.mjs`, #332) — it is exactly
+    how sweep F5 found the four that did not.
   - **The test before marking a note HIST:** if flipping it would hide an obligation, the
     obligation is in the wrong place — file it, *then* flip.
   - **The evidence this cost something:** `professor-review-ui-store-2026-07-14` parked three

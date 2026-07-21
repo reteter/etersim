@@ -11,7 +11,9 @@
     "test:e2e": "playwright test",
     "typecheck": "tsc -b",
     "lint": "eslint .",
-    "docs:normalize": "node scripts/normalize-markdown.mjs"
+    "docs:normalize": "node scripts/normalize-markdown.mjs",
+    "check:behavior-preserving": "node scripts/check-behavior-preserving.mjs",
+    "check:triggers": "node scripts/check-unpark-triggers.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",
