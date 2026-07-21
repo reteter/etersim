@@ -37,7 +37,7 @@ function runCli(args, cwd) {
 }
 
 describe("check-unpark-triggers CLI", () => {
-  it("exits 0 when every trigger has a nearby issue citation", () => {
+  it("exits 0 when every trigger has a same-paragraph issue citation", () => {
     withTempFixture(
       {
         "note.md": ["This idea is parked for now.", "See #123 for the tracker.", "Nothing else here."].join("\n"),
@@ -51,7 +51,7 @@ describe("check-unpark-triggers CLI", () => {
     );
   });
 
-  it("exits 1 and lists a trigger line with no nearby citation", () => {
+  it("exits 1 and lists a trigger line with no citation anywhere in its paragraph", () => {
     withTempFixture(
       {
         "note.md": ["Filler line one.", "Filler line two.", "This idea is parked for now.", "Filler line three.", "Filler line four.", "Filler line five."].join(
@@ -62,7 +62,7 @@ describe("check-unpark-triggers CLI", () => {
         const result = runCli([], dir);
         expect(result.status).toBe(1);
         expect(result.stdout).toContain("note.md:3: This idea is parked for now.");
-        expect(result.stdout).toContain("1 trigger(s) without a nearby issue citation");
+        expect(result.stdout).toContain("1 trigger(s) without a same-paragraph issue citation");
       },
     );
   });
@@ -89,23 +89,48 @@ describe("check-unpark-triggers CLI", () => {
     );
   });
 
-  it("finds a citation exactly 2 lines away (window boundary), but not 3 lines away", () => {
+  it("finds a citation several lines below the trigger when it stays in the same paragraph", () => {
+    // Reproduces the repo's real #326/#360 citation convention: the pointer
+    // is a trailing sentence a few lines after the trigger phrase, in the
+    // same paragraph — not on an adjacent line.
     withTempFixture(
       {
-        "within-window.md": ["#456 filed already.", "Filler.", "This idea is parked for now.", "Filler.", "Filler."].join(
-          "\n",
-        ),
-        "outside-window.md": ["#789 filed already.", "Filler.", "Filler.", "This idea is parked for now.", "Filler.", "Filler."].join(
-          "\n",
-        ),
+        "same-paragraph.md": [
+          "Raised by the owner during the grill, while locking guild contract",
+          "mechanics (parked, needs its own grill). Status: do not implement yet.",
+          "Unpark trigger tracked as #357 (filed 2026-07-21, #326 audit) — this note",
+          "carried the trigger in prose only, with no issue and no milestone home.",
+        ].join("\n"),
+      },
+      (dir) => {
+        const result = runCli([], dir);
+        expect(result.status).toBe(0);
+        expect(result.stdout).not.toContain("same-paragraph.md:2:");
+        expect(result.stdout).toContain("clean");
+      },
+    );
+  });
+
+  it("still flags a trigger when the citation is 1+ lines away but in a DIFFERENT paragraph", () => {
+    withTempFixture(
+      {
+        "different-paragraph.md": [
+          "# Route order conditionals (parked, needs its own grill)",
+          "",
+          "Raised by the owner during the grill, while locking guild contract",
+          "mechanics. Status: parked — do not implement; revisit in a dedicated grill.",
+          "",
+          "Unpark trigger tracked as #357 (filed 2026-07-21, #326 audit) — this note",
+          "carried the trigger in prose only, with no issue and no milestone home.",
+        ].join("\n"),
       },
       (dir) => {
         const result = runCli([], dir);
         expect(result.status).toBe(1);
-        // within-window.md's trigger (line 3) has #456 within 2 lines before (line 1) — no violation.
-        expect(result.stdout).not.toContain("within-window.md:3:");
-        // outside-window.md's trigger (line 4) has #789 three lines before (line 1) — out of window, violation.
-        expect(result.stdout).toContain("outside-window.md:4:");
+        // The trigger's own paragraph (lines 1-4) has no citation — the
+        // blank line at index 4 starts a new paragraph the citation lives
+        // in, so it does not rescue the first paragraph's match.
+        expect(result.stdout).toContain("different-paragraph.md:1:");
       },
     );
   });
@@ -119,7 +144,7 @@ describe("check-unpark-triggers CLI", () => {
       (dir) => {
         const result = runCli([], dir);
         const totalLineIdx = result.stdout.indexOf("trigger-language line(s) scanned");
-        const violationLineIdx = result.stdout.indexOf("without a nearby issue citation");
+        const violationLineIdx = result.stdout.indexOf("without a same-paragraph issue citation");
         expect(totalLineIdx).toBeGreaterThan(-1);
         expect(violationLineIdx).toBeGreaterThan(-1);
         expect(totalLineIdx).toBeLessThan(violationLineIdx);
