@@ -111,7 +111,7 @@ the Port"), and only a *claim* — a definition, a rule, a number — can contra
 | 5 | Guilds & contracts | 12 | 587 | `src/sim` (built) / UI (Guildhouse, board) / E13 spec (permit, Storehouse) | **worked s16 — CLEAN** (below); no finding |
 | 6 | World & setting | 17 | 1046 | PRD/specs/briefs (lore core) / `src/sim` (E10+E12 built) | **worked s16 — CLEAN** (below); no finding |
 | 7 | Harness & evaluation | 8 | 596 | E11 spec (7 unbuilt) / `src/sim` (Ledger, built) | **worked s16 — CLEAN** (below); no finding |
-| — | **Process subjects** (no glossary entry): verification gates, merge/wave ritual, session ritual, model ladder, review depth, documentation law | — | — | — | pending — **F1 came from here** |
+| — | **Process subjects** (no glossary entry): verification gates, merge/wave ritual, session ritual, model ladder, review depth, documentation law | — | — | — | **worked s16 close** — F1 came from here originally; F15–F17 raised and resolved same session |
 
 **Trade & economy, verified clean (s14).** Every `_Implementation_` line in the section
 makes a checkable claim about the code, and all of them hold: `SPREAD = 0.025`
@@ -270,9 +270,42 @@ check (F13) clean: every neighbour carries an entry, and `transaction` is the en
 (*"UI-only term, not a distinct sim type"*).
 
 **Pass B's seven glossary rows are now all worked, every one CLEAN.** With Pass A complete (s13),
-the only remaining sweep surface is the un-numbered **Process subjects** row below (verification gates,
+the only remaining sweep surface was the un-numbered **Process subjects** row below (verification gates,
 merge/wave ritual, session ritual, model ladder, review depth, documentation law) — the class F1 came
 from, which has no `CONTEXT.md` entries and so was never part of the term-keyed passes.
+
+**Process subjects, worked and resolved (s16 close).** No `src/sim` arbiter and no glossary term
+list — this row is read as cross-references between `WORKFLOW.md`, `CLAUDE.md`, `SELFCHECK.md`,
+`PROCESS.md`, the persona files and `agent-memory.md`, checked against `gh` state and today's date
+rather than against code. Three findings, all mechanical fixes with no design judgement required,
+so all three are discharged in this same pass (F3/F6/F8/F11 precedent): **F15** — `WORKFLOW.md`
+§Casting's "Current casting" line called Fable's access "intermittent" (a present-tense,
+still-sometimes-available framing) while `agent-memory.md:109`'s own dated prediction
+(2026-07-15) said access runs through 2026-07-19 with no renewal promised; today is 2026-07-21,
+two days past, with no renewal recorded anywhere in the repo. The line was never struck per its
+own corollary ("a falsified line is struck immediately"). Fixed: the line now states the lapse and
+that no replacement frontier caster is assigned, without inventing one — that choice stays an open
+owner call, not decided here. **F16** — `PROCESS.md` (the outside-reader tour) claimed the
+incident log holds "13 process failures and near-misses" with no date qualifier, while 22 reports
+are filed (`0001`–`0022`); its neighbouring sentence about the coder scorecard correctly says "as
+of 2026-07-16", so the asymmetry was itself a tell that this count was simply never revisited as
+incidents accumulated. Verified before fixing, not assumed: checked every incident from 0014 on
+for its outcome rating, since the same paragraph also claims "all N outcomes rated Low" — it still
+holds (0014 and 0021 predate the two-axis Outcome/failure-mode-class split and use an equivalent
+"caught before any effect" framing, but no incident logs a non-Low outcome). Fixed: count updated
+to 22, dated, and the "all N outcomes" line now names the pre-two-axis equivalent. **F17** —
+`WORKFLOW.md`'s "Cert order is law" sentence cites incidents 0008, 0011 and 0013 but not **0010**
+(reachability-from-`origin/main`, the incident that specifically motivated checking ancestry
+rather than "content looks present"), even though `CLAUDE.md`'s fuller wave-close-order bullet
+puts exactly that check first, by name. A reader following only `WORKFLOW.md`'s cert-order
+sentence could reproduce incident 0010 (stacked-child-merged-into-base). Fixed: the reachability
+check is now named first in `WORKFLOW.md`'s sentence, citing 0010.
+
+**The sweep is complete: Pass A (s13) and all eight Pass B rows (seven glossary, s14–s16; Process
+subjects, s16) are worked.** Three findings surfaced in the very last row that thirteen prior rows
+(Pass A's six plus Pass B's first seven) did not — a small data point for the interpretation
+section below: cross-reference contradictions concentrate exactly where there is no code and no
+enumerable term list to arbitrate, which is also the corpus segment nobody else's gate reads.
 
 ## Binding rules
 
@@ -336,6 +369,9 @@ an owner call (F5, F10) stay open by design, not by inertia.
 | F13 | semantic | `elasticity` (and `storability`) | **The word `elasticity` carries two different meanings in live text, and has no glossary entry to adjudicate between them.** Meaning A, the exponent of the price-from-stock curve: `market.ts:12,49` (`ELASTICITY = 0.75`, `(equilibrium/stock) ** ELASTICITY`), `E2-trade-loop.md:77,80` (same formula, `elasticity = 0.75`), `osmosis.test.ts:50`. Meaning B, the price-elastic multiplier on production/consumption flows: `E8-living-economy.md:192-193,276` (`elasticityMult = clamp(ratio, FLOW_MULT_MIN, FLOW_MULT_MAX)`, "clamps at 0.25/1.5"), `market.test.ts:284`, `market.ts:168,172`. **`src/sim/market.ts` uses both senses in one file** — A at lines 12/49, B at lines 168/172. `CONTEXT.md:214` does adjudicate, and picks **B** (*"price elasticity … names the production/consumption response"*) — while the code's constant named `ELASTICITY` is **A**, against the `CLAUDE.md` law that code identifiers come from the glossary. Same shape, milder: **`storability`**, named at `CONTEXT.md:137` as one of the four "market laws" Aether ice is defined against (*"visibly breaks exactly one"*), with no entry and no code. Two of those four laws are undefined vocabulary. **This is also how the finding was found** — not by sweeping a term, since neither is on the list, but by reading a neighbouring entry. See the struck claim in §Method: the 81 are a subset, so Pass B's coverage gap is structural, not incidental. | **resolved s14** (#316) — owner ruling: **B keeps the name**, matching `CONTEXT.md:214` and textbook economics (elasticity is *quantity* answering price), and costing nothing on B's side because the code already says `FLOW_MULT_*` / `productionMult`. A became `PRICE_CURVE_EXPONENT` — a name introducing no new domain word, since "price curve" was already in use. `CONTEXT.md` gained **Elasticity** and **Storability** entries, so all four market laws now have one. E2's formula and E8's phantom `elasticityMult` reconciled. Note what the fix confirmed: the collision never lived in the code's identifiers — only in prose, where nothing checks. |
 | F14 | referential | the "M3 no-punishment lock" | `route-events-2026-07-14.md` invokes **"the M3 no-punishment lock"** three times — `:16` (a law that "stays untouched"), `:19` (what pirates must not breach casually), and `:51`, where it is **condition 2 of the four-part unpark trigger** for intrusive events, and therefore load-bearing for [ADR-0009](../adr/0009-no-direct-combat.md)'s reversal path. **Nothing anywhere defines it.** Verified s14 across `docs/`, `CONTEXT.md`, `CLAUDE.md`, every ADR and every other design note; `git log -S "no-punishment"` returns exactly two commits — the grill record that coined the phrase (`e4117a8`) and this sweep's own F10 (`0c94141`). So a named lock gates a parked mechanic while no text states what it locks, and a future session cannot tell whether revisiting it is a small call or a pillar-level one. **Found while resolving F10** — the identical shape (a real-sounding authority that holds nothing), one document deeper, which is the argument for finishing the citation walk rather than stopping at the first fix. | **resolved s15** — owner ruling: **strike the name, cite the real constraint** (not define — the define option would manufacture a rationale retroactively, the exact error F10's resolution corrected). The check that decided it: the only M3-rooted "not punitive" candidate, `E13-guild-buildings.md:174`, is a playtest note about whether a *capacity clamp* feels punitive, not a general lock — and M3's success criteria (PRD) name none. The real, defined constraint is **fork 1 of the route-events grill** (2026-07-14, *not* M3): *events never modify routes, cargo or purse*. All three sites repointed to it — route-events fork-1 row and Phase-3 trigger, and [ADR-0009](../adr/0009-no-direct-combat.md) condition 2 (of which the combat ban is one instance) — with a struck-name note left in route-events so it is not reintroduced. Confirmed same class as F10: misattributed authority, name holding nothing. |
 | F11 | stale copy | M4 grill brief's input list | `grill-brief-m4-workbench.md` names **#255** twice as a parked automation input — in question 6 (*"which of the parked inputs fold in, which stay parked?"*) and in §Inputs. **#255 is closed and shipped** ("route editor table — visible click affordance for empty order cells"). Grill briefs are LIVE by definition and exist to hand a future session the right questions, explicitly *"for whichever orchestrator leads the M4+ grills"* — so this one hands the M4 grill a question that no longer needs deciding. #173, #177 and #227 in the same lists are correctly open. | **resolved s13** — dropped from both lists, with a one-line note in §Inputs recording that it was there and why it went (so the next reader does not re-add it). |
+| F15 | status | `WORKFLOW.md` §Casting current-casting line | The line called Fable's access **"intermittent"** — present-tense, still-sometimes-available — while `agent-memory.md:109`'s own dated prediction (2026-07-15) said access runs through 2026-07-19 with no renewal promised. Today is 2026-07-21, two days past, with no renewal recorded anywhere in the repo. A prediction that came due and was never checked back against — the exact shape §Documentation law's "falsified line struck immediately" corollary exists to catch, one level removed (here the *prediction itself* wasn't false when written; what went stale is that nobody revisited it once its own horizon passed). | **resolved same session** — line now states the lapse (`agent-memory.md` cited) and that no replacement frontier caster is assigned; deciding a replacement is left an explicit open owner call, not invented here. |
+| F16 | status | `PROCESS.md` incident count | The outside-reader tour claimed the incident log holds **"13 process failures and near-misses"** with no date qualifier, while **22** are filed (`0001`–`0022`) — a 9-incident, unqualified undercount in the one document written for readers with no other context. Its neighbouring sentence (the coder scorecard) correctly says "as of 2026-07-16"; the asymmetry between two adjacent sentences in the same paragraph was the tell that this count was simply never revisited as incidents accumulated. Checked before fixing, not assumed: the paragraph's other claim ("all N outcomes rated Low") still holds across all 22 — 0014 and 0021 predate the two-axis Outcome/failure-mode-class split and use an equivalent "caught before any effect" framing, but none logs a non-Low outcome. | **resolved same session** — count updated to 22, dated; "all N outcomes" line now names the pre-two-axis equivalent explicitly. |
+| F17 | referential | `WORKFLOW.md` cert-order paragraph | "Cert order is law" cites incidents 0008, 0011 and 0013 — not **0010**, the incident that specifically motivated verifying a merged PR's squash-commit is an ancestor of `origin/main` rather than that "the content looks present". `CLAUDE.md`'s fuller wave-close-order bullet puts exactly that check first, by name; `WORKFLOW.md`'s shorter version omits it entirely rather than pointing to the fuller one. A reader following only `WORKFLOW.md`'s sentence could reproduce incident 0010 (stacked-child-merged-into-base) despite the sentence's own framing as "law". | **resolved same session** — reachability-from-`origin/main` now named first in the sentence, citing 0010, matching `CLAUDE.md`'s order. |
 
 ## What the findings have in common (interpretation, not a finding)
 
@@ -422,3 +458,13 @@ order. The rule is unchanged in spirit — take the next pending row, do not sho
 but the sequence it points at was re-derived once the corpus was actually measured. If a
 future session finds a better ordering, it moves the rows and says so here; what it must
 not do is pick a row because it looks appealing today.
+
+**Closed s16.** Every Pass A row and every Pass B row — the seven glossary rows plus the
+un-numbered Process subjects row — is worked: CLEAN or carries findings, and every finding
+raised across both passes is resolved or explicitly routed (F5, F9's remedy generalized into
+law, F7 routed to #309). The standing, resumable sweep this note describes is done. It does
+not follow that the design surface will stay contradiction-free — new documents and new
+decisions will drift again — only that this particular systematic pass over the corpus that
+existed at open (s13) has run its course. A future contradiction is a new sweep, not a
+reopening of this one; if one starts, it gets its own note rather than a ninth Pass B row
+appended here.

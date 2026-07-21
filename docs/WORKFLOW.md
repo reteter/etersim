@@ -20,7 +20,9 @@ partner, orchestration) — never models; the advisor pairing rule is advisor ti
 executor tier. The current casting lives in this one replaceable line and may change
 without touching anything else in the process:
 
-> **Current casting:** frontier = Claude Fable 5 (access intermittent); strong =
+> **Current casting:** frontier = **lapsed** — Claude Fable 5 access ran through
+> 2026-07-19 with no renewal (`agent-memory.md` §Frontier access is intermittent);
+> no replacement frontier caster is assigned, pending an owner call. strong =
 > Claude Opus; cheap = Claude Sonnet. Any comparable model may fill a slot — the
 > gates below, not the vendor, carry the quality claim.
 
@@ -154,9 +156,12 @@ run on `main` after all of a wave's PRs merge — red returns the wave to the fi
 never "merged, fix later". Full run + baseline (tests, typecheck, lint) at
 epic/milestone close. Every certification run starts by printing `pwd` +
 `git branch --show-current` and stops on a mismatch — a persistent shell may still
-sit in a coder worktree (incident 0008). Cert order is law: worktrees removed and
-branches pruned **first** (clean `git worktree list` is the go-signal, incident 0011),
-`npm install` first if the merge touched `package.json`/lock (incident 0013).
+sit in a coder worktree (incident 0008). Cert order is law: **reachability from
+`origin/main` verified first** — a merged PR's squash-commit is an ancestor of
+`origin/main`, not merely "the content looks present" (incident 0010) — then
+worktrees removed and branches pruned (clean `git worktree list` is the go-signal,
+incident 0011), then `npm install` if the merge touched `package.json`/lock
+(incident 0013).
 
 **Milestone playtest law (owner lock, 2026-07-15).** No milestone closes on green
 metrics alone: an owner playtest is part of every milestone's close. The harness
