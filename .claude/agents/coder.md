@@ -58,7 +58,13 @@ the repo read-set, the SELFCHECK §5 report, and the §6 gates are the Orchestra
   (ADR-0003). Identifiers from CONTEXT.md; a missing glossary term is a question for
   the Orchestrator, not a new name.
 - Scope boundaries in your package are hard walls: files owned by neighboring issues
-  are read-only.
+  are read-only. **Standing exception (don't wait for a package to grant it):** a
+  scope-fence that forbids editing a layer (e.g. "no `src/sim` edits") does *not* forbid
+  a pure barrel re-export of already-shipped symbols through that layer's public index
+  (`src/sim/index.ts`) when the layer's own contract requires consumers to import from
+  the index — that is in-bounds. Add it, and flag it in your report for ratification;
+  don't STOP-and-report on it (the STOP rule is for new *logic* or a false premise, not
+  for wiring an existing export to its documented public surface).
 - Never `lint --fix` to clear errors, never `--no-verify`, never weaken an assertion.
 
 ## Verification boundary — review belongs to the Orchestrator

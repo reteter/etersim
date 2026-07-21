@@ -15,9 +15,10 @@ read `git log` and `gh issue list` directly — this file no longer claims them.
 Written for any model in any harness;
 Claude Code's per-machine auto-memory is the day-to-day working channel.
 
-_Last update: 2026-07-21 s18 (owner-requested) — E13.0 close: §Queue cut to the
-go-forward order (the E13.0, OQ8, and docs-vs-docs-sweep items retired as done),
-§Pointers to resumable state removed (the design-surface sweep it pointed at closed s16)._
+_Last update: 2026-07-21 s19 (owner-requested) — E13 nearly closed: #100 shipped (#372),
+#102 closed, #101 UI implemented on `feat/101-storehouse-ui` (@99cc073, pushed, unmerged —
+wave check + merge + E13-close ceremony is the next session's first move). §Queue re-cut to
+the go-forward order; §Watch gains the route-planning reframe (#376)._
 
 ## Design sessions are the work (owner framing, 2026-07-19)
 
@@ -55,11 +56,11 @@ auto-memory and `git log`, not here.
 The *order* is the standing owner agreement, not a re-planning.
 Statuses are **not** listed here — run `gh issue list` for what is open.
 
-1. **E13 implementation:** #100 → #101 → #102
-   (#100 should be visibly smaller after E13.0 — the interim scope-delta measure is
-   `design-notes/e13-0-shrink-measurement-2026-07-21.md`; the definitive LOC measure is
-   still due at E13 close, per the bet above).
-2. **Cheap tails:** #302, #303.
+1. **Close E13:** wave-check + merge `feat/101-storehouse-ui`, then the E13-close ceremony —
+   flip the LOC-shrink bet to a definitive result (`design-notes/e13-0-shrink-measurement-2026-07-21.md`
+   §At E13 close; the #100 diff numbers are captured, it reads CONFIRMED), and settle the
+   deferred docs-law rows (specs/README "milestone closed", design-notes/README for #374/#376).
+2. **Cheap tails:** #302, #303, #375 (small buy-hint bug).
 3. Then **E11 v1** (#232 → #234) → **E15** (#281 → #284;
    its spec depends on E13.0 + E13).
 
@@ -79,3 +80,9 @@ has been removed — find it at its real home.
 - **Refit-status violet `#a373d6` vs mining `#7e55ab`** proximity —
   eyeball at the next playtest; may collide under the one-color-one-meaning law.
 - **Recurring e2e smell:** `dispatchEvent` standing in for real interaction.
+- **Route planning is a redesign, not decoration** (owner playtest, 2026-07-21).
+  The list/dropdown Stop editor is the wrong interaction model; the owner's direction is a
+  structural fusion of route planning into the Price Board economic surface (port-icon
+  editor). Incremental price-column/margin tweaks on the *existing* editor are off the table.
+  Tracked as #376 (needs its own grill+spec); this line records the framing so no one picks
+  up small route-editor polish against it.
