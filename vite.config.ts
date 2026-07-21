@@ -12,7 +12,11 @@ export default defineConfig({
     // (see src/ui/Tabs.test.tsx) — vitest 4 dropped `environmentMatchGlobs`
     // from the config type, so a glob-based split isn't available here.
     environment: "node",
-    include: ["src/**/*.test.{ts,tsx}"],
+    // scripts/**/*.test.mjs: docs-tooling tests for scripts/normalize-markdown.mjs
+    // (#341). scripts/ stays outside the tsconfig project references
+    // (tsconfig.json) — this include is vitest-only, doesn't pull the .mjs
+    // module into typecheck.
+    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.mjs"],
     setupFiles: ["src/test-setup.ts"],
   },
 });
