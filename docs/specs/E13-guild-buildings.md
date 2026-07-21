@@ -140,10 +140,13 @@ The deferred ordered-iterator refactor (#304) keeps its debt but moves its trigg
   term; buildings still carry no book value — the honest-curve rule stands). The
   Storehouse registers a `StoreRef`; `computeNetWorth` walks `companyStores` (E13.0), and
   omissions are caught by the value-neutrality invariant rather than by an enumeration.
-- **Open (OQ8):** does the Storehouse's value join `siteStoreValue` or get its own
-  `NetWorthBreakdown` field? The latter changes the `netWorth` Ledger event shape
-  (`ledger.ts:83-90`) and needs its own version story — decide at the E13 grill before
-  #100 starts.
+- **Decided (OQ8, grilled 2026-07-21):** the Storehouse's value gets its own `NetWorthBreakdown`
+  field, `buildingStoreValue` — generic, not `storehouseValue`, since E15's Plant needs the
+  identical treatment (`E15-processing.md:197`) and a generic field lets it reuse this one
+  without a second shape change. Changes the `netWorth` Ledger event shape (`ledger.ts:83-90`):
+  `SAVE_VERSION` bumps to 14, `migrateV13ToV14` backfills `buildingStoreValue: 0` on existing
+  `netWorth` events (a fact for pre-Storehouse saves, not an approximation). Reasoning:
+  [design-notes/oq8-buildingStoreValue-grill-2026-07-21](../design-notes/oq8-buildingStoreValue-grill-2026-07-21.md).
 
 ### Docs sync
 
