@@ -181,7 +181,7 @@ describe("deliver (#81)", () => {
         headquarters: { portId, buildOrder: { siteStore: emptySiteStore() } },
       },
     };
-    const after = applyCommand(w, { kind: "deliver", shipId: laden.id, good: "electronics" });
+    const after = applyCommand(w, { kind: "deliver", shipId: laden.id, good: "electronics", target: { kind: "hqBuild" } });
     expect(amountOf(after.company.headquarters!.buildOrder!.siteStore, "electronics")).toBe(SHIP_RECIPE.electronics);
     expect(amountOf(after.company.ships[0].cargo, "electronics")).toBe(50 - SHIP_RECIPE.electronics);
     expect(after.ledger.length).toBe(w.ledger.length + 1);
@@ -208,7 +208,7 @@ describe("deliver (#81)", () => {
       },
     };
     // Ship is docked at its home port, not the HQ port → deliver rejected.
-    expect(applyCommand(w, { kind: "deliver", shipId: shipOf(w).id, good: "timber" })).toBe(w);
+    expect(applyCommand(w, { kind: "deliver", shipId: shipOf(w).id, good: "timber", target: { kind: "hqBuild" } })).toBe(w);
   });
 
   it("a delivery that moves nothing (no remaining need) appends no event", () => {
@@ -226,7 +226,7 @@ describe("deliver (#81)", () => {
       },
     };
     // Recipe is already complete: this deliver launches instead of moving goods.
-    const after = applyCommand(w, { kind: "deliver", shipId: laden.id, good: "electronics" });
+    const after = applyCommand(w, { kind: "deliver", shipId: laden.id, good: "electronics", target: { kind: "hqBuild" } });
     expect(after.ledger.some((e) => e.kind === "delivery")).toBe(false); // moved 0, no delivery event
     expect(after.ledger.some((e) => e.kind === "launch")).toBe(true); // but it did launch
   });
@@ -425,7 +425,7 @@ describe("launch (#81)", () => {
       },
     };
     const countBefore = w.company.ships.length;
-    const after = applyCommand(w, { kind: "deliver", shipId: laden.id, good: "electronics" });
+    const after = applyCommand(w, { kind: "deliver", shipId: laden.id, good: "electronics", target: { kind: "hqBuild" } });
 
     expect(after.company.ships).toHaveLength(countBefore + 1);
     expect(after.company.headquarters!.buildOrder).toBeUndefined(); // build cleared

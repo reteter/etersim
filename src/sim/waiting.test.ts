@@ -76,7 +76,7 @@ describe("waitingGates", () => {
       name: "loop",
       stops: [
         { portId: a, orders: [{ kind: "buy", good: "grain", minMargin: 1 }] },
-        { portId: b, orders: [{ kind: "deliver", good: "grain" }] }, // never a reference
+        { portId: b, orders: [{ kind: "deliver", good: "grain", target: { kind: "hqBuild" } }] }, // never a reference
       ],
     };
     const waitingWorld = withWaiting(world, route);

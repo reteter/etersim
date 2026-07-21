@@ -536,7 +536,7 @@ function scriptedAllKindsWorld(): World {
 
   w = applyCommand(w, { kind: "foundHeadquarters", portId: portA }); // founding
   w = applyCommand(w, { kind: "placeBuildOrder" }); // laborFee
-  w = applyCommand(w, { kind: "deliver", shipId, good: "grain" }); // delivery
+  w = applyCommand(w, { kind: "deliver", shipId, good: "grain", target: { kind: "hqBuild" } }); // delivery
 
   // rush — a deliberately small budget buys only a partial line, leaving the
   // rest of the recipe for auto-draw (both kinds must fire from one build).

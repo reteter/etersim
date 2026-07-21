@@ -534,7 +534,7 @@ describe("resolveReferencePort (E9.1, pure — no World/market)", () => {
       name: "r",
       stops: [
         stop("a", [{ kind: "buy", good: "grain" }]),
-        stop("b", [{ kind: "deliver", good: "grain" }]),
+        stop("b", [{ kind: "deliver", good: "grain", target: { kind: "hqBuild" } }]),
       ],
     };
     expect(resolveReferencePort(route, 0, "grain")).toBeNull();
@@ -582,12 +582,12 @@ describe("unitMargin (E9.1 — sole site margin is computed, same pricing fns as
 describe("isValidRoute rejections (E9.1 qty + Margin Gate)", () => {
   const { a, b } = directPair(createWorld("valid-e91"));
 
-  it("rejects qty on a deliver order", () => {
+  it.each(["deliver", "store", "withdraw"] as const)("rejects qty on a %s order", (kind) => {
     const route: Route = {
       id: "x",
       name: "x",
       stops: [
-        { portId: a, orders: [{ kind: "deliver", good: "grain", qty: 5 }] },
+        { portId: a, orders: [{ kind, good: "grain", target: { kind: "hqBuild" }, qty: 5 }] },
         { portId: b, orders: [] },
       ],
     };
@@ -635,7 +635,7 @@ describe("isValidRoute rejections (E9.1 qty + Margin Gate)", () => {
       id: "x",
       name: "x",
       stops: [
-        { portId: a, orders: [{ kind: "deliver", good: "grain", minMargin: 5 }] },
+        { portId: a, orders: [{ kind: "deliver", good: "grain", target: { kind: "hqBuild" }, minMargin: 5 }] },
         { portId: b, orders: [] },
       ],
     };

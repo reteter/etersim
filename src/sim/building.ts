@@ -146,7 +146,7 @@ export function autoDrawCapForDayTick(dayTick: number): number {
 
 /** Move min(cargo, remaining need) of one good into a site's siteStore, per
  *  its recipe. Pure. Superseded as `deliver`'s own move by
- *  `transfer.ts`'s `resolveDeliveryTarget` + `moveOwnGoods` (E13.0 #307), but
+ *  `transfer.ts`'s explicit StoreRef + `moveOwnGoods` (E13), but
  *  kept — and still directly unit-tested (`constructionSite.test.ts`) — as
  *  the generic engine's own read-only "what would a delivery of `good` do"
  *  primitive. */

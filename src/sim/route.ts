@@ -5,9 +5,8 @@ import type { StoreRef } from "./transfer";
 /** Stable identifier for a Route template (CONTEXT.md). */
 export type RouteId = string;
 
-/** One order at a Stop: buy/sell/deliver a specific good. */
-export interface StopOrder {
-  readonly kind: "buy" | "sell" | "deliver" | "store" | "withdraw";
+/** Fields shared by every Stop order. */
+interface StopOrderBase {
   readonly good: GoodId;
   /** "Up to N" ceiling (E9.1, buy & sell only). Absent ⇒ today's greedy
    *  behavior (buy fills the Hold, sell empties the good). */
@@ -15,9 +14,13 @@ export interface StopOrder {
   /** Margin Gate (E9.1, buy only). Absent ⇒ no gate — the buy executes
    *  normally on arrival. See CONTEXT.md — Margin Gate. */
   readonly minMargin?: number;
-  /** Explicit own-store destination/source for non-market goods transfers. */
-  readonly target?: StoreRef;
 }
+
+/** One order at a Stop.  Goods transfers always carry their StoreRef: the
+ * destination/source is player intent, never a priority-chain inference. */
+export type StopOrder =
+  | (StopOrderBase & { readonly kind: "buy" | "sell" })
+  | (StopOrderBase & { readonly kind: "deliver" | "store" | "withdraw"; readonly target: StoreRef });
 
 /** One entry in a Route: a port plus its ordered StopOrders. */
 export interface Stop {

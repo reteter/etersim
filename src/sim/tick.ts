@@ -119,9 +119,9 @@ function executeStop(
       if (qty > 0) w = applyCommand(w, { kind: "sell", shipId, good: order.good, qty, routeId });
       } else if (order.kind === "deliver") {
         w = applyCommand(w, { kind: "deliver", shipId, good: order.good, target: order.target });
-      } else if (order.kind === "store" && order.target) {
+      } else if (order.kind === "store") {
         w = applyCommand(w, { kind: "storeGood", shipId, good: order.good, target: order.target });
-      } else if (order.kind === "withdraw" && order.target) {
+      } else if (order.kind === "withdraw") {
         w = applyCommand(w, { kind: "withdrawGood", shipId, good: order.good, source: order.target });
       }
   }

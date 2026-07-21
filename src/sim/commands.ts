@@ -37,7 +37,7 @@ import {
 } from "./shipyard";
 import type { Route, RouteId } from "./route";
 import { cargoUsed, isRouteActive, type Ship, type ShipId } from "./ship";
-import { moveOwnGoods, readStore, resolveDeliveryTarget, type StoreRef } from "./transfer";
+import { moveOwnGoods, readStore, type StoreRef } from "./transfer";
 import { replaceShip, type World } from "./world";
 
 /**
@@ -74,7 +74,7 @@ export type Command =
   | { readonly kind: "foundHeadquarters"; readonly portId: PortId }
   | { readonly kind: "placeBuildOrder" }
   | { readonly kind: "rushBuild" }
-  | { readonly kind: "deliver"; readonly shipId: ShipId; readonly good: GoodId; readonly target?: StoreRef }
+  | { readonly kind: "deliver"; readonly shipId: ShipId; readonly good: GoodId; readonly target: StoreRef }
   | { readonly kind: "commissionGuildBuilding"; readonly type: "storehouse"; readonly variant: GuildId; readonly portId: PortId }
   | { readonly kind: "storeGood"; readonly shipId: ShipId; readonly good: GoodId; readonly target: StoreRef }
   | { readonly kind: "withdrawGood"; readonly shipId: ShipId; readonly good: GoodId; readonly source: StoreRef }
@@ -120,7 +120,7 @@ function isValidRoute(route: Route): boolean {
       if (seen.has(order.good)) return false;
       seen.add(order.good);
       if (order.qty !== undefined) {
-        if (order.kind === "deliver") return false;
+        if (order.kind === "deliver" || order.kind === "store" || order.kind === "withdraw") return false;
         if (!Number.isInteger(order.qty) || order.qty <= 0) return false;
       }
       if (order.minMargin !== undefined && order.kind !== "buy") return false;
@@ -143,12 +143,12 @@ function hasActiveBuildOrder(company: World["company"]): boolean {
 }
 
 /** The site-specific half of delivering into a resolved `StoreRef` target
- *  (E13.0 #307 — `resolveDeliveryTarget`/`moveOwnGoods`, `transfer.ts`):
+ *  (E13 — explicit StoreRef/`moveOwnGoods`, `transfer.ts`):
  *  which port to tag the `delivery` Ledger event with, and that site's own
  *  completion check (`launchIfComplete` / `completeShipyardIfDone` /
  *  `completeRefitIfDone`). `null` under the same "doesn't currently resolve"
  *  conditions `readStore`/`writeStore` use. `target.kind` is never `"hold"`
- *  here — `resolveDeliveryTarget` only ever returns a site ref. */
+ *  here — Storehouse uses `storeGood`/`withdrawGood`, not `deliver`. */
 function siteCompletion(
   world: World,
   target: StoreRef,
@@ -189,6 +189,7 @@ function siteCompletion(
 function applyDelivery(world: World, ship: Ship, good: GoodId, target: StoreRef): World | null {
   const info = siteCompletion(world, target);
   if (!info) return null;
+  if (ship.location.kind !== "docked" || ship.location.portId !== info.portId) return null;
 
   const holdRef: StoreRef = { kind: "hold", shipId: ship.id };
   const before = amountOf(readStore(world, holdRef)!, good);
@@ -396,19 +397,15 @@ export function applyCommand(world: World, command: Command): World {
       return launchIfComplete(appendLedgerEvents(rushed, result.events));
     }
     case "deliver": {
-      // E13.0 (#307): the guard-clause chain (HQ -> Shipyard's own
-      // construction -> Refit) is extracted into `resolveDeliveryTarget`
-      // (`transfer.ts`) — pure, and the load-bearing seam E13 later deletes
-      // to let the player name the target directly. `deliver` itself is now
-      // "resolve -> moveOwnGoods", plus the SAME zero-need completion tail
-      // as before (presence-based, not need-based — kept hand-maintained
-      // here per the spec's explicit call-out, not folded into the
-      // primitive).
+      // E13: delivery is explicitly addressed.  The prior priority chain
+      // (HQ -> Shipyard -> Refit) was deliberately deleted: a StoreRef is
+      // player intent, so a same-port Storehouse and construction site can
+      // never compete for the same good implicitly.
       const ship = world.company.ships.find((s) => s.id === command.shipId);
       if (!ship || ship.location.kind !== "docked") return world;
       const dockedPortId = ship.location.portId;
 
-      const target = command.target ?? resolveDeliveryTarget(world, ship, command.good);
+      const target = command.target;
       if (target) {
         const result = applyDelivery(world, ship, command.good, target);
         if (result) return result;

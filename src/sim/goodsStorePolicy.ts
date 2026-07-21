@@ -30,7 +30,7 @@ export type StorePolicy =
  * proposed `qty` of `good` offered to `store` under `policy`, returns how
  * much would actually be accepted right now (never more than `qty`, never
  * negative). Pure; callers (`transfer.ts`'s `moveOwnGoods`,
- * `resolveDeliveryTarget`) use the returned amount both to decide whether a
+ * explicit delivery targeting) use the returned amount both to decide whether a
  * site accepts a good at all (`> 0`) and to clamp the actual transfer.
  */
 export function accepts(store: GoodsStore, policy: StorePolicy, good: GoodId, qty: number): number {

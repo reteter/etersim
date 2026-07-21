@@ -180,7 +180,11 @@ function StopRow({
     stop.orders.find((o) => o.good === good);
   const setOrder = (good: GoodId, kind: StopOrder["kind"]) => {
     const withoutGood = stop.orders.filter((o) => o.good !== good);
-    const next = kindOf(good) === kind ? withoutGood : [...withoutGood, { kind, good }];
+    const nextOrder: StopOrder =
+      kind === "buy" || kind === "sell"
+        ? { kind, good }
+        : { kind, good, target: { kind: "hqBuild" } };
+    const next = kindOf(good) === kind ? withoutGood : [...withoutGood, nextOrder];
     onChange({ ...stop, orders: next });
   };
   /** Patches the good's existing order (qty and/or minMargin) in place —
