@@ -110,7 +110,7 @@ the Port"), and only a *claim* — a definition, a rule, a number — can contra
 | 4 | Player & ships | 11 | 1557 | `src/sim` (9 built) / UI+store (2) / E13 spec (store/withdraw, unbuilt) | **worked s16 — CLEAN** (below); no finding |
 | 5 | Guilds & contracts | 12 | 587 | `src/sim` (built) / UI (Guildhouse, board) / E13 spec (permit, Storehouse) | **worked s16 — CLEAN** (below); no finding |
 | 6 | World & setting | 17 | 1046 | PRD/specs/briefs (lore core) / `src/sim` (E10+E12 built) | **worked s16 — CLEAN** (below); no finding |
-| 7 | Harness & evaluation | 8 | 596 | none (unbuilt) | pending |
+| 7 | Harness & evaluation | 8 | 596 | E11 spec (7 unbuilt) / `src/sim` (Ledger, built) | **worked s16 — CLEAN** (below); no finding |
 | — | **Process subjects** (no glossary entry): verification gates, merge/wave ritual, session ritual, model ladder, review depth, documentation law | — | — | — | pending — **F1 came from here** |
 
 **Trade & economy, verified clean (s14).** Every `_Implementation_` line in the section
@@ -248,6 +248,31 @@ E10, epic complete. **Count anchored**: exactly 17 convention entries, no wrap a
 Neighbour-concept check (F13) clean: Policy carries an entry, `mandate` is an inline `(PL:)` gloss (one
 of the §Method examples), and the ladder levels Multiregion / Galaxy / the Unknown are defined within
 the Lens ladder entry itself, not orphaned.
+
+**Harness & evaluation, verified clean (s16) — Pass B's last glossary row.** Eight terms, a **hybrid
+arbiter**: seven are E11-unbuilt (Harness, Policy, Run, Batch, Direct play, Replay, Experiment) and
+adjudicate against the E11 spec; one — **Ledger** — is heavily built and carries the row's real claim
+surface. The seven unbuilt terms' scope claims hold: the header's *"v1 = Batch core + `harness run`
+CLI; Direct play and Replay deferred to v2"* is `E11-proving-grounds.md:8-9` verbatim, owner-locked
+2026-07-15. **Ledger** got the row-4 treatment, read line-by-line: `contractFee` is a real kind
+(`ledger.ts:104`), `routeId` is carried on `trade` events **only** (`ledger.ts:37`, the comment at
+`:21` stating exactly that), and net worth is `thalers + cargoValue + siteStoreValue` at mid price
+(`ledger.ts:222`). The **Grammar law** (#203) — *"every thaler-moving kind carries `thalers`, every
+rank-moving kind carries `pointsDelta`, a new unclassified kind fails to typecheck"* — is enforced by
+the exhaustive `Record<LedgerEvent['kind'], Category>` classification at `ledger.test.ts:610`, exactly
+as claimed. The one careful call is the **Value law**: its guard, *"a value-neutrality property test
+rather than an enumeration of stores (ADR-0008)"*, is **not** in `src/sim` yet — but the entry
+attributes it to ADR-0008, not to a named test file, and both ADR-0008 (`:50`) and E13.0's acceptance
+criterion C3 (`E13.0-goods-store.md:266` — `valueNeutrality.test.ts`, ≥20 seeds) specify it. So it is
+approved-but-unbuilt E13.0, the row-2 case (the entry leads the code by design), **not** a claim of a
+test that exists. **Count anchored**: exactly 8 convention entries, no wrap artifact. Neighbour-concept
+check (F13) clean: every neighbour carries an entry, and `transaction` is the entry's own inline gloss
+(*"UI-only term, not a distinct sim type"*).
+
+**Pass B's seven glossary rows are now all worked, every one CLEAN.** With Pass A complete (s13),
+the only remaining sweep surface is the un-numbered **Process subjects** row below (verification gates,
+merge/wave ritual, session ritual, model ladder, review depth, documentation law) — the class F1 came
+from, which has no `CONTEXT.md` entries and so was never part of the term-keyed passes.
 
 ## Binding rules
 
