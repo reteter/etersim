@@ -5,6 +5,8 @@ import {
   type ContractOffer,
   type World,
 } from "../sim";
+import { runGoldenScenario } from "../sim/e13-0-golden-scenario";
+import goldenSaveFixture from "./e13-0-golden-save.fixture.json?raw";
 import {
   AUTOSAVE_KEY,
   clearAutosave,
@@ -381,5 +383,21 @@ describe("persistence", () => {
       storage.setItem(AUTOSAVE_KEY, JSON.stringify(v9Save));
       expect(loadAutosave(storage)).toBeNull();
     });
+  });
+
+  // E13.0 (#307, docs/specs/E13.0-goods-store.md §Testing, C2): byte-identical
+  // save round-trip. `e13-0-golden-save.fixture.json` was generated on `main`
+  // @ b3ae530 (pre-#307, the GoodsStore refactor) by running the exact same
+  // golden scenario (`e13-0-equivalence.test.ts`'s C1 fixture) through
+  // `exportWorldJson` and committing the output verbatim — the same
+  // generate-once-on-main discipline C1's digest fixture uses. `GoodsStore` is
+  // a compile-time-only brand over the same on-disk `Record<GoodId, number>`
+  // (ADR-0008/spec §Persistence), so the refactored `exportWorldJson` output
+  // for the identical scenario must match this fixture byte-for-byte —
+  // stronger than a deep-equal round-trip, and the one test that would catch
+  // e.g. `storeOf` filling in the wrong `GOOD_IDS` order.
+  it("exports the golden scenario byte-identical to the pre-refactor fixture (E13.0 #307, spec C2)", () => {
+    const json = exportWorldJson(runGoldenScenario());
+    expect(json).toBe(goldenSaveFixture);
   });
 });
