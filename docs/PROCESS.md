@@ -83,11 +83,12 @@ defect has reached `main`** (the one content escape was a merge-procedure error,
 incident 0010, relanded the same day). The scorecard is the substrate for model
 A/B decisions — which model codes, which reviews — made on data, not vibes.
 
-**[The incident log](incidents/)** — a blameless register of 13 process failures
-and near-misses. Its key design choice: every incident is rated twice, **outcome**
-(what actually happened) *separately from* **failure-mode class** (how bad the same
-slip could have been). All 13 outcomes rated Low — nothing shipped broken, no work
-lost — while several failure-mode classes rated Medium+: the log exists to catch
+**[The incident log](incidents/)** — a blameless register of **22** process failures
+and near-misses (as of 2026-07-21). Its key design choice: every incident is rated
+twice, **outcome** (what actually happened) *separately from* **failure-mode class**
+(how bad the same slip could have been). All 22 outcomes rated Low (or the
+pre-two-axis equivalent: "caught before any effect") — nothing shipped broken, no
+work lost — while several failure-mode classes rated Medium+: the log exists to catch
 dangerous *classes* while they're still cheap. Recurring families so far:
 false-signal certifications (stale environment, contended runs), dispatch defects
 (worktree provisioning), merge-procedure traps (stacked PRs). Each incident ends in
