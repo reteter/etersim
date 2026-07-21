@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createWorld,
   tick,
+  totalHeld,
   type ContractOffer,
   type World,
 } from "../sim";
@@ -240,7 +241,7 @@ describe("persistence", () => {
     // freshly-opened empty one).
     expect(world.company.shipyard?.site).toBeUndefined(); // activated
     expect(world.company.shipyard?.refitOrder).toBeDefined();
-    const anyDrawn = Object.values(world.company.shipyard!.refitOrder!.siteStore).some((qty) => qty > 0);
+    const anyDrawn = totalHeld(world.company.shipyard!.refitOrder!.siteStore) > 0;
     expect(anyDrawn).toBe(true);
     const restored = parseWorldJson(exportWorldJson(world));
     expect(restored).toEqual(world);
@@ -252,7 +253,7 @@ describe("persistence", () => {
     // Preconditions: the fixture actually landed with the Shipyard's own
     // site still active (not yet built) and having gathered something.
     expect(world.company.shipyard?.site).toBeDefined();
-    const anyDrawn = Object.values(world.company.shipyard!.site!.siteStore).some((qty) => qty > 0);
+    const anyDrawn = totalHeld(world.company.shipyard!.site!.siteStore) > 0;
     expect(anyDrawn).toBe(true);
     const restored = parseWorldJson(exportWorldJson(world));
     expect(restored).toEqual(world);
