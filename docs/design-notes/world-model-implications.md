@@ -117,21 +117,29 @@ criterion rather than an afterthought).
 - **From:** PRD §Pillars 3 and `CONTEXT.md` — Arcane good: *"Flows through the same market mechanisms as any other good — there is no separate magic system."*
 - **False if:** any branch in `src/sim` keyed on a good being arcane, outside the single documented exception (Aether ice's decay).
 - **Check:** partly greppable; substantially a review question.
-- **Status:** pre-registered (M4). Registering it now makes it an M4 acceptance criterion instead of a discovery afterwards.
+- **Status:** pre-registered (M4). **Attached as an acceptance criterion** to
+  [grill-brief-m4-events-and-ice.md](grill-brief-m4-events-and-ice.md) §Acceptance criteria
+  (#325, 2026-07-21) — this entry stays the source of the falsifier/check pair; the brief
+  points back here so the two don't drift.
 
 ### W7 — Aether ice cannot be profitably stockpiled
 
 - **From:** `CONTEXT.md` — Aether ice: *"Storage arbitrage is impossible by nature."*
 - **False if:** a policy that buys ice and waits outperforms one that buys and delivers promptly, on identical seeds.
 - **Check:** harness A/B.
-- **Status:** pre-registered (M4). This one states a *design intent about strategy*, which is exactly the class no unit test reaches.
+- **Status:** pre-registered (M4). This one states a *design intent about strategy*, which is exactly the class no unit test reaches. **Attached as an acceptance criterion** to
+  [grill-brief-m4-events-and-ice.md](grill-brief-m4-events-and-ice.md) §Acceptance criteria
+  (#325, 2026-07-21).
 
 ### W8 — Trade osmosis never carries Aether ice
 
 - **From:** `CONTEXT.md` — Aether ice: *"Trade osmosis won't move it."*
 - **False if:** any osmosis pulse whose good is ice.
 - **Check:** runtime assertion — absolute, cheap, no Run needed.
-- **Status:** pre-registered (M4). The cheapest check in the register; write it the day ice lands.
+- **Status:** pre-registered (M4). The cheapest check in the register; write it the day ice
+  lands. **Attached as an acceptance criterion** to
+  [grill-brief-m4-events-and-ice.md](grill-brief-m4-events-and-ice.md) §Acceptance criteria
+  (#325, 2026-07-21).
 
 ### W9 — Every term the glossary defines is spoken somewhere
 
@@ -197,7 +205,7 @@ law — *a trigger is a promise, and promises live in the issue tracker*
 
 | Item | Where it lives now |
 | --- | --- |
-| **W6/W7/W8** → M4 grill brief as acceptance criteria | **#325** |
+| **W6/W7/W8** → M4 grill brief as acceptance criteria | **#325 — done**, 2026-07-21 |
 | **W9** → anchored script (incident 0020) | **#324** |
 | **W1/W2/W5** → E11 assertion content | **comment on #234**, not a new issue — the obligation already had a home, so it went there |
 

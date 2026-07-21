@@ -53,6 +53,28 @@ delivered as *Głos Eteru* dispatches — and the concrete market model of Aethe
    the milestone playtest (e.g. ice routes must not strictly dominate carry trade;
    events must not bankrupt a passive player — the agency guarantee)?
 
+## Acceptance criteria (pre-registered, `world-model-implications.md` W6/W7/W8)
+
+Written before the feature so these land as acceptance criteria, not discoveries — the
+window for that closes when M4 starts (`world-model-implications.md` §Honest limits). Each
+keeps its falsifier and its named check; an implication without those is lore, per the
+register's own admission rule.
+
+- **W6 — there is no separate magic system.** From PRD §Pillars 3 and `CONTEXT.md` Arcane
+  good: *"flows through the same market mechanisms as any other good — there is no separate
+  magic system."* **False if** any branch in `src/sim` keys on a good being arcane, outside
+  the single documented exception (Aether ice's decay, this brief's §Rails). **Check:**
+  partly greppable, substantially a review question at wave-check time.
+- **W7 — Aether ice cannot be profitably stockpiled.** From `CONTEXT.md` Aether ice:
+  *"storage arbitrage is impossible by nature."* **False if** a policy that buys ice and
+  waits outperforms one that buys and delivers promptly, on identical seeds. **Check:**
+  E11 harness A/B — this states a design intent about strategy, the class no unit test
+  reaches.
+- **W8 — trade osmosis never carries Aether ice.** From `CONTEXT.md` Aether ice: *"trade
+  osmosis won't move it."* **False if** any osmosis pulse whose good is ice. **Check:**
+  runtime assertion — absolute, cheap, no Run needed. **Write it the day ice lands** — the
+  cheapest check in the whole register, per `world-model-implications.md` W8.
+
 ## Traps
 
 - Dispatches that state conclusions ("prices will rise!") — the lock forbids it;
