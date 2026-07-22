@@ -12,7 +12,7 @@ import {
   type Route,
   type World,
 } from "../sim";
-import { useGameStore } from "./gameStore";
+import { resolveRelevantShip, useGameStore } from "./gameStore";
 import { loadAutosave, type StorageLike } from "./persistence";
 
 const store = () => useGameStore.getState();
@@ -287,6 +287,39 @@ describe("gameStore Controlled Ship", () => {
     store().openShip("s0");
     expect(store().controlledShipId).toBe("s0");
     expect(store().selection).toEqual({ kind: "ship", id: "s0" });
+  });
+});
+
+describe("resolveRelevantShip (#319 — fleet-resolution selector)", () => {
+  it("resolves the Controlled Ship when it is present in the fleet — even when it is not the first ship", () => {
+    store().newGame("etersim");
+    const world = store().world!;
+    type ShipIdOf = (typeof world.company.ships)[number]["id"];
+    const s0 = world.company.ships[0];
+    // A second ship, distinct from ships[0], designated Controlled: this is
+    // the case a naive `ships[0]` fallback would get wrong, so it's the case
+    // that actually exercises the exact-match branch instead of coinciding
+    // with the fallback (advisor review, #319).
+    const s1 = { ...s0, id: "s1-test" as ShipIdOf };
+    const twoShipWorld = { ...world, company: { ...world.company, ships: [s0, s1] } };
+    expect(resolveRelevantShip(twoShipWorld, s1.id)).toBe(s1);
+  });
+
+  it("falls back to the first ship when the Controlled Ship id is absent", () => {
+    store().newGame("etersim");
+    const world = store().world!;
+    type ShipIdOf = (typeof world.company.ships)[number]["id"];
+    const missingId = "no-such-ship-id" as ShipIdOf;
+    expect(resolveRelevantShip(world, missingId)).toBe(world.company.ships[0]);
+    expect(resolveRelevantShip(world, null)).toBe(world.company.ships[0]);
+  });
+
+  it("returns null for an empty fleet", () => {
+    store().newGame("etersim");
+    const world = store().world!;
+    const emptyFleetWorld = { ...world, company: { ...world.company, ships: [] } };
+    expect(resolveRelevantShip(emptyFleetWorld, null)).toBeNull();
+    expect(resolveRelevantShip(emptyFleetWorld, world.company.ships[0].id)).toBeNull();
   });
 });
 

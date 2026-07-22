@@ -134,9 +134,22 @@ const INITIAL = {
   seed: null,
 };
 
+/**
+ * Fleet-resolution selector (#319): "which of my ships is relevant here" for
+ * a given context — the Controlled Ship (CONTEXT.md) if it still exists in
+ * `world`, else the company's first ship, else none. The single place this
+ * fallback logic lives; every surface that needs "the relevant ship" (the
+ * store's own initial-selection seeding, `PortPanel`) resolves through this
+ * instead of re-deriving the exact-match-then-first-ship pattern inline.
+ */
+export function resolveRelevantShip(world: World, controlledShipId: ShipId | null): Ship | null {
+  const ships = world.company.ships;
+  return ships.find((s) => s.id === controlledShipId) ?? ships[0] ?? null;
+}
+
 /** The Controlled Ship a fresh world starts with — the company's first ship. */
 function initialControlledShip(world: World): ShipId | null {
-  return world.company.ships[0]?.id ?? null;
+  return resolveRelevantShip(world, null)?.id ?? null;
 }
 
 /**
