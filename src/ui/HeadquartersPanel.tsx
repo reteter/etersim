@@ -16,9 +16,9 @@ import {
   STOREHOUSE_LABOR_FEE,
   STOREHOUSE_PERMIT_RANK,
   STOREHOUSE_RECIPE,
+  type GuildId,
   type CompanyBuilding,
   type GoodId,
-  type GuildId,
   type Port,
   type PortId,
   type Route,
@@ -35,6 +35,7 @@ import { BuildProgress } from "./BuildProgress";
 import { GUILD_NAME_PL } from "./guildDisplay";
 import { OverlayShell } from "./OverlayShell";
 import { Tabs } from "./Tabs";
+import { RoutesTab } from "./RoutesTab";
 
 type Tab = "construction" | "routes";
 
@@ -400,7 +401,7 @@ const STORE_ORDER_KIND_LABEL: Record<(typeof STORE_ORDER_KINDS)[number], string>
  *  hosts a Company storehouse, and only render a chip for goods in that
  *  Building's own `storehouseFilter` — never a chip that would silently
  *  no-op against the Building's goods filter. */
-function StopRow({
+function LegacyStopRow({
   stop,
   index,
   route,
@@ -592,7 +593,7 @@ function StopRow({
  *  valid Command payload — createRoute/updateRoute reject anything short of
  *  ≥2 Stops across ≥2 distinct ports (src/sim/commands.ts isValidRoute), so
  *  Save stays disabled until the draft already clears that bar. */
-function RouteEditor({
+function LegacyRouteEditor({
   world,
   draft,
   onChange,
@@ -617,7 +618,7 @@ function RouteEditor({
         onChange={(e) => onChange({ ...draft, name: e.target.value })}
       />
       {draft.stops.map((stop, i) => (
-        <StopRow
+        <LegacyStopRow
           key={i}
           stop={stop}
           index={i}
@@ -657,7 +658,7 @@ function RouteEditor({
 /** One Route's row in the Trasy list: loop metrics, assign/unassign, suspend
  *  state, resume — everything docs/specs/E9's Loop metrics + assignment ACs
  *  ask for, per Route. */
-function RouteRow({
+function LegacyRouteRow({
   world,
   route,
   selected,
@@ -765,7 +766,7 @@ function RouteRow({
  *  pollute the new Route's loop metrics). Deterministic, derived from World
  *  state only — the ship-name precedent (keyed by count, no wall clock, no
  *  RNG draw) applied to ids. */
-function nextRouteId(world: World): RouteId {
+function legacyNextRouteId(world: World): RouteId {
   let max = 0;
   const consider = (id: string) => {
     const m = /^r(\d+)$/.exec(id);
@@ -781,7 +782,7 @@ function nextRouteId(world: World): RouteId {
 /** The "Trasy" tab (docs/specs/E9 — UX skeleton): the Company's Route
  *  templates — create/edit via a list-based Stop editor, assign/unassign
  *  ships, and each Route's loop metrics (route-rot legible at a glance). */
-function RoutesTab({ world }: { world: World }) {
+export function LegacyRoutesTab({ world }: { world: World }) {
   const dispatch = useGameStore((s) => s.dispatch);
   const selectedRouteId = useGameStore((s) => s.selectedRouteId);
   const selectRoute = useGameStore((s) => s.selectRoute);
@@ -791,7 +792,7 @@ function RoutesTab({ world }: { world: World }) {
   const editingExisting = draft ? routes.some((r) => r.id === draft.id) : false;
 
   const startNew = () => {
-    setDraft({ id: nextRouteId(world), name: `Route ${routes.length + 1}`, stops: [] });
+    setDraft({ id: legacyNextRouteId(world), name: `Route ${routes.length + 1}`, stops: [] });
   };
   const startEdit = (route: Route) => {
     setDraft(route);
@@ -814,7 +815,7 @@ function RoutesTab({ world }: { world: World }) {
       <div className="route-list">
         {routes.length === 0 && <p className="side-panel__hint">No routes yet.</p>}
         {routes.map((route) => (
-          <RouteRow
+          <LegacyRouteRow
             key={route.id}
             world={world}
             route={route}
@@ -826,7 +827,7 @@ function RoutesTab({ world }: { world: World }) {
         ))}
       </div>
       {draft ? (
-        <RouteEditor world={world} draft={draft} onChange={setDraft} onSave={save} onCancel={cancel} />
+        <LegacyRouteEditor world={world} draft={draft} onChange={setDraft} onSave={save} onCancel={cancel} />
       ) : (
         <button type="button" className="menu-btn" onClick={startNew}>
           New route

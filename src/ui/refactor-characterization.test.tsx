@@ -51,6 +51,7 @@ beforeEach(() => {
     controlledShipId: null,
     selection: null,
     selectedRouteId: null,
+    activeOverlay: null,
     speed: "paused",
   });
 });
@@ -102,14 +103,16 @@ describe("TopBar overlays — single-overlay behaviour (#320)", () => {
     await user.keyboard("b");
     expect(screen.queryByRole("table", { name: "Region price board" })).toBeNull();
 
-    // Ledger and Headquarters each open from their own button. We assert only
-    // that the opened overlay is present — never a two-overlays-open state,
-    // which #320 deliberately replaces with mutual exclusion.
+    // Opening a second overlay replaces the first rather than stacking it.
     await user.click(screen.getByRole("button", { name: "Ledger" }));
     expect(screen.getByRole("table", { name: "Transactions" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Headquarters" }));
     expect(screen.getByRole("dialog", { name: /headquarters/i })).toBeInTheDocument();
+    expect(screen.queryByRole("table", { name: "Transactions" })).toBeNull();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: /headquarters/i })).toBeNull();
   });
 });
 
