@@ -1,5 +1,11 @@
 # Grill brief — M4 Workbench (Clusters A+B)
 
+> **RESOLVED 2026-07-22 → [E16 — Workbench](../specs/E16-workbench.md).** This grill ran; every
+> question below is answered in E16's Design section (Q1 map→§Map role; Q2 dispatch→§Dispatch; Q3
+> labels→§Market-quality signal; Q4 map-keeps→§Core principle; Q5 density→§Information density; Q6
+> parked-automation→§Non-goals). Kept for provenance — the brief is the *questions*, E16 is the
+> *answers*. Crux was port-centric construction (validated in the grill mockup).
+
 A **grill brief** is the scenario for a future owner grill: the questions that grill
 must resolve, the rails already locked, and the known traps. It hands the *questions*,
 not the answers — the owner answers at the table. Written at the fantasy-roadmap

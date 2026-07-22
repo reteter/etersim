@@ -414,12 +414,35 @@ The region-wide economic overlay:
 all Ports × all Goods in one table with bid/ask and trend per cell, highlighting the cheapest ask
 and highest bid per good.
 Full information in M2 (fog is a parked E6 candidate).
+E16 (M4) makes this the game's **workbench** —
+Routes are authored on it and Ships dispatched from it, and the Headquarters Trasy tab demotes to a
+read-only Route-ribbon roster ([spec](docs/specs/E16-workbench.md));
+the as-built rewrite lands when E16 ships.
 _Implementation_:
 shipped in #62 ([spec](docs/specs/E8-living-economy.md)) —
 `PriceBoardOverlay.tsx`, opened from the TopBar button or the `B` hotkey;
 rows are ports, columns goods, cheapest-ask / highest-bid highlighted per good, docked row marked.
 _Avoid_:
 market overview, economy screen (as identifiers)
+
+**Market-quality signal** (PL: sygnał jakości rynku):
+A per-(Port, Good, direction) rank of how good a market is relative to the region, on a gradient
+(best / near-best / possible-but-worse), derived from the price spread —
+generalizing the Price board's cheapest-ask / highest-bid extremes.
+Computed **once** and rendered in three surfaces:
+Price board cell emphasis, PortPanel buy/sell action shading, and offer labels (okazja / rzadkie /
+pilne).
+Its visual channel is **intensity (opacity + weight), deliberately hue-free**, so "best market"
+means the same on every surface and never collides with archetype tints, price trend, or gold
+(one-color-one-meaning, ADR-0006).
+Informational only —
+it never trades or wires anything.
+_Implementation_:
+planned E16 (`docs/specs/E16-workbench.md`) as a store-bridge selector (compute-once, the Professor
+Finding 4 discipline);
+subsumes `PriceBoardOverlay.tsx`'s local `columnExtremes`.
+_Avoid_:
+recommendation, hint (as identifiers — it is a ranked signal, not an instruction)
 
 ### Player & ships
 
@@ -505,6 +528,10 @@ assignable Routes need ≥ 2 Stops over ≥ 2 distinct ports.
 Route-editor UI shipped in #85 (`HeadquartersPanel.tsx` Trasy tab — list-based Stop editor,
 assign/unassign, suspend/resume, loop metrics; `RegionMap.tsx` highlights the selected Route's Stop
 ports).
+E16 (M4) moves authoring onto the Price board (port-centric: place Stops, attach orders against live
+prices) and demotes the Trasy tab to a read-only Route ribbon roster with an edit-in-board seam
+([spec](docs/specs/E16-workbench.md)) —
+this entry's "created and edited in the Headquarters' Route panel" is rewritten when E16 ships.
 Naming collision with the old internal `route` resolved at the E9 grill (2026-07-09):
 the pathfinding concept is now **Course**;
 `Route` is reserved for this player-facing loop.
@@ -549,6 +576,10 @@ Order vocabulary locked at the E9 grill (2026-07-09), replacing the earlier load
 E13 (M3) adds two order kinds: **store**
 and **withdraw** (transfer between Cargo and a Storehouse, market-free — the goods are already
 yours).
+E16 (M4) authors Stops on the Price board —
+a good-cell click attaches an order with the kind inferred from context —
+and makes greedy sells legible (the sell chip reads "sprzedaj całość · {good}"; a runtime note
+records the executed sale) (`docs/specs/E16-workbench.md`).
 _Avoid_:
 waypoint, leg;
 load/unload (pre-E9 wording)
@@ -577,6 +608,20 @@ E9.1 (`docs/specs/E9.1-route-qty-and-margin-gate.md`);
 `resolveReferencePort`
 + `unitMargin` (pure, sim + UI), the `runRouteForShip` gate state machine, `SAVE_VERSION 11`.
 _Avoid_: price floor, limit order (these imply a market order type, not a route wait); stop-loss
+
+**Route ribbon** (PL: wstążka trasy):
+The visual language for a Route:
+its ordered Stops laid along a schematic rail as planet-style nodes in each Port's archetype color,
+connected by the route line, with the assigned Ship gliding the loop (returning home along a return
+arc + ↻; on Routes over two Stops the intermediate Stops dim during the return).
+One idiom, two surfaces: **editable**
+on the Price board (the authoring canvas) and **read-only** in the Headquarters Trasy tab (a roster,
+one ribbon per Route).
+Schematic on purpose (umowna scale, not orrery geometry) so it does not compete with the map.
+_Implementation_:
+planned E16 (`docs/specs/E16-workbench.md`), UI-only.
+_Avoid_:
+route strip, timeline (as identifiers)
 
 **Voyage** (PL: rejs):
 One traversal of a lane by a ship, taking a number of ticks.
