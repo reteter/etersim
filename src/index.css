@@ -1051,6 +1051,73 @@ body {
   color: #8891a3;
 }
 
+/* Board authoring (#394, docs/specs/E16-workbench.md — board fusion): the
+   "Nowa trasa" bar, in-draft/suggested row states, and the per-cell order
+   chip. Kept visually light — the ribbon docked below is the primary
+   authoring surface. */
+.price-board__authoring-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.price-board__authoring-hint {
+  color: #8891a3;
+  font-size: 0.85rem;
+}
+
+.price-board__row--in-draft {
+  outline: 1px solid rgba(230, 236, 245, 0.35);
+}
+
+.price-board__row--suggested .price-board__port-name {
+  color: #e0c265;
+}
+
+.price-board__pairing-hint {
+  color: #e0c265;
+}
+
+.price-board__cell-btn {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.price-board__order-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  margin-top: 0.15rem;
+}
+
+.price-board__order-chip-label {
+  color: #a8b2c2;
+}
+
+.price-board__order-more {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.price-board__order-more input {
+  width: 4.5rem;
+}
+
+.price-board__ribbon-dock {
+  margin-top: 0.75rem;
+  border-top: 1px solid #2a3040;
+  padding-top: 0.5rem;
+}
+
 /* Options overlay tabs (#56): Ogólne (settings) + Keybinds (read-only key
    list). Mirrors the Ledger tab shell; active blue is the shared "active
    control in a group" hue (#4c7bab, ADR-0006). */
@@ -1934,4 +2001,27 @@ body {
    x/y attributes, so it actually animates between `progress` updates. */
 .route-ribbon__ship--animating {
   transition: transform 0.3s linear;
+}
+
+/* Editable mode (#394 board authoring): per-node Stop controls docked below
+   the schematic SVG rail — plain HTML, not part of the ribbon's visual
+   language proper, so read-only mode (#392 roster rows, no `edit` prop)
+   never renders any of this. */
+.route-ribbon__edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+}
+
+.route-ribbon__edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.route-ribbon__edit-name {
+  flex: 1;
+  color: #a8b2c2;
 }

@@ -13,9 +13,12 @@ import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
  * This component only *renders* what it is given — a resolved node list
  * (`portId → archetype`/`name` already looked up by the caller), never a
  * bare `Route` — so it never reaches into the store (E16 spec, "the
- * component must not reach into the store"). Read-only mode only in this
- * issue (#392): no add/remove/reorder/attach-order affordances. Editable
- * authoring mode is a later E16 issue.
+ * component must not reach into the store"). Read-only mode shipped in #392
+ * (no `edit` prop passed: no add/remove/reorder affordances). #394 adds an
+ * **editable mode** (`edit` prop): per-node remove + reorder buttons. Order
+ * attach/edit itself lives in the board's grid cells, not the ribbon (E16
+ * spec — UX latitude on "where order-editing lives"), so the ribbon's
+ * authoring surface is deliberately scoped to Stop-level manipulation.
  */
 
 export interface RouteRibbonNode {
@@ -48,6 +51,14 @@ export interface RouteRibbonProps {
    *  under `prefers-reduced-motion`, so pausing never looks like motion
    *  snuck in behind the pause. */
   readonly paused?: boolean;
+  /** Present ⇒ editable mode (#394 board authoring): each node gets a
+   *  remove button and reorder (◀/▶) buttons. Absent ⇒ read-only (#392
+   *  roster rows) — the "no authoring affordances" guarantee that mode's
+   *  test asserts. */
+  readonly edit?: {
+    readonly onRemoveStop: (index: number) => void;
+    readonly onMoveStop: (index: number, direction: -1 | 1) => void;
+  };
 }
 
 const NODE_SPACING = 32;
@@ -103,7 +114,7 @@ function shipOnRibbon(
   return { point: quadraticPoint(last, first, control, t), onReturnLeg };
 }
 
-export function RouteRibbon({ routeName, nodes, ship, paused }: RouteRibbonProps) {
+export function RouteRibbon({ routeName, nodes, ship, paused, edit }: RouteRibbonProps) {
   const reducedMotion = usePrefersReducedMotion();
   const animating = ship !== undefined && !reducedMotion && !paused;
 
@@ -222,6 +233,43 @@ export function RouteRibbon({ routeName, nodes, ship, paused }: RouteRibbonProps
           </g>
         )}
       </svg>
+      {edit && (
+        <div className="route-ribbon__edit" role="group" aria-label="Edytuj przystanki">
+          {nodes.map((node, i) => (
+            <div key={node.portId} className="route-ribbon__edit-row">
+              <span className="route-ribbon__edit-name">
+                #{i + 1} {node.name}
+              </span>
+              <button
+                type="button"
+                className="menu-btn"
+                aria-label={`Przesuń przystanek ${i + 1} wcześniej`}
+                disabled={i === 0}
+                onClick={() => edit.onMoveStop(i, -1)}
+              >
+                ◀
+              </button>
+              <button
+                type="button"
+                className="menu-btn"
+                aria-label={`Przesuń przystanek ${i + 1} później`}
+                disabled={i === nodes.length - 1}
+                onClick={() => edit.onMoveStop(i, 1)}
+              >
+                ▶
+              </button>
+              <button
+                type="button"
+                className="menu-btn"
+                aria-label={`Usuń przystanek ${i + 1}: ${node.name}`}
+                onClick={() => edit.onRemoveStop(i)}
+              >
+                Usuń
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
