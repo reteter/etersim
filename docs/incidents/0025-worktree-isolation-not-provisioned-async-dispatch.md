@@ -20,10 +20,10 @@ Unknown — the repro attempt refutes "async dispatch never honors isolation" as
 
 ## Recommendation
 
-- **Prevent:** none identified — mechanism confirmed sound in the general case; nothing to change in dispatch convention.
-- **Detect:** coders already self-report + stop-and-verify before improvising (per CLAUDE.md); that worked here. No change.
-- **Contain:** if this recurs, capture the exact dispatch call (background vs foreground, exact params) at failure time before improvising, so a future investigation has the call shape to compare.
+- **Prevent:** `.claude/agents/coder.md` §Git discipline gained an explicit stop-condition mirroring the existing main-checkout rule: a missing dedicated worktree under `isolation: "worktree"` is now a stop-and-report, never a self-provisioned `git worktree add`. Both s20 coders improvised instead of stopping — the contract didn't name this case before.
+- **Detect:** coders already self-report after the fact (both did); the new stop-condition moves that report earlier, before any improvisation.
+- **Contain:** if this recurs, capture the exact dispatch call (background vs foreground, exact params) at failure time, so a future investigation has the call shape to compare.
 
 ## Follow-up
 
-Two leftover manual worktrees cleaned up post-merge (#380, #381). Watch for recurrence; no code/process change landed.
+Two leftover manual worktrees cleaned up post-merge (#380, #381). `coder.md` stop-condition landed same session. Watch for recurrence.
