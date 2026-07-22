@@ -305,3 +305,12 @@ Sequencing note: E16 is **UI-only**, so it is file-disjoint from the sim-heavy E
 parallel with them — but its priority slot against the HANDOFF §Queue (E11 v1 → E15) is an **owner
 call**, made when this spec is approved. It is not a blocker for either. (a) is the enabling package;
 (b)–(g) fan out from it, with (c) the largest and the true heart of #376.
+
+Engineer-pass note (2026-07-22, Carl at the table — incident 0029): (a) #392 is not purely
+`store` — extracting the signal selector forces a **behavior-neutral** swap of
+`PriceBoardOverlay.tsx`'s local `columnExtremes` for the selector, and that same file is edited
+heavily by (c) #394. So **(a) → (c) is a sequential dependency edge, not a parallel pair** — merge
+(a) with its minimal consume-site edit first, then (c) adds authoring. Two further open questions
+for #390 part 2 (the profitability register) live in #390's issue, not here: the Total/30d derivation
+must not be O(full-retention Ledger) per render (memoize or accumulate), and net margin's docking is
+exact only from the #391 tag forward (older saves need a "net accounted from day N" signal).

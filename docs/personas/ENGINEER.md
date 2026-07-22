@@ -60,6 +60,15 @@ the Engineer proposes a new ADR rather than burying the decision in prose.
 Input: the grill locks + Design section. Output: the Tech section, in the spec file,
 per `docs/specs/TEMPLATE.md`.
 
+**Feasibility-fork trigger** (incident 0029): a Designer grill fork that hinges on
+*feasibility or derivability* — "can we compute X?", "does the data carry Y?", "is this
+one migration or two?" — is a "what" question whose answer is secretly "how". It is an
+Engineer-hat trigger: **announce the hat and apply working-law 1 (name the test / check
+the code) before the owner locks the fork.** A feasibility claim locked silently as a
+Designer decision is exactly how an underivable metric reaches an approved spec — the
+solvent is a flowing grill's momentum, so the discipline is to say the hat out loud when
+the fork turns on the data, not to trust that the check will feel necessary.
+
 **Standalone (any harness — e.g. testing this persona on another vendor):** open the
 session with this file, then per AGENTS.md order (CLAUDE.md → HANDOFF.md), plus:
 CONTEXT.md, the target spec's Design section, and the named source files it touches.
