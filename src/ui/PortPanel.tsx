@@ -37,7 +37,7 @@ import {
   type ShipId,
   type World,
 } from "../sim";
-import { useGameStore } from "../store/gameStore";
+import { resolveRelevantShip, useGameStore } from "../store/gameStore";
 import { activeHeadquartersSite, deriveSiteStallReason } from "../store/headquartersStall";
 import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
@@ -923,9 +923,8 @@ export function PortPanel({ portId }: { portId: PortId }) {
   if (!port) return null;
 
   // Commands target the Controlled Ship (CONTEXT.md); fall back to the first
-  // ship if none is designated yet.
-  const ship =
-    world.company.ships.find((s) => s.id === controlledShipId) ?? world.company.ships[0];
+  // ship if none is designated yet (resolveRelevantShip, #319).
+  const ship = resolveRelevantShip(world, controlledShipId);
   if (!ship) return null;
   const dockedHere = ship.location.kind === "docked" && ship.location.portId === port.id;
   const snapshot = world.priceSnapshots[port.id];

@@ -33,6 +33,14 @@ export type Selection =
  *  arrival auto-pause (see `advance` below). */
 export type PauseCause = "manual" | "autoArrival";
 
+/**
+ * TopBar's overlays (#320): one field replaces three independent booleans
+ * (`priceBoardOpen`/`ledgerOpen`/`headquartersOpen`) so opening one overlay
+ * is structurally exclusive with the others — a fourth overlay costs a new
+ * union member, not a new boolean. UI-only, never serialized.
+ */
+export type Overlay = "priceBoard" | "ledger" | "hq";
+
 interface GameState {
   readonly world: World | null;
   readonly speed: Speed;
@@ -93,6 +101,13 @@ interface GameState {
    * save shape.
    */
   readonly seed: string | null;
+  /**
+   * The overlay TopBar currently shows, or none (#320). At most one at a
+   * time by construction — opening one replaces whatever was active, so
+   * "two overlays stacked" is unrepresentable rather than merely prevented
+   * by UI discipline.
+   */
+  readonly activeOverlay: Overlay | null;
 
   newGame(seed: number | string): void;
   loadWorld(world: World): void;
@@ -119,6 +134,11 @@ interface GameState {
   dispatch(command: Command): void;
   /** Folds elapsed real ms into world ticks; the rAF loop feeds this. */
   advance(elapsedMs: number): void;
+  /** Opens `overlay`, replacing whatever was active (#320) — the single home
+   *  for mutual exclusion, instead of each caller having to close the others. */
+  openOverlay(overlay: Overlay): void;
+  /** Closes the active overlay; a no-op if none is open. */
+  closeOverlay(): void;
 }
 
 const INITIAL = {
@@ -132,11 +152,25 @@ const INITIAL = {
   pauseCause: null,
   lastSeenTick: 0,
   seed: null,
+  activeOverlay: null as Overlay | null,
 };
+
+/**
+ * Fleet-resolution selector (#319): "which of my ships is relevant here" for
+ * a given context — the Controlled Ship (CONTEXT.md) if it still exists in
+ * `world`, else the company's first ship, else none. The single place this
+ * fallback logic lives; every surface that needs "the relevant ship" (the
+ * store's own initial-selection seeding, `PortPanel`) resolves through this
+ * instead of re-deriving the exact-match-then-first-ship pattern inline.
+ */
+export function resolveRelevantShip(world: World, controlledShipId: ShipId | null): Ship | null {
+  const ships = world.company.ships;
+  return ships.find((s) => s.id === controlledShipId) ?? ships[0] ?? null;
+}
 
 /** The Controlled Ship a fresh world starts with — the company's first ship. */
 function initialControlledShip(world: World): ShipId | null {
-  return world.company.ships[0]?.id ?? null;
+  return resolveRelevantShip(world, null)?.id ?? null;
 }
 
 /**
@@ -237,6 +271,10 @@ export const useGameStore = create<GameState>()((set, get) => ({
   selectRoute: (routeId) => set({ selectedRouteId: routeId }),
 
   openShip: (id) => set({ controlledShipId: id, selection: { kind: "ship", id } }),
+
+  openOverlay: (overlay) => set({ activeOverlay: overlay }),
+
+  closeOverlay: () => set({ activeOverlay: null }),
 
   dispatch: (command) => {
     const { world } = get();
