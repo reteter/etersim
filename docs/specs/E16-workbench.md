@@ -210,9 +210,18 @@ frame. The `activeOverlay` store field (#320) governs its open state. Consider w
 tab set changes ("Ceny" now implies "Ceny · Trasa").
 
 **Reaching the workbench (keybinds are settled — extend, don't redesign; M4 rail).** The board opens
-via its existing `B` hotkey, unchanged. #175 (a keybind to open the Trasy tab) shifts meaning now
-that Trasy is a read-only roster — repoint it at the roster or reconsider it at filing; either way
-this epic does not add a new keybinding scheme.
+via its existing `B` hotkey, unchanged. #175 (a keybind to open the Trasy tab) is **closed (owner,
+2026-07-22)**: Headquarters is the un-suggested operational-oversight room, so inspecting a register
+is meant to be a conscious, slightly effortful act — a frictionless hotkey to a read-only roster
+works against that intent. The board (authoring) keeps `B`; the roster needs no hotkey. This epic
+adds no new keybinding scheme.
+
+**Signal boundary (owner framing, 2026-07-22).** The market-quality signal renders only on the
+*action* surfaces — the board and the PortPanel — never inside the Headquarters registers. HQ is the
+raw operational-data room where nothing is suggested; it may grow rich *analytics* (route
+profitability — total / last-30-days / current / ROI, parked as a follow-up issue) but those are
+**data, not suggestions**. Data ≠ suggestion is the line: the roster shows what your routes *are*,
+the board signals where the *opportunity* is.
 
 ### Trasy roster (`src/ui/HeadquartersPanel.tsx`)
 
