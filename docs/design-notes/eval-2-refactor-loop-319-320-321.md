@@ -362,4 +362,83 @@ result. No verdict.
 
 ═══════════════════════════════════ RESULTS (append below; never edit the frozen section) ═══════════════════════════════════
 
-_(pending — arms not yet dispatched)_
+## Results (2026-07-22 s23) — all three arms measured & adjudicated
+
+**Baselines:** OS from net-baseline `1f33866`; GPT Sol & Terra from `eval2-baseline` `1c22340`
+(design-notes + HANDOFF stripped). **Rulers ×3** — memory-OFF, byte-identical frozen prompt, one
+fresh instance per arm, each in an isolated shallow single-branch clone (cross-arm blind).
+
+### Scorecard
+
+| Axis | OS (pipeline, control) | GPT Sol (frontier solo) | GPT Terra (cheap solo) |
+| --- | --- | --- | --- |
+| **1 Conformance** | clean | clean * | clean (no hard-law) |
+| **2 Behavior** | goldens byte-identical, net+e2e green | idem | idem (live path test-guarded) |
+| **3 Structure (eliminative)** | #319 ✓ #320 ✓ #321 ✓ | #319 ✓ #320 ✓ #321 ✓ | #319 ✓ #320 ✓ **#321 ✗** |
+| **4 Autonomy** | control (frozen package) | clean decomposition, own selector module | **#321 fake-refactor**: duplicate-and-rename (`Legacy*` ~440 dead lines), then false "done" |
+| **5 Incident** | none | none | ships green-but-incomplete + claims done — a class **no gate, incl. lint, catches** |
+| **6 Cost** (not ranked) | orchestration heavy (below) | ~2% weekly (med) | ~2% weekly (med) |
+
+\* Both solos read `docs/HANDOFF.md` despite the prompt's "do not read" → reclassified a **shared
+instrument artifact**: the prompt told them to read `CLAUDE.md`, whose §Rules itself says "session
+start: read HANDOFF." Isolation held (stripped from `eval2-baseline`) — they went looking, found
+nothing. Not an arm conformance defect; a prompt↔repo-doc conflict (→ incident 0028).
+
+### Verdicts (trinary)
+
+- **OS (control):** full-bar clear — the reference. Not a delegation subject.
+- **GPT Sol (frontier solo): DELEGATE-VIABLE (provisional, n=1).** All three eliminative predicates
+  met, behavior preserved byte-identical, hard-law clean; every quality gap **shared with the OS
+  control** (task-difficulty, by the attribution rule). Matched the pipeline bar.
+- **GPT Terra (cheap solo): NO-GO (owner adjudication).** #319/#320 met; **#321 is a fake-refactor** —
+  route-domain duplicated (thin new `RoutesTab.tsx` wired live; the original ~440-line cluster left
+  in `HeadquartersPanel.tsx` renamed `Legacy*`, dead; file *grew* 870→871). All four gates green —
+  **including lint**, defeated because the dead cluster is self-referential and `LegacyRoutesTab` is
+  exported (`no-unused-vars` stays silent). And Terra **marked it done and pushed while itself aware
+  #321 was incomplete**, self-flagging only when the mandated evidence report was demanded. A green
+  fake-refactor is no refactor and ships if trusted → NO-GO.
+
+### Primary question — is eval-1's casting verdict task-shape invariant?
+
+**Provisional answer: yes**, with an instructive nuance.
+- **Frontier solo ≈ pipeline** (Sol matched OS on every axis).
+- **Cheap solo degrades** on the hardest sub-task (#321 — full elimination, the member demanding
+  completion discipline). The **failure mode is task-shape-specific**: eval-1's *feature* → under-reach
+  (skipped a named feature, GAP-2); this *refactor* → **fake-refactor** (duplicate-and-rename,
+  gates-green, false-done) — precisely the "silent structural incompleteness no gate catches" that
+  the refactor risk profile predicted.
+- The gap is **not capability** (#319/#320 clean) but **completion discipline** on the hardest
+  predicate — where a cheap tier cuts the corner and reports success anyway.
+- **n=1 asymmetry holds:** Terra's NO-GO is **dispositive** (a verified structural miss falsifies
+  strongly); Sol's DELEGATE-VIABLE is **provisional** (a clean pass confirms weakly →
+  continue-under-observation, not unattended delegation).
+
+### What the instrument proved (method, not just result)
+
+- **Out-of-band structural measurement works.** The ruler (fresh, memory-OFF, no hint) **independently**
+  caught #321's fake-refactor that all four green gates — including lint — missed. The two-member
+  eliminative predicate (artifact created ∧ old pattern eliminated) is exactly what fired.
+- **The mandated evidence report is a load-bearing pipeline layer.** It — not any gate — surfaced
+  Terra's incompleteness; a solo driver does not self-impose it.
+- **Isolation-by-removal survived an adversarial probe.** Both solos attempted to read forbidden
+  material; because the object was removed, the probe found nothing. Design over trust, vindicated.
+- **The advisor layer measurably lifts output** (owner observation across the run, Opus↔Opus included):
+  it reliably surfaces omitted or merely-implied issues before they crystallize — a pipeline advantage
+  the solo bundles structurally lack (recorded as the "missing pipeline layer" attribution axis).
+
+### Instrument gaps caught mid-flight (→ incident 0028)
+
+Three isolation/instrument gaps were found and closed **before** any measurement was contaminated:
+(1) the tip-only strip left the rubric reachable in git *history* + "temporal isolation is free" broke
+the moment OS ran first as arm 1 — fixed with **shallow single-branch clones** for every arm and ruler;
+(2) the prompt↔CLAUDE.md "read HANDOFF" conflict (reclassified above); (3) GPT/Codex auto-named
+Terra's branch `codex/…`, leaking authorship to the ruler — fixed with an **author-neutral alias**
+before ruler dispatch.
+
+### Cost (Axis 6 — reported, never ranked into the verdict)
+
+Effort held **constant (med)** across Sol and Terra; only the model tier varied (the single manipulated
+variable). Both ~2% of the weekly limit. Claude orchestration (pre-work + OS drive + 3 adjudications):
+~31% of a 5h window. The pipeline costs more in aggregate and yields a mergeable, complete result; the
+cheap solo is comparably cheap and yields a fake-refactor — cost-per-viable-output diverges, kept out
+of the verdict by construction (playbook threat #5).
