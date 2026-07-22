@@ -28,14 +28,22 @@ export function buyCapReason(holdSpace: number, stock: number, buyMax: number): 
  * Zero-remaining hold/stock get the blunter phrasing that matches the
  * reported case (hold 50/50 → "Hold full"); a >0 binding constraint
  * reports the room left, since it isn't literally full/empty.
+ *
+ * The thalers branch splits the same way (#375, owner playtest at purse
+ * ₸23): at a low purse the structural cap (hold/stock) is unreachable for
+ * nearly every good, so `reason === "thalers"` fires constantly. Reporting
+ * the flat "can't afford any" line in that common case reads as "auto-max
+ * is broken" even though `buyMax > 0` — the player CAN still transact, just
+ * below the structural cap. Only `buyMax === 0` (truly can't afford a
+ * single unit) gets the absolute phrasing; `buyMax > 0` names the cap.
  */
-export function buyCapHint(reason: BuyCapReason, holdSpace: number, stock: number): string {
+export function buyCapHint(reason: BuyCapReason, holdSpace: number, stock: number, buyMax: number): string {
   switch (reason) {
     case "hold":
       return holdSpace <= 0 ? "Hold full" : `Only ${holdSpace} hold space left`;
     case "stock":
       return stock <= 0 ? "Out of stock" : `Only ${stock} in stock`;
     case "thalers":
-      return "Not enough thalers";
+      return buyMax <= 0 ? "Nie stać cię na żaden zakup" : `Kasa ogranicza zakup do ${buyMax}`;
   }
 }

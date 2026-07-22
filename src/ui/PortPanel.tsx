@@ -229,7 +229,7 @@ function MarketRow({
   // concluded the game was broken). Shown near the trade line below.
   const holdSpace = ship.hold - cargoUsed(ship);
   const stockMax = Math.floor(entry.stock);
-  const capHint = trading ? buyCapHint(buyCapReason(holdSpace, stockMax, buyMax), holdSpace, stockMax) : null;
+  const capHint = trading ? buyCapHint(buyCapReason(holdSpace, stockMax, buyMax), holdSpace, stockMax, buyMax) : null;
   // Qty is shared by both actions, so it's clamped to whichever side allows
   // more — each button still disables independently via canBuy/canSell.
   const maxQty = Math.max(buyMax, sellMax);
