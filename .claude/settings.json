@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/git-worktree-guard.sh"
+            "command": "bash \"D:/code/claudeapp/etersim/.claude/hooks/git-worktree-guard.sh\""
           }
         ]
       }
