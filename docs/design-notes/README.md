@@ -63,7 +63,7 @@ HIST when its grill happens.
 
 | Note | Status | What it says |
 | --- | --- | --- |
-| [grill-brief-m4-workbench](grill-brief-m4-workbench.md) | **LIVE** | M4 Clusters A+B: how the Price board becomes the game's control center (route planning, dispatch, reading in one surface) and what the region map keeps. |
+| [grill-brief-m4-workbench](grill-brief-m4-workbench.md) | HIST | M4 Clusters A+B: how the Price board becomes the game's control center (route planning, dispatch, reading in one surface) and what the region map keeps. **Grilled 2026-07-22 → resolved into [E16 — Workbench](../specs/E16-workbench.md)** (port-centric authoring, unified market-quality signal, Route-ribbon roster). Kept for provenance: the brief's six questions map to E16's Design subsections. |
 | [grill-brief-m4-events-and-ice](grill-brief-m4-events-and-ice.md) | **LIVE** | M4: the region's first weather — economic events as *Głos Eteru* dispatches — plus the concrete market model of Aether ice. Locked rail: level-1 events disturb production/consumption only. |
 | [grill-brief-m5-great-work](grill-brief-m5-great-work.md) | **LIVE** | M5 The Expedition — **the big one**, budget a full session. Commissioning flow, construction at Great Work scale, contract integration, pacing to credits. Run only after Processing has shipped and been playtested. |
 | [grill-brief-m6-zoom-out](grill-brief-m6-zoom-out.md) | **LIVE** | M6 first zoom-out: recursion architecture, administrator mechanic, second region, long crossings. **Its first question is architectural and hard to reverse** — grill after M5 is specced. |

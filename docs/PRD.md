@@ -306,12 +306,15 @@ uncertainty; the player's verb shifts from *click* to **read and react** — mas
 the speed of reading the Price board, not the number of clicks. Success measure: a
 master spends more time on the Price board than in the route editor.
 
-- **The Workbench (Clusters A+B, converging)**: the Price board becomes the control
-  center — route planning integrated into the board, ship dispatch from it, the offer
-  label system (#227) — while the region map's role shifts to *check the fleet +
-  enjoy what you built*. Keybinds are settled. (The harness part of this cluster was
-  grilled and unparked into E11 v1 on 2026-07-15.) Grill brief:
-  [grill-brief-m4-workbench.md](design-notes/grill-brief-m4-workbench.md).
+- **E16 Workbench (Clusters A+B, converging)**: the Price board becomes the control
+  center — route planning authored on the board (port-centric), ship dispatch from it,
+  a unified market-quality signal (board / PortPanel / offer labels #227) — while the
+  region map's role shifts to *check the fleet + enjoy what you built*. Keybinds are
+  settled. UI-only (no `src/sim`), so file-disjoint from E11/E15; priority slot an owner
+  call. (The harness part of this cluster was grilled and unparked into E11 v1 on
+  2026-07-15.) Grilled 2026-07-22; spec:
+  [specs/E16-workbench.md](specs/E16-workbench.md) (grill brief:
+  [grill-brief-m4-workbench.md](design-notes/grill-brief-m4-workbench.md)).
 - **Economic events** (Events gradient, level 1): flow shocks, bounty/blight —
   disturbances of production/consumption, never threats to ships. Events enter the
   world as **dispatches** of the region's gazette, *Głos Eteru* (Victorian-press
