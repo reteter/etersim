@@ -151,26 +151,6 @@ function v9SaveWithContractOffer(): { version: 9; world: World } {
   };
 }
 
-/** A v11 save (post-E9.1, pre-E14): a world whose ships carry no `baseHold`
- *  at all — the exact shape a v11 save on disk actually had. Kept only to
- *  prove v11 is now rejected outright (#286 fix dropped the v11->v12 hop,
- *  same precedent as v9/v10's drop at the previous bumps). */
-function v11Save(): { version: 11; world: World } {
-  const world = e9World();
-  const deshaped = {
-    ...world,
-    company: {
-      ...world.company,
-      ships: world.company.ships.map((ship) => {
-        const rest: Record<string, unknown> = { ...ship };
-        delete rest.baseHold;
-        return rest;
-      }),
-    },
-  } as unknown as World;
-  return { version: 11, world: deshaped };
-}
-
 /** Drives a commissioned Shipyard's own construction site to activation via
  *  rush + tick, then starts and partially fills a Refit — a Headquarters, a
  *  fully-built Shipyard, and a partially-filled RefitOrder (E14 #275/#286). */
@@ -382,63 +362,63 @@ describe("persistence", () => {
     expect(parsed.version).toBe(SAVE_VERSION);
   });
 
-  describe("v13 -> v14 migration (E13, #100 — Company.buildings, netWorth.buildingStoreValue)", () => {
-    /** A v13 save on disk: a world that ticked through at least one day
-     *  boundary (so its Ledger carries a real `netWorth` event), de-shaped
-     *  back to the pre-#100 wire format — no `Company.buildings` at all, and
-     *  no `buildingStoreValue` on any `netWorth` event (the mechanic didn't
-     *  exist yet). */
-    function v13World(): { world: World; hasNetWorthEvent: boolean } {
-      const world = midSessionWorld(); // 250 ticks — crosses several day boundaries
-      const rest: Record<string, unknown> = { ...world.company };
-      delete rest.buildings;
-      const deshapedLedger = world.ledger.map((event) => {
-        if (event.kind !== "netWorth") return event;
-        const evRest: Record<string, unknown> = { ...event };
-        delete evRest.buildingStoreValue;
-        return evRest;
+  describe("v14 -> v15 migration (#391, #390 sim slice — dockingFee.routeId)", () => {
+    /** A v14 save on disk: a world with at least one real `dockingFee`
+     *  Ledger event, de-shaped back to the pre-#391 wire format — no
+     *  `routeId` field at all, even on a docking that (under today's code)
+     *  would have been tagged route-driven, because the tag didn't exist yet
+     *  at v14. */
+    function v14World(): { world: World; hasDockingFeeEvent: boolean } {
+      const routed = e9World(); // routed ship loops A<->B, docking (and paying the fee) repeatedly
+      const deshapedLedger = routed.ledger.map((event) => {
+        if (event.kind !== "dockingFee") return event;
+        const rest: Record<string, unknown> = { ...event };
+        delete rest.routeId;
+        return rest;
       });
-      const deshaped = { ...world, company: rest, ledger: deshapedLedger } as unknown as World;
-      return { world: deshaped, hasNetWorthEvent: world.ledger.some((e) => e.kind === "netWorth") };
+      const world = { ...routed, ledger: deshapedLedger } as unknown as World;
+      return {
+        world,
+        hasDockingFeeEvent: world.ledger.some((e) => e.kind === "dockingFee"),
+      };
     }
 
-    it("parseWorldJson backfills buildings: [] and every netWorth event's buildingStoreValue: 0", () => {
-      const { world, hasNetWorthEvent } = v13World();
-      expect(hasNetWorthEvent).toBe(true); // precondition: the fixture actually carries one
-      const text = JSON.stringify({ version: 13, world });
+    it("parseWorldJson accepts a v14 world unchanged (identity — dockingFee.routeId is additive/absent-safe)", () => {
+      const { world, hasDockingFeeEvent } = v14World();
+      expect(hasDockingFeeEvent).toBe(true); // precondition: the fixture actually carries one
+      const text = JSON.stringify({ version: 14, world });
 
       const migrated = parseWorldJson(text);
 
-      expect(migrated.company.buildings).toEqual([]);
-      const netWorthEvents = migrated.ledger.filter((e) => e.kind === "netWorth");
-      expect(netWorthEvents.length).toBeGreaterThan(0);
-      for (const event of netWorthEvents) {
-        expect(event.kind === "netWorth" && event.buildingStoreValue).toBe(0);
+      expect(migrated).toEqual(world);
+      const feeEvents = migrated.ledger.filter((e) => e.kind === "dockingFee");
+      for (const event of feeEvents) {
+        expect(event.kind === "dockingFee" ? event.routeId : "unexpected").toBeUndefined();
       }
     });
 
-    it("loadAutosave transparently migrates a v13 slot, so an old save keeps loading (incident 0009 concern)", () => {
+    it("loadAutosave transparently migrates a v14 slot, so an old save keeps loading (incident 0009 concern)", () => {
       const storage = fakeStorage();
-      const { world } = v13World();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 13, world }));
+      const { world } = v14World();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 14, world }));
 
       const restored = loadAutosave(storage);
       expect(restored).not.toBeNull();
       expect(hasAutosave(storage)).toBe(true);
-      expect(restored!.company.buildings).toEqual([]);
+      expect(restored).toEqual(world);
     });
 
-    it("a save older than v13 (v12) is now rejected — migration is one step, not open-ended", () => {
+    it("a save older than v14 (v13) is now rejected — migration is one step, not open-ended", () => {
       const storage = fakeStorage();
-      const world = e9World();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 12, world }));
+      const world = midSessionWorld();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 13, world }));
       expect(loadAutosave(storage)).toBeNull();
     });
 
-    it("v11 is still rejected", () => {
+    it("v12 is still rejected", () => {
       const storage = fakeStorage();
-      const save = v11Save();
-      storage.setItem(AUTOSAVE_KEY, JSON.stringify(save));
+      const world = e9World();
+      storage.setItem(AUTOSAVE_KEY, JSON.stringify({ version: 12, world }));
       expect(loadAutosave(storage)).toBeNull();
     });
 

@@ -89,6 +89,68 @@ describe("docking fee (#80)", () => {
     expect(arrived.company.thalers).toBe(0);
   });
 
+  it("tags a route-driven docking's dockingFee event with the assignment's routeId (#391)", () => {
+    const { a, b } = directPair(createWorld("fee-routed"));
+    const route: Route = {
+      id: "r",
+      name: "loop",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain" }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const start = seed("fee-routed", a, 500, [route]);
+    const shipId = shipOf(start).id;
+
+    // Assign the route: executes Stop 0 (buy) and dwells at a (no transition,
+    // no fee yet), then a later tick redirects toward Stop 1 (b) and the ship
+    // sails there — the same "assign, dwell, depart" sequence the trade-
+    // tagging test above relies on. Drive ticks (no further commands) until
+    // it docks again at b.
+    let w = tick(start, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    let guard = 0;
+    // First dwell tick already landed docked at a; keep ticking until the
+    // ship is underway, then until it docks again — that next docking is b.
+    while (shipOf(w).location.kind === "docked" && dockedAt(w) === a && guard++ < 500) w = tick(w, []);
+    while (shipOf(w).location.kind !== "docked" && guard++ < 500) w = tick(w, []);
+    expect(dockedAt(w)).toBe(b); // precondition: actually arrived at the routed Stop
+
+    const feeEvents = w.ledger.filter((e) => e.kind === "dockingFee");
+    expect(feeEvents.length).toBe(1);
+    expect(feeEvents[0]).toMatchObject({ portId: b, routeId: "r" });
+  });
+
+  it("a suspended (auto-suspended by manual sailTo) route-assigned ship's dockingFee carries no routeId (#391)", () => {
+    const { a, b } = directPair(createWorld("fee-suspended"));
+    const route: Route = {
+      id: "r",
+      name: "loop",
+      stops: [
+        { portId: a, orders: [{ kind: "buy", good: "grain" }] },
+        { portId: b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const start = seed("fee-suspended", a, 500, [route]);
+    const shipId = shipOf(start).id;
+
+    // Assign, then dwell at a — same setup as the routed test above.
+    let w = tick(start, [{ kind: "assignRoute", shipId, routeId: "r" }]);
+    expect(shipOf(w).assignment).toMatchObject({ routeId: "r", suspended: false });
+
+    // A manual sailTo auto-suspends the assignment (ADR-0007) — the ship
+    // still carries the Route, but it is no longer "route-driven".
+    w = tick(w, [{ kind: "sailTo", shipId, portId: b }]);
+    expect(shipOf(w).assignment).toMatchObject({ routeId: "r", suspended: true });
+
+    let guard = 0;
+    while (shipOf(w).location.kind !== "docked" && guard++ < 500) w = tick(w, []);
+    expect(dockedAt(w)).toBe(b);
+
+    const feeEvents = w.ledger.filter((e) => e.kind === "dockingFee");
+    expect(feeEvents.length).toBe(1);
+    expect(feeEvents[0].kind === "dockingFee" ? feeEvents[0].routeId : "unexpected").toBeUndefined();
+  });
+
   it("charges no fee for a port passed through without docking", () => {
     // Find a 2-hop shortest course A -> ... -> C; the intermediate port is not docked.
     const w0 = createWorld("passthrough");

@@ -81,14 +81,23 @@ export const AUTOSAVE_KEY = "etersim.autosave";
  *  `buildingStoreValue: 0` onto every `netWorth` event — a fact for a
  *  Storehouse-free save, not an approximation (same precedent as the v9->v10
  *  `requiredRank` backfill). Per the one-step-migration precedent, v12 is no
- *  longer readable — only v13 carries forward now. */
-export const SAVE_VERSION = 14;
+ *  longer readable — only v13 carries forward now.
+ *  v15: #391 (#390 sim slice) adds `routeId?` to the `dockingFee` Ledger
+ *  event (docs/specs/E16-workbench.md — Signal boundary), mirroring the
+ *  `trade` variant's existing `routeId?` (#82). Additive and absent-safe — a
+ *  v14 world is already valid v15 shape, and a v14 save's historical
+ *  `dockingFee` events correctly have no `routeId` (whether any given past
+ *  docking was route-driven is unrecoverable, no backfill possible), so
+ *  `migrateV14ToV15` is a documented identity (the v10->v11/v12->v13
+ *  precedent). Per the one-step-migration precedent, v13 is no longer
+ *  readable — only v14 carries forward now. */
+export const SAVE_VERSION = 15;
 
 /** Save envelope versions this adapter can still read, migrating forward to
  *  `SAVE_VERSION` on load — currently just the immediately preceding version;
- *  a save older than that is unreadable, same as every prior bump (v12
- *  dropped here, matching the v11-drop precedent at the previous bump). */
-const READABLE_VERSIONS: ReadonlySet<number> = new Set([13, SAVE_VERSION]);
+ *  a save older than that is unreadable, same as every prior bump (v13
+ *  dropped here, matching the v12-drop precedent at the previous bump). */
+const READABLE_VERSIONS: ReadonlySet<number> = new Set([14, SAVE_VERSION]);
 
 /** v12 -> v13 (E14 #286 fix): a documented identity — `Shipyard.site?` is
  *  additive and absent-safe, and every v12 `Shipyard` was already "built"
@@ -97,24 +106,22 @@ const READABLE_VERSIONS: ReadonlySet<number> = new Set([13, SAVE_VERSION]);
  *  historical sibling comment — no longer reachable (v12 is no longer a
  *  READABLE_VERSIONS member). */
 
-/** v13 -> v14 (E13, #100): backfills `buildings: []` onto `Company` (a v13
+/** v13 -> v14 (E13, #100): backfilled `buildings: []` onto `Company` (a v13
  *  save never had a guild Building) and `buildingStoreValue: 0` onto every
  *  `netWorth` Ledger event (a v13 net-worth snapshot never counted one). Both
- *  are lossless facts, not approximations — the v9->v10 `requiredRank`
- *  backfill precedent. `Company.guildBuild` stays absent (optional, same as
- *  a v13 save already had no pending order). */
-function migrateV13ToV14(rawWorld: unknown): World {
-  const world = rawWorld as {
-    company: { buildings?: unknown };
-    ledger: readonly { kind: string; buildingStoreValue?: number }[];
-  };
-  return {
-    ...world,
-    company: { ...world.company, buildings: world.company.buildings ?? [] },
-    ledger: world.ledger.map((event) =>
-      event.kind === "netWorth" ? { ...event, buildingStoreValue: event.buildingStoreValue ?? 0 } : event,
-    ),
-  } as unknown as World;
+ *  were lossless facts, not approximations — the v9->v10 `requiredRank`
+ *  backfill precedent. `Company.guildBuild` stayed absent (optional, same as
+ *  a v13 save already had no pending order). Kept only as `migrateV14ToV15`'s
+ *  historical sibling comment — no longer reachable (v13 is no longer a
+ *  READABLE_VERSIONS member). */
+
+/** v14 -> v15 (#391, #390 sim slice): a documented identity — `dockingFee.routeId?`
+ *  is additive and absent-safe, and a v14 `dockingFee` event never had a
+ *  `routeId` at all, which is exactly what "no `routeId`" still means at v15
+ *  (unrecoverable — whether that past docking was route-driven, no
+ *  backfill). Nothing to transform. */
+function migrateV14ToV15(rawWorld: unknown): World {
+  return rawWorld as World;
 }
 
 /** Autosave cadence in world ticks (spec: written every 24 ticks and on pause). */
@@ -178,7 +185,7 @@ function deserialize(text: string | null): World | null {
   }
   if (!isReadableEnvelopeShape(parsed)) return null;
   if (parsed.version === SAVE_VERSION) return parsed.world as unknown as World;
-  return migrateV13ToV14(parsed.world); // the only older readable version (v13)
+  return migrateV14ToV15(parsed.world); // the only older readable version (v14)
 }
 
 /**
