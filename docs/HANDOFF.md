@@ -15,10 +15,11 @@ read `git log` and `gh issue list` directly — this file no longer claims them.
 Written for any model in any harness;
 Claude Code's per-machine auto-memory is the day-to-day working channel.
 
-_Last update: 2026-07-21 s19 (owner-requested) — E13 nearly closed: #100 shipped (#372),
-#102 closed, #101 UI implemented on `feat/101-storehouse-ui` (@99cc073, pushed, unmerged —
-wave check + merge + E13-close ceremony is the next session's first move). §Queue re-cut to
-the go-forward order; §Watch gains the route-planning reframe (#376)._
+_Last update: 2026-07-22 s23 (owner-requested) — E13 closed (#100/#101/#102 shipped; cheap tails
+#302/#303/#375 done) and **eval-2 concluded**: the casting curve (pipeline > frontier-solo >
+cheap-solo) is **task-shape-invariant** (feature → refactor). OS winner merged as #319/#320/#321;
+GPT Sol **DELEGATE-VIABLE**, Terra **NO-GO** (green fake-refactor no gate caught). §Queue re-cut —
+E13 + tails drop off, E11 v1 → E15 now leads. §Watch gains the advisor-as-eval-variable direction._
 
 ## Design sessions are the work (owner framing, 2026-07-19)
 
@@ -56,13 +57,12 @@ auto-memory and `git log`, not here.
 The *order* is the standing owner agreement, not a re-planning.
 Statuses are **not** listed here — run `gh issue list` for what is open.
 
-1. **Close E13:** wave-check + merge `feat/101-storehouse-ui`, then the E13-close ceremony —
-   flip the LOC-shrink bet to a definitive result (`design-notes/e13-0-shrink-measurement-2026-07-21.md`
-   §At E13 close; the #100 diff numbers are captured, it reads CONFIRMED), and settle the
-   deferred docs-law rows (specs/README "milestone closed", design-notes/README for #374/#376).
-2. **Cheap tails:** #302, #303, #375 (small buy-hint bug).
-3. Then **E11 v1** (#232 → #234) → **E15** (#281 → #284;
-   its spec depends on E13.0 + E13).
+1. **E11 v1** (#232 → #233 → #234): harness skeleton → batch runner → runtime assertions/anomaly list.
+2. Then **E15 — Processing** (#281 → #284; its spec depends on E13.0 + E13, both now closed).
+
+Parallel / owner-gated: **#376** (route planning ↔ Price Board fusion) needs its own grill+spec
+before any code — see §Watch. Small non-blocking tails: #374 (multi-seed storehouse guardrail),
+#384 (full markdown-normalizer sweep, one pass).
 
 ## Watch — non-derivable only
 
@@ -86,3 +86,8 @@ has been removed — find it at its real home.
   editor). Incremental price-column/margin tweaks on the *existing* editor are off the table.
   Tracked as #376 (needs its own grill+spec); this line records the framing so no one picks
   up small route-editor polish against it.
+- **The advisor layer looks like a real differentiator, not a nicety** (owner observation across
+  eval-2, s23): it reliably surfaces omitted or merely-implied issues before they crystallize —
+  Opus↔Opus included. Owner interest in formalizing it as its *own* eval variable (arm-with-advisor
+  vs. without, same ticket) rather than leaving it an anecdote. A candidate next eval — **not yet
+  agreed**, so it lives here as a framing, not in §Queue.
