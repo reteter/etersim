@@ -99,3 +99,58 @@ describe("RouteRibbon (read-only)", () => {
     expect(screen.queryByTestId("route-ribbon__ship")).toBeNull();
   });
 });
+
+describe("RouteRibbon (editable, #394 board authoring)", () => {
+  it("renders remove + reorder buttons per node when `edit` is passed", () => {
+    render(
+      <RouteRibbon
+        routeName="Trójkąt Zbożowy"
+        nodes={NODES}
+        edit={{ onRemoveStop: vi.fn(), onMoveStop: vi.fn() }}
+      />,
+    );
+    expect(screen.getAllByRole("button", { name: /Usuń przystanek/ })).toHaveLength(3);
+  });
+
+  it("calls onRemoveStop with the clicked node's index", () => {
+    const onRemoveStop = vi.fn();
+    render(
+      <RouteRibbon
+        routeName="Trójkąt Zbożowy"
+        nodes={NODES}
+        edit={{ onRemoveStop, onMoveStop: vi.fn() }}
+      />,
+    );
+    screen.getByRole("button", { name: /Usuń przystanek 2/ }).click();
+    expect(onRemoveStop).toHaveBeenCalledWith(1);
+  });
+
+  it("disables move-earlier on the first node and move-later on the last node", () => {
+    render(
+      <RouteRibbon
+        routeName="Trójkąt Zbożowy"
+        nodes={NODES}
+        edit={{ onRemoveStop: vi.fn(), onMoveStop: vi.fn() }}
+      />,
+    );
+    const earlierButtons = screen.getAllByRole("button", { name: /wcześniej$/ });
+    expect(earlierButtons[0]).toBeDisabled();
+    const laterButtons = screen.getAllByRole("button", { name: /później$/ });
+    expect(laterButtons[laterButtons.length - 1]).toBeDisabled();
+  });
+
+  it("calls onMoveStop with direction on ◀/▶ click", () => {
+    const onMoveStop = vi.fn();
+    render(
+      <RouteRibbon
+        routeName="Trójkąt Zbożowy"
+        nodes={NODES}
+        edit={{ onRemoveStop: vi.fn(), onMoveStop }}
+      />,
+    );
+    screen.getByRole("button", { name: /Przesuń przystanek 2 wcześniej/ }).click();
+    expect(onMoveStop).toHaveBeenCalledWith(1, -1);
+    screen.getByRole("button", { name: /Przesuń przystanek 2 później/ }).click();
+    expect(onMoveStop).toHaveBeenCalledWith(1, 1);
+  });
+});

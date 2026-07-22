@@ -17,6 +17,7 @@ import {
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { computeLoopMetrics } from "../store/routeMetrics";
+import { nextRouteId, parseMinMarginInput, parseQtyInput } from "./routeAuthoring";
 
 /** Column headers for the per-good order table (Polish, 2026-07-14 UI grill:
  *  new visible labels ship Polish). The chip buttons underneath keep their
@@ -99,29 +100,21 @@ function StopRow({
   /** "up to N": blank ⇒ greedy (`qty` absent); anything short of a positive
    *  integer is ignored (matches `isValidRoute`'s own qty check,
    *  commands.ts) rather than let the editor build a route the sim would
-   *  reject outright. */
+   *  reject outright. Parse rule relocated to `routeAuthoring.ts` (#394 pin
+   *  #2) — shared with the board editor, applied here the same way. */
   const setQty = (good: GoodId, raw: string) => {
-    const trimmed = raw.trim();
-    if (trimmed === "") {
-      patchOrder(good, { qty: undefined });
-      return;
-    }
-    const n = Number(trimmed);
-    if (!Number.isInteger(n) || n <= 0) return;
-    patchOrder(good, { qty: n });
+    const result = parseQtyInput(raw);
+    if (result.kind === "ignore") return;
+    patchOrder(good, { qty: result.kind === "set" ? result.qty : undefined });
   };
   /** Margin Gate threshold: blank ⇒ no gate (`minMargin` absent);
    *  `isValidRoute` places no sign/integer constraint on `minMargin` itself
-   *  (only that it's buy-only), so any finite number is accepted. */
+   *  (only that it's buy-only), so any finite number is accepted. Parse rule
+   *  relocated to `routeAuthoring.ts` (#394 pin #2). */
   const setMinMargin = (good: GoodId, raw: string) => {
-    const trimmed = raw.trim();
-    if (trimmed === "") {
-      patchOrder(good, { minMargin: undefined });
-      return;
-    }
-    const n = Number(trimmed);
-    if (!Number.isFinite(n)) return;
-    patchOrder(good, { minMargin: n });
+    const result = parseMinMarginInput(raw);
+    if (result.kind === "ignore") return;
+    patchOrder(good, { minMargin: result.kind === "set" ? result.minMargin : undefined });
   };
   /** Inactive-gate warning (E9.1 AC): a buy's `minMargin` is set but there's
    *  no sell-stop for the good anywhere on the (draft) route — the same
@@ -408,25 +401,6 @@ function RouteRow({
       </div>
     </div>
   );
-}
-
-/** Next Route id: "r" + one past the highest numeric id used so far — by a
- *  live Route or by any routeId-tagged trade in the Ledger, so a deleted
- *  Route's id is never recycled into a new Route (its old Ledger tags would
- *  pollute the new Route's loop metrics). Deterministic, derived from World
- *  state only — the ship-name precedent (keyed by count, no wall clock, no
- *  RNG draw) applied to ids. */
-function nextRouteId(world: World): RouteId {
-  let max = 0;
-  const consider = (id: string) => {
-    const m = /^r(\d+)$/.exec(id);
-    if (m) max = Math.max(max, Number(m[1]));
-  };
-  for (const route of world.company.routes) consider(route.id);
-  for (const event of world.ledger) {
-    if (event.kind === "trade" && event.routeId !== undefined) consider(event.routeId);
-  }
-  return `r${max + 1}`;
 }
 
 /** The "Trasy" tab (docs/specs/E9 — UX skeleton): the Company's Route

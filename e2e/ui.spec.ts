@@ -590,6 +590,126 @@ test.describe('region price board (#62)', () => {
   });
 });
 
+test.describe('price board — port-centric route authoring (#394, docs/specs/E16-workbench.md)', () => {
+  test.beforeEach(async ({ page }) => {
+    await startNewGame(page);
+  });
+
+  test('default (no draft) row-click still opens the port panel — the coexistence rule holds', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const portName = await rows.first().locator('.price-board__port-name').innerText();
+    await rows.first().click();
+
+    await expect(dialog).not.toBeVisible();
+    await expect(page.locator('.side-panel__title')).toHaveText(portName);
+  });
+
+  test('port-row click appends a Stop; a second port-row click appends the second Stop and shows the ribbon loop', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    await expect(rows.nth(0)).not.toHaveClass(/price-board__row--in-draft/);
+
+    await rows.nth(0).click();
+    await expect(dialog).toBeVisible(); // authoring click never closes the board
+    await expect(rows.nth(0)).toHaveClass(/price-board__row--in-draft/);
+
+    // A single Stop doesn't clear the isValidRoute bar yet — Save stays
+    // disabled and the ribbon (>=2 nodes) doesn't render.
+    await expect(dialog.getByRole('button', { name: 'Zapisz trasę' })).toBeDisabled();
+    await expect(dialog.locator('.route-ribbon')).toHaveCount(0);
+
+    await rows.nth(1).click();
+    await expect(rows.nth(1)).toHaveClass(/price-board__row--in-draft/);
+    await expect(dialog.getByRole('button', { name: 'Zapisz trasę' })).toBeEnabled();
+
+    // The ribbon shows the loop closure (↻) for the 2-Stop draft.
+    await expect(dialog.locator('.route-ribbon')).toBeVisible();
+    await expect(dialog.locator('.route-ribbon__return-arc')).toBeVisible();
+    await expect(dialog.getByText('↻')).toBeVisible();
+  });
+
+  test('good-cell click attaches an order with the context-inferred kind, and the pairing highlight appears on the best-bid port', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const firstRow = rows.first();
+    await firstRow.click(); // Stop 1
+
+    // Click the first cell button in the newly-in-draft row — attaches an
+    // order with an inferred kind (buy or sell), visible as an order chip.
+    const cellBtn = firstRow.locator('.price-board__cell-btn').first();
+    await cellBtn.click();
+    const chip = firstRow.locator('.price-board__order-chip').first();
+    await expect(chip).toBeVisible();
+    await expect(chip.locator('.price-board__order-chip-label')).toHaveText(/Kup|Sprzedaj/);
+
+    // If the attached order was a buy, its good's best-bid port row now
+    // carries the highlight-only pairing suggestion (a ★ marker) — never an
+    // auto-added Stop (the suggested row is not marked in-draft).
+    const label = await chip.locator('.price-board__order-chip-label').innerText();
+    if (label.startsWith('Kup')) {
+      const suggestedRow = dialog.locator('.price-board__row--suggested');
+      await expect(suggestedRow).toHaveCount(1);
+      await expect(suggestedRow).not.toHaveClass(/price-board__row--in-draft/);
+
+      // Clicking that suggested port adds it as the second Stop — the
+      // player still has to click; nothing auto-wires. Re-locate by port
+      // name after the click: `.price-board__row--suggested` no longer
+      // matches once the class flips to `--in-draft`, so the original
+      // locator would resolve to nothing.
+      const suggestedPortName = await suggestedRow.locator('.price-board__port-name').innerText();
+      await suggestedRow.click();
+      const nowStop = rows.filter({ hasText: suggestedPortName.replace(/\s*★\s*$/, '') });
+      await expect(nowStop).toHaveClass(/price-board__row--in-draft/);
+      await expect(dialog.locator('.price-board__row--suggested')).toHaveCount(0);
+    }
+  });
+
+  test('the order chip flip button overrides the inferred kind', async ({ page }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const firstRow = rows.first();
+    await firstRow.click();
+    await firstRow.locator('.price-board__cell-btn').first().click();
+
+    const chip = firstRow.locator('.price-board__order-chip').first();
+    const before = await chip.locator('.price-board__order-chip-label').innerText();
+    await chip.getByRole('button', { name: /zmień na/ }).click();
+    const after = await chip.locator('.price-board__order-chip-label').innerText();
+    expect(after.startsWith('Kup')).toBe(!before.startsWith('Kup'));
+  });
+
+  test('"Anuluj" discards the draft without dispatching a Route', async ({ page }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    await rows.nth(0).click();
+    await rows.nth(1).click();
+    await dialog.getByRole('button', { name: 'Anuluj' }).click();
+
+    await expect(dialog.getByRole('button', { name: 'Nowa trasa' })).toBeVisible();
+    await expect(dialog.locator('.route-ribbon')).toHaveCount(0);
+  });
+});
+
 test.describe('trading interactions (when docked)', () => {
   test.beforeEach(async ({ page }) => {
     await startNewGame(page);
