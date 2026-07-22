@@ -402,6 +402,24 @@ a thin strong-Opus review layer cleared the bar cost-effectively) — **not any 
 cheapening the solo degrades the product, not just the bill. Cost stays outside the trinary
 verdict (frozen threat #5).
 
+## Drobiazgi wave 4 — #375 + #302/#303 (2026-07-22, s21)
+
+Two Sonnet coders, disjoint files (`src/ui/PortPanel.tsx` + `src/ui/buyCap.ts` +
+`e2e/market.spec.ts` vs `src/sim/building.test.ts` + `src/sim/shipyard.test.ts`).
+Dispatched async/background in a prior session (s20) under `isolation: "worktree"`;
+both self-reported no harness worktree was pre-provisioned and improvised a manual
+`git worktree add` (the exact incident-0012 anti-pattern) — see issue #378. Main
+stayed clean both times (verified), so this is a near-miss, not a repeat of 0012.
+A same-session repro dispatch (identical shape: `coder`, `isolation: "worktree"`,
+async/background) **did not reproduce** the failure — dedicated worktree + branch
+were provisioned correctly before the repro agent took any action. Root cause
+stays unresolved; mechanism confirmed sound in the general case.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-22 | #380 | #375 | 2 | 1 (minor) | 0 (session-driver micro-fix) | pass | Buy-cap hint: `buyMax === 0` keeps the absolute "Not enough thalers"; `buyMax > 0` now names the cap instead. Tier-2 Sonnet review: zero blocking findings, but caught a real incident-0005-shaped weak test — `buyCap.test.ts`'s "regardless of buyMax" case passed `buyMax=0` on both sides, so it never actually varied the parameter. Owner flagged the review's own "not a real risk" framing as the same pattern by another name (assurance from reading the switch statement, not from the test). Fixed directly (session driver, not returned to the coder): added `buyMax=5` variants; mutation-verified (coupling the hold/stock branches to `buyMax===0` now fails the assertion, reverted). Re-ran full local gate + CI green post-fix. |
+| 07-22 | #381 | #302, #303 | 3 | 0 blocking, 1 (minor, out of scope) | 0 | pass | De-vacuates the last `if (store)` guard in `building.test.ts` (incident-0005 pattern) — also caught and fixed a sibling vacuity the issue didn't name (`store ? amountOf(...) : 0` ternary, line 141). Keys the shipyard auto-draw bound test on `AUTO_DRAW_PER_DAY` instead of a hardcoded, 2.4x-loose `24`. Two-axis Opus review: both changes verified as genuine strengthening, not relocated vacuity — arithmetic re-derived independently (`TICKS_PER_DAY=24`, draw caps 0–9, so the tightened bound is exact, not tautological). One non-blocking note: the test's own `24`-tick loop count is still a bare literal coupled to `TICKS_PER_DAY` by coincidence, not by reference — latent, out of #303's scope. |
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at

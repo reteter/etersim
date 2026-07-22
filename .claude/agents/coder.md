@@ -32,6 +32,10 @@ the repo read-set, the SELFCHECK §5 report, and the §6 gates are the Orchestra
   to an absolute repo path.
 - Never checkout/commit/reset on `main` or in the main checkout. If you find yourself
   there, stop and report — don't improvise a fix.
+- If you were dispatched with `isolation: "worktree"` and `git worktree list` shows
+  no dedicated worktree assigned to you, **stop and report** — do not run
+  `git worktree add` yourself (incident-0012, incident-0025). A missing worktree is
+  an Orchestrator-side dispatch problem to diagnose, not something to route around.
 - Branch `feat/<issue>-<slug>` (or `fix/`, `chore/`) off `origin/main`; conventional
   commits.
 
