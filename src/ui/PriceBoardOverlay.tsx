@@ -339,7 +339,7 @@ export function PriceBoardOverlay({
                         <button
                           type="button"
                           className="price-board__cell-btn"
-                          aria-label={`${GOODS[good].name} at ${port.name}: dodaj zlecenie`}
+                          aria-label={`${GOODS[good].name} w ${port.name}: dodaj zlecenie`}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCellClick(port.id, good);
