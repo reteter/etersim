@@ -2,7 +2,7 @@
 
 - **Date:** 2026-07-22
 - **Detected by:** both coders self-reported the missing worktree in their completion reports (s20); confirmed against `git worktree list` (s21).
-- **Status:** Closed (near-miss contained; root cause unresolved, mechanism re-verified sound).
+- **Status:** Closed — **root cause identified s24 (2026-07-23):** `isolation: "worktree"` only provisions when the coder runs in the **background**; a synchronous `run_in_background: false` dispatch silently shares the driver's main checkout with no worktree.
 
 ## What happened
 
@@ -16,7 +16,9 @@ Two coders were dispatched async/background with `isolation: "worktree"` (s20, #
 
 ## Recurrence
 
-Unknown — the repro attempt refutes "async dispatch never honors isolation" as a general rule (this session's async repro worked correctly), so the s20 failure looks like a one-off rather than a structural driver. No access to the exact s20 dispatch call shape to rule out a call-site difference.
+~~Unknown — the repro attempt refutes "async dispatch never honors isolation" as a general rule (this session's async repro worked correctly), so the s20 failure looks like a one-off rather than a structural driver. No access to the exact s20 dispatch call shape to rule out a call-site difference.~~
+
+**Resolved s24 (2026-07-23) — a controlled result captured the missing call shape.** A #392 coder dispatched `run_in_background: false` (foreground/synchronous) landed in the **main checkout** on branch `main` (self-verified: `pwd` = repo root, `git rev-parse --absolute-git-dir` = main `.git`, `git branch --show-current` = `main`) — no worktree provisioned. Re-dispatched **identically except `run_in_background: true`** (the default): a dedicated worktree + branch provisioned correctly. Same coder type, same `isolation: "worktree"`, same task package, back-to-back. **Root cause: isolation provisions a worktree only for background agents; a foreground coder shares the driver's main checkout.** The s20 "background failed" observations remain unexplained under this model (possibly a misclassified call shape or a transient), but the reliable rule is now established: **dispatch coders in the background.**
 
 ## Recommendation
 
@@ -26,4 +28,4 @@ Unknown — the repro attempt refutes "async dispatch never honors isolation" as
 
 ## Follow-up
 
-Two leftover manual worktrees cleaned up post-merge (#380, #381). `coder.md` stop-condition landed same session. Watch for recurrence.
+Two leftover manual worktrees cleaned up post-merge (#380, #381). `coder.md` stop-condition landed same session. Watch for recurrence. **s24: root cause found (see Recurrence) — the fix is a dispatch-side rule (always background), landed in `CLAUDE.md` §Git & worktrees and `ORCHESTRATOR.md` §Provision the worktree.** The coder-side stop-condition stays as the backstop.
