@@ -196,7 +196,10 @@ export function RouteRibbon({ routeName, nodes, ship, paused }: RouteRibbonProps
         })}
 
         {shipState && (
-          <ShipIcon
+          // Position via a wrapping <g>'s CSS `transform` (not the x/y
+          // attributes) so `.route-ribbon__ship--animating`'s transition
+          // has a property that actually changes between `progress` updates.
+          <g
             className={
               animating
                 ? "route-ribbon__ship route-ribbon__ship--animating"
@@ -204,11 +207,19 @@ export function RouteRibbon({ routeName, nodes, ship, paused }: RouteRibbonProps
             }
             data-testid="route-ribbon__ship"
             data-animating={animating}
-            x={shipState.point.x - SHIP_ICON_SIZE / 2}
-            y={shipState.point.y - SHIP_ICON_SIZE / 2}
-            width={SHIP_ICON_SIZE}
-            height={SHIP_ICON_SIZE}
-          />
+            style={
+              {
+                transform: `translate(${shipState.point.x}px, ${shipState.point.y}px)`,
+              } as CSSProperties
+            }
+          >
+            <ShipIcon
+              x={-SHIP_ICON_SIZE / 2}
+              y={-SHIP_ICON_SIZE / 2}
+              width={SHIP_ICON_SIZE}
+              height={SHIP_ICON_SIZE}
+            />
+          </g>
         )}
       </svg>
     </div>

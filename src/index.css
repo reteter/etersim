@@ -1915,15 +1915,23 @@ body {
   transition: opacity 0.2s ease;
 }
 
+/* Same neutral glyph tint the map uses for a non-Controlled ship
+   (`.ship__glyph`) — a Route's assigned Ship is not necessarily the
+   Controlled Ship, so this must never be the reserved Controlled-Ship gold
+   (ADR-0006 / incident 0002, one-color-one-meaning). */
 .route-ribbon__ship {
-  color: #e0a840;
+  color: #cfd6e2;
   pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
 /* Motion law (ADR-0003, #161 skiff-anchoring precedent): the glide
    transition only applies while actively animating — reduced-motion or a
    paused game drops this class and the Ship glyph holds its position with
-   no transition at all, matching the skiff freeze-in-place behavior. */
+   no transition at all, matching the skiff freeze-in-place behavior. The
+   transition targets the CSS `transform` set inline (translate), not the
+   x/y attributes, so it actually animates between `progress` updates. */
 .route-ribbon__ship--animating {
   transition: transform 0.3s linear;
 }
