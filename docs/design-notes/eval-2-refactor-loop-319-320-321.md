@@ -1,9 +1,11 @@
 # Eval-2 — delegating a behavior-preserving REFACTOR loop (#319/#320/#321), pre-registered
 
 **Date:** 2026-07-22 (s22). **Status:** LIVE — pre-registered; frozen before any arm runs.
-**Baseline:** _TBD — the commit that adds the frozen characterization net atop `main`
-(§Pre-work); recorded here before the first arm is dispatched. No arm runs against a baseline
-that lacks the net._ **Tracked by:** #379.
+**Baseline:** `1f33866` on `main` (PR #385 — the commit that adds the frozen render-altitude
+characterization net; §Pre-work steps 1–2 done: net authored, no-op check passed, determinism
+verified). **Arms' baseline:** the `eval2-baseline` branch, derived from `1f33866` with
+`docs/design-notes/` and `docs/HANDOFF.md` stripped (§Isolation) — this, not the net-baseline, is
+what the solo arms are handed. **Tracked by:** #379.
 
 > This is eval **2**, deliberately a **different task-shape** from eval-1
 > ([`eval-gpt-5.6-solo-driver-e13.md`](eval-gpt-5.6-solo-driver-e13.md) — a *feature*: sim +
