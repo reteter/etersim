@@ -14,6 +14,7 @@ import {
   type World,
 } from "../sim";
 import { AUTOSAVE_INTERVAL_TICKS, saveAutosave } from "./persistence";
+import { resolveFleetShip } from "./fleetResolution";
 import { loadSettings, saveSettings } from "./settings";
 
 /**
@@ -32,6 +33,7 @@ export type Selection =
  *  "manual" covers the pause button and its hotkey; "autoArrival" is the
  *  arrival auto-pause (see `advance` below). */
 export type PauseCause = "manual" | "autoArrival";
+export type ActiveOverlay = "priceBoard" | "ledger" | "hq" | null;
 
 interface GameState {
   readonly world: World | null;
@@ -51,6 +53,8 @@ interface GameState {
    * focus. Exactly one at a time; null before a world exists.
    */
   readonly controlledShipId: ShipId | null;
+  /** The single TopBar-owned overlay currently visible. */
+  readonly activeOverlay: ActiveOverlay;
   /**
    * Auto-pause on arrival (docs/design-notes/trade-loop-followups.md item 4):
    * pauses the game when the Controlled Ship docks at its final destination.
@@ -112,6 +116,7 @@ interface GameState {
   setAutoPauseOnArrival(value: boolean): void;
   select(selection: Selection): void;
   selectRoute(routeId: RouteId | null): void;
+  setActiveOverlay(overlay: ActiveOverlay): void;
   /** Designates a ship as Controlled and focuses its ShipPanel — the shared
    *  path for map, Harbor and header clicks (docs/specs/E2-trade-loop.md). */
   openShip(id: ShipId): void;
@@ -128,6 +133,7 @@ const INITIAL = {
   carryMs: 0,
   selection: null,
   controlledShipId: null,
+  activeOverlay: null,
   selectedRouteId: null,
   pauseCause: null,
   lastSeenTick: 0,
@@ -136,7 +142,7 @@ const INITIAL = {
 
 /** The Controlled Ship a fresh world starts with — the company's first ship. */
 function initialControlledShip(world: World): ShipId | null {
-  return world.company.ships[0]?.id ?? null;
+  return resolveFleetShip(world, null)?.id ?? null;
 }
 
 /**
@@ -235,6 +241,8 @@ export const useGameStore = create<GameState>()((set, get) => ({
   select: (selection) => set({ selection }),
 
   selectRoute: (routeId) => set({ selectedRouteId: routeId }),
+
+  setActiveOverlay: (activeOverlay) => set({ activeOverlay }),
 
   openShip: (id) => set({ controlledShipId: id, selection: { kind: "ship", id } }),
 

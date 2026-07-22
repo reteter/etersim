@@ -71,6 +71,21 @@ test.describe('main game UI after start', () => {
     await expect(page.getByRole('button', { name: '1x' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  test('TopBar overlays are mutually exclusive and Escape closes the active overlay (#320)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /^Ledger$/ }).click();
+    const ledger = page.getByRole('table', { name: 'Transactions' });
+    await expect(ledger).toBeVisible();
+
+    await page.keyboard.press('b');
+    await expect(ledger).toHaveCount(0);
+    await expect(page.getByRole('table', { name: 'Region price board' })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('table', { name: 'Region price board' })).toHaveCount(0);
+  });
+
   test('credits entry is reachable and lists CC BY attribution (#34)', async ({ page }) => {
     await page.getByRole('button', { name: /credits/i }).click();
 

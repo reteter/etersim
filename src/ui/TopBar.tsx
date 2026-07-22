@@ -46,7 +46,8 @@ export function TopBar() {
   const setSpeed = useGameStore((s) => s.setSpeed);
   const togglePause = useGameStore((s) => s.togglePause);
   const hasHeadquarters = useGameStore((s) => !!s.world?.company.headquarters);
-  const [priceBoardOpen, setPriceBoardOpen] = useState(false);
+  const activeOverlay = useGameStore((s) => s.activeOverlay);
+  const setActiveOverlay = useGameStore((s) => s.setActiveOverlay);
   // Which tab the board shows (#96's PriceBoardOverlay `tab`/`onTabChange`
   // props — controlled, not a mount-once `initialTab`, since #195 rider 1
   // needs a notice click to retarget the tab even while the board is already
@@ -55,8 +56,6 @@ export function TopBar() {
   // re-targets) the board, so the click always lands on the settlement audit
   // trail regardless of what was showing before.
   const [priceBoardTab, setPriceBoardTab] = useState<"ceny" | "kontrakty">("ceny");
-  const [ledgerOpen, setLedgerOpen] = useState(false);
-  const [headquartersOpen, setHeadquartersOpen] = useState(false);
   // Notice strip (#97, 2026-07-14 UI grill lock 1 — replaces the spec's
   // phantom "toast pattern"): UI-side only, never the save shape. Notices are
   // derived from Ledger `settlement` events appended since `lastSeenTick` —
@@ -70,7 +69,7 @@ export function TopBar() {
   const noticeCount = ledger.filter((e) => e.kind === "settlement" && e.tick > lastSeenTick).length;
   const openNotices = () => {
     setPriceBoardTab("kontrakty");
-    setPriceBoardOpen(true);
+    setActiveOverlay("priceBoard");
     markNoticesSeen();
   };
 
@@ -92,10 +91,9 @@ export function TopBar() {
         return;
       }
       if (e.key.toLowerCase() === "b") {
-        setPriceBoardOpen((open) => {
-          if (!open) setPriceBoardTab("ceny");
-          return !open;
-        });
+        const open = useGameStore.getState().activeOverlay === "priceBoard";
+        if (!open) setPriceBoardTab("ceny");
+        setActiveOverlay(open ? null : "priceBoard");
         return;
       }
       // "g" (#217): sail the Controlled Ship to the selected port — same
@@ -120,7 +118,7 @@ export function TopBar() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [togglePause, setSpeed]);
+  }, [togglePause, setSpeed, setActiveOverlay]);
 
   return (
     <header className="top-bar">
@@ -164,31 +162,31 @@ export function TopBar() {
         className="menu-btn"
         onClick={() => {
           setPriceBoardTab("ceny");
-          setPriceBoardOpen(true);
+          setActiveOverlay("priceBoard");
         }}
       >
         Price Board
       </button>
-      <button type="button" className="menu-btn" onClick={() => setLedgerOpen(true)}>
+      <button type="button" className="menu-btn" onClick={() => setActiveOverlay("ledger")}>
         Ledger
       </button>
       {/* Persistent shortcut once the Headquarters is founded (docs/specs/E9
           — UX skeleton: "a persistent TopBar shortcut once founded"). */}
       {hasHeadquarters && (
-        <button type="button" className="menu-btn" onClick={() => setHeadquartersOpen(true)}>
+        <button type="button" className="menu-btn" onClick={() => setActiveOverlay("hq")}>
           Headquarters
         </button>
       )}
       <GameMenu />
-      {priceBoardOpen && (
+      {activeOverlay === "priceBoard" && (
         <PriceBoardOverlay
-          onClose={() => setPriceBoardOpen(false)}
+          onClose={() => setActiveOverlay(null)}
           tab={priceBoardTab}
           onTabChange={setPriceBoardTab}
         />
       )}
-      {ledgerOpen && <LedgerOverlay onClose={() => setLedgerOpen(false)} />}
-      {headquartersOpen && <HeadquartersPanel onClose={() => setHeadquartersOpen(false)} />}
+      {activeOverlay === "ledger" && <LedgerOverlay onClose={() => setActiveOverlay(null)} />}
+      {activeOverlay === "hq" && <HeadquartersPanel onClose={() => setActiveOverlay(null)} />}
     </header>
   );
 }

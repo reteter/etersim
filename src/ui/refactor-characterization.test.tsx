@@ -51,6 +51,7 @@ beforeEach(() => {
     controlledShipId: null,
     selection: null,
     selectedRouteId: null,
+    activeOverlay: null,
     speed: "paused",
   });
 });
