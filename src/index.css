@@ -1858,3 +1858,80 @@ body {
   color: #a8b2c2;
   font-variant-numeric: tabular-nums;
 }
+
+/* Route ribbon (CONTEXT.md — Route ribbon; docs/specs/E16-workbench.md —
+   Route ribbon component, #392). Schematic on purpose — an umowna rail, not
+   orrery geometry — so it never competes with the map's spatial beauty. */
+.route-ribbon {
+  display: block;
+}
+
+.route-ribbon__svg {
+  overflow: visible;
+}
+
+.route-ribbon__leg {
+  stroke: #4a5568;
+  stroke-width: 0.6;
+}
+
+.route-ribbon__return-arc {
+  stroke: #4a5568;
+  stroke-width: 0.6;
+  stroke-dasharray: 1.4 1.2;
+  opacity: 0.7;
+}
+
+.route-ribbon__loop-marker {
+  font-size: 4px;
+  fill: #a8b2c2;
+}
+
+/* Node disc: tinted per archetype (--port-color, set inline — the same
+   --archetype-* token the map's ports and price board rows use, ADR-0006:
+   archetype color only here, the market-quality signal is hue-free and does
+   not render on this read-only ribbon). */
+.route-ribbon__node-disc {
+  fill: var(--port-color);
+  stroke: var(--port-color);
+  stroke-width: 0.3;
+}
+
+.route-ribbon__node-icon {
+  color: #f2f4f8;
+  pointer-events: none;
+}
+
+.route-ribbon__node-label {
+  font-size: 2.5px;
+  fill: #a8b2c2;
+  pointer-events: none;
+}
+
+/* Intermediate Stops dim during the return phase (E16 spec — "passing over,
+   not stopping at, the middle Stops") — opacity only, no motion. */
+.route-ribbon__node--dim {
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
+}
+
+/* Same neutral glyph tint the map uses for a non-Controlled ship
+   (`.ship__glyph`) — a Route's assigned Ship is not necessarily the
+   Controlled Ship, so this must never be the reserved Controlled-Ship gold
+   (ADR-0006 / incident 0002, one-color-one-meaning). */
+.route-ribbon__ship {
+  color: #cfd6e2;
+  pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Motion law (ADR-0003, #161 skiff-anchoring precedent): the glide
+   transition only applies while actively animating — reduced-motion or a
+   paused game drops this class and the Ship glyph holds its position with
+   no transition at all, matching the skiff freeze-in-place behavior. The
+   transition targets the CSS `transform` set inline (translate), not the
+   x/y attributes, so it actually animates between `progress` updates. */
+.route-ribbon__ship--animating {
+  transition: transform 0.3s linear;
+}

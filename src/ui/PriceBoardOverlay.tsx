@@ -1,16 +1,7 @@
 import type { CSSProperties } from "react";
-import {
-  effectiveBase,
-  GOOD_IDS,
-  GOODS,
-  price,
-  quoteBuy,
-  quoteSell,
-  type GoodId,
-  type Port,
-  type PortId,
-} from "../sim";
+import { effectiveBase, GOOD_IDS, GOODS, price, type GoodId, type Port, type PortId } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { computeMarketSignal, quotePortGood } from "../store/marketSignal";
 import { KontraktyTab } from "./KontraktyTab";
 import { OverlayShell } from "./OverlayShell";
 import { priceTrend, TREND_GLYPH, TREND_LEGEND, type Trend } from "./priceTrend";
@@ -29,41 +20,18 @@ interface Cell {
   readonly trend: Trend;
 }
 
-/** All cells for one port, keyed by good. */
+/** All cells for one port, keyed by good. `quotePortGood` (store/marketSignal)
+ *  is the single quote source this board and the market-quality signal both
+ *  read — sharing it is load-bearing (E16 spec — Trap 2): reimplementing the
+ *  quote here would let the board's numbers silently drift from the signal's. */
 function portCells(port: Port, snapshot: Record<GoodId, number>): Record<GoodId, Cell> {
   const cells = {} as Record<GoodId, Cell>;
   for (const good of GOOD_IDS) {
-    const entry = port.market[good];
+    const { bid, ask } = quotePortGood(port, good);
     const base = effectiveBase(port, good);
-    cells[good] = {
-      bid: quoteSell(entry, base, 1),
-      ask: quoteBuy(entry, base, 1),
-      trend: priceTrend(price(entry, base), snapshot[good]),
-    };
+    cells[good] = { bid, ask, trend: priceTrend(price(port.market[good], base), snapshot[good]) };
   }
   return cells;
-}
-
-/** Per-good column extremes: the cheapest ask (where to buy) and the
- *  highest bid (where to sell), ignoring ports where the good isn't
- *  tradable (null quote). Ties highlight every matching port. */
-function columnExtremes(
-  ports: readonly Port[],
-  cellsByPort: Record<PortId, Record<GoodId, Cell>>,
-): { bestAsk: Record<GoodId, number | null>; bestBid: Record<GoodId, number | null> } {
-  const bestAsk = {} as Record<GoodId, number | null>;
-  const bestBid = {} as Record<GoodId, number | null>;
-  for (const good of GOOD_IDS) {
-    const asks = ports
-      .map((port) => cellsByPort[port.id][good].ask)
-      .filter((v): v is number => v !== null);
-    const bids = ports
-      .map((port) => cellsByPort[port.id][good].bid)
-      .filter((v): v is number => v !== null);
-    bestAsk[good] = asks.length > 0 ? Math.min(...asks) : null;
-    bestBid[good] = bids.length > 0 ? Math.max(...bids) : null;
-  }
-  return { bestAsk, bestBid };
 }
 
 /**
@@ -100,7 +68,11 @@ export function PriceBoardOverlay({
   for (const port of ports) {
     cellsByPort[port.id] = portCells(port, world.priceSnapshots[port.id]);
   }
-  const { bestAsk, bestBid } = columnExtremes(ports, cellsByPort);
+  // Market-quality signal (store bridge, docs/specs/E16-workbench.md):
+  // computed once here and subsumes this board's old local `columnExtremes`
+  // helper — "best" highlight now reads tier === "strong" (a tie at the
+  // regional extreme lights up every tied port, not just a singular id).
+  const signal = computeMarketSignal(ports);
 
   const openPort = (portId: PortId) => {
     select({ kind: "port", id: portId });
@@ -166,8 +138,8 @@ export function PriceBoardOverlay({
                 <span className="price-board__port-name">{port.name}</span>
                 {GOOD_IDS.map((good) => {
                   const cell = cellsByPort[port.id][good];
-                  const isBestAsk = cell.ask !== null && cell.ask === bestAsk[good];
-                  const isBestBid = cell.bid !== null && cell.bid === bestBid[good];
+                  const isBestAsk = signal.entries[port.id][good].buyTier === "strong";
+                  const isBestBid = signal.entries[port.id][good].sellTier === "strong";
                   return (
                     <span key={good} className="price-board__cell" role="cell">
                       <span
