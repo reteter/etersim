@@ -1,10 +1,9 @@
-import { useEffect, useState, type ComponentType, type CSSProperties, type SVGProps } from "react";
+import { useState, type CSSProperties } from "react";
 import {
   GOODS,
   shortestCourse,
   type LaneId,
   type Port,
-  type PortArchetype,
   type PortId,
   type Region,
   type Ship,
@@ -12,15 +11,8 @@ import {
   type Voyage,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
-import {
-  AgrarianIcon,
-  FreeportIcon,
-  IndustrialIcon,
-  MiningIcon,
-  ShipIcon,
-  UrbanIcon,
-  VerdantIcon,
-} from "./icons";
+import { ARCHETYPE_ICONS, ShipIcon } from "./icons";
+import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 import { projectToViewBox } from "./mapProjection";
 import { refitBubbleData } from "./refitBubble";
 import { shipPosition } from "./shipPosition";
@@ -53,16 +45,6 @@ const CENTER = { x: 0.5, y: 0.5 };
  *  length ~1.8 viewBox units — clearly smaller than SHIP_ICON_SIZE (4):
  *  scale, not just color, sets the Controlled Ship apart. */
 const SKIFF_HULL_POINTS = "0.9,0 0.27,-0.36 -0.81,-0.32 -0.9,0 -0.81,0.32 0.27,0.36";
-
-/** Archetype → vendored SVG icon (#34, docs/adr/0006-svg-icon-strategy.md). */
-const ARCHETYPE_ICONS: Record<PortArchetype, ComponentType<SVGProps<SVGSVGElement>>> = {
-  agrarian: AgrarianIcon,
-  industrial: IndustrialIcon,
-  urban: UrbanIcon,
-  mining: MiningIcon,
-  verdant: VerdantIcon,
-  freeport: FreeportIcon,
-};
 
 /** Orbit ring radius (viewBox units): distance from the region center
  *  (0.5, 0.5) to the port, in unit-plane space, then projected. Nothing new
@@ -106,25 +88,6 @@ function laneLabelPosition(a: { x: number; y: number }, b: { x: number; y: numbe
     x: (a.x + b.x) / 2 + (-dy / length) * LANE_LABEL_OFFSET,
     y: (a.y + b.y) / 2 + (dx / length) * LANE_LABEL_OFFSET,
   };
-}
-
-/** True while the user's OS/browser requests reduced motion. Read once at
- *  mount plus a live listener (Playwright's `emulateMedia` sets this before
- *  `page.goto`, so the initial `matchMedia` read already reflects it in
- *  E2E). Skiffs freeze at their spawn phase under this instead of animating
- *  — still visible, no motion (#69 review precedent, carried over from the
- *  ambient pulses this glyph replaces). */
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-  useEffect(() => {
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onChange = () => setReduced(mql.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-  return reduced;
 }
 
 /**
