@@ -1,5 +1,5 @@
 {
-  "version": 13,
+  "version": 14,
   "world": {
     "tick": 273,
     "rng": 1528315252,
@@ -268,7 +268,8 @@
         "portId": "p1"
       },
       "guilds": {},
-      "contracts": []
+      "contracts": [],
+      "buildings": []
     },
     "priceSnapshots": {
       "p0": {
@@ -369,6 +370,7 @@
         "thalers": 19935,
         "cargoValue": 64.10473422733726,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 19999.104734227338
       },
       {
@@ -377,6 +379,7 @@
         "thalers": 19935,
         "cargoValue": 67.63367600199749,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 20002.633676002
       },
       {
@@ -385,6 +388,7 @@
         "thalers": 19935,
         "cargoValue": 71.41404275520327,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 20006.414042755205
       },
       {
@@ -393,6 +397,7 @@
         "thalers": 19935,
         "cargoValue": 75.0183143099773,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 20010.01831430998
       },
       {
@@ -401,6 +406,7 @@
         "thalers": 19935,
         "cargoValue": 78.24562257803846,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 20013.245622578037
       },
       {
@@ -481,6 +487,7 @@
         "thalers": 6359,
         "cargoValue": 0,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 6359
       },
       {
@@ -489,6 +496,7 @@
         "thalers": 6359,
         "cargoValue": 0,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 6359
       },
       {
@@ -497,6 +505,7 @@
         "thalers": 6359,
         "cargoValue": 0,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 6359
       },
       {
@@ -505,6 +514,7 @@
         "thalers": 6359,
         "cargoValue": 0,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 6359
       },
       {
@@ -513,6 +523,7 @@
         "thalers": 6359,
         "cargoValue": 0,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 6359
       },
       {
@@ -521,6 +532,7 @@
         "thalers": 6359,
         "cargoValue": 0,
         "siteStoreValue": 0,
+        "buildingStoreValue": 0,
         "total": 6359
       }
     ],
