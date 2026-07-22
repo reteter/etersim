@@ -57,3 +57,14 @@ carries this pull.
 Playwright/`5173` `reuseExistingServer` masking trap — was carried into `CLAUDE.md`
 §Commands as a coder-facing note (a docs-port, not an incident: the config already
 documents the `PLAYWRIGHT_PORT` override).
+
+**s24 (2026-07-23) — the §Recurrence prediction confirmed twice in one E16 session, both
+caught before merge:** (a) #392's read-only `RouteRibbon` Ship glyph initially used the
+reserved gold `#e0a840` — a Route's assigned Ship is not necessarily the Controlled Ship,
+so this is the same collision on a fresh surface; the **advisor** caught it pre-push and
+it was retinted to the map's non-Controlled `#cfd6e2`. (b) #394's new board pairing
+highlight *avoided* the pull by construction — the coder chose `#e0c265`, deliberately
+distinct from `#e0a840`, and the tier-2 review confirmed no collision. The detection net
+held (advisor as the Standards-axis surrogate in (a); coder discipline + review in (b)),
+exactly as the Recommendation predicted — no new rule needed, the pull is simply
+permanent and every new "mark the best/selected thing" surface re-meets it.

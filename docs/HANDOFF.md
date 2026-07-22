@@ -15,11 +15,14 @@ read `git log` and `gh issue list` directly — this file no longer claims them.
 Written for any model in any harness;
 Claude Code's per-machine auto-memory is the day-to-day working channel.
 
-_Last update: 2026-07-22 s23 (owner-requested) — E13 closed (#100/#101/#102 shipped; cheap tails
-#302/#303/#375 done) and **eval-2 concluded**: the casting curve (pipeline > frontier-solo >
-cheap-solo) is **task-shape-invariant** (feature → refactor). OS winner merged as #319/#320/#321;
-GPT Sol **DELEGATE-VIABLE**, Terra **NO-GO** (green fake-refactor no gate caught). §Queue re-cut —
-E13 + tails drop off, E11 v1 → E15 now leads. §Watch gains the advisor-as-eval-variable direction._
+_Last update: 2026-07-23 s24 (owner-requested) — **E16 (Workbench) implementation opened.** Enabler
+#392 (market-quality signal selector + read-only RouteRibbon) and core #394 (port-centric board
+authoring — the #376 heart) both shipped, tier-2 Sonnet coders, clean waves. #376 is fulfilled
+(→ E16 spec). New gate: **#404 blocks #393** — board authoring is buy/sell-only, so deliver/store/
+withdraw lose their authoring home the moment #393 removes the RoutesTab editor; parked for a grill.
+Process: the worktree-isolation mystery is **root-caused** (incident 0025) — `isolation: "worktree"`
+provisions only for **background** coders; CLAUDE.md gained the §Session-start hat/casting cue and the
+§Git background rule._
 
 ## Design sessions are the work (owner framing, 2026-07-19)
 
@@ -60,9 +63,11 @@ Statuses are **not** listed here — run `gh issue list` for what is open.
 1. **E11 v1** (#232 → #233 → #234): harness skeleton → batch runner → runtime assertions/anomaly list.
 2. Then **E15 — Processing** (#281 → #284; its spec depends on E13.0 + E13, both now closed).
 
-Parallel / owner-gated: **#376** (route planning ↔ Price Board fusion) needs its own grill+spec
-before any code — see §Watch. Small non-blocking tails: #374 (multi-seed storehouse guardrail),
-#384 (full markdown-normalizer sweep, one pass).
+In flight (owner ran it this session, ahead of the E11/E15 order above): **E16 — Workbench**
+(#376 fulfilled). Enabler #392 + core #394 merged; fan-out remaining — **#393 gated by the #404
+decision**, plus #395/#396/#227/#398 (independent). E11 v1 → E15 stay the standing order for the
+non-E16 track. Small non-blocking tails: #374 (multi-seed storehouse guardrail), #384 (full
+markdown-normalizer sweep, one pass).
 
 ## Watch — non-derivable only
 
@@ -80,12 +85,11 @@ has been removed — find it at its real home.
 - **Refit-status violet `#a373d6` vs mining `#7e55ab`** proximity —
   eyeball at the next playtest; may collide under the one-color-one-meaning law.
 - **Recurring e2e smell:** `dispatchEvent` standing in for real interaction.
-- **Route planning is a redesign, not decoration** (owner playtest, 2026-07-21).
-  The list/dropdown Stop editor is the wrong interaction model; the owner's direction is a
-  structural fusion of route planning into the Price Board economic surface (port-icon
-  editor). Incremental price-column/margin tweaks on the *existing* editor are off the table.
-  Tracked as #376 (needs its own grill+spec); this line records the framing so no one picks
-  up small route-editor polish against it.
+- **E16's real test is the M4 success measure, and it is still owed** (spec §Testing).
+  The gate is behavioral, not green tests: does authoring *on the board* feel faster than the old
+  Trasy editor, and does a master stop opening Trasy? Cut small, playtest, iterate. Also eyeball the
+  intensity-only signal against the existing color load, and the refit-violet/mining-violet proximity
+  below. No amount of passing E2E substitutes for the owner playing it.
 - **The advisor layer looks like a real differentiator, not a nicety** (owner observation across
   eval-2, s23): it reliably surfaces omitted or merely-implied issues before they crystallize —
   Opus↔Opus included. Owner interest in formalizing it as its *own* eval variable (arm-with-advisor
