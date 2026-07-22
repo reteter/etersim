@@ -20,11 +20,14 @@ import type { World } from "./world";
  * by `ledger.test.ts`'s exhaustive classification — a new `LedgerEvent` kind
  * left unclassified fails to typecheck.
  *
- * `routeId` is carried only on `trade` events (the Tech union in the spec,
- * matching issue #82's acceptance criteria verbatim) — a route-driven trade
- * is dispatched through the exact same `buy`/`sell` command a manual trade
- * uses, tagged with the assignment's routeId; other route-driven mutations
- * (docking fee, deliver) are not further tagged.
+ * `routeId` is carried on `trade` events (issue #82's acceptance criteria
+ * verbatim) — a route-driven trade is dispatched through the exact same
+ * `buy`/`sell` command a manual trade uses, tagged with the assignment's
+ * routeId — and, since #391, on `dockingFee` events, tagged the same way
+ * whenever the docking ship has an active, non-suspended assignment (so a
+ * route's net margin — gross minus its exact docking cost — is derivable;
+ * #390 part 1). Other route-driven mutations (deliver) are not further
+ * tagged.
  */
 export type LedgerEvent =
   | {
@@ -44,6 +47,7 @@ export type LedgerEvent =
       readonly shipId: ShipId;
       readonly portId: PortId;
       readonly thalers: number;
+      readonly routeId?: RouteId;
     }
   | {
       readonly kind: "autoDraw";

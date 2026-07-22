@@ -17,7 +17,7 @@ import {
 } from "./region";
 import { deriveSubstream, nextFloat, nextUint32, type RngState } from "./rng";
 import { resolveReferencePort, type Route, type RouteId, type StopOrder } from "./route";
-import { advanceShip, cargoUsed, type Ship, type ShipId } from "./ship";
+import { advanceShip, cargoUsed, isRouteActive, type Ship, type ShipId } from "./ship";
 import { runShipyardAutoDraw, runShipyardConstructionAutoDraw } from "./shipyard";
 import { runGuildBuildAutoDraw } from "./storehouse";
 import { replaceShip, snapshotPrices, STARTING_HOLD, type World } from "./world";
@@ -66,8 +66,14 @@ export function driftStep(
 /** Deduct the docking fee for `portId` from the shared purse (min(fee, thalers),
  *  no debt). Charged once per docking transition, manual or routed. A paid-0
  *  docking (empty purse, or a hypothetically fee-less archetype) moves no
- *  thalers, so it appends no Ledger event. */
-function chargeDockingFee(world: World, portId: PortId, shipId: ShipId): World {
+ *  thalers, so it appends no Ledger event.
+ *
+ *  Tags the event with `ship.assignment.routeId` iff the docking is
+ *  route-driven — an active, non-suspended assignment (`isRouteActive`,
+ *  issue #391, mirrors the `trade` tag from #82) — so a route's docking cost
+ *  is exactly attributable for net-margin derivation (#390). A manual
+ *  docking, or one by a suspended route-assigned ship, carries no `routeId`. */
+function chargeDockingFee(world: World, portId: PortId, ship: Ship): World {
   const port = world.region.ports.find((p) => p.id === portId)!;
   const paid = Math.min(DOCKING_FEE[port.archetype] ?? 0, world.company.thalers);
   if (paid <= 0) return world;
@@ -78,9 +84,10 @@ function chargeDockingFee(world: World, portId: PortId, shipId: ShipId): World {
   return appendLedgerEvent(charged, {
     kind: "dockingFee",
     tick: world.tick,
-    shipId,
+    shipId: ship.id,
     portId,
     thalers: paid,
+    routeId: isRouteActive(ship) ? ship.assignment!.routeId : undefined,
   });
 }
 
@@ -313,7 +320,7 @@ function runDockingPhase(world: World, before: readonly Ship[], advanced: readon
       before[i].location.kind === "underway" && advanced[i].location.kind === "docked";
     if (transitioned) {
       const loc = advanced[i].location;
-      if (loc.kind === "docked") w = chargeDockingFee(w, loc.portId, advanced[i].id);
+      if (loc.kind === "docked") w = chargeDockingFee(w, loc.portId, advanced[i]);
     }
     w = runRouteForShip(w, advanced[i].id);
   }
