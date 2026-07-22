@@ -186,8 +186,10 @@ and market pricing are all reused as-is.
 
 Compute the signal **once**, in a store-bridge selector, not inline per surface (Professor Finding 4
 discipline; the fleet-resolution selector shipped in the #319 refactor is the precedent to follow).
-Shape: a function of `(region, priceSnapshots)` returning, per (port, good), the buy-quality and
-sell-quality tier (strong / mid / weak) plus the best-ask/best-bid port ids for pairing. This
+Shape: a function of `(ports)` returning, per (port, good), the buy-quality and
+sell-quality tier (strong / mid / weak) plus the best-ask/best-bid port ids for pairing. (As-built
+#392: the tier reads only the current cross-port quotes at qty 1; `priceSnapshots` feeds the board's
+trend arrows, not the quality tier, so it is not a selector input.) This
 subsumes and replaces `PriceBoardOverlay.tsx`'s local `columnExtremes` (that inline helper becomes a
 consumer of the selector, or is deleted in its favor). PortPanel action shading and any offer-label
 computation read the *same* selector — three renderings, one source.
