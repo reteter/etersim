@@ -63,7 +63,12 @@ describe("buyCapHint", () => {
   });
 
   it("structural caps keep their existing wording regardless of buyMax (#375)", () => {
+    // buyMax varies (0 vs a positive value) while the structural reason/wording
+    // must not: proves the hold/stock branches genuinely ignore buyMax rather
+    // than merely never having been asked with a nonzero one.
     expect(buyCapHint("hold", 0, 12, 0)).toBe("Hold full");
+    expect(buyCapHint("hold", 0, 12, 5)).toBe("Hold full");
     expect(buyCapHint("stock", 20, 0, 0)).toBe("Out of stock");
+    expect(buyCapHint("stock", 20, 0, 5)).toBe("Out of stock");
   });
 });
