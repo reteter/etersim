@@ -323,6 +323,44 @@ describe("resolveRelevantShip (#319 — fleet-resolution selector)", () => {
   });
 });
 
+describe("gameStore activeOverlay (#320)", () => {
+  it("starts with no overlay active", () => {
+    expect(store().activeOverlay).toBeNull();
+  });
+
+  it("openOverlay sets the active overlay, replacing any other — mutual exclusion at the store level", () => {
+    store().openOverlay("ledger");
+    expect(store().activeOverlay).toBe("ledger");
+
+    store().openOverlay("priceBoard");
+    expect(store().activeOverlay).toBe("priceBoard");
+  });
+
+  it("closeOverlay clears the active overlay and is a no-op when none is open", () => {
+    store().closeOverlay();
+    expect(store().activeOverlay).toBeNull();
+
+    store().openOverlay("hq");
+    store().closeOverlay();
+    expect(store().activeOverlay).toBeNull();
+  });
+
+  it("newGame/loadWorld/reset clear the active overlay", () => {
+    store().openOverlay("ledger");
+    store().newGame("etersim");
+    expect(store().activeOverlay).toBeNull();
+
+    store().openOverlay("hq");
+    const snapshot = store().world!;
+    store().loadWorld(snapshot);
+    expect(store().activeOverlay).toBeNull();
+
+    store().openOverlay("priceBoard");
+    store().reset();
+    expect(store().activeOverlay).toBeNull();
+  });
+});
+
 describe("gameStore auto-pause on arrival", () => {
   // autoPauseOnArrival is a persisted preference, deliberately untouched by
   // the top-level beforeEach's reset() — pin it explicitly per test.
