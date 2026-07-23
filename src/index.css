@@ -83,6 +83,25 @@ body {
   z-index: 1;
 }
 
+/* Routed-sale note (#398, pause-cause kin): same absolutely-positioned,
+   zero-layout-impact treatment as .top-bar__pause-note (#195) — offset one
+   row further down so the rare case of both notes showing at once stacks
+   instead of overlapping. */
+.top-bar__routed-sale-note {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin: calc(0.2rem + 1.4rem) 0 0;
+  padding: 0.1rem 0.4rem;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: #a8b2c2;
+  background-color: #161b24;
+  border: 1px solid #2a3040;
+  border-radius: 4px;
+  z-index: 1;
+}
+
 .top-bar__menu {
   display: flex;
   gap: 0.25rem;

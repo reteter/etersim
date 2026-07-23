@@ -654,7 +654,10 @@ test.describe('price board — port-centric route authoring (#394, docs/specs/E1
     await cellBtn.click();
     const chip = firstRow.locator('.price-board__order-chip').first();
     await expect(chip).toBeVisible();
-    await expect(chip.locator('.price-board__order-chip-label')).toHaveText(/Kup|Sprzedaj/);
+    // #398: a fresh (qty-less) sell order reads as "sprzedaj całość · {good}"
+    // — the greedy semantics visible at authoring time — instead of an
+    // opaque "Sprzedaj"; a fresh buy still reads as plain "Kup".
+    await expect(chip.locator('.price-board__order-chip-label')).toHaveText(/^Kup$|^sprzedaj całość · /);
 
     // If the attached order was a buy, its good's best-bid port row now
     // carries the highlight-only pairing suggestion (a ★ marker) — never an
@@ -693,6 +696,36 @@ test.describe('price board — port-centric route authoring (#394, docs/specs/E1
     await chip.getByRole('button', { name: /zmień na/ }).click();
     const after = await chip.locator('.price-board__order-chip-label').innerText();
     expect(after.startsWith('Kup')).toBe(!before.startsWith('Kup'));
+  });
+
+  test('a fresh sell order chip reads "sprzedaj całość · {good}", not opaque "Sprzedaj" (#398)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const firstRow = rows.first();
+    await firstRow.click();
+
+    // textContent, not innerText: the header is CSS text-transform: uppercase
+    // (visual only) — textContent reads the underlying GOODS[good].name.
+    const goodName = await dialog.locator('.price-board__good-header').first().textContent();
+    await firstRow.locator('.price-board__cell-btn').first().click();
+
+    const chip = firstRow.locator('.price-board__order-chip').first();
+    const label = chip.locator('.price-board__order-chip-label');
+    let text = await label.innerText();
+    // Force a sell: the inferred kind is playtest-tunable (routeAuthoring.ts
+    // inferOrderKind) and unseeded here, so flip to sell if a buy landed.
+    if (text.startsWith('Kup')) {
+      await chip.getByRole('button', { name: /zmień na/ }).click();
+      text = await label.innerText();
+    }
+    // The greedy (qty-less) sell chip's full text — not a substring — reads
+    // legibly as "sell everything of this good", no opaque "Sprzedaj".
+    await expect(label).toHaveText(`sprzedaj całość · ${goodName}`);
   });
 
   test('"Anuluj" discards the draft without dispatching a Route', async ({ page }) => {

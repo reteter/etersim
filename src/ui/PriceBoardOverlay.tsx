@@ -356,12 +356,16 @@ export function PriceBoardOverlay({
                           onClick={(e) => e.stopPropagation()}
                         >
                           <span className="price-board__order-chip-label">
-                            {ORDER_KIND_LABEL[order.kind]}
-                            {order.qty === undefined
-                              ? order.kind === "sell"
-                                ? " · sprzedaj całość"
-                                : ""
-                              : ` · ${order.qty} szt.`}
+                            {order.kind === "sell" && order.qty === undefined
+                              ? // #398: a greedy sell order (route.ts's "today's
+                                // greedy behavior" — no qty cap) must read legibly
+                                // as "sell everything", not an opaque "Sprzedaj" —
+                                // the good's own name replaces the redundant
+                                // kind label rather than prefixing it.
+                                `sprzedaj całość · ${GOODS[good].name}`
+                              : `${ORDER_KIND_LABEL[order.kind]}${
+                                  order.qty === undefined ? "" : ` · ${order.qty} szt.`
+                                }`}
                           </span>
                           <button
                             type="button"

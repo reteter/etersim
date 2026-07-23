@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isUnderRefit, SPEEDS, type Speed } from "../sim";
+import { GOODS, isUnderRefit, SPEEDS, type Speed } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { GameMenu } from "./GameMenu";
 import { HeadquartersPanel } from "./HeadquartersPanel";
@@ -43,6 +43,7 @@ export function TopBar() {
   const markNoticesSeen = useGameStore((s) => s.markNoticesSeen);
   const speed = useGameStore((s) => s.speed);
   const pauseCause = useGameStore((s) => s.pauseCause);
+  const routedSaleNote = useGameStore((s) => s.routedSaleNote);
   const setSpeed = useGameStore((s) => s.setSpeed);
   const togglePause = useGameStore((s) => s.togglePause);
   const hasHeadquarters = useGameStore((s) => !!s.world?.company.headquarters);
@@ -159,6 +160,16 @@ export function TopBar() {
         {pauseCause === "autoArrival" && (
           <p className="top-bar__pause-note" role="status">
             auto-pauza: statek zacumował (wyłączalna w Opcjach)
+          </p>
+        )}
+        {/* Routed-sale readout (#398, pause-cause kin): records what a Stop's
+            greedy sell just did, so a routed sale is legible in the moment
+            the same way a pause explains itself (cluster B symptom c —
+            a Stop's "sell all" used to read as a cargo wipe). */}
+        {routedSaleNote && (
+          <p className="top-bar__routed-sale-note" role="status">
+            {routedSaleNote.portName}: sprzedano całość {GOODS[routedSaleNote.good].name} (
+            {routedSaleNote.qty} szt.) — Stop {routedSaleNote.stopIndex}
           </p>
         )}
       </div>
