@@ -432,6 +432,35 @@ waves, tier-2 Sonnet review each re-ran gates independently. First E16 (Workbenc
 | 07-23 | #402 | #392 | 2 | 0 blocking; 1 should-fix (spec-sync, driver) | 0 | pass | E16 enabler: market-quality signal selector (subsumes `columnExtremes`, behavior-neutral — no snapshot churn + a tie-at-extreme render test with mutation proof = Trap 1, board highlights off `tier==="strong"` not a singular port id) + read-only `RouteRibbon`. **Advisor (pre-push) caught two things the unit tests structurally could not:** a board-level Trap-1 gap, and an **incident-0002 gold near-miss** — the ribbon Ship glyph used reserved `#e0a840`, retinted to non-Controlled `#cfd6e2`. Coder TDD slip (impl before test) self-caught, recovered with named red + a `tierFor` mutation. Driver micro-edit: spec §Tech signature `(region, priceSnapshots)`→`(ports)` (doc-only, `priceSnapshots` feeds trend not the tier). Tier-2 Sonnet review re-ran 784/784, MERGE-READY. |
 | 07-23 | #403 | #394 | 2 | 0 blocking; 3 nits (1 driver micro-fix, 2 → #405) | 0 | pass (116 e2e) | E16 core — the #376 heart: port-centric board authoring. **All five package pins held** (local-draft-then-commit gated on `isValidRoute`; `nextRouteId` *relocated* to `routeAuthoring.ts` not duplicated; inferred-kind tie rule named+commented `TIER_STRENGTH`, tie→buy; order-equivalence asserts the built `Route` payload `toEqual` a hand-built literal; non-scope respected — no assign/`sailTo`). Gesture collision with #62 row-nav resolved by gating authoring on draft-active (advisor-consulted; a dedicated E2E guards the default nav). **Second gold near-miss avoided cleanly** — coder chose highlight `#e0c265`, distinct from `#e0a840` (incident-0002 §Recurrence confirmed twice this session). Flag C (board is buy/sell-only; store/withdraw have no board home once #393 removes the RoutesTab editor) parked → **#404, blocks #393**. Nits→#405; aria-label English "at"→"w" driver micro-fix. Tier-2 Sonnet review re-ran 821/821, MERGE-READY. |
 
+## E16 fan-out wave — #396 + #398 (2026-07-23, s25) — the #406 parallel-timing experiment
+
+The first dispatch run **explicitly to measure** whether a genuine ≥2-coder parallel wave
+shortens a session (#406), now that background isolation is confirmed to provision reliably
+(incident 0025). Two Sonnet coders, background + `isolation: "worktree"`, one shared
+tier-2 Sonnet review over the combined diff, owner-merged, full cert green (825 vitest /
+120 e2e / typecheck / lint on `main`).
+
+**Disjointness gate mattered.** #406 named #396 **+ #397** as the vehicle; the Orchestrator
+killed that pair at dispatch — both render on the same PortPanel `GoodRow` (spec puts the
+"okazja" label on the exact cell #396 shades), and #397 is cross-cutting by nature ("the
+word" reaches offer surfaces on any layout), so it cannot be *confirmed* file-disjoint from
+anything. Substituted **#398** (a truly disjoint partner); #397 goes solo later. The
+experiment measures parallelism, not the selector, so a disjoint pair still runs it.
+
+**#406 result:** parallel wall-clock ≈ **15m19s** (bounded by the slower #398) vs. a
+sequential estimate ≈ **25m46s** (10m27s + 15m19s) — **~41% saved**. Orchestrator overhead
+stayed low: one review covered both, one `index.css` overlap (hunks 625 lines apart —
+merged clean), and one *package-quality* miss (the driver's #398 pointer named
+`RouteRibbon.tsx`; the chip actually lives in `PriceBoardOverlay.tsx` — the coder caught and
+corrected it). **Zero cross-contamination** despite the shared stylesheet — the point of the
+background-isolation fix, confirmed. Verdict: a confirmed-disjoint pair is worth dispatching
+in parallel; the cost is the disjointness proof up front, not the run.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-23 | #407 | #396 | 2 | 0 (clean) | 0 | pass | PortPanel buy/sell action shading from the same `computeMarketSignal` selector the board uses (single source). Intensity-only (opacity/weight, hue-free — ADR-0006/incident-0002 respected). Unavailable≠faded held: class applies only on `canBuy`/`canSell`. **Mapping call (driver-decided, code-derived, not owner):** `strong`→bright, `mid`/`weak`→faded — because the as-built board is **binary** (`PriceBoardOverlay.tsx` branches only on `=== "strong"`; `mid`/`weak` render identically), so this keeps "bright = best market" identical on every surface. Surfaced the underlying spec drift (§rendering-1/2 "near-best steps down" / "(near-)best" was never built) → **#409** (owner call: sync prose vs. build gradient). Reviewer confirmed the e2e board↔PortPanel class-equality assertion *is* tier-equality (board `--best` ≡ `tier==="strong"`), not over-coupling. Tier-2 Sonnet: ship, no findings. |
+| 07-23 | #408 | #398 | 2 | 0 blocking; 1 nit (test-coverage) | 0 | pass | Runtime execution legibility (cluster-B symptom c): chip reads `sprzedaj całość · {good}`; ephemeral routed-sale note `{Port}: sprzedano całość {good} ({n} szt.) — Stop {k}` in the pause-cause (#130) pattern (`gameStore.ts` + `TopBar.tsx`). **Scope flag watched, not hit:** note fully derived from already-exposed sim values (Ledger `trade` events + routes) — `advance()` diffs the append-only ledger, filters `side==="sell"` + `routeId` + greedy (`order.qty===undefined`) — **no `src/sim` change**. Package pointer was wrong (RouteRibbon → PriceBoardOverlay); coder corrected + flagged. Reviewer verified ledger-diff soundness (fold calls `tick(next,[])` with no commands so defs can't mutate mid-fold), `qty===undefined` keys the *order def* not `event.qty`. Edge-triggered persist-until-superseded lifecycle (no timer → determinism-safe). Nit: `reset()` test could also exercise `newGame`/`loadWorld` (shared `...INITIAL` path). Tier-2 Sonnet: ship. |
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
