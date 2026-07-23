@@ -550,6 +550,91 @@ describe("gameStore auto-pause under an active route (#151)", () => {
   });
 });
 
+describe("gameStore routedSaleNote (#398)", () => {
+  /** Same shape as `routedControlledWorld` above — a funded World with s0
+   *  docked at one end of its shortest lane and a two-Stop grain loop (buy at
+   *  A, sell at B) already in the Company. */
+  function routedSaleWorld(seed: string): { world: World; a: PortId; b: PortId; laneTicks: number } {
+    const w0 = createWorld(seed);
+    const lane = [...w0.region.lanes].sort((x, y) => x.voyageTicks - y.voyageTicks)[0];
+    const route: Route = {
+      id: "r",
+      name: "loop",
+      stops: [
+        { portId: lane.a, orders: [{ kind: "buy", good: "grain" }] },
+        { portId: lane.b, orders: [{ kind: "sell", good: "grain" }] },
+      ],
+    };
+    const ship = { ...w0.company.ships[0], location: { kind: "docked", portId: lane.a } as const };
+    const world: World = { ...w0, company: { ...w0.company, thalers: 100_000, ships: [ship], routes: [route] } };
+    return { world, a: lane.a, b: lane.b, laneTicks: lane.voyageTicks };
+  }
+
+  it("starts with no routed-sale note", () => {
+    expect(store().routedSaleNote).toBeNull();
+  });
+
+  it("records the routed greedy sell at the Stop that emptied the hold", () => {
+    const { world, b, laneTicks } = routedSaleWorld("routed-sale-398");
+    store().loadWorld(world);
+    store().dispatch({ kind: "assignRoute", shipId: "s0", routeId: "r" });
+    store().setSpeed(1);
+
+    let fired = false;
+    for (let i = 0; i < laneTicks * 2 + 8 && !fired; i++) {
+      store().advance(MS_PER_TICK_AT_1X);
+      if (store().routedSaleNote) fired = true;
+    }
+    expect(fired).toBe(true); // only meaningful if the sale actually happened
+
+    const note = store().routedSaleNote!;
+    const bPort = store().world!.region.ports.find((p) => p.id === b)!;
+    expect(note.portName).toBe(bPort.name);
+    expect(note.good).toBe("grain");
+    expect(note.stopIndex).toBe(2); // 1-based: Stop #2 is the sell at B
+    expect(note.qty).toBeGreaterThan(0);
+  });
+
+  it("does not fire for an explicit up-to-N sell (not a cargo wipe)", () => {
+    const { world, a, b, laneTicks } = routedSaleWorld("routed-sale-qty-398");
+    const capped: World = {
+      ...world,
+      company: {
+        ...world.company,
+        routes: [
+          {
+            id: "r",
+            name: "loop",
+            stops: [
+              { portId: a, orders: [{ kind: "buy", good: "grain" }] },
+              { portId: b, orders: [{ kind: "sell", good: "grain", qty: 1 }] },
+            ],
+          },
+        ],
+      },
+    };
+    store().loadWorld(capped);
+    store().dispatch({ kind: "assignRoute", shipId: "s0", routeId: "r" });
+    store().setSpeed(1);
+
+    for (let i = 0; i < laneTicks * 2 + 8; i++) store().advance(MS_PER_TICK_AT_1X);
+
+    expect(store().routedSaleNote).toBeNull();
+  });
+
+  it("reset/newGame/loadWorld clear the routed-sale note", () => {
+    const { world, laneTicks } = routedSaleWorld("routed-sale-clear-398");
+    store().loadWorld(world);
+    store().dispatch({ kind: "assignRoute", shipId: "s0", routeId: "r" });
+    store().setSpeed(1);
+    for (let i = 0; i < laneTicks * 2 + 8 && !store().routedSaleNote; i++) store().advance(MS_PER_TICK_AT_1X);
+    expect(store().routedSaleNote).not.toBeNull();
+
+    store().reset();
+    expect(store().routedSaleNote).toBeNull();
+  });
+});
+
 describe("gameStore autosave", () => {
   // saveAutosave/loadAutosave default to globalThis.localStorage, resolved per
   // call — so a global fake exercises the real default path without a browser.

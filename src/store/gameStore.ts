@@ -6,6 +6,7 @@ import {
   isRouteActive,
   tick,
   type Command,
+  type GoodId,
   type PortId,
   type RouteId,
   type Ship,
@@ -32,6 +33,33 @@ export type Selection =
  *  "manual" covers the pause button and its hotkey; "autoArrival" is the
  *  arrival auto-pause (see `advance` below). */
 export type PauseCause = "manual" | "autoArrival";
+
+/**
+ * Routed-sale note (#398, pause-cause kin — #130): an ephemeral, UI-only
+ * readout of the most recent routed **greedy** sell (a Stop's "sell all"
+ * order, `StopOrder.qty === undefined`, route.ts) executed during the last
+ * `advance()` — so the moment a Stop empties the hold of a good, the player
+ * sees why (docs/design-notes/pause-cause-note-2026-07-14.md's pattern,
+ * applied to an edge-triggered event instead of a level-triggered pause).
+ * Derived entirely from values the sim already exposes (the Ledger's `trade`
+ * events, tagged with `routeId` for a route-driven trade, plus the Route's
+ * own Stop list to recover which Stop it was and confirm the order was
+ * greedy) — no new sim event, no sim change. `stopIndex` is 1-based (matches
+ * the roster's own `#{i+1}` numbering) and resolves to the *first* Stop on
+ * the route selling `good` at `portId` with no qty cap; a route that sells
+ * the same good at the same port twice (rare) picks the first such Stop.
+ * Never serialized (not the save, not settings) — like `pauseCause`, a UI
+ * state readout, not a domain concept. Persists until superseded by the next
+ * qualifying sale or cleared by `newGame`/`loadWorld`/`reset` — no timer (no
+ * `Date.now`/`setTimeout`), so it never flickers for a single frame at high
+ * game speed.
+ */
+export interface RoutedSaleNote {
+  readonly portName: string;
+  readonly good: GoodId;
+  readonly qty: number;
+  readonly stopIndex: number;
+}
 
 /**
  * TopBar's overlays (#320): one field replaces three independent booleans
@@ -79,6 +107,12 @@ interface GameState {
    * not settings) — a UI state readout, not a domain concept.
    */
   readonly pauseCause: PauseCause | null;
+  /**
+   * Ephemeral routed-sale readout (#398): the most recent routed greedy sell
+   * `advance()` observed, or null before any has happened this session. See
+   * `RoutedSaleNote` above. Never serialized.
+   */
+  readonly routedSaleNote: RoutedSaleNote | null;
   /**
    * Notice strip watermark (#97, moved to the store 2026-07-15 — issue #195
    * rider 2): the last world tick the player has seen settlement notices up
@@ -150,6 +184,7 @@ const INITIAL = {
   controlledShipId: null,
   selectedRouteId: null,
   pauseCause: null,
+  routedSaleNote: null,
   lastSeenTick: 0,
   seed: null,
   activeOverlay: null as Overlay | null,
@@ -202,6 +237,34 @@ function arrivedAtCourseDestination(before: Ship, after: Ship): boolean {
  */
 function underActiveRoute(ship: Ship): boolean {
   return isRouteActive(ship);
+}
+
+/**
+ * Scans the Ledger events appended since `before` (append-only, so a length
+ * diff on `after.ledger` is exactly "what happened this `advance()`") for the
+ * most recent routed greedy sell, and resolves it to a `RoutedSaleNote`
+ * (#398). Returns null when no such event fired — the caller then keeps
+ * whatever note was already showing (persist-until-superseded, no timer).
+ */
+function detectRoutedSaleNote(before: World, after: World): RoutedSaleNote | null {
+  const newEvents = after.ledger.slice(before.ledger.length);
+  for (let i = newEvents.length - 1; i >= 0; i--) {
+    const event = newEvents[i];
+    if (event.kind !== "trade" || event.side !== "sell" || event.routeId === undefined) continue;
+    const route = after.company.routes.find((r) => r.id === event.routeId);
+    if (!route) continue;
+    const stopIndex = route.stops.findIndex(
+      (stop) =>
+        stop.portId === event.portId &&
+        stop.orders.some(
+          (order) => order.kind === "sell" && order.good === event.good && order.qty === undefined,
+        ),
+    );
+    if (stopIndex === -1) continue; // not a greedy "sell all" order — no note
+    const port = after.region.ports.find((p) => p.id === event.portId);
+    return { portName: port?.name ?? event.portId, good: event.good, qty: event.qty, stopIndex: stopIndex + 1 };
+  }
+  return null;
 }
 
 export const useGameStore = create<GameState>()((set, get) => ({
@@ -293,7 +356,12 @@ export const useGameStore = create<GameState>()((set, get) => ({
     const shipBefore = world.company.ships.find((s) => s.id === controlledShipId) ?? null;
     let next = world;
     for (let i = 0; i < ticks; i++) next = tick(next, []);
-    set({ world: next, carryMs: nextCarry });
+    // #398: detect a routed greedy sell across every tick this advance folded
+    // (the Ledger diff is length-based, so folding many ticks into one call
+    // loses nothing — only the most recent qualifying sale is kept, matching
+    // "persist until superseded").
+    const routedSaleNote = detectRoutedSaleNote(world, next);
+    set({ world: next, carryMs: nextCarry, ...(routedSaleNote ? { routedSaleNote } : {}) });
     // Autosave once whenever this advance crossed a 24-tick boundary, however
     // many ticks it folded (spec: autosave every 24 ticks).
     const interval = AUTOSAVE_INTERVAL_TICKS;

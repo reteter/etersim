@@ -277,6 +277,39 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await expect(dialog2.locator('.route-row__metrics')).toContainText(/Docking fees\/loop: \d+/);
   });
 
+  test('a routed greedy sell shows a runtime note at the Stop it emptied the hold at (#398)', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const { world, a, b } = routeReadyWorld('hq-398');
+    const bName = world.region.ports.find((p) => p.id === b)!.name;
+    await continueWithWorld(page, world);
+
+    await page.locator('g.port').first().click({ force: true });
+    await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
+    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await dialog.getByRole('tab', { name: 'Trasy' }).click();
+
+    // buy grain (Stop 1, A) → sell grain (Stop 2, B), both greedy (no qty).
+    await createGrainRoute(dialog, a, b);
+    const routeRow = dialog.locator('.route-row').first();
+    await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
+    await routeRow.getByRole('button', { name: /^Assign$/ }).click();
+
+    await dialog.getByRole('button', { name: /^Close$/ }).click();
+    await page.getByRole('button', { name: '100x' }).click();
+
+    // Once the ship's greedy sell at Stop 2 (B) fires, the TopBar's routed-
+    // sale note (#398, pause-cause kin — #130) records it: legible in the
+    // moment, not a silent cargo wipe.
+    await expect(page.locator('.top-bar__routed-sale-note')).toContainText(
+      `${bName}: sprzedano całość ${GOODS.grain.name}`,
+      { timeout: 30_000 },
+    );
+    await expect(page.locator('.top-bar__routed-sale-note')).toContainText('szt.) — Stop 2');
+  });
+
   test('edit propagates from the next Stop: an in-flight ship redirects to the edited Stop port', async ({
     page,
   }) => {
