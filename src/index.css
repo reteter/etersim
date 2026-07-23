@@ -708,6 +708,21 @@ body {
   background: #263041;
 }
 
+/* Market-quality signal action shading (E16 spec §PortPanel action shading,
+   package e — same tier the board's cell emphasis reads). Intensity only —
+   opacity + weight, hue-free (ADR-0006) — never a new color. Applied only to
+   already-enabled buttons; the disabled/unavailable state (no free Hold /
+   nothing to sell) keeps its existing `:disabled` opacity untouched. */
+.market-row__trade-btn--bright {
+  opacity: 1;
+  font-weight: 700;
+  border-color: #4c5a72;
+}
+
+.market-row__trade-btn--faded {
+  opacity: 0.65;
+}
+
 .sail-btn {
   width: 100%;
   margin: 0.75rem 0;

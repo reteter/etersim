@@ -39,6 +39,7 @@ import {
 } from "../sim";
 import { resolveRelevantShip, useGameStore } from "../store/gameStore";
 import { activeHeadquartersSite, deriveSiteStallReason } from "../store/headquartersStall";
+import { computeMarketSignal, type SignalTier } from "../store/marketSignal";
 import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
 import { FOUNDING_GOAL, foundingProgress, foundingSavings } from "./foundingProgress";
@@ -166,6 +167,20 @@ function unitHint(total: number | null): string {
 }
 
 /**
+ * Market-quality signal → action shading (E16 spec §PortPanel action
+ * shading, package e): `strong` reads **bright**, `mid`/`weak` read
+ * **faded** — the same tier the board's cell emphasis already reads, so a
+ * (port, good) shades the same way on both surfaces (signal single-source).
+ * `null` tier (no quote) shades faded too, but is moot in practice since the
+ * caller only applies this class when the action is already enabled — the
+ * disabled/unavailable state (no free Hold / nothing to sell) is carried
+ * entirely by the existing `disabled` attribute, never by this class.
+ */
+function shadingClass(tier: SignalTier | null): string {
+  return tier === "strong" ? "market-row__trade-btn--bright" : "market-row__trade-btn--faded";
+}
+
+/**
  * Largest buyable quantity: bounded by available stock and hold space, then
  * walked unit-by-unit (via `quoteBuy`, which itself sums the marginal price
  * per unit) to find the most units affordable within `thalers`. The walk is
@@ -203,6 +218,8 @@ function MarketRow({
   ship,
   thalers,
   trading,
+  buyTier,
+  sellTier,
 }: {
   good: GoodId;
   entry: MarketGood;
@@ -212,6 +229,12 @@ function MarketRow({
   ship: Ship;
   thalers: number;
   trading: boolean;
+  /** Market-quality signal tiers for this (port, good) — same selector the
+   *  board reads (docs/specs/E16-workbench.md §The market-quality signal).
+   *  Drives the buy/sell action's bright/faded shading below; the existing
+   *  disabled state (no free Hold / nothing to sell) stays untouched. */
+  buyTier: SignalTier | null;
+  sellTier: SignalTier | null;
 }) {
   const dispatch = useGameStore((s) => s.dispatch);
 
@@ -298,6 +321,7 @@ function MarketRow({
             />
             <button
               type="button"
+              className={canBuy ? shadingClass(buyTier) : undefined}
               disabled={!canBuy}
               aria-label={`Buy ${GOODS[good].name}`}
               onClick={() => dispatch({ kind: "buy", shipId: ship.id, good, qty: clampedQty })}
@@ -307,6 +331,7 @@ function MarketRow({
             </button>
             <button
               type="button"
+              className={canSell ? shadingClass(sellTier) : undefined}
               disabled={!canSell}
               aria-label={`Sell ${GOODS[good].name}`}
               onClick={() => dispatch({ kind: "sell", shipId: ship.id, good, qty: clampedQty })}
@@ -929,6 +954,11 @@ export function PortPanel({ portId }: { portId: PortId }) {
   const dockedHere = ship.location.kind === "docked" && ship.location.portId === port.id;
   const snapshot = world.priceSnapshots[port.id];
   const ArchetypeIcon = ARCHETYPE_ICONS[port.archetype];
+  // Market-quality signal (docs/specs/E16-workbench.md §The market-quality
+  // signal, package e): same selector `PriceBoardOverlay` reads, computed
+  // once here over the region's ports so a (port, good) shades identically
+  // on both surfaces (signal single-source, not a re-derived local rule).
+  const signal = computeMarketSignal(world.region.ports);
 
   return (
     <>
@@ -973,6 +1003,8 @@ export function PortPanel({ portId }: { portId: PortId }) {
             ship={ship}
             thalers={world.company.thalers}
             trading={dockedHere}
+            buyTier={signal.entries[port.id][good].buyTier}
+            sellTier={signal.entries[port.id][good].sellTier}
           />
         ))}
       </div>
