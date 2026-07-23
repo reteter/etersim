@@ -257,3 +257,86 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
     expect(glyphTitle).toBe(headerTitle);
   });
 });
+
+test.describe('market-quality signal shading (#396, E16 package e)', () => {
+  test('PortPanel Buy shades bright at the region\'s best-ask port, faded elsewhere — matching the board\'s own best-ask highlight (signal single-source)', async ({
+    page,
+  }) => {
+    let world = fundedWorld('signal-shading-buy');
+    const { portId: homePortId, name: homeName } = homePort(world);
+    // Home port: abundant, cheap grain — the region's clear best ask.
+    const cheap: MarketGood = { stock: 1000, equilibrium: 100 };
+    // Every other port: scarce, expensive grain — clearly not near-best
+    // (far outside the 8% NEAR_BEST_BAND), so they read faded, not bright.
+    const expensive: MarketGood = { stock: 100, equilibrium: 1000 };
+    world = {
+      ...world,
+      region: {
+        ...world.region,
+        ports: world.region.ports.map((p) =>
+          p.id === homePortId
+            ? { ...p, market: { ...p.market, grain: cheap } }
+            : { ...p, market: { ...p.market, grain: expensive } },
+        ),
+      },
+    };
+    const otherPortName = world.region.ports.find((p) => p.id !== homePortId)!.name;
+
+    await continueWithWorld(page, world);
+
+    // Board: the home port's grain ask cell is the best-ask highlight.
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    // Grain is GOOD_IDS[0] (src/sim/goods.ts), so its cell is the row's
+    // first .price-board__cell — scoping to it excludes any *other* good
+    // that happens to also be best-ask at these procedurally generated ports.
+    const homeGrainCell = dialog
+      .locator('.price-board__row')
+      .filter({
+        has: page.locator('.price-board__port-name', {
+          hasText: new RegExp(`^${escapeRegExp(homeName)}$`),
+        }),
+      })
+      .locator('.price-board__cell')
+      .first();
+    await expect(homeGrainCell.locator('.price-board__ask--best')).toHaveCount(1);
+    const otherGrainCell = dialog
+      .locator('.price-board__row')
+      .filter({
+        has: page.locator('.price-board__port-name', {
+          hasText: new RegExp(`^${escapeRegExp(otherPortName)}$`),
+        }),
+      })
+      .locator('.price-board__cell')
+      .first();
+    await expect(otherGrainCell.locator('.price-board__ask--best')).toHaveCount(0);
+    await dialog.getByRole('button', { name: /close/i }).click();
+
+    // PortPanel (docked here — home port): the same (port, good) reads
+    // "bright" on the Buy action — the same selector, so the two surfaces
+    // agree by construction.
+    await openMarket(page, homeName);
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    const buyButton = grainRow.getByRole('button', { name: 'Buy Grain', exact: true });
+    await expect(buyButton).toHaveClass(/market-row__trade-btn--bright/);
+  });
+
+  test('Sell action reads unavailable (disabled), not merely faded, with nothing to sell', async ({
+    page,
+  }) => {
+    const world = fundedWorld('signal-shading-sell-unavailable');
+    const { name } = homePort(world);
+
+    await continueWithWorld(page, world);
+    await openMarket(page, name);
+
+    // Fresh ship, empty hold — nothing to sell.
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    const sellButton = grainRow.getByRole('button', { name: 'Sell Grain', exact: true });
+    await expect(sellButton).toBeDisabled();
+    // Unavailable, not "faded" — the shading class never applies to a
+    // disabled action (E16 spec: unavailable ≠ merely faded).
+    await expect(sellButton).not.toHaveClass(/market-row__trade-btn--faded/);
+    await expect(sellButton).not.toHaveClass(/market-row__trade-btn--bright/);
+  });
+});

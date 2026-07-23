@@ -397,6 +397,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
         />
         <button
           aria-label="Buy Grain"
+          class="market-row__trade-btn--faded"
           type="button"
         >
           Kup 
@@ -475,6 +476,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
         />
         <button
           aria-label="Buy Textiles"
+          class="market-row__trade-btn--faded"
           type="button"
         >
           Kup 
@@ -553,6 +555,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
         />
         <button
           aria-label="Buy Aether Salt"
+          class="market-row__trade-btn--faded"
           type="button"
         >
           Kup 
@@ -631,6 +634,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
         />
         <button
           aria-label="Buy Electronics"
+          class="market-row__trade-btn--bright"
           type="button"
         >
           Kup 
@@ -709,6 +713,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
         />
         <button
           aria-label="Buy Timber"
+          class="market-row__trade-btn--faded"
           type="button"
         >
           Kup 
