@@ -33,7 +33,12 @@ merged. Outside E16 the owner-agreed order stands: **E11 v1** (#232 → #233 →
   `docs/personas/*`, `.claude/*`; work documents stay ungated. Because the gate protects the
   rules, they no longer carry their own justification — **imperative + incident number** is the
   house style, and a rule a model could execute wrongly is rewritten as a command rather than
-  annotated. Not yet trimmed under that rule: `casting.md`, `pipeline.md`, `session.md`.
+  annotated. Both indexes were trimmed back to one line per row (−53% / −55%).
+- **The next fat is `CONTEXT.md`: 51k chars, and it is obligatory reading for every hat** —
+  43% of what the Orchestrator reads before starting, 62% for Designer/Engineer. It cannot be
+  cut like the others (a glossary must stay complete, and identifiers are law), so the move is
+  structural: a **core** every hat actually reads, the rest consulted on demand. Choosing the
+  core is an owner call, not a mechanical trim.
 - **`docs/owner-framings-PARKED.md` needs a permanent home** for three owner framings, and
   its seven watch items need sorting into promise / issue / observation. Owner call pending.
 - **Owner framings are parked in `docs/owner-framings-PARKED.md`** — they need a permanent
