@@ -28,12 +28,12 @@ merged. Outside E16 the owner-agreed order stands: **E11 v1** (#232 → #233 →
   coder would get a conflicting contract. Refresh the spec **before #232**.
 - **E15's spec says SAVE_VERSION v14, which E13 already consumed** — grill OQ8 settled v15.
   A spec instructing a broken migration, not merely a stale line (ADR-0007 territory).
-- **WORKFLOW is now a 40-line router over `docs/workflows/`** (s29). Old `WORKFLOW §Name`
-  citations still land via the router's mapping table; obligatory-reading files were rewritten
-  to point at the files directly. **Still owed:** the Orchestrator reads the most (~280 lines
-  across verification + session + documentation), and trimming that means moving rationale
-  ("the evidence this cost something", "why nobody noticed") out to `docs/incidents/` or
-  design-notes. Judgement call per paragraph, not mechanical — needs the owner at the table.
+- **The constitution is now gated and narrative-free** (s29). `.claude/hooks/constitution-guard.sh`
+  asks for owner consent on `CLAUDE.md`, `AGENTS.md`, `docs/workflows/*`, `docs/PROCESS.md`,
+  `docs/personas/*`, `.claude/*`; work documents stay ungated. Because the gate protects the
+  rules, they no longer carry their own justification — **imperative + incident number** is the
+  house style, and a rule a model could execute wrongly is rewritten as a command rather than
+  annotated. Not yet trimmed under that rule: `casting.md`, `pipeline.md`, `session.md`.
 - **`docs/owner-framings-PARKED.md` needs a permanent home** for three owner framings, and
   its seven watch items need sorting into promise / issue / observation. Owner call pending.
 - **Owner framings are parked in `docs/owner-framings-PARKED.md`** — they need a permanent
