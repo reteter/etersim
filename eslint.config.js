@@ -87,6 +87,16 @@ export default tseslint.config(
     },
   },
   {
+    // E11 (#232): the Harness runs on Node via tsx, outside the Vite bundle
+    // — the `**/*.{ts,tsx}` block above already reaches it, but under
+    // `globals.browser`. Node globals (process, console, URL…) belong here
+    // instead; the harness has no DOM.
+    files: ["harness/**/*.ts"],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
     // #349: scripts/*.mjs (e.g. normalize-markdown.mjs) had no matching
     // `files:` block, so eslint silently skipped them entirely — plain Node
     // ESM, not part of any tsconfig, so the TS-aware `**/*.{ts,tsx}` block

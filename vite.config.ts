@@ -16,7 +16,12 @@ export default defineConfig({
     // (#341). scripts/ stays outside the tsconfig project references
     // (tsconfig.json) — this include is vitest-only, doesn't pull the .mjs
     // module into typecheck.
-    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.mjs"],
+    // harness/**/*.test.ts (#232): the E11 Harness lives outside the Vite
+    // bundle and runs with tsx, but its suites are plain node-environment
+    // Vitest like the sim's — this include is vitest-only and changes
+    // nothing about the bundle (harness/ has its own tsconfig project,
+    // tsconfig.harness.json, for typecheck).
+    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.mjs", "harness/**/*.test.ts"],
     setupFiles: ["src/test-setup.ts"],
   },
 });

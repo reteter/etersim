@@ -6,6 +6,7 @@ import { amountOf } from "./goodsStore";
 import { rankOf } from "./guild";
 import { effectiveBase, maxAffordableQty } from "./market";
 import { ARCHETYPE_PROFILES, TICKS_PER_DAY, type Region } from "./region";
+import { advanceDays } from "./scenario";
 import { cargoUsed } from "./ship";
 import { tick } from "./tick";
 import { createWorld, type World } from "./world";
@@ -72,7 +73,7 @@ describe("feasibility property test (#98 — over a broader seed sample than #93
   for (const seed of SEEDS) {
     it(`seed ${seed}: every generated offer is acceptable at rank 1+ its tier and haulable by a 50-hold ship with slack`, () => {
       let world = withCrateredImports(createWorld(seed));
-      for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+      world = advanceDays(world, 1);
 
       expect(world.contractOffers.length).toBeGreaterThan(0);
       for (const offer of world.contractOffers) {
@@ -124,7 +125,7 @@ describe("loss-leader guardrail (#98 — the epic's core promise, encoded loosel
       // contract's own economics).
       let world = foundedWorld(seed, 5_000);
       world = withCrateredImports(world);
-      for (let i = 0; i < TICKS_PER_DAY; i++) world = tick(world, []);
+      world = advanceDays(world, 1);
       expect(world.contractOffers.length).toBeGreaterThan(0);
 
       // A freshly enrolled Company is rank 1: pick a tier-1 offer so
