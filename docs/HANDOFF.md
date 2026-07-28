@@ -18,8 +18,11 @@ Claude Code's per-machine auto-memory is the day-to-day working channel.
 _Last update: 2026-07-23 s24 (owner-requested) — **E16 (Workbench) implementation opened.** Enabler
 #392 (market-quality signal selector + read-only RouteRibbon) and core #394 (port-centric board
 authoring — the #376 heart) both shipped, tier-2 Sonnet coders, clean waves. #376 is fulfilled
-(→ E16 spec). New gate: **#404 blocks #393** — board authoring is buy/sell-only, so deliver/store/
-withdraw lose their authoring home the moment #393 removes the RoutesTab editor; parked for a grill.
+(→ E16 spec). ~~New gate: **#404 blocks #393** — board authoring is buy/sell-only, so deliver/store/
+withdraw lose their authoring home the moment #393 removes the RoutesTab editor; parked for a grill.~~
+**Struck 2026-07-28 (s27): #404 is decided** — the kinds are authored on the board via the "więcej"
+drawer; #393 is now gated on the **merge** of #419, not on a decision
+([grill record](design-notes/nonmarket-order-authoring-grill-2026-07-28.md)).
 Process: the worktree-isolation mystery is **root-caused** (incident 0025) — `isolation: "worktree"`
 provisions only for **background** coders; CLAUDE.md gained the §Session-start hat/casting cue and the
 §Git background rule._
@@ -64,8 +67,9 @@ Statuses are **not** listed here — run `gh issue list` for what is open.
 2. Then **E15 — Processing** (#281 → #284; its spec depends on E13.0 + E13, both now closed).
 
 In flight (owner ran it this session, ahead of the E11/E15 order above): **E16 — Workbench**
-(#376 fulfilled). Enabler #392 + core #394 merged; fan-out remaining — **#393 gated by the #404
-decision**, plus ~~#395/#396/#227/#398 (independent)~~ — struck 2026-07-28: #396 and #398 shipped
+(#376 fulfilled). Enabler #392 + core #394 merged; fan-out remaining — ~~**#393 gated by the #404
+decision**~~ (struck 2026-07-28 s27: #404 decided, #393 now gated on **#419's merge**), plus
+~~#395/#396/#227/#398 (independent)~~ — struck 2026-07-28: #396 and #398 shipped
 in s25, #227 is superseded by #397 and closed; what remains is #395+#405 (batched), #397 (solo) and
 #393. Run `gh issue list` for the live set. E11 v1 → E15 stay the standing order for the
 non-E16 track. Small non-blocking tails: #374 (multi-seed storehouse guardrail), #384 (full
