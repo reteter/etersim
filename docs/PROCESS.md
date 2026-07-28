@@ -21,6 +21,12 @@ that enforces it, and most rules exist because a logged failure demanded them.
 | **The advisor** | a stronger model the executor can consult mid-task | second opinions at decision points — a *pre-review* safety layer |
 | **The Professor** | read-only architecture reviewer ([PROFESSOR.md](personas/PROFESSOR.md)) | subsystem design health at epic boundaries, never diff review |
 
+A hat is a read-obligation, not a label: [HATS.md](HATS.md) maps each one to the
+documents that must have been read *before* the first action taken under it, and a
+session-start hook injects that map so it lands before any hat is declared. The rule
+exists because the passive version of it failed — a model announced the Orchestrator hat
+without having read the workflow it governs.
+
 Design is never delegated: grills (structured interrogation of a feature idea,
 one question at a time) run in dialogue with the owner, and a spec is approved
 before any issue exists. Implementation is never done by the most expensive model:
