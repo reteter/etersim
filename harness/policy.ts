@@ -32,7 +32,8 @@ export interface Policy<M> {
 /** The outcome of one Run: the world as it ended, plus the policy's final
  *  memory (a policy's own bookkeeping is part of what a report may read).
  *  Metrics and Ledger serialisation belong to the Batch runner (#233); the
- *  Ledger itself is already on the world (`world.company.ledger`). */
+ *  Ledger itself is already on the world, at `world.ledger` (src/sim/world.ts
+ *  — it belongs to the World, not to the Company). */
 export interface RunResult<M> {
   readonly world: World;
   readonly memory: M;

@@ -81,7 +81,7 @@ type Policy<M> = {
   name: string;
   diagnostic?: boolean; // may read sim internals (drift, RNG) — bug-hunt only
   init(world: World): M;
-  act(world: World, memory: M): { commands: Command[]; memory: M };
+  act(world: World, memory: M): { commands: readonly Command[]; memory: M };
 };
 ```
 

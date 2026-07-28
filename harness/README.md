@@ -22,6 +22,11 @@ consumer — the sim never imports the harness (ADR-0002). Nothing here reaches
 npm run harness -- <script.ts>    # runs any harness entry point with tsx
 ```
 
+**Slice 1 ships no entry point** — there is no file to put after `--` yet. The
+script exists so the `run` CLI (#233) has a home; until then the harness is
+exercised through its Vitest suite (`npm test`) or through a throwaway script
+of your own.
+
 ## What exists today (slice 1, #232)
 
 - `policy.ts` — the `Policy<M>` contract (`name`, optional `diagnostic`,
