@@ -51,7 +51,7 @@ describe("check-unpark-triggers CLI", () => {
     );
   });
 
-  it("exits 1 and lists a trigger line with no citation anywhere in its paragraph", () => {
+  it("surfaces a trigger line with no citation anywhere in its paragraph — and still exits 0 (#412)", () => {
     withTempFixture(
       {
         "note.md": ["Filler line one.", "Filler line two.", "This idea is parked for now.", "Filler line three.", "Filler line four.", "Filler line five."].join(
@@ -60,9 +60,12 @@ describe("check-unpark-triggers CLI", () => {
       },
       (dir) => {
         const result = runCli([], dir);
-        expect(result.status).toBe(1);
+        // A surfacer never gates: the exit code is 0 whether or not anything
+        // was surfaced. What must survive is the surfacing itself.
+        expect(result.status).toBe(0);
         expect(result.stdout).toContain("note.md:3: This idea is parked for now.");
-        expect(result.stdout).toContain("1 trigger(s) without a same-paragraph issue citation");
+        expect(result.stdout).toContain("1 line(s) surfaced");
+        expect(result.stdout).toContain("SURFACER, NOT A VERDICT");
       },
     );
   });
@@ -76,7 +79,7 @@ describe("check-unpark-triggers CLI", () => {
       },
       (dir) => {
         const result = runCli([], dir);
-        expect(result.status).toBe(1);
+        expect(result.status).toBe(0);
         expect(result.stdout).toContain("exempt files (2)");
         expect(result.stdout).toContain("README.md");
         expect(result.stdout).toContain("grill-brief-m4-workbench.md");
@@ -126,7 +129,7 @@ describe("check-unpark-triggers CLI", () => {
       },
       (dir) => {
         const result = runCli([], dir);
-        expect(result.status).toBe(1);
+        expect(result.status).toBe(0);
         // The trigger's own paragraph (lines 1-4) has no citation — the
         // blank line at index 4 starts a new paragraph the citation lives
         // in, so it does not rescue the first paragraph's match.
@@ -144,7 +147,7 @@ describe("check-unpark-triggers CLI", () => {
       (dir) => {
         const result = runCli([], dir);
         const totalLineIdx = result.stdout.indexOf("trigger-language line(s) scanned");
-        const violationLineIdx = result.stdout.indexOf("without a same-paragraph issue citation");
+        const violationLineIdx = result.stdout.indexOf("line(s) surfaced");
         expect(totalLineIdx).toBeGreaterThan(-1);
         expect(violationLineIdx).toBeGreaterThan(-1);
         expect(totalLineIdx).toBeLessThan(violationLineIdx);
