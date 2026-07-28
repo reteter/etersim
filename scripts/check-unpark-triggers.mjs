@@ -1,6 +1,22 @@
 #!/usr/bin/env node
-// Detector for "a trigger is a promise" (#327, WORKFLOW.md §Documentation
-// law): "every unpark trigger in docs/design-notes/ names an issue."
+// Surfacer for "a trigger is a promise" (#327, docs/workflows/documentation.md
+// §A trigger is a promise): "every unpark trigger in docs/design-notes/ names
+// an issue."
+//
+// THIS IS A SURFACER, NOT A VERDICT (owner decision 2026-07-28, #412). It
+// prints candidate lines for a human to read and always exits 0; only its own
+// failure to run is an error. Reason, from #412's evidence: the law is about a
+// *promise*, and this script matches the *word* — "parked"/"unpark" in a
+// heading, in a sentence stating the law itself, in a retrospective about a
+// trigger that already fired, in a cross-reference to a hook parked somewhere
+// else. It shipped at 27 hits, stayed at exactly 27 for a week, and sat in no
+// gate. A red that is mostly false positives teaches the team to scroll past a
+// red line, which is worse than no detector at all (incident 0030).
+//
+// The two hit classes it CAN legitimately point at: a live unpark trigger whose
+// paragraph names no issue, and the law's own escape hatch ("record it as an
+// idea with no commitment"), which no mechanical check can tell apart from a
+// violation. Both need a human, which is precisely why this exits 0.
 //
 // Decision record: docs/design-notes/s14-law-automation-decision-2026-07-21.md
 // Issue: #332. Reproduces mechanically the manual backlog pass #326's own
@@ -47,15 +63,17 @@
 // design-notes index) is also invisible to this check, by the same design.
 //
 // Exit codes:
-//   0 - every matched trigger line has an issue citation in its paragraph.
-//   1 - at least one matched trigger line has no citation anywhere in its
-//       paragraph; each is printed as `file:line: <trimmed line text>`.
+//   0 - always, whether or not anything was surfaced. Surfaced lines are
+//       printed as `file:line: <trimmed line text>` for a human to read.
+//       Nothing here gates a commit, a PR or `npm run selfcheck`.
+//   non-zero - the surfacer itself could not run (unreadable directory, I/O
+//       error). That, and only that, is a failure.
 
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const HELP_TEXT = `check-unpark-triggers.mjs — detector for the #327 trigger-is-a-promise law
+const HELP_TEXT = `check-unpark-triggers.mjs — SURFACER for the #327 trigger-is-a-promise law
 
 Usage:
   node scripts/check-unpark-triggers.mjs
@@ -64,9 +82,16 @@ No arguments: always scans the full docs/design-notes/ directory (relative
 to the current working directory) for unpark-trigger language lacking an
 issue-number citation anywhere in its same paragraph (blank-line-delimited
 block). See the script's header comment for the full exemption rules and
-the detector's documented blind spot.
+the surfacer's documented blind spot.
 
-Exit codes: 0 clean, 1 violation(s) found (listed as file:line: <text>).
+This is a SURFACER, not a VERDICT (#412): it matches the WORD "parked" /
+"unpark", while the law is about a PROMISE. Headings, the law's own wording,
+retrospectives about triggers that already fired and cross-references to
+items parked elsewhere all match it and are not violations. It prints
+candidates; a human decides.
+
+Exit codes: 0 always — including when lines are surfaced. Non-zero only when
+the surfacer itself cannot run. Nothing here gates anything.
 `;
 
 const DESIGN_NOTES_DIR = "docs/design-notes";
@@ -162,14 +187,17 @@ export function run(argv, cwd = process.cwd()) {
   );
 
   if (allViolations.length > 0) {
-    console.log(`\ncheck-unpark-triggers: ${allViolations.length} trigger(s) without a same-paragraph issue citation:\n`);
+    console.log(`\ncheck-unpark-triggers: ${allViolations.length} line(s) surfaced — trigger language with no same-paragraph issue citation:\n`);
     for (const v of allViolations) {
       console.log(`${v.file}:${v.lineNo}: ${v.text}`);
     }
-    return 1;
+    console.log(
+      "\ncheck-unpark-triggers: SURFACER, NOT A VERDICT (#412) — read the lines above and decide. Exit 0 either way.",
+    );
+    return 0;
   }
 
-  console.log("\ncheck-unpark-triggers: clean — every matched trigger has a same-paragraph issue citation.");
+  console.log("\ncheck-unpark-triggers: nothing surfaced — clean, every matched trigger has a same-paragraph issue citation.");
   return 0;
 }
 

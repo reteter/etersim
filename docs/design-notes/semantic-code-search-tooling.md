@@ -1,6 +1,6 @@
 # Semantic code search / RAG tooling (deferred)
 
-**Status:** parked, 2026-07-10. Revisit when the codebase outgrows grep-scale (rough trigger: `src/` well past ~30k lines or recurring "where is the concept X handled" friction during epics).
+**Status:** parked, 2026-07-10. Revisit when the codebase outgrows grep-scale (rough trigger: `src/` well past ~30k lines or recurring "where is the concept X handled" friction during epics). **Trigger tracked as #437** (filed 2026-07-28 — this note carried the promise in prose only, which is what "a trigger is a promise" forbids); sibling of #212, which indexes the knowledge corpus rather than the code.
 
 ## Decision
 

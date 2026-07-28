@@ -2,7 +2,11 @@
 
 - **Date:** 2026-07-28 (discovered); originated 2026-07-21
 - **Detected by:** the s26 pre-work selfcheck, running the detector set against a clean baseline
-- **Status:** Open — finding and recommendation carried by #412
+- **Status:** Closed 2026-07-28 — resolved through #412 by the **Contain** path below: the owner
+  chose reclassification over narrow-and-gate, so `check:triggers` is now a surfacer that exits 0
+  and gates nothing, and both `docs/workflows/documentation.md` and its own `--help` say so.
+  The recommended narrow-the-scan work was **not** done and is not owed: a surfacer has no
+  green to reach.
 
 ## What happened
 
@@ -77,3 +81,14 @@ gate **after** it is green, not before.
 
 Bycatch, also in #412: `design-notes/README.md`'s row for `s14-law-automation-decision-2026-07-21`
 still reads **LIVE (until implementation PR lands)** — that PR landed as `8690469` on 2026-07-21.
+*(Already corrected to HIST by an earlier session; noted here so the record is not read as owing
+it twice.)*
+
+**How it actually resolved (2026-07-28).** The owner took the **Contain** option rather than the
+ordered fix above, on the argument this incident itself makes: a red nobody trusts teaches the
+team to scroll past a red line. Of the 27 hits, exactly one was a live promise with no tracker —
+`semantic-code-search-tooling.md:3`, now filed as **#437** and cited in the note. The other
+genuine hit (`playtest-2026-07-14-pricebar-shipinfo.md:50`, "Parked here; no issue") is the law's
+own escape hatch and needs no change. The lesson stands unchanged and generalised: **a tool that
+encodes a law is not the law being enforced** — either wire it to a gate green, or say plainly
+that a human enforces it.

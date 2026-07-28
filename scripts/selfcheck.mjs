@@ -36,7 +36,19 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
  * deleting its entry here in the same commit.
  */
 const KNOWN_BASELINES = {
-  "check:triggers": { count: 27, ref: "#412", note: "prose heuristic, mostly false positives" },
+  // Empty by design. `check:triggers` was pinned here at 27 until 2026-07-28,
+  // when it was reclassified as a surfacer (#412) and stopped returning a
+  // verdict at all — see SURFACERS below.
+};
+
+/**
+ * Commands that report for a human to read and never gate (`check-behavior-preserving`'s
+ * contract, extended to `check:triggers` by the owner's #412 call). They exit 0 whether or
+ * not they surfaced anything, so "green" would be a lie: the run is reported by how many
+ * lines it raised, and only a crash is a failure.
+ */
+const SURFACERS = {
+  "check:triggers": "candidate lines only — the law is about a promise, the pattern matches a word",
 };
 
 const TASK_KINDS = {
@@ -152,6 +164,16 @@ const baselineStep = (label, cmd) => () => {
 function detectorStep(cmd) {
   return () => {
     const r = sh(`npm run ${cmd} --silent`);
+
+    const surfacerNote = SURFACERS[cmd];
+    if (surfacerNote) {
+      if (!r.ok) return result("fail", "surfacer could not run", tail(r.out, 25));
+      const surfaced = r.out.match(/(\d+)\s+line\(s\) surfaced/);
+      return surfaced
+        ? result("known", `${surfaced[1]} line(s) surfaced — not a gate`, surfacerNote)
+        : result("known", "nothing surfaced — not a gate", surfacerNote);
+    }
+
     const known = KNOWN_BASELINES[cmd];
     if (r.ok) {
       return known

@@ -56,8 +56,12 @@ read one index line at a time and HIST rows are explicitly *"safe to skip"*. **A
 written in prose fires into a document nobody is obliged to open** — three such triggers once
 went five days unnoticed while the file one of them meant to shrink grew 23% (→ #319–#321).
 
-- **The detector:** `npm run check:triggers` (#332) — every unpark trigger in
-  `docs/design-notes/` names an issue. It is red-since-birth and unwired: #412, incident 0030.
+- **The surfacer:** `npm run check:triggers` (#332) — lists lines in `docs/design-notes/` where
+  trigger language carries no issue citation in its own paragraph. **It exits 0 either way and
+  gates nothing** (owner call 2026-07-28, #412): the law is about a *promise*, the pattern
+  matches a *word*, so headings, retrospectives and the law's own wording match it too. Read
+  its list; do not read its exit code. **Enforcing this law is human work** — the surfacer only
+  says where to look.
 - **Before marking a note HIST:** if flipping it would hide an obligation, file the obligation
   *then* flip.
 - **If you are unwilling to file an issue, do not write a trigger.** Record it as an idea with

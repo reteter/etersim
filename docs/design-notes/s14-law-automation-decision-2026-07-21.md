@@ -38,7 +38,12 @@ therefore a **surfacer, not a verdict**: it hard-fails on added/removed test fil
 every other touched assertion line it prints the line for a human to eyeball in seconds —
 the blind spot is stated in its own `--help` text, not left implicit.
 
-**4. A trigger is a promise (#327).** **Automated — `scripts/check-unpark-triggers.mjs`.**
+**4. A trigger is a promise (#327).** ~~**Automated — `scripts/check-unpark-triggers.mjs`.**~~
+**Struck 2026-07-28 (#412, owner call): reclassified as a surfacer.** The call below — "the most
+automatable of the four" — did not survive contact: the script shipped at 27 hits, stayed at
+exactly 27 for a week, and mostly matched the *word* "parked" rather than a *promise*. It now
+exits 0 always and gates nothing; enforcing this law is human work. The rest of this section is
+kept as written, because the reasoning is what makes the correction legible (incident 0030).
 The most automatable of the four, and #326's own acceptance criteria already require this
 exact property to hold. Detector: grep `docs/design-notes/*.md` for unpark-trigger language
 (same pattern class as #326's manual pass), then check a small window around each hit for
