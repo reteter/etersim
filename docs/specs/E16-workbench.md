@@ -210,6 +210,19 @@ change, not a selector change — the tier is already there to read.
    of the buy gradient), *rzadkie* (good tradable at few ports), *pilne* (time/contract-driven — the
    one label that reads a signal beyond pure spread).
 
+   **As-built (#397, 2026-07-28, tier-2 review-confirmed).** Every port's market carries every good
+   (worldgen), so "tradable at few ports" cannot mean market presence — *rzadkie* reads **producer
+   scarcity** instead: the good's producing archetype (`ARCHETYPE_PROFILES.productionPerDay`) has
+   ≤1 port region-wide (`RARE_PRODUCER_PORT_MAX`). *pilne* reads an accepted `ActiveContract` at
+   that (port, good) with quota still outstanding this period, not period-end proximity —
+   `periodEndTick` is a private `src/sim/contract.ts` export E16's UI+store-bridge-only boundary
+   doesn't allow surfacing. `okazja`/`rzadkie` render on the buy/ask side, `pilne` on sell (delivery
+   quota only credits on a sale, `commands.ts` `applyTrade`). Implementation: `src/store/offerLabels.ts`.
+   **Naming collision, unresolved:** "Pilne" already names a different concept in `KontraktyTab.tsx`
+   (#226 desperation-clause offer cards, `requiredRank === 1`) — same Polish word, different meaning,
+   both player-visible at different points in the flow. CONTEXT.md sanctions both entries separately;
+   neither acknowledges the other. Flagged for a Designer look, not blocking.
+
 **Visual channel — intensity, not hue.** The signal rides **opacity + weight (bright ↔ faded)** and
 is deliberately **hue-free**. This keeps one-color-one-meaning (ADR-0006, incident 0002): a new
 quality hue would collide with archetype tints, the trend up/down colors, best-ask/bid, and gold

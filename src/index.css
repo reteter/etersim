@@ -1153,6 +1153,20 @@ body {
   font-weight: 700;
 }
 
+/* Offer labels (#397, docs/specs/E16-workbench.md — Market-quality signal,
+   rendering 3): the word rendering of the same hue-free signal driving
+   .price-board__bid--best/.price-board__ask--best above — no new hue
+   (ADR-0006), just a small caps word chip riding the existing neutral text
+   color/weight. */
+.price-board__offer-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #a8b2c2;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .price-board__trend--up {
   color: #5fbf7f;
 }
