@@ -136,10 +136,18 @@ each surface" vs. "one selector"), applied here so the signal is not re-computed
 from the region's price spread — generalizing the board's existing best-ask / best-bid extremes into
 a graded scale (best / near-best / possible-but-worse). Three renderings:
 
-1. **Board — cell emphasis.** The strong end is the current best-ask/best-bid highlight; near-best
-   and the rest step down. (Generalizes `columnExtremes`.)
+**The selector grades three tiers; the rendering is binary** (as-built #392/#394/#396, ratified
+2026-07-28 via #409 option (a)). `computeMarketSignal` returns `strong` / `mid` / `weak` — `mid`
+being the near-best band, `NEAR_BEST_BAND = 0.08` — but every surface renders **`strong` bright,
+`mid` and `weak` plain**. The middle level is computed and deliberately not drawn: two levels
+already carry "is this the market to act in", and a third shade competes with the existing color
+load for a distinction the player does not act on differently. Rendering it later is a rendering
+change, not a selector change — the tier is already there to read.
+
+1. **Board — cell emphasis.** The `strong` tier is the current best-ask/best-bid highlight; `mid`
+   and `weak` render plain. (Generalizes `columnExtremes`.)
 2. **PortPanel — action shading** (the owner's TODO): the buy / sell actions shade by carried Cargo
-   and free Hold — **bright** = this is the (near-)best market for the action, **faded** = possible
+   and free Hold — **bright** = this is the best market for the action, **faded** = possible
    but better ports exist. Buy is meaningless with no free Hold; sell is meaningless with nothing to
    sell — those read as unavailable, not merely faded.
 3. **Offer labels (#227) — the word.** Where a label reads better than a shade: *okazja* (bright end

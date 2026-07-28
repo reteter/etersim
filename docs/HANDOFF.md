@@ -65,7 +65,9 @@ Statuses are **not** listed here — run `gh issue list` for what is open.
 
 In flight (owner ran it this session, ahead of the E11/E15 order above): **E16 — Workbench**
 (#376 fulfilled). Enabler #392 + core #394 merged; fan-out remaining — **#393 gated by the #404
-decision**, plus #395/#396/#227/#398 (independent). E11 v1 → E15 stay the standing order for the
+decision**, plus ~~#395/#396/#227/#398 (independent)~~ — struck 2026-07-28: #396 and #398 shipped
+in s25, #227 is superseded by #397 and closed; what remains is #395+#405 (batched), #397 (solo) and
+#393. Run `gh issue list` for the live set. E11 v1 → E15 stay the standing order for the
 non-E16 track. Small non-blocking tails: #374 (multi-seed storehouse guardrail), #384 (full
 markdown-normalizer sweep, one pass).
 

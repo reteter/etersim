@@ -29,6 +29,9 @@ If the task doesn't fit any row, ask the owner before proceeding.
 
 ## 2. Read set (in this order)
 
+0. `docs/HATS.md` — find the row for the hat this task puts you in and read what it
+   names. §1 tells you the *gate*; HATS tells you the *reading* the hat obliges. The
+   list below is the floor for every hat; the row adds what yours needs on top.
 1. `CONTEXT.md` — the ubiquitous language. **Law: identifiers come from here; a new
    concept means a glossary entry first.** Skim fully; read your area closely.
 2. `docs/WORKFLOW.md` — the pipeline (grill → spec → approval → issues → PR) and the
