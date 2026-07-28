@@ -11,6 +11,7 @@ import {
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { computeMarketSignal, quotePortGood } from "../store/marketSignal";
+import { computeOfferLabels, OFFER_LABEL_TEXT } from "../store/offerLabels";
 import { KontraktyTab } from "./KontraktyTab";
 import { OverlayShell } from "./OverlayShell";
 import { priceTrend, TREND_GLYPH, TREND_LEGEND, type Trend } from "./priceTrend";
@@ -148,6 +149,9 @@ export function PriceBoardOverlay({
   // regional extreme lights up every tied port, not just a singular id). It
   // also drives #394's inferred-kind rule and highlight-only pairing assist.
   const signal = computeMarketSignal(ports);
+  // Offer labels (#397, spec §Market-quality signal rendering 3): composed
+  // over the same signal, never a second computation of the tier itself.
+  const offerLabels = computeOfferLabels(ports, signal, world.company.contracts);
 
   const authoring = draft !== null;
   const suggestedPortIds = draft ? suggestedPairingPortIds(draft, signal) : new Set<PortId>();
@@ -425,6 +429,14 @@ export function PriceBoardOverlay({
                   // portId, not stopIndex — see the `expanded` state comment.
                   const cellKey = `${port.id}:${good}`;
                   const dim = effectiveFocus !== null && effectiveFocus !== good;
+                  // Offer labels (#397, spec §Market-quality signal rendering
+                  // 3): the word rendering of the same signal driving
+                  // isBestAsk/isBestBid above — buy-side labels ride the ask,
+                  // sell-side the bid, matching which quote each label
+                  // actually reasons about.
+                  const cellLabels = offerLabels.entries[port.id][good];
+                  const buyLabelText = cellLabels.buy.map((l) => OFFER_LABEL_TEXT[l]).join(" · ");
+                  const sellLabelText = cellLabels.sell.map((l) => OFFER_LABEL_TEXT[l]).join(" · ");
                   const cellContent = (
                     <>
                       <span
@@ -447,6 +459,16 @@ export function PriceBoardOverlay({
                       >
                         {quoteLabel(cell.ask)}
                       </span>
+                      {sellLabelText !== "" && (
+                        <span className="price-board__offer-label" title="Sygnał jakości rynku — sprzedaż">
+                          {sellLabelText}
+                        </span>
+                      )}
+                      {buyLabelText !== "" && (
+                        <span className="price-board__offer-label" title="Sygnał jakości rynku — kupno">
+                          {buyLabelText}
+                        </span>
+                      )}
                     </>
                   );
                   return (

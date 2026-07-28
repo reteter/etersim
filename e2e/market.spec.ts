@@ -340,3 +340,41 @@ test.describe('market-quality signal shading (#396, E16 package e)', () => {
     await expect(sellButton).not.toHaveClass(/market-row__trade-btn--bright/);
   });
 });
+
+test.describe('offer labels (#397, E16 package f)', () => {
+  test('"okazja" renders on the board cell at the region\'s best-ask port — same signal as the #396 shading, third rendering', async ({
+    page,
+  }) => {
+    let world = fundedWorld('offer-label-bargain');
+    const { portId: homePortId, name: homeName } = homePort(world);
+    const cheap: MarketGood = { stock: 1000, equilibrium: 100 };
+    const expensive: MarketGood = { stock: 100, equilibrium: 1000 };
+    world = {
+      ...world,
+      region: {
+        ...world.region,
+        ports: world.region.ports.map((p) =>
+          p.id === homePortId
+            ? { ...p, market: { ...p.market, grain: cheap } }
+            : { ...p, market: { ...p.market, grain: expensive } },
+        ),
+      },
+    };
+
+    await continueWithWorld(page, world);
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+
+    // Grain is GOOD_IDS[0], so its cell is the row's first .price-board__cell.
+    const homeGrainCell = dialog
+      .locator('.price-board__row')
+      .filter({
+        has: page.locator('.price-board__port-name', {
+          hasText: new RegExp(`^${escapeRegExp(homeName)}$`),
+        }),
+      })
+      .locator('.price-board__cell')
+      .first();
+    await expect(homeGrainCell.locator('.price-board__offer-label')).toContainText('okazja');
+  });
+});
