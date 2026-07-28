@@ -109,7 +109,7 @@ test.describe('Founding progress bar (#157)', () => {
     await continueWithWorld(page, fundedWorld('founding-bar', 1_500));
     await page.locator('g.port').first().click({ force: true });
 
-    const bar = page.getByRole('progressbar', { name: 'Founding savings progress' });
+    const bar = page.getByRole('progressbar', { name: 'Postęp oszczędności na założenie' });
     await expect(bar).toBeVisible();
     await expect(bar).toHaveAttribute('aria-valuenow', '1500');
     await expect(bar).toHaveAttribute('aria-valuemax', '3000'); // the real gate, never ₸2,500
@@ -125,7 +125,7 @@ test.describe('Founding progress bar (#157)', () => {
     await continueWithWorld(page, fundedWorld('founding-bar-full'));
     await page.locator('g.port').first().click({ force: true });
 
-    const bar = page.getByRole('progressbar', { name: 'Founding savings progress' });
+    const bar = page.getByRole('progressbar', { name: 'Postęp oszczędności na założenie' });
     await expect(bar).toHaveAttribute('aria-valuenow', '3000'); // clamped at the gate
     await expect(page.locator('.founding-goal__count')).toContainText('₸3000 / ₸3000');
 
@@ -148,7 +148,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await expect(foundBtn).toHaveCount(0); // founding button gone once founded
 
     // TopBar shortcut appears once founded.
-    const headquartersBtn = page.getByRole('button', { name: /^Headquarters$/ });
+    const headquartersBtn = page.getByRole('button', { name: /^Siedziba$/ });
     await expect(headquartersBtn).toBeVisible();
 
     // PortPanel's Headquarters section shows a build progress bar once a
@@ -182,7 +182,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.locator('g.port').first().click({ force: true });
     await expect(page.locator('.headquarters-section .headquarters-progress__row')).toHaveCount(5);
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
 
     // Rush shows a live quote (nonzero — deep purse, nothing bought yet)
@@ -207,7 +207,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await continueWithWorld(page, fundedWorld('hq-thin', 4_000));
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
 
     await dialog.getByRole('button', { name: /Zleć budowę/ }).click();
@@ -237,7 +237,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
@@ -247,7 +247,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     // Route now shows in the list with a placeholder last-loop result.
     const routeRow = dialog.locator('.route-row').first();
     await expect(routeRow).toBeVisible();
-    await expect(routeRow.locator('.route-row__result')).toContainText('no loop yet');
+    await expect(routeRow.locator('.route-row__result')).toContainText('brak jeszcze pętli');
 
     // Assign s0.
     await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
@@ -264,10 +264,10 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
     await dialog2.getByRole('tab', { name: 'Trasy' }).click();
-    await expect(dialog2.locator('.route-row__result')).not.toContainText('no loop yet', {
+    await expect(dialog2.locator('.route-row__result')).not.toContainText('brak jeszcze pętli', {
       timeout: 30_000,
     });
 
@@ -288,7 +288,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
 
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
@@ -322,7 +322,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
 
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
@@ -340,12 +340,12 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.side-panel__subtitle')).toContainText('Underway', { timeout: 30_000 });
+    await expect(page.locator('.side-panel__subtitle')).toContainText('W drodze', { timeout: 30_000 });
 
     // Pause and edit the Route while the ship is genuinely in flight toward
     // B: move Stop 2 from B to a third port C.
     await page.getByRole('button', { name: '⏸' }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
     await dialog2.getByRole('tab', { name: 'Trasy' }).click();
     await dialog2
@@ -366,7 +366,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     // redirect (not a lasting dock) is the robust, non-flaky signal.
     await page.getByRole('button', { name: '100x' }).click();
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.side-panel__subtitle')).toContainText(`Underway to ${cName}`, {
+    await expect(page.locator('.side-panel__subtitle')).toContainText(`W drodze do ${cName}`, {
       timeout: 30_000,
     });
   });
@@ -381,7 +381,7 @@ test.describe('Headquarters overlay scroll (#176, via OverlayShell #181)', () =>
 
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
@@ -427,7 +427,7 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
 
@@ -449,7 +449,7 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
 
@@ -464,7 +464,7 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
     const budowa = dialog.getByRole('tab', { name: 'Budowa' });
     const trasy = dialog.getByRole('tab', { name: 'Trasy' });

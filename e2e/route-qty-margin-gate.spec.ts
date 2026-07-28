@@ -35,7 +35,7 @@ async function continueWithWorld(page: Page, world: World) {
 async function openTrasyTab(page: Page) {
   await page.locator('g.port').first().click({ force: true });
   await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-  await page.getByRole('button', { name: /^Headquarters$/ }).click();
+  await page.getByRole('button', { name: /^Siedziba$/ }).click();
   const dialog = page.getByRole('dialog', { name: /siedziba/i });
   await dialog.getByRole('tab', { name: 'Trasy' }).click();
   return dialog;

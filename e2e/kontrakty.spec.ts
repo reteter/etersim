@@ -119,12 +119,12 @@ test.describe('Kontrakty tab (#96)', () => {
     await continueWithWorld(page, world);
     await openKontrakty(page);
 
-    const tier1Row = page.locator('.kontrakty-offer').filter({ hasText: 'Textiles' });
+    const tier1Row = page.locator('.kontrakty-offer').filter({ hasText: 'Tekstylia' });
     await expect(tier1Row).toBeVisible();
     await expect(tier1Row).toContainText(`Oczekiwane ~2 kursy/okres, najbliższe źródło: ${sourceName}`);
     await expect(tier1Row.getByRole('button', { name: 'Przyjmij kontrakt' })).toBeVisible();
 
-    const tier2Row = page.locator('.kontrakty-offer').filter({ hasText: 'Aether Salt' });
+    const tier2Row = page.locator('.kontrakty-offer').filter({ hasText: 'Sól eteryczna' });
     await expect(tier2Row).toHaveClass(/kontrakty-offer--locked/);
     await expect(tier2Row).toContainText('Wymaga rangi 2 w tej gildii');
     await expect(tier2Row.getByRole('button', { name: 'Przyjmij kontrakt' })).toHaveCount(0);
@@ -135,11 +135,11 @@ test.describe('Kontrakty tab (#96)', () => {
     await continueWithWorld(page, world);
     await openKontrakty(page);
 
-    const tier1Row = page.locator('.kontrakty-offer').filter({ hasText: 'Textiles' });
+    const tier1Row = page.locator('.kontrakty-offer').filter({ hasText: 'Tekstylia' });
     await tier1Row.getByRole('button', { name: 'Przyjmij kontrakt' }).click();
 
-    await expect(page.locator('.kontrakty-offer').filter({ hasText: 'Textiles' })).toHaveCount(0);
-    const activeRow = page.locator('.kontrakty-contract').filter({ hasText: 'Textiles' });
+    await expect(page.locator('.kontrakty-offer').filter({ hasText: 'Tekstylia' })).toHaveCount(0);
+    const activeRow = page.locator('.kontrakty-contract').filter({ hasText: 'Tekstylia' });
     await expect(activeRow).toBeVisible();
     await expect(activeRow.locator('.kontrakty-contract__progress')).toHaveText(
       '0/70 — rozliczenie za 7 d',
@@ -175,7 +175,7 @@ test.describe('Kontrakty tab (#96)', () => {
     await continueWithWorld(page, withActive);
     await openKontrakty(page);
 
-    const row = page.locator('.kontrakty-contract').filter({ hasText: 'Textiles' });
+    const row = page.locator('.kontrakty-contract').filter({ hasText: 'Tekstylia' });
     await row.getByRole('button', { name: 'Zrezygnuj (koszt: −3 rangi)' }).click();
     await expect(row).toContainText('Rezygnacja kosztuje −3 punkty rangi. Potwierdzić?');
 
@@ -208,7 +208,7 @@ test.describe('Kontrakty tab (#96)', () => {
     await continueWithWorld(page, withDesperateOffer);
     await openKontrakty(page);
 
-    const desperateRow = page.locator('.kontrakty-offer').filter({ hasText: 'Timber' });
+    const desperateRow = page.locator('.kontrakty-offer').filter({ hasText: 'Drewno' });
     await expect(desperateRow).not.toHaveClass(/kontrakty-offer--locked/);
     await expect(desperateRow.locator('.kontrakty-offer__label')).toHaveText(
       'Pilne — gildia przyjmie każdego',
@@ -216,11 +216,11 @@ test.describe('Kontrakty tab (#96)', () => {
     await expect(desperateRow.locator('.rank-badge')).toHaveCount(0);
 
     // A naturally rank-1 tier-1 offer stays label-free (it isn't desperate).
-    const tier1Row = page.locator('.kontrakty-offer').filter({ hasText: 'Textiles' });
+    const tier1Row = page.locator('.kontrakty-offer').filter({ hasText: 'Tekstylia' });
     await expect(tier1Row.locator('.kontrakty-offer__label')).toHaveCount(0);
 
     await desperateRow.getByRole('button', { name: 'Przyjmij kontrakt' }).click();
-    await expect(page.locator('.kontrakty-offer').filter({ hasText: 'Timber' })).toHaveCount(0);
-    await expect(page.locator('.kontrakty-contract').filter({ hasText: 'Timber' })).toBeVisible();
+    await expect(page.locator('.kontrakty-offer').filter({ hasText: 'Drewno' })).toHaveCount(0);
+    await expect(page.locator('.kontrakty-contract').filter({ hasText: 'Drewno' })).toBeVisible();
   });
 });

@@ -51,7 +51,7 @@ test.describe('etersim start screen', () => {
     await expect(page.getByRole('heading', { name: /etersim/i })).toBeVisible();
     await expect(page.getByText(/aether-punk trading venture/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /nowa gra/i })).toBeVisible();
-    await expect(page.getByLabel(/seed/i)).toBeVisible();
+    await expect(page.getByLabel(/ziarno/i)).toBeVisible();
 
     await page.getByRole('button', { name: /nowa gra/i }).click();
     await expect(page.locator('svg.region-map')).toBeVisible();
@@ -72,9 +72,9 @@ test.describe('main game UI after start', () => {
   });
 
   test('credits entry is reachable and lists CC BY attribution (#34)', async ({ page }) => {
-    await page.getByRole('button', { name: /credits/i }).click();
+    await page.getByRole('button', { name: /autorzy/i }).click();
 
-    const dialog = page.getByRole('dialog', { name: /credits/i });
+    const dialog = page.getByRole('dialog', { name: /autorzy/i });
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText(/lorc/i);
     await expect(dialog).toContainText(/delapouite/i);
@@ -86,11 +86,11 @@ test.describe('main game UI after start', () => {
   });
 
   test('options entry toggles auto-pause-on-arrival (#37)', async ({ page }) => {
-    await page.getByRole('button', { name: /^Options$/ }).click();
+    await page.getByRole('button', { name: /^Opcje$/ }).click();
 
-    const dialog = page.getByRole('dialog', { name: /options/i });
+    const dialog = page.getByRole('dialog', { name: /opcje/i });
     await expect(dialog).toBeVisible();
-    const toggle = dialog.getByRole('checkbox', { name: /auto-pause on arrival/i });
+    const toggle = dialog.getByRole('checkbox', { name: /auto-pauza po zacumowaniu/i });
     // Default is On (src/store/settings.ts DEFAULT_SETTINGS).
     await expect(toggle).toBeChecked();
 
@@ -102,8 +102,8 @@ test.describe('main game UI after start', () => {
     // proving the toggle went through setAutoPauseOnArrival. The
     // localStorage round-trip itself is covered at the unit level
     // (src/store/settings.test.ts, gameStore.test.ts).
-    await page.getByRole('button', { name: /^Options$/ }).click();
-    await expect(page.getByRole('dialog', { name: /options/i }).getByRole('checkbox')).not.toBeChecked();
+    await page.getByRole('button', { name: /^Opcje$/ }).click();
+    await expect(page.getByRole('dialog', { name: /opcje/i }).getByRole('checkbox')).not.toBeChecked();
   });
 
   test('digit hotkeys switch speed; space pauses and resumes to the previous speed (#56)', async ({
@@ -133,7 +133,7 @@ test.describe('main game UI after start', () => {
   test('speed hotkeys are ignored while typing in a text field (#56)', async ({ page }) => {
     const rate = (label: string) => page.getByRole('button', { name: label });
     await page.locator('.fleet-list__item--controlled').click();
-    const nameInput = page.getByRole('textbox', { name: /ship name/i });
+    const nameInput = page.getByRole('textbox', { name: /nazwa statku/i });
     await nameInput.click(); // focus a text input
 
     await page.keyboard.press('3'); // would be 100x if the guard were absent
@@ -143,16 +143,16 @@ test.describe('main game UI after start', () => {
   });
 
   test('Options → Keybinds tab lists the fixed bindings read-only (#56)', async ({ page }) => {
-    await page.getByRole('button', { name: /^Options$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /options/i });
+    await page.getByRole('button', { name: /^Opcje$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /opcje/i });
 
     // Default tab is "General" — the auto-pause toggle is first-class.
-    await expect(dialog.getByRole('checkbox', { name: /auto-pause on arrival/i })).toBeVisible();
+    await expect(dialog.getByRole('checkbox', { name: /auto-pauza po zacumowaniu/i })).toBeVisible();
 
-    await dialog.getByRole('tab', { name: /keybinds/i }).click();
-    await expect(dialog.getByText('Pause / resume')).toBeVisible();
-    await expect(dialog.getByText('Speed 1x / 10x / 100x')).toBeVisible();
-    await expect(dialog.getByText('Price Board')).toBeVisible();
+    await dialog.getByRole('tab', { name: /skróty klawiszowe/i }).click();
+    await expect(dialog.getByText('Pauza / wznów')).toBeVisible();
+    await expect(dialog.getByText('Prędkość 1x / 10x / 100x')).toBeVisible();
+    await expect(dialog.getByText('Tablica cen')).toBeVisible();
     await expect(dialog.getByText('Płyń do wybranego portu')).toBeVisible(); // #217
   });
 
@@ -264,7 +264,7 @@ test.describe('main game UI after start', () => {
   test('fleet list is always visible and shows the Controlled Ship\'s docked status', async ({ page }) => {
     // Visible before any selection.
     await expect(page.locator('.fleet-list__item--controlled')).toBeVisible();
-    await expect(page.locator('.fleet-list__item--controlled .fleet-list__status')).toContainText('Docked');
+    await expect(page.locator('.fleet-list__item--controlled .fleet-list__status')).toContainText('Zadokowany');
     await expect(page.locator('.fleet-list__item--controlled .fleet-list__hold')).toContainText('/');
   });
 
@@ -286,7 +286,7 @@ test.describe('main game UI after start', () => {
     await openControlledShip(page);
 
     await expect(page.locator('.side-panel__subtitle')).toContainText('Zadokowany w porcie');
-    await expect(page.getByText(/Hold \d+\/\d+/)).toBeVisible();
+    await expect(page.getByText(/Ładownia \d+\/\d+/)).toBeVisible();
   });
 
   test('ship panel: the docked port name is a keyboard-operable link that opens that port\'s panel (#196)', async ({
@@ -1043,7 +1043,7 @@ test.describe('trading interactions (when docked)', () => {
 
     // Switch to ship panel and verify cargo
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.hold')).toContainText('Grain');
+    await expect(page.locator('.hold')).toContainText('Zboże');
     await expect(page.locator('.hold')).toContainText('5');
   });
 
@@ -1063,7 +1063,7 @@ test.describe('trading interactions (when docked)', () => {
 
     // Hold should reflect partial sell
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.hold')).toContainText('Grain');
+    await expect(page.locator('.hold')).toContainText('Zboże');
     // We don't assert exact number to avoid race, but presence of Grain after sell
   });
 
@@ -1090,7 +1090,7 @@ test.describe('trading interactions (when docked)', () => {
     expect(sailedAway).toBe(true);
 
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
+    await expect(page.locator('.side-panel__subtitle')).toContainText('W drodze');
 
     // The destination port name is a link too (#196): opens that port's
     // panel, same as the docked case above.
@@ -1180,7 +1180,7 @@ test.describe('keybind <g> sails the Controlled Ship to the selected port (#217)
     await expect(disabledSailBtn).toHaveAttribute('title', 'W drodze — musi zadokować, by popłynąć gdzie indziej.');
 
     await openControlledShip(page);
-    await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
+    await expect(page.locator('.side-panel__subtitle')).toContainText('W drodze');
     // The course actually targets the port that was selected, not just any
     // port (portId: selection.id — belt-and-suspenders on top of the
     // disabled-Underway check above).
@@ -1197,7 +1197,7 @@ test.describe('ambient osmosis skiffs on the map (#161, replaces the pulses #63)
     // threshold within the first few ticks, while the rest of the lanes stay
     // under it for hundreds of ticks — a stable active + quiet mix (verified
     // by running the sim standalone for this PR; not asserted elsewhere).
-    await page.getByLabel(/seed/i).fill('66');
+    await page.getByLabel(/ziarno/i).fill('66');
     await page.getByRole('button', { name: /nowa gra/i }).click();
   }
 
