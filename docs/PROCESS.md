@@ -35,8 +35,9 @@ it composes packages and reads reports.
 ## The model ladder — casting is model-agnostic
 
 Process docs name **capability tiers, not vendors**: *cheap* codes, *strong*
-reviews, *frontier* designs and orchestrates. The current casting (Fable /
-Opus / Sonnet as of July 2026) lives in one replaceable line of
+reviews, *frontier* designs and orchestrates. The current casting (Opus 5 on
+both the frontier and strong rungs, Sonnet coding, as of 2026-07-28; Fable 5
+held the frontier rung until its access lapsed) lives in one replaceable line of
 [WORKFLOW.md](WORKFLOW.md) §Casting — the repo survived a frontier-access lapse
 and an external (non-Claude) agent build precisely because the contracts don't
 name models. The safety net is designed to **distrust coder green regardless of

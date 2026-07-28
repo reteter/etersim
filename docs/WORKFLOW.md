@@ -20,11 +20,18 @@ partner, orchestration) — never models; the advisor pairing rule is advisor ti
 executor tier. The current casting lives in this one replaceable line and may change
 without touching anything else in the process:
 
-> **Current casting:** frontier = **lapsed** — Claude Fable 5 access ran through
-> 2026-07-19 with no renewal (`agent-memory.md` §Frontier access is intermittent);
-> no replacement frontier caster is assigned, pending an owner call. strong =
-> Claude Opus; cheap = Claude Sonnet. Any comparable model may fill a slot — the
-> gates below, not the vendor, carry the quality claim.
+> **Current casting** (owner call, 2026-07-28): frontier = **Claude Opus 5** — the rung is
+> filled again, ending the lapse that began when Fable 5 access expired on 2026-07-19.
+> strong = **Claude Opus 5**; cheap = **Claude Sonnet**. Any comparable model may fill a
+> slot — the gates below, not the vendor, carry the quality claim.
+>
+> **One model now occupies two rungs.** That is legal — the ladder ranks *capability
+> tiers*, not headcount — but it means the frontier/strong distinction is no longer
+> enforced by the casting, only by **what each rung is allowed to do**: frontier
+> orchestrates and grills; strong reviews and never reviews a wave it drove. Watch for
+> the failure that shape invites — a session driver "reviewing" its own wave because the
+> reviewer would be the same model anyway. Splitting the rungs again is a one-line edit
+> here.
 
 **Casting decisions edit the def** (incident 0017): a role's model override is
 real only when the harness def (`.claude/agents/*.md` frontmatter) or the
@@ -36,7 +43,8 @@ satisfying advisor tier ≥ executor tier). Architecture-heavy packages (seam
 extraction, new-module design) may name a strong-tier coder explicitly — a
 deliberate, named choice per dispatch.
 
-When frontier access lapses: `procedural` roadmap items (PRD §Roadmap labels) keep
+When frontier access lapses (**not in force as of 2026-07-28** — the rung is filled;
+kept because the lapse recurs): `procedural` roadmap items (PRD §Roadmap labels) keep
 full velocity under the standing gates; `design-frontier` items wait for an owner-led
 grill — running that grill with a strong-tier model is a deliberate, named choice,
 not a drift. The labels exist so an orchestrator *notices* the moment work crosses
