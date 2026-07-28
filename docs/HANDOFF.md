@@ -28,13 +28,12 @@ merged. Outside E16 the owner-agreed order stands: **E11 v1** (#232 → #233 →
   coder would get a conflicting contract. Refresh the spec **before #232**.
 - **E15's spec says SAVE_VERSION v14, which E13 already consumed** — grill OQ8 settled v15.
   A spec instructing a broken migration, not merely a stale line (ADR-0007 territory).
-- **Sectioned WORKFLOW reading is only half-won, and the measurement says why.** The headings
-  now exist (s29), so the per-hat map resolves: Designer/Engineer reads ~114 of 356 lines,
-  Analyst less. But the **Orchestrator still reads ~82%**, because it genuinely needs all of
-  §Verification gates *and* §Documentation law. Sectioning helps the design hats; it cannot
-  help the Orchestrator. What would: ~75 lines of WORKFLOW are rationale ("the evidence this
-  cost something", "why nobody noticed") whose home is `docs/incidents/` or design-notes,
-  both already indexed. Not attempted — it is a judgement call per paragraph, not mechanical.
+- **WORKFLOW is now a 40-line router over `docs/workflows/`** (s29). Old `WORKFLOW §Name`
+  citations still land via the router's mapping table; obligatory-reading files were rewritten
+  to point at the files directly. **Still owed:** the Orchestrator reads the most (~280 lines
+  across verification + session + documentation), and trimming that means moving rationale
+  ("the evidence this cost something", "why nobody noticed") out to `docs/incidents/` or
+  design-notes. Judgement call per paragraph, not mechanical — needs the owner at the table.
 - **`docs/owner-framings-PARKED.md` needs a permanent home** for three owner framings, and
   its seven watch items need sorting into promise / issue / observation. Owner call pending.
 - **Owner framings are parked in `docs/owner-framings-PARKED.md`** — they need a permanent
