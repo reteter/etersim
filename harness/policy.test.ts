@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { advanceDays, cargoUsed, createWorld, type LedgerEvent, type World } from "../src/sim/index.ts";
+import {
+  advanceDays,
+  cargoUsed,
+  createWorld,
+  TICKS_PER_DAY,
+  type LedgerEvent,
+  type World,
+} from "../src/sim/index.ts";
 import { doNothing } from "./policies/doNothing.ts";
 import { gradientLoop } from "./policies/gradientLoop.ts";
 import { runPolicy, type Policy } from "./policy.ts";
@@ -40,7 +47,7 @@ describe("doNothing — the null baseline", () => {
       },
     };
     runPolicy(createWorld(3), counting, 2);
-    expect(polls).toBe(2 * 24); // TICKS_PER_DAY
+    expect(polls).toBe(2 * TICKS_PER_DAY);
   });
 });
 
@@ -122,6 +129,6 @@ describe("determinism (spec §Testing)", () => {
       init: () => 0,
       act: (_world, memory) => ({ commands: [], memory: memory + 1 }),
     };
-    expect(runPolicy(createWorld(1), counter, 3).memory).toBe(3 * 24);
+    expect(runPolicy(createWorld(1), counter, 3).memory).toBe(3 * TICKS_PER_DAY);
   });
 });
