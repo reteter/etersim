@@ -10,3 +10,52 @@ export {
   type GradientLoopMemory,
   type GradientLoopParams,
 } from "./policies/gradientLoop.ts";
+export { POLICY_NAMES, POLICY_REGISTRY, resolvePolicy, type PolicyFactory } from "./policies/registry.ts";
+// #233: the Batch runner + `harness run` CLI. The CLI entry (`cli.ts`) is
+// invoked via `npm run harness -- run ...`, not imported — these exports are
+// for a script or a test that wants to run a Batch programmatically.
+export {
+  runBatchRun,
+  runOne,
+  runPolicyBatch,
+  type AggregateStat,
+  type BatchAggregate,
+  type PolicyBatchReport,
+  type RunRecord,
+} from "./batch.ts";
+export {
+  computeActiveContractLoad,
+  computeChurn,
+  computeCostLines,
+  computeGoodsPnL,
+  computeGuildStandings,
+  computeHoldUtilization,
+  computeNetWorthCurve,
+  computeRunMetrics,
+  computeSettlementCounts,
+  computeVoyages,
+  reconcileThalers,
+  signedThalers,
+  type ChurnStats,
+  type ComputeRunMetricsArgs,
+  type CostLine,
+  type DaySnapshot,
+  type GoodPnL,
+  type GuildStanding,
+  type NetWorthPoint,
+  type RunMetrics,
+  type SettlementCounts,
+  type ShipHoldUtilization,
+  type ThalerReconciliation,
+} from "./metrics.ts";
+export { compareAllPairs, compareBatches, type PolicyComparison } from "./compare.ts";
+export {
+  buildReport,
+  renderMarkdown,
+  round,
+  ROUND_DP,
+  CADENCE_NOTE,
+  type AnomalyEntry,
+  type BatchReport,
+  type PolicyReportEntry,
+} from "./report.ts";
