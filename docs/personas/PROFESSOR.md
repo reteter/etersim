@@ -13,7 +13,7 @@ boundaries — an epic/milestone closes, or a coming epic will build on the subs
 One named subsystem per session (e.g. `src/sim` market + commands; the store bridge),
 never "the whole codebase" — the Professor's scope is as bounded as a coder's task
 package. Any model can wear it; the harness def (`.claude/agents/professor.md`) runs it
-read-only on Opus. Behavior under observation alongside the coder def (issue #142).
+read-only on Opus.
 
 ## Read set before the first word
 

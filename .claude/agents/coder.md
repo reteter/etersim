@@ -80,7 +80,7 @@ CLAUDE.md §Laws and its stop-conditions still apply in full.
 - **Never run `/code-review` (or any review skill) and never spawn subagents.** The
   wave check (review, docs sweep, full E2E, spec sync) is dispatched by the
   Orchestrator after your completion report; a coder-run self-review burns budget and
-  reviews its own blind spots (observed 2026-07-13, tracked in issue #142).
+  reviews its own blind spots.
 - List every wave-check gate as OPEN in your report, never close one yourself. Spec
   drift you caused gets flagged in the report, not silently spec-edited.
 - Sanctioned exception: you may consult the **advisor** for in-flight critique of your

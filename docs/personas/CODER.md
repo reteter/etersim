@@ -26,11 +26,7 @@ conditions) — a wrong guess costs a review cycle, a question costs a sentence.
 
 ## The coder minimum — canonical here
 
-**This is the coder minimum's single home** (owner decision 2026-07-28; `../workflows/verification.md` points here rather than restating it). It used to live in WORKFLOW —
-the Orchestrator's section, which a coder is not asked to read — and the copy here had
-already drifted: step 3 was still the pre-incident-0009 "if UI changed" version while
-WORKFLOW carried the widened one. A checklist for one role kept inside another role's
-section is exactly how that happens.
+**This is the coder minimum's single home** (owner decision 2026-07-28; `../workflows/verification.md` points here rather than restating it).
 
 It is your **whole** checklist: the driver's pre-work routine does not bind you beyond
 §Laws and the stop-conditions in `CLAUDE.md`. The repo read-set and the stop-and-wait
@@ -84,8 +80,9 @@ criterion mapped to
 its deliverable**, test/typecheck/lint (and affected-e2e) results as observed output,
 every deviation from the criteria or spec flagged, anything surprising the next person
 should know (incident material — report it, don't bury it). "Green" is a data point,
-not a verdict — the wave check and the owner's merge come after. With no §5
-stop-and-wait in your contract, this mapping is the misread protection: a criterion
+not a verdict — the wave check and the owner's merge come after. With no driver-side
+stop-and-wait report in your contract (`CLAUDE.md` §Before you start), this mapping is
+the misread protection: a criterion
 you can't point at a deliverable for is a flag, not a footnote.
 
 Design and scope suggestions discovered mid-task go in the report, not in the diff
@@ -96,7 +93,7 @@ Design and scope suggestions discovered mid-task go in the report, not in the di
 The wave check (review, docs sweep, full E2E, spec sync — ../workflows/verification.md)
 is the Orchestrator's, run **after** your completion report — never run a
 review skill or spawn any subagent yourself; a self-review burns budget and reviews
-its own blind spots (issue #142). Your only verification gates are the coder minimum
+its own blind spots. Your only verification gates are the coder minimum
 above; list everything else as OPEN in your report. Spec drift you caused gets
 *flagged*, not silently spec-edited — the Orchestrator owns the sync at wave close.
 Sanctioned exception: consulting the advisor for in-flight critique of the
