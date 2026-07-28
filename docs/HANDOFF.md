@@ -34,11 +34,14 @@ merged. Outside E16 the owner-agreed order stands: **E11 v1** (#232 → #233 →
   rules, they no longer carry their own justification — **imperative + incident number** is the
   house style, and a rule a model could execute wrongly is rewritten as a command rather than
   annotated. Both indexes were trimmed back to one line per row (−53% / −55%).
-- **The next fat is `CONTEXT.md`: 51k chars, and it is obligatory reading for every hat** —
-  43% of what the Orchestrator reads before starting, 62% for Designer/Engineer. It cannot be
-  cut like the others (a glossary must stay complete, and identifiers are law), so the move is
-  structural: a **core** every hat actually reads, the rest consulted on demand. Choosing the
-  core is an owner call, not a mechanical trim.
+- **Entry cost is the metric that mattered, and it moved:** what a hat must read before its
+  first action fell 22% (Orchestrator 132k → 104k chars), 26% (Analyst), 14% (Designer). The
+  wins came from indexes and `CONTEXT.md`, not from the workflows everyone assumed were fat.
+  Untouched and now the largest unexamined block: `docs/personas/*` (28k across six files).
+- **`docs/specs/README.md` now warns about three live spec drifts** found in the owner's s29
+  audit — E11's §Ledger vs `ledger.ts` (blocks #232/#233), E15's §Addressing vs §Testing and
+  its `SAVE_VERSION` v14 (OQ8 settled v15), E14's pre-E13 deliver chain. **Recorded, not
+  fixed.**
 - **`docs/owner-framings-PARKED.md` needs a permanent home** for three owner framings, and
   its seven watch items need sorting into promise / issue / observation. Owner call pending.
 - **Owner framings are parked in `docs/owner-framings-PARKED.md`** — they need a permanent
