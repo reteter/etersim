@@ -112,6 +112,62 @@ dumb, not magic*:
   This preserves the port-centric spine, the load-bearing order, and player agency. Auto-pairing is
   explicitly rejected: it is the "auto-sell-at-best" the route-automation grill locked out.
 
+#### The market-free kinds — deliver / store / withdraw (#404 grill, 2026-07-28)
+
+Inference reads the *market*, and `deliver` / `store` / `withdraw` have no market to read. They are
+authored on the board too — the board is the only authoring surface after (b) removes the Trasy list
+editor — but through a **deliberately asymmetric** gesture, so the frequent case does not pay for the
+rare one.
+
+1. **The default click is unchanged.** One click, kind inferred, `⇄` flips buy↔sell and stays
+   **binary**. Extending `⇄` into a five-way menu was rejected: it would tax every routine buy with a
+   choice the player almost never wants.
+2. **Market-free kinds live behind "więcej"** — the same progressive-disclosure drawer that already
+   holds `qty` and `minMargin`. No third gesture is introduced.
+3. **The drawer is the complete truth about kind.** It lists *every* kind legal in that cell,
+   including `buy` and `sell`; `⇄` is a **shortcut** for the frequent flip, never a rival source of
+   truth. A model where two controls partition the kinds along an unwritten market/market-free line
+   is exactly the structure a reader without this conversation cannot infer.
+4. **A cell already carrying a market-free order is inert to the plain click.** Removal is the chip's
+   `×` only. The plain click keeps its add/toggle-off meaning for `buy`/`sell`, where the player can
+   restore the order with the same gesture that removed it — a `store` order cannot be restored that
+   way, so a blind click must not be able to destroy it. Changing kind out of a market-free order
+   goes through the drawer (point 3), which is why that path has to be complete.
+5. **Legality mirrors the Trasy editor one-to-one, with no board-side tightening.** `deliver` is
+   offered everywhere (a deliver order at a port with no active build is a documented no-op —
+   CONTEXT.md §Stop order); `store` / `withdraw` appear only where the Company has an **activated
+   Storehouse** and only for goods inside that Building's own `storehouseFilter`.
+   **`deliver` is deliberately *not* gated on an active build site.** Storehouse legality is
+   monotonic — a built Storehouse does not disappear — but a build site does, so gating `deliver` on
+   it would strand an existing order in a cell that no longer offers its kind: unremovable through
+   the drawer, and invisible for the same reason #413 describes. E15 also moves the target (its
+   plants are "fed only by Company deliveries"), so a build-site gate would need rewriting one epic
+   later.
+6. **Market-free kinds take no fields.** `deliver`, `store` and `withdraw` carry neither `qty` nor
+   `minMargin` (`route.ts`), so for them the drawer holds the kind picker and nothing else, and the
+   cell's chip renders label + `×` with **no** `⇄`.
+
+**Storehouse discoverability — a port-row marker.** With the kinds behind a drawer, nothing on the
+board would reveal *where* `store` / `withdraw` are possible; the Trasy editor answered this
+structurally, by growing two extra columns on a Stop whose port had a Storehouse. The board's columns
+are region-wide goods and cannot do that. So the **port row header** carries a marker (glyph +
+`title`, beside the existing `★` pairing hint) whenever the Company has a Storehouse at that port.
+Port-level, not cell-level: the cells already carry trend glyph, ask, best-ask/bid highlight, signal
+intensity and focus emphasis, and #414 is an open finding about exactly that channel load — the
+per-good precision belongs in the drawer, where the choice is made anyway. **Visible always, not only
+in authoring mode**: this is a fact about your own holdings, not a market suggestion, so §Signal
+boundary's *data ≠ suggestion* line puts it on the permitted side. Hue-free glyph, so ADR-0006 is
+untouched.
+
+**Why this was a blocking decision (#404).** The board does not merely *lack* these kinds today — it
+**silently destroys them**. `handleCellClick` falls through to `inferOrderKind` for any kind that is
+not `buy`/`sell` (`PriceBoardOverlay.tsx:221-222`), `setStopOrder` then *replaces* rather than merges
+(`routeAuthoring.ts:118-121`), and no chip renders for the market-free kinds at all
+(`PriceBoardOverlay.tsx:473`) — so one click turns a `store` order into a `buy` with no cue that
+anything was there. The path is **unreachable today** (the board only ever builds fresh drafts:
+`nextRouteId`, `stops: []`, `createRoute`), and **(b)'s "Edytuj →" seam is precisely what makes it
+reachable.** Hence the ordering law in §Issue cut: (h) merges before (b).
+
 ### Dispatch from the board
 
 The board owns **route dispatch**; the PortPanel keeps **transactional trade**. The boundary
@@ -220,6 +276,19 @@ order; contextual focus + column pinning; the editable ribbon docked below the g
 frame. The `activeOverlay` store field (#320) governs its open state. Consider whether the board's
 tab set changes ("Ceny" now implies "Ceny · Trasa").
 
+**Market-free kinds (h).** The eligibility rule is not net-new logic — it already exists in
+`RoutesTab.tsx` and moves surface: a `CompanyBuilding` looked up by `stop.portId` over
+`world.company.buildings` (line 78), narrowed per good by `storehouseFilter(building.variant)` (line
+168). Extract it beside the other shared draft helpers in `src/ui/routeAuthoring.ts` (the module
+#394 created for exactly this — one copy consumed by both surfaces) rather than re-deriving it in
+the board; the board and the editor must not drift on legality while both exist. Three code-level
+consequences of the §Attaching orders lock, each named so the diff is checkable against it:
+`handleCellClick` must **return early** when the good's existing order is a market-free kind instead
+of falling through to `inferOrderKind`; the chip at `PriceBoardOverlay.tsx:473` must render for all
+five kinds, omitting `⇄` for the market-free three; and the drawer's kind picker is built from the
+cell's legal-kind set, not from a constant. **No `src/sim` change** — the five `StopOrder` kinds,
+`storehouseFilter` and the no-op semantics all already exist (epic non-goal upheld).
+
 **Reaching the workbench (keybinds are settled — extend, don't redesign; M4 rail).** The board opens
 via its existing `B` hotkey, unchanged. #175 (a keybind to open the Trasy tab) is **closed (owner,
 2026-07-22)**: Headquarters is the un-suggested operational-oversight room, so inspecting a register
@@ -242,6 +311,13 @@ The Trasy tab's list-based Stop editor is **removed**; the tab becomes a read-on
 it, editing an existing Route has no home). Route-domain code already cleaved out of build-domain in
 the #321 refactor, which eases this.
 
+**Hard precondition (#404, 2026-07-28): (h) merges before this removal.** The list editor is the only
+surface that authors `deliver` / `store` / `withdraw` today, and the board both fails to render them
+and silently overwrites them (§Attaching orders → §The market-free kinds). Removing the editor before
+the board can hold those kinds would leave a Route needing a Storehouse Stop unauthorable *and*
+corruptible. This is written as an ordering between two PRs rather than as a promise inside one,
+because a promise inside one diff is unverifiable — a merged commit order is a fact.
+
 ### PortPanel action shading (`src/ui/PortPanel.tsx`)
 
 Buy/sell action affordances read the market-quality selector and shade bright/faded by signal, gated
@@ -256,6 +332,10 @@ by Cargo + free Hold for availability. No trade-logic change — presentation on
   *rewritten as-built only when E16 ships*, not now.
 - **PRD §M4** — the Workbench bullet gains its epic number (E16) + spec link.
 - **specs/README.md** — new row for E16 (added in the same commit as this file, Documentation law).
+- **#404's decision adds no glossary entry** (checked 2026-07-28, glossary-first law): all five
+  `StopOrder` kinds, **Storehouse** and **Stop** are already in CONTEXT.md, and the decision
+  introduces no new domain concept — only a new authoring surface for concepts that exist. Recorded
+  because "no entry needed" is a checked result, not a skipped step.
 - Supersedes nothing outright; E9's route-editor description (Trasy list editor) gets a pointer to
   E16 when E16 ships (the list editor is replaced).
 
@@ -272,6 +352,13 @@ UI epic → **Playwright E2E** is the gate (no sim TDD; nothing in `src/sim` cha
   Commands as one authored the old way (guard against the surface drifting from `route.ts`
   semantics).
 - **Roster → board edit seam:** "Edytuj →" opens the correct Route in the board editor.
+- **Market-free kinds survive a board edit (the #404 regression guard):** a Route carrying a `store`
+  order, opened in the board editor, renders that order as a chip; a plain click on its cell changes
+  nothing; and saving round-trips the order unchanged. This is the assertion that would have failed
+  before (h) — write it as a regression test, not only as a feature test.
+- **Market-free authoring:** at a port with an activated Storehouse, the drawer offers `store` /
+  `withdraw` only for goods in the Building's `storehouseFilter`; `deliver` is offered at every port,
+  including one with no active build.
 - **Signal single-source:** the same (port, good) reads the same tier on the board and in the
   PortPanel (one selector, asserted across surfaces).
 - **Density tools:** contextual focus dims non-target columns; pinning hides a column.
@@ -311,11 +398,19 @@ Milestone **E16 — Workbench** (to be filed).
 | (e) | ui | `feat(ui)`: PortPanel action shading from the signal (owner TODO) | (a) |
 | (f) | ui | `feat(ui)`: offer labels (#227 — okazja/rzadkie/pilne) from the signal | (a) |
 | (g) | ui | `feat(ui)`: runtime execution-legibility note + "sprzedaj całość" chip label (cluster B symptom c) | — |
+| (h) | ui | `feat(ui)`: market-free order kinds on the board — drawer kind picker, click-inert market-free cells, chips for all five kinds, Storehouse port-row marker (#404's decision) | (c) |
 
 Sequencing note: E16 is **UI-only**, so it is file-disjoint from the sim-heavy E11/E15 and can run in
 parallel with them — but its priority slot against the HANDOFF §Queue (E11 v1 → E15) is an **owner
 call**, made when this spec is approved. It is not a blocker for either. (a) is the enabling package;
-(b)–(g) fan out from it, with (c) the largest and the true heart of #376.
+(b)–(h) fan out from it, with (c) the largest and the true heart of #376.
+
+**Ordering law (#404, 2026-07-28): (h) merges before (b).** Not a preference — (b) removes the only
+surface that authors the market-free kinds, and (h) is what gives them a new one *and* closes the
+silent-overwrite path (§Trasy roster, §Attaching orders). Kept as two issues rather than folded into
+(b) so the ordering is a fact in the merge history instead of an unverifiable promise inside one
+diff — the same reasoning incident 0030 records about detectors that encode a law without being
+wired to anything that runs.
 
 Engineer-pass note (2026-07-22, Carl at the table — incident 0029): (a) #392 is not purely
 `store` — extracting the signal selector forces a **behavior-neutral** swap of
