@@ -271,8 +271,8 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
     knowledge was present twice over; what was missing was the obligation.
   - **If you are unwilling to file an issue, do not write a trigger.** Record it as an idea
     with no commitment, which is honest and cheaper than a promise nothing keeps.
-- **Session-close docs exception (owner, 2026-07-16):** the session-close docs-only
-  batch (HANDOFF, scorecard rows, incident reports, memory exports)
+- **Session-boundary docs exception (owner, 2026-07-16; widened 2026-07-28):** the
+  session-close docs-only batch (HANDOFF, scorecard rows, incident reports, memory exports)
   commits **directly to `main`** and is pushed immediately — before committing,
   `git status -sb` must show `main` level with `origin/main` (the incident-0006 guard
   was the unpushed local commit, not the missing PR). Anything beyond the close ritual
@@ -333,9 +333,9 @@ and the admission rule bind the cause. **Project notes no longer live in per-mac
 auto-memory** (same decision) — that channel is only for what is true of this machine and
 this owner.
 
-> **Open, needs an owner call:** the start-of-session rewrite is a commit that the
-> session-close exception above does not cover. (The former `AGENTS.md`/`CLAUDE.md`
-> contradiction on committing to `main` is gone — owner decision 2026-07-28 stripped
-> `AGENTS.md` of rules of its own, so `CLAUDE.md` is the only authority. What remains is
-> narrow: either the exception widens to both session boundaries, or the start-of-session
-> rewrite stays uncommitted until close.)
+**How the rewrites reach `main`** (owner decision 2026-07-28). The `main`-commit exception
+covers **`docs/HANDOFF.md` alone, at either session boundary** — one file, one commit, so
+`git show --stat` naming anything else is the violation. The start-of-session rewrite is
+committed rather than left in the working tree: an uncommitted HANDOFF dirties the baseline
+`SELFCHECK` §3 requires for every later task in the session, and invites the file into an
+unrelated feature commit.
