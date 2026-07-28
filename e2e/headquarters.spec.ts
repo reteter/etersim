@@ -274,8 +274,8 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     // Loop metrics are populated: total Course ticks and last-loop result
     // both render a number (docking fees may legitimately be 0 or a
     // positive figure — asserting presence, not a specific value).
-    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Course: \d+t\/loop/);
-    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Docking fees\/loop: \d+/);
+    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Kurs: \d+t\/pętla/);
+    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Opłaty dokowe\/pętla: \d+/);
   });
 
   test('a routed greedy sell shows a runtime note at the Stop it emptied the hold at (#398)', async ({

@@ -49,7 +49,7 @@ test.describe('etersim start screen', () => {
 
     await expect(page).toHaveTitle(/etersim/i);
     await expect(page.getByRole('heading', { name: /etersim/i })).toBeVisible();
-    await expect(page.getByText(/aether-punk trading venture/i)).toBeVisible();
+    await expect(page.getByText(/handlowe przedsięwzięcie/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /nowa gra/i })).toBeVisible();
     await expect(page.getByLabel(/ziarno/i)).toBeVisible();
 
@@ -66,7 +66,7 @@ test.describe('main game UI after start', () => {
   test('shows top bar with thalers, date and speed controls', async ({ page }) => {
     await expect(page.locator('.top-bar__thalers')).toContainText('₸');
     await expect(page.locator('.top-bar__date')).toBeVisible();
-    await expect(page.getByRole('group', { name: /speed controls/i })).toBeVisible();
+    await expect(page.getByRole('group', { name: /sterowanie prędkością/i })).toBeVisible();
     // Default speed is 1x after newGame
     await expect(page.getByRole('button', { name: '1x' })).toHaveAttribute('aria-pressed', 'true');
   });
