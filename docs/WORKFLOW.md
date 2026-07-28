@@ -240,8 +240,10 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
   - **Corollary — a falsified line is struck immediately.** On learning a recorded statement
     is false, strike it through in place *now* rather than waiting for a full rewrite. A
     one-line strike is always affordable; "the next refresh will fix it" is how HANDOFF went
-    actively misleading in two consecutive sessions (sweep F2). A strike is not a refresh, so
-    this leaves HANDOFF's owner-request rule intact.
+    actively misleading in two consecutive sessions (sweep F2). Since 2026-07-28 HANDOFF is
+    rewritten whole at both session boundaries (§Session rituals), so the corollary now bites
+    hardest on the documents that are *not* refreshed on a schedule — specs, PROCESS, the
+    indexes.
   - **Corollary — a prediction is recorded as a prediction.** Forecasts about future sessions
     ("from s13 the owner is back on their own machine") are written as expectations carrying
     their falsifier, never as settled state.
@@ -264,12 +266,13 @@ order inverts (owner decision, 2026-07-14; it happened in E3 wave 2).
     days; one of them was a hygiene cleave for `HeadquartersPanel.tsx`, which **grew 23%
     while parked** (→ #319–#321). The remedy was already written in **#304** — *"the deferral
     is a decision with a home rather than a note that decays"* — and the symptom already
-    logged in HANDOFF §Watch (*"parked-in-a-lot-with-no-exit … none have issues"*). The
+    logged in HANDOFF's then-existing §Watch (*"parked-in-a-lot-with-no-exit … none have
+    issues"*). The
     knowledge was present twice over; what was missing was the obligation.
   - **If you are unwilling to file an issue, do not write a trigger.** Record it as an idea
     with no commitment, which is honest and cheaper than a promise nothing keeps.
 - **Session-close docs exception (owner, 2026-07-16):** the session-close docs-only
-  batch (HANDOFF when requested, scorecard rows, incident reports, memory exports)
+  batch (HANDOFF, scorecard rows, incident reports, memory exports)
   commits **directly to `main`** and is pushed immediately — before committing,
   `git status -sb` must show `main` level with `origin/main` (the incident-0006 guard
   was the unpushed local commit, not the missing PR). Anything beyond the close ritual
@@ -305,13 +308,32 @@ nothing else drifted. (Codified 2026-07-07 — the E10 sweep touched six files.)
 
 Lightweight by design (ceremony slim, owner decision 2026-07-16):
 
-- **Start:** read `docs/HANDOFF.md` (mind its date stamp — it updates only on owner
-  request), check `gh issue list`, prune merged branches, then selfcheck
-  (`docs/SELFCHECK.md`; short form is the default — full form for epics, `src/sim`,
-  external agents). Recap locked decisions in one line and declare the working hat.
+- **Start:** read `docs/HANDOFF.md`, check `gh issue list`, prune merged branches, then
+  selfcheck (`docs/SELFCHECK.md`; short form is the default — full form for epics,
+  `src/sim`, external agents). Recap locked decisions in one line and declare the working
+  hat. Once the work is named, **rewrite HANDOFF with this session's intent** before acting.
 - **During grills:** label branches ("**Branch 2.3 — …**"), one focused question at a
   time, consistent decision language ("Locked:" / "Open branch:" / "Extracting to
   issue #NN"). After each decision: update spec / CONTEXT.md / issues immediately.
-- **Close:** 2–3-sentence retro + forward pointer written into Claude Code auto-memory
-  (the working channel); update `docs/HANDOFF.md` only when the owner asks. The
-  session-close docs batch commits straight to `main` (§Documentation law).
+- **Close:** 2–3-sentence retro, then **rewrite `docs/HANDOFF.md`** — where the work
+  stopped, what the next session must know. The session-close docs batch commits straight
+  to `main` (§Documentation law).
+
+**HANDOFF's rewrite contract (owner decision 2026-07-28, replacing the 2026-07-16
+owner-request rule).** Written and overwritten by the **session-driving model only** — never
+a coder, never a subagent — at both boundaries, and kept to **~15 lines**. Its admission
+rule: *if `git log` or `gh issue list` answers a sentence, that sentence does not belong
+there.* What does belong is the owner-agreed order, why the last session stopped where it
+did, and **promises that are not tasks** — a bet with a falsifier, a decision waiting on the
+owner. An obligation that *is* a task still goes to the issue tracker (§Documentation law: a
+trigger is a promise), and owner rulings that outlive a session are not state and live
+outside the file. History needs no section: `git log -p docs/HANDOFF.md`. The 2026-07-16
+rule closed updates because the file drifted, which treated the symptom; the length budget
+and the admission rule bind the cause. **Project notes no longer live in per-machine
+auto-memory** (same decision) — that channel is only for what is true of this machine and
+this owner.
+
+> **Open, needs an owner call:** the start-of-session rewrite is a commit that the
+> session-close exception above does not cover, and `AGENTS.md`'s hard floor says *never
+> commit to `main`*. Two harnesses will read this oppositely, both correctly. Until it is
+> settled, the safe reading is `AGENTS.md`.

@@ -127,12 +127,16 @@ forward:
    archive, one line per lesson.
 3. **[`agent-memory.md`](agent-memory.md)** — machine-independent lessons exported
    from per-machine memory; travels with the repo to any harness.
-4. **Per-machine auto-memory** (Claude Code) — the day-to-day working channel:
-   session state, owner preferences, machine quirks. Probabilistic recall, local.
-5. **[`HANDOFF.md`](HANDOFF.md)** — the cross-harness export for *any* model in
-   *any* harness, updated on owner request. Carries only what `git log` / `gh`
-   cannot derive — owner-agreed order, owner framings, resumable-state pointers;
-   its date stamp is the freshness contract for that non-derivable half.
+4. **Per-machine auto-memory** (Claude Code) — only what is true of *this machine and
+   this owner*: environment quirks, owner preferences, harness mechanics. Probabilistic
+   recall, local. **Project notes were removed from this channel on 2026-07-28** — it is
+   invisible to any other harness, which is exactly where project state must not sit.
+5. **[`HANDOFF.md`](HANDOFF.md)** — a ~15-line orientation note for the next session,
+   rewritten by the session-driving model at both session boundaries (owner decision
+   2026-07-28). Admits only what `git log` / `gh` cannot derive: the owner-agreed order,
+   why the last session stopped where it did, and promises that are not tasks. Its
+   predecessor updated on owner request and went stale between asks — the fix was a
+   length budget and an admission rule, not tighter access.
 
 The rule of thumb: a lesson is born in the incident log, gets promoted to
 `CLAUDE.md` only if it must be present in every session, and lives in

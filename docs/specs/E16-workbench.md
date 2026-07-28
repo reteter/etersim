@@ -387,7 +387,7 @@ UI epic → **Playwright E2E** is the gate (no sim TDD; nothing in `src/sim` cha
 board *feel* faster than the old editor, and does the master stop opening Trasy? Cut small, playtest,
 iterate (the UI-grill-corrects-by-playtest rule). Also eyeball the intensity-only signal for
 legibility against the existing color load, and the refit-violet/mining-violet proximity flagged in
-HANDOFF §Watch.
+`docs/owner-framings-PARKED.md` §Watch items in transit (it was HANDOFF §Watch until 2026-07-28).
 
 ---
 
@@ -398,7 +398,7 @@ after `gh issue create`. Final acceptance criteria live in each issue's newest c
 (WORKFLOW §Issues).
 
 **On #376, #177, #227.** #376 is a *grill+spec* meta-ticket ("needs its own grill+spec before any
-code", HANDOFF §Queue) — this spec is its deliverable. **Owner decision (2026-07-22): #376 closes as
+code", HANDOFF's then-existing §Queue) — this spec is its deliverable. **Owner decision (2026-07-22): #376 closes as
 fulfilled, and implementation is filed as fresh E16 issues** (not a rename). #177 (ShipPanel route
 status + suspend) is a genuine implementation ticket and folds into (b). #227 (offer labels) becomes
 (f).
@@ -417,8 +417,8 @@ Milestone **E16 — Workbench** (to be filed).
 | (h) | ui | `feat(ui)`: market-free order kinds on the board — drawer kind picker, click-inert market-free cells, chips for all five kinds, Storehouse port-row marker (#404's decision) | (c) |
 
 Sequencing note: E16 is **UI-only**, so it is file-disjoint from the sim-heavy E11/E15 and can run in
-parallel with them — but its priority slot against the HANDOFF §Queue (E11 v1 → E15) is an **owner
-call**, made when this spec is approved. It is not a blocker for either. (a) is the enabling package;
+parallel with them — but its priority slot against the owner-agreed order in HANDOFF (E11 v1 → E15)
+is an **owner call**, made when this spec is approved. It is not a blocker for either. (a) is the enabling package;
 (b)–(h) fan out from it, with (c) the largest and the true heart of #376.
 
 **Ordering law (#404, 2026-07-28): (h) merges before (b).** Not a preference — (b) removes the only

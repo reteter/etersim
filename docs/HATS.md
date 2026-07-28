@@ -22,7 +22,7 @@ so a non-Claude-Code harness reading only the repo gets the same map (#410 §Des
 | **Orchestrator** | implementation: issues → packages → waves → integration | **`docs/WORKFLOW.md` in full** — §Verification gates (the tier table), §Model ladder, §Batching, §PR timing, §Session rituals; `docs/personas/ORCHESTRATOR.md`; `CLAUDE.md` §Git & worktrees; `docs/incidents/README.md` §Log; the epic spec + `docs/specs/README.md` |
 | **Coder** (subagent) | dispatched with a task package | Its package, `docs/personas/CODER.md`, `docs/SELFCHECK.md` §4 (the hard laws). **Not** the rest of SELFCHECK — a coder runs the *coder minimum* (WORKFLOW §Verification gates), not the driver's checklist |
 | **Professor** | architecture pass on one named subsystem at an epic/milestone boundary | `docs/personas/PROFESSOR.md`, the subsystem's spec, `docs/adr/` |
-| **No hat yet** | session start, before the work is named | `docs/HANDOFF.md` (mind its date stamp), `gh issue list`, then `docs/SELFCHECK.md` — which tells you which hat you need |
+| **No hat yet** | session start, before the work is named | `docs/HANDOFF.md`, `gh issue list`, then `docs/SELFCHECK.md` — which tells you which hat you need. Once the work *is* named, rewrite `docs/HANDOFF.md` with this session's intent before acting (CLAUDE.md §Rules) |
 
 ## Notes that keep this honest
 

@@ -7,10 +7,12 @@ with *"Read AGENTS.md and follow it"* — do this, in order:
 1. **Read `CLAUDE.md`** — the project rules. The filename is historical (this repo
    was built with Claude Code); treat it as PROJECT.md — nothing in it is
    Claude-specific: source-of-truth map, laws, git/worktree rules, commands.
-2. **Read `docs/HANDOFF.md`** — the cross-harness export: only what `git log` / `gh`
-   cannot derive — owner-agreed order, owner framings, resumable-state pointers.
-   Since 2026-07-16 it updates only on owner request — read `git log` / `gh issue
-   list` directly for the current commit and open work; this file no longer claims them.
+2. **Read `docs/HANDOFF.md`** — a ~15-line orientation note, written and overwritten by
+   the session-driving model at session start and close (owner decision 2026-07-28,
+   replacing the 2026-07-16 owner-request rule). It carries only what `git log` / `gh`
+   cannot derive — the owner-agreed order, why the last session stopped where it did, and
+   promises that are not tasks. Read `git log` / `gh issue list` directly for the current
+   commit and open work; this file never claims them.
 3. **Before any task**: run the checklist in `docs/SELFCHECK.md` (§1–§5) and post
    its report before touching anything. It is explicitly written for any model.
 
