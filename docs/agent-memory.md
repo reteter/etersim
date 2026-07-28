@@ -8,8 +8,7 @@ exported. Update this file when a durable, machine-independent lesson lands; del
 entries when they expire.
 
 Session-state notes (queue, watch items) do NOT live here — they live in
-[HANDOFF.md](HANDOFF.md), rewritten by the session-driving model at both session
-boundaries (owner decision 2026-07-28). Since that decision, per-machine auto-memory
+the issue tracker (owner decision 2026-07-28 — `docs/HANDOFF.md` was retired the same day). Since that decision, per-machine auto-memory
 carries **no project notes at all** — only what is true of a given machine and the owner.
 For when this file last changed, read `git log -- docs/agent-memory.md`; a hand-maintained
 "last export" stamp is derivable and drifted (it claimed 2026-07-17 while carrying 07-28
@@ -117,8 +116,8 @@ both the frontier and strong rungs. The name in the slot is the volatile part; t
 is not. The next frontier partner may again be a non-Claude model in a non-Claude
 harness, or the rung may empty again with no notice. That is why the process is
 model-agnostic (WORKFLOW §Casting) and why everything a session needs lives in the
-repo: HANDOFF.md (orientation, rewritten at both session boundaries), agent-memory.md (durable
-lessons), PRD/specs (direction),
+repo: the issue tracker (state, order, owner calls), agent-memory.md (durable lessons),
+PRD/specs (direction),
 incidents (scars). The owner works from the terminal CLI; `gh` is the sync mechanism
 between machines. Don't assume frontier-tier capacity when planning scope —
 `design-frontier` items wait for an owner-led grill.

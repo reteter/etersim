@@ -2,38 +2,46 @@
 
 Lightweight by design (ceremony slim, owner decision 2026-07-16).
 
-- **Start:** read [HANDOFF.md](../HANDOFF.md) → `gh issue list` → prune merged branches →
-  `npm run selfcheck -- --kind=<docs|impl|design|analysis>` → post the one-line report it
-  prints (`CLAUDE.md` §Before you start) → recap locked decisions in one line → declare the
-  hat. Once the work is named, **rewrite HANDOFF with this session's intent** before acting.
+- **Start:** `gh issue list` → `gh issue list --label needs:owner-decision` (what is blocked on
+  an owner call) → the milestone descriptions, `gh api repos/:owner/:repo/milestones` (the
+  owner-agreed order) → prune merged branches → `npm run selfcheck -- --kind=<docs|impl|design|analysis>`
+  and post the one-line report it prints (`CLAUDE.md` §Before you start). Recap locked decisions
+  in one line and declare the hat.
 - **During grills:** label branches ("**Branch 2.3 — …**"), one focused question at a time,
   consistent decision language ("Locked:" / "Open branch:" / "Extracting to issue #NN"). After
   each decision, update spec / `CONTEXT.md` / issues immediately.
-- **Close:** 2–3-sentence retro, then **rewrite HANDOFF** — where the work stopped, what the
-  next session must know. The session-close docs batch commits straight to `main`
-  ([documentation.md](documentation.md) §Session-boundary docs exception).
+- **Close:** 2–3-sentence retro, then **leave the carry-over in the tracker**: file what was
+  learned, close what was discharged, post the newest acceptance criteria as a comment on
+  anything re-scoped, and set `needs:owner-decision` on anything now waiting on the owner. The
+  session-close docs batch (scorecard rows, incident reports, memory exports) commits straight
+  to `main` ([documentation.md](documentation.md) §Session-boundary docs exception).
 
-## HANDOFF's rewrite contract
+## Cross-session state lives in the tracker
 
-Owner decision 2026-07-28, replacing the 2026-07-16 owner-request rule.
+Owner decision 2026-07-28. There is no handoff document.
 
-Written and overwritten by the **session-driving model only** — never a coder, never a
-subagent — at both boundaries, and kept to **~15 lines**.
+**The rule:** a thing worth telling the next session is worth an issue. If it does not deserve
+one, it does not deserve to be written down.
 
-**Admission rule:** *if `git log` or `gh issue list` answers a sentence, that sentence does not
-belong there.* What does: the owner-agreed order of work, why the last session stopped where it
-did, and **promises that are not tasks** — a bet with a falsifier, a decision waiting on the
-owner. An obligation that *is* a task goes to the issue tracker instead
-([documentation.md](documentation.md)); owner rulings that outlive a session are not state and
-live outside the file. History needs no section: `git log -p docs/HANDOFF.md`.
+**Where each kind goes:**
 
-**Project notes do not live in per-machine auto-memory** (same decision) — that channel carries
-only what is true of this machine and this owner.
+| Carry-over | Home |
+| --- | --- |
+| Work to do | an issue, milestoned |
+| Blocked on an owner call | an issue labelled `needs:owner-decision` |
+| The agreed order of work | milestone descriptions |
+| Why a spec cannot be trusted yet | an issue, plus a warning in that spec's row in [specs/README.md](../specs/README.md) |
+| A bet with a falsifier | an issue that closes when it is measured |
+| Reasoning behind a parked idea | a design note — with an issue carrying the obligation ([documentation.md](documentation.md)) |
 
-## How the rewrites reach `main`
+**Why the document went away.** `docs/HANDOFF.md` was tried in three shapes: a per-session
+note (swelled), an owner-request export (went stale between asks, and its own §Watch outlived
+promises that had already been discharged), and a ~15-line budgeted note — which broke its own
+budget within a single session, reaching 52 lines and logging what that session had *done*.
+Each shape failed the same way: **nothing obliged the document to stay true.** `gh issue list`
+is swept at every session start, an issue has an open/closed state nobody has to maintain by
+hand, and a milestone description is read by whoever picks up the milestone. The tracker has
+the obligation the document never had.
 
-The `main`-commit exception covers **`docs/HANDOFF.md` alone, at either session boundary** —
-one file, one commit, so `git show --stat` naming anything else is the violation.
-
-Commit the start-of-session rewrite rather than leaving it in the working tree: an uncommitted
-HANDOFF dirties the baseline `npm run selfcheck` reports for every later task in the session.
+**Project notes do not live in per-machine auto-memory either** (same decision) — that channel
+carries only what is true of this machine and this owner.

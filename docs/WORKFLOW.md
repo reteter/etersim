@@ -14,7 +14,7 @@ idea → grill → feature spec → user approval → GH issues → implementati
 | **Verification gates** | closing a wave: tiers, review packages, fix loop, E2E certification, batching, PR timing, definition of done | [workflows/verification.md](workflows/verification.md) |
 | **Documentation law** | committing docs, a spec, or any decision batch; parking something; flipping a note to HIST | [workflows/documentation.md](workflows/documentation.md) |
 | **Roles and casting** | deciding who does the work and at which model tier; declaring an LCM session | [workflows/casting.md](workflows/casting.md) |
-| **Session rituals** | opening or closing a session; rewriting HANDOFF | [workflows/session.md](workflows/session.md) |
+| **Session rituals** | opening or closing a session; what carries to the next one | [workflows/session.md](workflows/session.md) |
 
 Which hat to wear and what it obliges you to read: `CLAUDE.md` §Hats. The laws that bind every
 model: `CLAUDE.md` §Laws. The coder's own checklist:

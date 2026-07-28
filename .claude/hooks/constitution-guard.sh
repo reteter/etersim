@@ -15,7 +15,7 @@
 #
 # Deliberately NOT protected — documents whose editing IS the normal work, where a
 # gate would fight a law we already have: CONTEXT.md (glossary-first requires the entry
-# before the identifier), docs/HANDOFF.md (rewritten at both session boundaries),
+# before the identifier),
 # docs/specs/* (spec sync ships with the task), docs/PRD.md, docs/adr/*,
 # docs/design-notes/*, docs/incidents/* (never gate filing an incident).
 #
@@ -53,7 +53,7 @@ case "$rel" in
   *) allow ;;
 esac
 
-reason="\"$rel\" is part of the process constitution: it is read by every session, and editing it is a decision rather than a task (owner decision 2026-07-28). Confirm only if the owner asked for this change in THIS session; otherwise report what you would change and let them decide. Work documents are not gated -- CONTEXT.md, docs/HANDOFF.md, docs/specs/, docs/PRD.md, docs/adr/, docs/design-notes/ and docs/incidents/ stay freely editable."
+reason="\"$rel\" is part of the process constitution: it is read by every session, and editing it is a decision rather than a task (owner decision 2026-07-28). Confirm only if the owner asked for this change in THIS session; otherwise report what you would change and let them decide. Work documents are not gated -- CONTEXT.md, docs/specs/, docs/PRD.md, docs/adr/, docs/design-notes/ and docs/incidents/ stay freely editable."
 
 REASON="$reason" node -e '
   process.stdout.write(JSON.stringify({

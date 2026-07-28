@@ -65,11 +65,10 @@ went five days unnoticed while the file one of them meant to shrink grew 23% (â†
 
 ## Session-boundary docs exception
 
-The session-close docs-only batch (HANDOFF, scorecard rows, incident reports, memory exports)
-commits **directly to `main`** and is pushed immediately (owner 2026-07-16, widened
-2026-07-28). Before committing, `git status -sb` must show `main` level with `origin/main`
-(incident 0006). Anything beyond the close ritual takes branch + PR. `docs/HANDOFF.md` alone
-may also go straight to `main` at either boundary ([session.md](session.md)).
+The session-close docs-only batch (scorecard rows, incident reports, memory exports) commits
+**directly to `main`** and is pushed immediately (owner 2026-07-16). Before committing,
+`git status -sb` must show `main` level with `origin/main` (incident 0006). Anything beyond
+the close ritual takes branch + PR.
 
 ## Line breaks are semantic, not width-wrapped
 

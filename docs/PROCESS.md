@@ -100,16 +100,16 @@ isolation, a byte-identical ruler prompt reused per arm, and a strict
 ruler-measures / orchestrator-adjudicates split whose one law is *a ruler finding is
 an input to verify, not a verdict, and skepticism must be symmetric.*
 
-**[The incident log](incidents/)** — a blameless register of **22** process failures
-and near-misses (as of 2026-07-21). Its key design choice: every incident is rated
-twice, **outcome** (what actually happened) *separately from* **failure-mode class**
-(how bad the same slip could have been). All 22 outcomes rated Low (or the
-pre-two-axis equivalent: "caught before any effect") — nothing shipped broken, no
-work lost — while several failure-mode classes rated Medium+: the log exists to catch
-dangerous *classes* while they're still cheap. Recurring families so far:
-false-signal certifications (stale environment, contended runs), dispatch defects
-(worktree provisioning), merge-procedure traps (stacked PRs). Each incident ends in
-a prevention that lands in the docs the same session.
+**[The incident log](incidents/)** — a blameless register of process failures and
+near-misses; `docs/incidents/README.md` §Log has the current count, one line each. Its key
+design choice: every incident is rated twice, **outcome** (what actually happened)
+*separately from* **failure-mode class** (how bad the same slip could have been). Outcomes
+have stayed Low — nothing shipped broken, no work lost — while several classes rated Medium
+or higher: the log exists to catch dangerous *classes* while they are still cheap. Recurring
+families: false-signal certifications (stale environment, contended runs), dispatch defects
+(worktree provisioning), merge-procedure traps (stacked PRs), and **laws that were written
+but never wired to anything that runs** (0030, 0031). Each incident ends in a prevention that
+lands in the docs the same session.
 
 **The advisor experiment** — an A/B on where a second-opinion layer pays off.
 Running tally: **7 coder-side advisor catches with zero overlap** with what review
@@ -139,12 +139,12 @@ forward:
    this owner*: environment quirks, owner preferences, harness mechanics. Probabilistic
    recall, local. **Project notes were removed from this channel on 2026-07-28** — it is
    invisible to any other harness, which is exactly where project state must not sit.
-5. **[`HANDOFF.md`](HANDOFF.md)** — a ~15-line orientation note for the next session,
-   rewritten by the session-driving model at both session boundaries (owner decision
-   2026-07-28). Admits only what `git log` / `gh` cannot derive: the owner-agreed order,
-   why the last session stopped where it did, and promises that are not tasks. Its
-   predecessor updated on owner request and went stale between asks — the fix was a
-   length budget and an admission rule, not tighter access.
+5. **The issue tracker** (`gh`) — carries everything that crosses a session boundary: open
+   work, the `needs:owner-decision` label for what is blocked on an owner call, and the
+   agreed order of work in milestone descriptions. There is no handoff document. One was
+   tried in three shapes and each failed the same way — nothing obliged it to stay true —
+   while an issue has an open/closed state nobody maintains by hand and a list that is
+   swept at every session start (owner decision 2026-07-28).
 
 The rule of thumb: a lesson is born in the incident log, gets promoted to
 `CLAUDE.md` only if it must be present in every session, and lives in

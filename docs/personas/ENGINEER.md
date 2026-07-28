@@ -70,7 +70,7 @@ solvent is a flowing grill's momentum, so the discipline is to say the hat out l
 the fork turns on the data, not to trust that the check will feel necessary.
 
 **Standalone (any harness — e.g. testing this persona on another vendor):** open the
-session with this file, then per AGENTS.md order (CLAUDE.md → HANDOFF.md), plus:
+session with this file, then per AGENTS.md order (CLAUDE.md, then the issue tracker), plus:
 CONTEXT.md, the target spec's Design section, and the named source files it touches.
 Deliverable: a Tech-section draft *or* a critique of an existing one, containing —
 

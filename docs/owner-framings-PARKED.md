@@ -1,17 +1,18 @@
 # Owner framings — PARKED, awaiting a permanent home
 
-**This file is temporary scaffolding, not a source of truth yet.** It holds the durable
-owner framings and the unresolved watch items that lived in `docs/HANDOFF.md` until
-2026-07-28, when the owner redefined HANDOFF as a ~15-line current-state note rewritten
-at every session boundary (owner decision, s29). That length budget cannot carry these,
-and deleting them would have lost owner rulings that carry falsifiers.
+**This file is temporary scaffolding, not a source of truth.** It holds the durable owner
+framings and the unresolved watch items that lived in `docs/HANDOFF.md` until 2026-07-28,
+when that file was retired entirely and cross-session state moved to the issue tracker.
+Deleting them along with it would have lost owner rulings that carry falsifiers.
+
+**Tracked by #427**, which is what actually obliges this file to be emptied — a parked
+document with no issue behind it is the failure this repo has logged twice.
 
 **Open decision:** where each block below belongs permanently — `docs/PRD.md`,
 `docs/WORKFLOW.md`, or a short standing-rulings file of its own. Until that is decided,
 nothing cites this file as law; it exists so nothing is lost in transit.
 
-Text is preserved verbatim from the pre-2026-07-28 HANDOFF. Dates are the owner's
-original ones.
+Text is preserved verbatim from the retired HANDOFF. Dates are the owner's original ones.
 
 ---
 
@@ -52,11 +53,10 @@ auto-memory and `git log`, not here.
 
 ## Watch items in transit
 
-These were HANDOFF §Watch. Under the new rule each is one of three things, and the
-sorting is the pending work: a **promise** (stays in HANDOFF — an obligation that is not
-a task, so the issue tracker rejects it), an **obligation that is a task** (gets a GitHub
-issue, per WORKFLOW §Documentation law: a trigger is a promise), or an **observation with
-no commitment** (goes to `docs/design-notes/`, or is dropped). None have been sorted yet.
+These were HANDOFF §Watch. Each is one of three things, and the sorting is the pending work
+(#427): an **obligation** (gets an issue — including the ones that are not tasks, which now
+carry the `needs:owner-decision` label), an **observation with no commitment** (goes to
+`docs/design-notes/`), or something already discharged. None have been sorted yet.
 
 - **Spec-vs-code skim is still not written into WORKFLOW.**
   Proposed in the s12 retro as a standing first step of any epic's implementation phase;

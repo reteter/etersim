@@ -40,7 +40,6 @@ const PROTECTED = [
 
 const FREE = [
   "CONTEXT.md",
-  "docs/HANDOFF.md",
   "docs/PRD.md",
   "docs/adr/0007-routes-may-wait-margin-gate.md",
   "docs/specs/E11-proving-grounds.md",
@@ -69,7 +68,7 @@ describe("constitution paths require owner consent", () => {
     const reason = JSON.parse(r.stdout).hookSpecificOutput.permissionDecisionReason;
     expect(reason).toMatch(/2026-07-28/);
     expect(reason).toMatch(/CONTEXT\.md/);
-    expect(reason).toMatch(/HANDOFF\.md/);
+    expect(reason).toMatch(/incidents/);
   });
 });
 

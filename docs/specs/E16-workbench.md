@@ -417,8 +417,8 @@ Milestone **E16 — Workbench** (to be filed).
 | (h) | ui | `feat(ui)`: market-free order kinds on the board — drawer kind picker, click-inert market-free cells, chips for all five kinds, Storehouse port-row marker (#404's decision) | (c) |
 
 Sequencing note: E16 is **UI-only**, so it is file-disjoint from the sim-heavy E11/E15 and can run in
-parallel with them — but its priority slot against the owner-agreed order in HANDOFF (E11 v1 → E15)
-is an **owner call**, made when this spec is approved. It is not a blocker for either. (a) is the enabling package;
+parallel with them — but its priority slot against the owner-agreed order (E11 v1 → E15, recorded in
+the milestone descriptions) is an **owner call**, made when this spec is approved. It is not a blocker for either. (a) is the enabling package;
 (b)–(h) fan out from it, with (c) the largest and the true heart of #376.
 
 **Ordering law (#404, 2026-07-28): (h) merges before (b).** Not a preference — (b) removes the only
