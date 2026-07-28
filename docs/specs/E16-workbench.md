@@ -140,7 +140,9 @@ rare one.
    **`deliver` is deliberately *not* gated on an active build site.** Storehouse legality is
    monotonic — a built Storehouse does not disappear — but a build site does, so gating `deliver` on
    it would strand an existing order in a cell that no longer offers its kind: unremovable through
-   the drawer, and invisible for the same reason #413 describes. E15 also moves the target (its
+   the drawer, and invisible for the same reason #413 describes (#413 shipped a "Ukryte kolumny"
+   strand badge for the hidden-column case; a vanished-cell case has no equivalent affordance and
+   would need its own). E15 also moves the target (its
    plants are "fed only by Company deliveries"), so a build-site gate would need rewriting one epic
    later.
 6. **Market-free kinds take no fields.** `deliver`, `store` and `withdraw` carry neither `qty` nor
@@ -153,7 +155,8 @@ structurally, by growing two extra columns on a Stop whose port had a Storehouse
 are region-wide goods and cannot do that. So the **port row header** carries a marker (glyph +
 `title`, beside the existing `★` pairing hint) whenever the Company has a Storehouse at that port.
 Port-level, not cell-level: the cells already carry trend glyph, ask, best-ask/bid highlight, signal
-intensity and focus emphasis, and #414 is an open finding about exactly that channel load — the
+intensity and focus emphasis, and #414 (resolved 2026-07-28: `role="columnheader"` + focus emphasis
+moved to opacity/weight) was a finding about exactly that channel load — the
 per-good precision belongs in the drawer, where the choice is made anyway. **Visible always, not only
 in authoring mode**: this is a fact about your own holdings, not a market suggestion, so §Signal
 boundary's *data ≠ suggestion* line puts it on the permitted side. Hue-free glyph, so ADR-0006 is
