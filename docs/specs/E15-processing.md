@@ -203,11 +203,16 @@ plantStall(plant): "starved" | "backlogged" | null           // derived, not sto
 
 ### Persistence
 
-- SAVE_VERSION: next free after E13's bump (13 is shipped; E13.0 consumes **no**
-  version — the Goods store is a compile-time alias over the same on-disk shape).
-  Note for whoever bumps: `e2e/fixtures/ledger-scenario.json` is version 12 and is
-  loaded by `e2e/ledger.spec.ts:55`; a bump to 14 drops v12 readability under the
-  one-step-migration precedent, so that fixture must be regenerated in the same PR.
+- SAVE_VERSION: **the next free version at implementation time — a number this spec
+  cannot fix in advance.** As at 2026-07-28 the shipped constant is **15**
+  (`src/store/persistence.ts`), so E15 bumps to 16: E13 consumed 14 and #391/#399
+  consumed 15, which is why this section's earlier "v14" and OQ8's "v15" are both spent.
+  E13.0 consumes **no** version — the Goods store is a compile-time alias over the same
+  on-disk shape.
+  Note for whoever bumps: `READABLE_VERSIONS` carries only the immediately preceding
+  version, so a bump drops the oldest readable one. `e2e/fixtures/ledger-scenario.json`
+  is at v14 and is loaded by `e2e/ledger.spec.ts`; regenerate it in the same PR as the
+  bump that drops v14.
   Migration adds market rows for
   the new goods at every port (archetype-table equilibria, stock 0) and their
   `priceBias` **without per-port jitter** (re-drawing worldgen jitter inside a
@@ -218,9 +223,11 @@ plantStall(plant): "starved" | "backlogged" | null           // derived, not sto
 
 - Sim (TDD): conversion math (rate/input/space min; integer exactness); both stalls
   derived correctly; day-boundary ordering (output counted in that day's netWorth);
-  commission gates (no HQ / second plant at port / Reserve); deliver targeting
-  priority (site before plant; non-input goods rejected by the plant); withdraw
-  from output store only; upkeep clamp at the Reserve (agency: a stalled plant
+  commission gates (no HQ / second plant at port / Reserve); **deliver addressing** — a
+  `deliver` naming the plant's input store lands there while a same-port construction
+  site is open, and vice versa, with **no implicit precedence between them** (§Addressing:
+  the priority chain is deleted, not extended); non-input goods rejected by the plant's
+  `accepts` policy; withdraw from output store only; upkeep clamp at the Reserve (agency: a stalled plant
   slows the game, never kills); no processed good in any production profile
   (category guardrail); determinism (same seed + same commands ⇒ deep-equal with
   operating plants); SAVE_VERSION migration (market rows + bias backfill, lossless

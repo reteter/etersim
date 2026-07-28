@@ -40,8 +40,10 @@ before the Storehouse existed genuinely had zero building-store value — not an
 Decided: `SAVE_VERSION = 14`, `migrateV13ToV14` backfills `buildingStoreValue: 0` on every
 persisted `netWorth` ledger event; `total` on those events is unchanged by the backfill. This
 is also the version `E15-processing.md:202` already earmarked as "next free after E13's bump"
-for its own reasons (new market rows) — no conflict, E13's #100 consumes v14, E15 consumes
-v15 later.
+for its own reasons (new market rows) — no conflict, E13's #100 consumes v14, ~~E15 consumes
+v15 later~~ — **struck 2026-07-28 (#425):** #391/#399 consumed v15 for `dockingFee.routeId`
+before E15 started. `E15-processing.md` §Persistence now states its bump relative to the
+shipped constant instead of naming a number, precisely so this line cannot go stale twice.
 
 **4. Record scope.** This note plus the three spec citations of OQ8, sized to match the
 decision (four short calls, not a reopened architecture) — not a CONTEXT.md entry, since
