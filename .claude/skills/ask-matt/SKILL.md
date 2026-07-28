@@ -6,6 +6,11 @@ disable-model-invocation: true
 
 # Ask Matt
 
+> **In etersim, `/handoff` does not exist** (removed 2026-07-28, #434). Cross-session state
+> lives in the issue tracker — `gh issue list`, the `needs:owner-decision` label, and the
+> milestone descriptions (`CLAUDE.md`). Read every `/handoff` below as "file or refresh the
+> issues, then open a fresh session"; the rest of this router is upstream text, left as is.
+
 You don't remember every skill, so ask.
 
 A **flow** is a path through the skills. Most paths run along one **main flow**, and two **on-ramps** merge onto it. Everything else is standalone, or a vocabulary layer that runs underneath.
