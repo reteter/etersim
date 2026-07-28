@@ -102,23 +102,49 @@ post-1.0 — PRD §Long-term fantasy; formerly "E6").
 
 An MCP adapter over the same core is a parked idea (portfolio demo), not first scope.
 
-### Ledger schema (shared with the future performance board)
+### Ledger schema (shared with the performance board)
 
-JSONL per Run: transaction events (`tick, port, good, qty, unitPrice, side,
-thalersAfter`), docking/departure events, daily net-worth snapshots (thalers + cargo at
-mid price). The in-game performance board (playtest 2026-07-09 input, E9-adjacent)
-consumes the same schema conceptually — one vocabulary, two consumers. Schema drift
-between them is spec drift.
+JSONL per Run, one line per `LedgerEvent` — **the union `src/sim/ledger.ts` already
+emits**, not a harness-local shape. The in-game performance board consumes the same
+stream: one vocabulary, two consumers, and schema drift between them is spec drift.
+
+The grammar law (#203, `CONTEXT.md` — Ledger) is what makes per-kind aggregation
+mechanical: every thaler-moving kind carries `thalers` — a signed total for the
+movement, never a unit price — and every rank-moving kind carries `pointsDelta`.
+`ledger.test.ts` enforces it exhaustively; a new kind left unclassified fails to
+typecheck.
+
+Kinds as built (2026-07-28), grouped by what they move:
+
+- **Goods:** `trade` (`shipId`, `portId`, `good`, `side`, `qty`, `thalers`, optional
+  `routeId`), plus the market-free `delivery`, `store` and `withdraw` — those three
+  carry `qty` and no `thalers`.
+- **Costs:** `dockingFee` (`routeId`-tagged since #391, so a route's net margin is
+  derivable), `upkeep`, `laborFee`, `enrollmentFee`, `contractFee`, `autoDraw`, `rush`.
+- **Milestones:** `founding`, `launch`, `shipyardBuilt`, `refitStart`, `refitComplete`,
+  and `completed` (a guild Building activated, with `buildingType`).
+- **Guild standing:** `settlement` (`outcome` met/missed/breached/resigned, plus
+  `pointsDelta`).
+- **Daily snapshot:** `netWorth` — **four** parts and their total: `thalers`,
+  `cargoValue`, `siteStoreValue`, `buildingStoreValue` (E13/OQ8; E15's Plant reuses the
+  last field rather than adding a fifth).
+
+The 2026-07-09 draft of this section named `unitPrice`, `thalersAfter` and a departure
+event. None of them shipped, and the harness must not reintroduce them: a per-unit price
+is `thalers / qty`, a running balance is a fold over the stream, and only docking is
+charged. **Report writers derive; the emitter stays the sim's.**
 
 ## Testing
 
-- Determinism: same policy + seed + days ⇒ deep-equal outcome and byte-equal Ledger;
-  replay of a Direct-play script reproduces its Run exactly.
+- Determinism: same policy + seed + days ⇒ deep-equal outcome and byte-equal Ledger.
+  (Script replay reproducing its Run exactly is a **v2** assertion — it tests `harness
+  replay`, deferred with it.)
 - Policy contract: a trivial do-nothing policy and a gradient-loop policy run a full
   Batch without violations; churn metric counts switches correctly on a scripted case.
 - Runtime assertions: a deliberately broken world state (test fixture) trips the
   invariant checks and lands in the anomaly list with its seed.
-- CLI smoke: `run`/`play`/`replay` round-trip on a small Batch in CI time budget.
+- CLI smoke: `harness run` over a small Batch, within the CI time budget. `play`/`replay`
+  join this line when v2 lands them.
 
 ## Re-review 2026-07-15 — the E9/E12/E3 delta
 

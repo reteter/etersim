@@ -97,9 +97,10 @@ green unmodified (the E9.1 byte-identity discipline).
 
 (As landed: the delivery helper is `applyDeliveryToConstructionSite`, already
 parameterized on `{ recipe, siteStore }` rather than the HQ — its Headquarters-shaped
-wrapper `applyDeliveryToSite` became dead once #290's `tryDeliver` in `commands.ts:164`
-started calling the seam engine directly for both the HQ build site and the Shipyard
-refit site, and was removed in #299.)
+wrapper `applyDeliveryToSite` became dead once #290's `tryDeliver` started calling the
+seam engine directly for both the HQ build site and the Shipyard refit site, and was
+removed in #299. `tryDeliver` itself is gone since E13.0 (#307): `deliver` now splits
+into `resolveDeliverTarget` + `applyDelivery` over `StoreRef`s in `src/sim/commands.ts`.)
 
 ### `src/sim/ship.ts`
 
@@ -199,6 +200,13 @@ trades). `deliver` is deliberately NOT gated — any Company ship, including the
 target itself, may deliver into the refit site; that is one of its three fill sources.
 `unassignRoute` is also not gated (a decision, not an oversight — detaching a suspended
 assignment moves nothing and grants no escape from the lock).
+
+> **Superseded by E13 (#100) and [ADR-0008](../adr/0008-one-goods-store.md).** The rule
+> below is kept as written, for provenance — but it is no longer the whole rule. Delivery
+> targets are explicit `StoreRef`s now, and the chain is **four** sites deep: the guild
+> Building's own construction site (`guildBuild`) is appended after the Refit site. An
+> activated Storehouse is deliberately *not* a `deliver` target — that verb is `store`
+> (Professor F7). As built: `resolveDeliverTarget` in `src/sim/commands.ts`.
 
 **Deliver targeting rule, three sites deep (#286 fix, generalizing the #285/#286 audit
 finding — same port can now host an HQ build, the Shipyard's own site, and a Refit
