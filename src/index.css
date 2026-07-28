@@ -995,9 +995,13 @@ body {
   color: #8891a3;
 }
 
+/* Column count is dynamic (#395 pinning: hidden goods drop out of the grid;
+   E15 also adds goods over time) — `--good-count` is set once on `.price-board`
+   from the visible-goods list and every row (header + port rows) reads it,
+   so hiding/showing a column narrows/widens the whole grid uniformly. */
 .price-board__row {
   display: grid;
-  grid-template-columns: 8rem repeat(5, 1fr);
+  grid-template-columns: 8rem repeat(var(--good-count, 5), 1fr);
   gap: 0.5rem;
   align-items: center;
   padding: 0.35rem 0.4rem;
@@ -1012,8 +1016,84 @@ body {
   border-bottom: 1px solid #2a3040;
 }
 
+/* #395: the good column header is a small flex group — the focus-toggle
+   button (`.price-board__good-header`, keeps its original class/text so the
+   good name is still the element's exact textContent) plus a sibling
+   hide/pin button. */
+.price-board__good-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+}
+
 .price-board__good-header {
+  flex: 1;
   text-align: center;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.price-board__good-header:hover,
+.price-board__good-header[aria-pressed="true"] {
+  color: #e6e6e6;
+}
+
+.price-board__good-hide-btn {
+  padding: 0 0.25rem;
+  font-size: 0.65rem;
+  line-height: 1;
+  opacity: 0.45;
+}
+
+.price-board__good-hide-btn:hover {
+  opacity: 1;
+}
+
+/* Contextual focus (#395, spec §Information density — "legibility tools
+   over full data, never hiding"): intensity-only emphasis, no new hue
+   (ADR-0006 one-color-one-meaning; incident 0002 — gold stays reserved for
+   the Controlled Ship). Dimming a `.price-board__cell` fades its whole
+   subtree (bid/ask/trend/order chip) uniformly via `opacity`, never
+   `display`/`visibility` — nothing becomes unreadable or unclickable. */
+.price-board__good-header--dim {
+  opacity: 0.4;
+}
+
+.price-board__cell--dim {
+  opacity: 0.4;
+}
+
+/* Hidden-columns affordance (#395 AC3): always visible while any column is
+   hidden, so a hidden column stays recoverable — never a silent, permanent
+   loss of information. */
+.price-board__hidden-note {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: #8891a3;
+}
+
+/* #405 nit 2: the 1-stop draft's standalone remove affordance — same dock
+   position as `.price-board__ribbon-dock`, minus the ribbon graphic (which
+   needs >=2 Stops to draw a loop). */
+.price-board__single-stop-dock {
+  margin-top: 0.75rem;
+  border-top: 1px solid #2a3040;
+  padding-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: #a8b2c2;
 }
 
 /* Clickable rows (jump to that port's own panel) get the archetype accent

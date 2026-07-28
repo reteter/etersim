@@ -165,9 +165,10 @@ enforced by construction. The signal is **informational only** — it never trad
 The board must stay readable as goods multiply (E15 adds provisions + clearwood; Aether ice comes
 with the events epic). Two tools, over full data (no fog):
 
-- **Contextual focus.** While attaching an order for good X, the board emphasizes X's column and
-  dims the rest — legibility follows the task — reverting when not building. Also invokable manually
-  (focus one good).
+- **Contextual focus.** While attaching or editing an order for good X (attach, flip kind, or open
+  the qty/Margin-Gate "więcej" panel), the board emphasizes X's column and dims the rest —
+  legibility follows the task — reverting when not building. Also invokable manually (focus one
+  good).
 - **Pinning / collapsing.** The player can hide columns for goods they don't trade, keeping the grid
   narrow as columns grow. A master handles a handful of goods; the board should show that handful.
 
