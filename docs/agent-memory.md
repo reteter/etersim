@@ -122,6 +122,40 @@ incidents (scars). The owner works from the terminal CLI; `gh` is the sync mecha
 between machines. Don't assume frontier-tier capacity when planning scope —
 `design-frontier` items wait for an owner-led grill.
 
+## A permission prompt is invisible to the model (Claude Code harness, 2026-07-28)
+
+A hook returning `permissionDecision: "ask"` (`.claude/hooks/constitution-guard.sh`) prompts
+**the owner**. The model never sees the prompt or the answer, so from inside a session
+"the hook did not fire" and "the hook fired and the owner approved" are indistinguishable —
+the edit simply proceeds.
+
+Trace (s30): an authorised `docs/workflows/documentation.md` edit went through with no visible
+prompt. It was filed as an issue asking whether the constitution guard enforces anything
+(#439) — the owner confirmed he had received the prompt and approved it, and the issue closed
+as a non-finding. The suspicion was reasonable, the escalation was not: the cheap check is to
+invoke the hook by hand with the JSON it expects (`echo '{"tool_input":{"file_path":"…"}}' |
+bash .claude/hooks/constitution-guard.sh`), which is conclusive and costs one command. If it
+returns the right decision, ask the owner rather than filing.
+
+Does not apply to `deny` hooks — those block visibly, on the model's side. The general shape:
+**the absence of a signal you were never able to see is not evidence.**
+
+## A reserved number in a document always goes stale (feedback, 2026-07-28)
+
+Never write a future resource identifier into a spec as a fixed value. State it relative to
+as-built, and record who spent what.
+
+Trace (#425): `E15-processing.md` reserved `SAVE_VERSION` **v14**; grill OQ8 corrected that to
+**v15** in a design note; by the time E15 was ready to start, the shipped constant was already
+15 — E13 had taken 14 and #391/#399 had taken 15. Two documents, two corrections, both wrong,
+and the second correction was itself cited as the authority in an open issue's acceptance
+criteria. The fix that ends the cycle is not a third number: it is "the next free version at
+implementation time, which is N today, because X took N-1 and Y took N".
+
+Generalises past save versions to any spec-time reservation of a shared, monotonic resource
+(migration numbers, ADR numbers, port allocations). **If a later change can consume it without
+reading your document, your document cannot hold it.**
+
 ## Bulk doc edits: snapshot what must survive, verify per item (feedback, 2026-07-28)
 
 A mechanical strip across many documents **will** eat something load-bearing that happens
