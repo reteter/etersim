@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.harness.tsbuildinfo",
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    // Node globals belong to the Harness project only — src/sim must never
+    // see `process`/`Buffer`/`__dirname` (ADR-0002/0003). That scoping holds
+    // today *because TypeScript 6 no longer auto-includes @types/* packages*:
+    // tsconfig.app.json declares no `types` field, so under TS 5.x this very
+    // config would have leaked Node globals into every src/sim file. If this
+    // project is ever pinned back to TS 5.x, add `"types": []` to
+    // tsconfig.app.json in the same change (verified by probe, #232 review).
+    "types": ["node"],
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["harness"]
+}

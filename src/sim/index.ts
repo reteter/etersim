@@ -108,6 +108,10 @@ export { computeRefitEstimate, computeShipyardEstimate } from "./siteEstimate";
 export { HEARTLAND, type RegionTemplate } from "./template";
 export { generateRegion } from "./worldgen";
 export { tick, type Command } from "./tick";
+// E11 (#232): the scenario-runner seam — the Harness advances world time
+// through this, exactly as the sim's own guardrail suites do (ADR-0002: the
+// harness is a plain consumer of the sim, never the reverse).
+export { advanceDays, type TickDecider } from "./scenario";
 export {
   computeNetWorth,
   regionAverageMid,
@@ -150,6 +154,10 @@ export {
   effectiveBase,
   estimateBuy,
   marketTick,
+  // #232: already-shipped market seam, re-exported so the E11 Harness's
+  // policies can size a buy the same way the sim's own routed buys do
+  // (barrel re-export only — the #292/#101 precedent above).
+  maxAffordableQty,
   NEUTRAL_MODIFIERS,
   price,
   quoteBuy,

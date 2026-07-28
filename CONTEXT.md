@@ -815,7 +815,9 @@ maintenance, wages (crew wages remain a parked, separate idea)
 Terms for the agent-facing evaluation tooling (epic E11 — spec drafted 2026-07-09; re-reviewed
 against E9/E12/E3 and **v1 slice approved 2026-07-15**: Batch core + `harness run` CLI; Direct play
 and Replay-of-sessions deferred to v2).
-None of these exist in the build yet.
+Harness, Policy and Run ship as of #232 (slice 1: the `harness/` skeleton, the Policy contract and
+the `advanceDays` seam).
+Batch reporting (#233), Experiments (#234) and the v2 Direct play/Replay modes do not exist yet.
 
 **Harness** (PL: poligon):
 The headless consumer of the simulation for running games without the UI.

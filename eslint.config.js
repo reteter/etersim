@@ -83,6 +83,71 @@ export default tseslint.config(
           property: "now",
           message: "Determinism: no wall-clock time inside src/sim (CLAUDE.md).",
         },
+        // #232 review: the two entries above were the whole guard, so
+        // `performance.now()` and `crypto.getRandomValues()` — both browser
+        // globals, both reachable from src/sim's DOM lib — went uncaught.
+        {
+          object: "performance",
+          property: "now",
+          message: "Determinism: no wall-clock time inside src/sim (CLAUDE.md).",
+        },
+        {
+          object: "crypto",
+          property: "getRandomValues",
+          message: "Determinism: all sim randomness must flow from the seeded RNG (CLAUDE.md).",
+        },
+      ],
+    },
+  },
+  {
+    // E11 (#232): the Harness runs on Node via tsx, outside the Vite bundle
+    // — the `**/*.{ts,tsx}` block above already reaches it, but under
+    // `globals.browser`. Node globals (process, console, URL…) belong here
+    // instead; the harness has no DOM.
+    files: ["harness/**/*.ts"],
+    languageOptions: {
+      globals: globals.node,
+    },
+    rules: {
+      // Determinism reaches past src/sim (ADR-0003): the Harness's core
+      // promise is "Policy + seed = identical Run"
+      // (docs/specs/E11-proving-grounds.md — the two-layer loop), so a
+      // policy or runner drawing on a wall clock or an unseeded RNG breaks
+      // replay just as surely as the sim doing it. The Node surface is
+      // *wider* than the browser one the sim faces — process.hrtime and
+      // crypto.getRandomValues come with `types: ["node"]`.
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "Math",
+          property: "random",
+          message:
+            "Determinism (ADR-0003): a Run must reproduce from Policy + seed — draw randomness from the world's seeded RNG.",
+        },
+        {
+          object: "Date",
+          property: "now",
+          message:
+            "Determinism (ADR-0003): no wall-clock time in the Harness — a Run must reproduce from Policy + seed.",
+        },
+        {
+          object: "performance",
+          property: "now",
+          message:
+            "Determinism (ADR-0003): no wall-clock time in the Harness — a Run must reproduce from Policy + seed.",
+        },
+        {
+          object: "process",
+          property: "hrtime",
+          message:
+            "Determinism (ADR-0003): no wall-clock time in the Harness — a Run must reproduce from Policy + seed.",
+        },
+        {
+          object: "crypto",
+          property: "getRandomValues",
+          message:
+            "Determinism (ADR-0003): a Run must reproduce from Policy + seed — draw randomness from the world's seeded RNG.",
+        },
       ],
     },
   },
