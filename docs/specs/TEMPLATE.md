@@ -55,7 +55,7 @@ that automation can't judge. -->
 one-line scope, blocked-by. Prefer parallel tracks of file-disjoint packages
 (ORCHESTRATOR.md heuristic). Fill real issue numbers after `gh issue create`.
 Final acceptance criteria live in each issue's newest criteria comment
-(WORKFLOW.md §Issues). -->
+(WORKFLOW.md §Pipeline step 4). -->
 
 Milestone **E<n> — <name>** (filed <date>).
 

@@ -116,9 +116,16 @@ first four.)*
 
 ## Milestones & epics
 
-Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). M1 and M2 are shipped (E8/E9/E10 all in). Of M3, E12 and E3 are shipped; **E13 is the next implementation work**. Epics beyond M3 are drafts and will be re-grilled before work starts.
+Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). Epics beyond M3 are drafts and will be re-grilled before work starts.
 
-**Roadmap labels** (2026-07-15, model-agnostic casting — WORKFLOW.md §Roles): every
+**Which epics are shipped and what is next is not recorded here** (2026-07-28): that is
+derivable, so it drifted — this paragraph claimed "E13 is the next implementation work"
+while E13 was closed and E16 in flight. Read `docs/specs/README.md` for per-epic milestone
+state and `gh issue list` for what is open.
+
+### Roadmap labels
+
+(2026-07-15, model-agnostic casting — WORKFLOW.md §Roles): every
 item below carries one of two labels. **`procedural`** — an approved spec exists and
 the machinery is established; any competent executor tier implements it under the
 standing gates. **`design-frontier`** — it designs new mechanics and requires an

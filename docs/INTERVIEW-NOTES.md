@@ -146,7 +146,7 @@ harness assertions — rather than on any model's reputation. Swapping the
 frontier partner is a casting change, not a re-org. Designed under real
 conditions: intermittent frontier access with no guarantee of renewal.
 
-**Artifacts:** `docs/WORKFLOW.md` §Casting is model-agnostic, PRD §Roadmap
+**Artifacts:** `docs/WORKFLOW.md` §Casting, PRD §Roadmap
 labels, `docs/design-notes/farewell-roadmap-grill-2026-07-15.md`.
 
 **Hook:** "When the vendor landscape shifts under you, the process

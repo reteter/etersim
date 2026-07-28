@@ -395,7 +395,7 @@ legibility against the existing color load, and the refit-violet/mining-violet p
 
 Filed after approval; milestone = epic E16. Prefer parallel, file-disjoint packages. Numbers filled
 after `gh issue create`. Final acceptance criteria live in each issue's newest criteria comment
-(WORKFLOW §Issues).
+(WORKFLOW §Pipeline step 4).
 
 **On #376, #177, #227.** #376 is a *grill+spec* meta-ticket ("needs its own grill+spec before any
 code", HANDOFF's then-existing §Queue) — this spec is its deliverable. **Owner decision (2026-07-22): #376 closes as

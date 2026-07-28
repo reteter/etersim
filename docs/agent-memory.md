@@ -55,7 +55,7 @@ silently skipped gate.
 
 ## Model ladder for orchestration (feedback, owner-confirmed 2026-07-13)
 
-> **Superseded 2026-07-15** by [WORKFLOW.md](WORKFLOW.md) §Casting is model-agnostic:
+> **Superseded 2026-07-15** by [WORKFLOW.md](WORKFLOW.md) §Casting:
 > roles are capability-tier contracts (cheap/strong/frontier) with a one-line
 > replaceable current casting; PRD roadmap items carry `procedural` /
 > `design-frontier` labels. The section below stays as the historical rationale —
