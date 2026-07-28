@@ -104,10 +104,14 @@ typecheck, lint, `/code-review`) are all local; CI was never a documented gate.
 Compensate locally: `npm run build` (not in the routine trio) and Playwright E2E for UI
 changes; watch for Linux-only breakage invisible on Windows (import-path casing, CRLF).
 
-## Frontier access is intermittent (user context, updated 2026-07-15)
+## Frontier access is intermittent (user context, updated 2026-07-28)
 
-Fable access runs through **2026-07-19** with no renewal promised; the next frontier
-partner may be a non-Claude model in a non-Claude harness. That is why the process is
+**The lesson now has a full cycle behind it, not just a forecast.** Fable 5 held the
+frontier rung until access expired on 2026-07-19; the rung sat empty for nine days and
+was refilled on 2026-07-28 by Claude Opus 5 (owner call) — which also put one model on
+both the frontier and strong rungs. The name in the slot is the volatile part; the slot
+is not. The next frontier partner may again be a non-Claude model in a non-Claude
+harness, or the rung may empty again with no notice. That is why the process is
 model-agnostic (WORKFLOW §Casting) and why everything a session needs lives in the
 repo: HANDOFF.md (state snapshot, on request), agent-memory.md (durable lessons), PRD/specs (direction),
 incidents (scars). The owner works from the terminal CLI; `gh` is the sync mechanism
