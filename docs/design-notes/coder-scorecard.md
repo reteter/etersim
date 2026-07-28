@@ -461,6 +461,41 @@ in parallel; the cost is the disjointness proof up front, not the run.
 | 07-23 | #407 | #396 | 2 | 0 (clean) | 0 | pass | PortPanel buy/sell action shading from the same `computeMarketSignal` selector the board uses (single source). Intensity-only (opacity/weight, hue-free — ADR-0006/incident-0002 respected). Unavailable≠faded held: class applies only on `canBuy`/`canSell`. **Mapping call (driver-decided, code-derived, not owner):** `strong`→bright, `mid`/`weak`→faded — because the as-built board is **binary** (`PriceBoardOverlay.tsx` branches only on `=== "strong"`; `mid`/`weak` render identically), so this keeps "bright = best market" identical on every surface. Surfaced the underlying spec drift (§rendering-1/2 "near-best steps down" / "(near-)best" was never built) → **#409**, closed 2026-07-28 as option (a): binary ratified, spec §rendering-1/2 synced to the as-built — so the mapping call this row records was the right one and is now the spec. Reviewer confirmed the e2e board↔PortPanel class-equality assertion *is* tier-equality (board `--best` ≡ `tier==="strong"`), not over-coupling. Tier-2 Sonnet: ship, no findings. |
 | 07-23 | #408 | #398 | 2 | 0 blocking; 1 nit (test-coverage) | 0 | pass | Runtime execution legibility (cluster-B symptom c): chip reads `sprzedaj całość · {good}`; ephemeral routed-sale note `{Port}: sprzedano całość {good} ({n} szt.) — Stop {k}` in the pause-cause (#130) pattern (`gameStore.ts` + `TopBar.tsx`). **Scope flag watched, not hit:** note fully derived from already-exposed sim values (Ledger `trade` events + routes) — `advance()` diffs the append-only ledger, filters `side==="sell"` + `routeId` + greedy (`order.qty===undefined`) — **no `src/sim` change**. Package pointer was wrong (RouteRibbon → PriceBoardOverlay); coder corrected + flagged. Reviewer verified ledger-diff soundness (fold calls `tick(next,[])` with no commands so defs can't mutate mid-fold), `qty===undefined` keys the *order def* not `event.qty`. Edge-triggered persist-until-superseded lifecycle (no timer → determinism-safe). Nit: `reset()` test could also exercise `newGame`/`loadWorld` (shared `...INITIAL` path). Tier-2 Sonnet: ship. |
 
+## E16 fan-out — #395 + #405 batched (2026-07-28, s26)
+
+One Sonnet coder, background + `isolation: "worktree"`, both issues on one branch per
+WORKFLOW §Batching (same area, same file — the **opposite** of a parallel pair, and worth
+recording as such: #395 and #405 both live in `PriceBoardOverlay.tsx`, which is exactly the
+shape the #406 disjointness gate killed a wave earlier. Same-file issues batch; they never
+parallelize). Owner-merged, full cert green on `main` @ `b469447`: **825 vitest / 126 e2e /
+typecheck / lint**, `postmerge.ps1` CLEAN.
+
+**The review earned its keep by verifying a claim instead of accepting it.** The coder
+implemented #405's "stable Stop identity" as `${portId}:${good}` rather than a per-Stop id,
+and argued it from the file's existing conventions. The Orchestrator flagged the obvious
+worry — a Route visiting the same port twice — and handed it to the reviewer as the
+package's highest-value question. The reviewer resolved it **against the render loop**: the
+board renders one row *per port* (`ports.map`, not `draft.stops.map`), so there is exactly
+one interactive cell per (port, good) however often a port repeats, and the collision cannot
+occur. It then checked an edge case nobody asked for — `p1` vs `p10` prefix collision, since
+worldgen ids are `p${i}` — and found the trailing colon in
+`key.startsWith(\`${removedPortId}:\`)` already prevents it.
+
+**The one finding was a process law, not a defect.** The implementation broadened "attaching"
+to include kind-flip and opening "więcej"; sound, and the reviewer endorsed it — but merging
+it would have left the spec's own bullet false, and CLAUDE.md's spec-drift rule has no
+exception. Returned to the same coder via resume (fix loop, full transcript); one-line spec
+edit, re-checked at the fix's own tier (docs → 1). **This is the first row where the wave
+check caught nothing in the code and still paid for itself.**
+
+**TDD from the e2e side, done in the strong order:** all 6 new specs were written and run
+against unmodified code *first*, failing for the expected reasons — red captured before
+implementation rather than reconstructed after it.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-28 | #415 | #395, #405 | 2 | 0 code; 1 process (spec drift) | 1 (docs only) | pass | Board density (contextual focus + column pinning) + the two #394 authoring nits. Focus precedence: one shared `focusedGood`, **latest gesture wins** — the coder's advisor killed the naive "authoring always wins" rule, which would have made the manual control dead exactly mid-authoring; derived `effectiveFocus` suppresses emphasis when the focused good is hidden, so focus+hide never dims the whole board. Intensity-only, hue-free (ADR-0006 / incident 0002 hold). Scope walls held: UI-local state only, **nothing persisted** (`persistence.ts` untouched → ADR-0007's SAVE_VERSION rule never in play), no `src/sim`. Reviewer verified the `${portId}:${good}` keying against the render loop incl. the `p1`/`p10` prefix case (see above), and confirmed the repo's recurring `dispatchEvent` e2e smell is **absent** — real `.click()`/`.fill()`, exact-count assertions. Two nits routed to issues rather than the fix loop: **#413** (hiding a column strands a live attached order — invisible but committable; satisfies AC3 literally, so a discoverability gap, not this PR's bug) and **#414** (interactive good headers lack `role="columnheader"` — pre-existing; focus emphasis rides `color` not opacity/weight — grayscale, so no ADR-0006 collision, but a third channel meaning "emphasis" where the spec names two). |
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
