@@ -28,8 +28,13 @@ merged. Outside E16 the owner-agreed order stands: **E11 v1** (#232 → #233 →
   coder would get a conflicting contract. Refresh the spec **before #232**.
 - **E15's spec says SAVE_VERSION v14, which E13 already consumed** — grill OQ8 settled v15.
   A spec instructing a broken migration, not merely a stale line (ADR-0007 territory).
-- **In flight this session:** SELFCHECK / WORKFLOW / HATS are being untangled — the same
-  rule is written in three or four places and drifts. Branch `docs/handoff-role-rework`.
+- **In flight (s29):** untangling SELFCHECK / WORKFLOW / HATS — the same rule is written in
+  three or four places and drifts. Decided and not yet executed: delete `docs/HATS.md`, move
+  the laws into a numbered `CLAUDE.md` section (SELFCHECK §2 and §4 become pointers), promote
+  WORKFLOW's cited-but-not-heading paragraphs (`§Batching`, `§Model ladder`, `§PR timing`,
+  `§E2E certification points`) to `###` **under** `§Verification gates` so its 23 citations
+  survive, and give the coder minimum a single home in `personas/CODER.md`. Owner ruling for
+  this session: **work directly on `main`, no feature branches.**
 - **Owner framings are parked in `docs/owner-framings-PARKED.md`** — they need a permanent
   home (PRD / WORKFLOW / own file). Owner decision pending.
 - **Bet to settle at E13 close:** did #100 visibly shrink? If not, "running-in" is a feeling,
