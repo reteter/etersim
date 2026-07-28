@@ -1224,6 +1224,23 @@ body {
   color: #e0c265;
 }
 
+/* Storehouse marker (#419, spec §The market-free kinds — "port row header
+   carries a marker"): hue-free by design (ADR-0006) — no `color` rule here,
+   it inherits the port-name's own color (including the docked-gold case)
+   rather than introducing a new tint for "you own a Storehouse here". */
+.price-board__storehouse-marker {
+  font-size: 0.9em;
+}
+
+/* Drawer kind picker (#419 AC1): the complete kind set for a cell, inside
+   the existing "więcej" panel — reuses `.menu-btn`/`.menu-btn--active`
+   rather than a new control style. */
+.price-board__order-kind-picker {
+  display: flex;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
 .price-board__cell-btn {
   display: flex;
   align-items: baseline;
