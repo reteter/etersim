@@ -9,7 +9,9 @@
 # run through the PowerShell tool, not Bash) is unaffected. This hook returns "ask",
 # not "deny", so the owner decides in the moment — no marker/override needed.
 #
-# No jq dependency (parity with git-worktree-guard.sh) — JSON in/out via node.
+# JSON in/out via node, not jq: node is guaranteed wherever this repo builds, while jq is a
+# per-machine install (present on the owner's machine since 2026-07-28, absent when these
+# hooks were written — the earlier "jq is not installed" note is no longer the reason).
 set -u
 
 input="$(cat)"

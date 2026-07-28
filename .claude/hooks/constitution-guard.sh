@@ -22,7 +22,9 @@
 # A hook is Claude-Code-specific, so CLAUDE.md §Rules states the same rule for any
 # other harness. This file is the enforcement, not the source.
 #
-# No jq dependency (not installed in this repo's Git Bash) — JSON in/out via node.
+# JSON in/out via node, not jq: node is guaranteed wherever this repo builds, while jq is a
+# per-machine install (present on the owner's machine since 2026-07-28, absent when these
+# hooks were written — the earlier "jq is not installed" note is no longer the reason).
 set -u
 
 input="$(cat)"
