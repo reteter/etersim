@@ -1,5 +1,6 @@
-import type { PolicyBatchReport, RunRecord } from "./batch.ts";
+import { aggregateStat, type PolicyBatchReport, type RunRecord } from "./batch.ts";
 import { compareAllPairs, type PolicyComparison } from "./compare.ts";
+import { GOOD_IDS } from "../src/sim/index.ts";
 
 /**
  * Batch report writer (docs/specs/E11-proving-grounds.md §CLI / §Portfolio
@@ -166,6 +167,97 @@ export function renderMarkdown(report: BatchReport): string {
       );
     }
     lines.push("");
+
+    lines.push("### Per-good P&L (median net thalers across seeds, buy cost netted against sell revenue)");
+    lines.push("");
+    lines.push(
+      "_Caveat: if a Policy trades a different good per seed (as `gradientLoop` does — it picks its " +
+        "gradient once per seed), the median across seeds can read 0 for every good even though every " +
+        "individual Run traded briskly, because most seeds contribute a 0 for any single good's row. " +
+        "Read the per-Run detail table above, or `report.json`, for the real per-seed picture._",
+    );
+    lines.push("");
+    lines.push("| Good | Median net (₸) | Median bought (units) | Median sold (units) |");
+    lines.push("| --- | --- | --- | --- |");
+    for (const good of GOOD_IDS) {
+      const nets = policy.runs.map((r) => r.metrics.goodsPnL.find((g) => g.good === good)?.netThalers ?? 0);
+      const bought = policy.runs.map((r) => r.metrics.goodsPnL.find((g) => g.good === good)?.boughtQty ?? 0);
+      const sold = policy.runs.map((r) => r.metrics.goodsPnL.find((g) => g.good === good)?.soldQty ?? 0);
+      if (nets.every((n) => n === 0) && bought.every((n) => n === 0) && sold.every((n) => n === 0)) continue;
+      lines.push(
+        `| ${good} | ${aggregateStat(nets).median} | ${aggregateStat(bought).median} | ${aggregateStat(sold).median} |`,
+      );
+    }
+    lines.push("");
+
+    lines.push(
+      "### Strategy churn (median count of carried-good switches across seeds — a pendulum policy " +
+        "switches often, an opportunist rarely)",
+    );
+    lines.push("");
+    const switches = policy.runs.map((r) => r.metrics.churn.switches);
+    lines.push(`Median switches per Run: **${aggregateStat(switches).median}** (min ${aggregateStat(switches).min}, max ${aggregateStat(switches).max}).`);
+    lines.push("");
+
+    lines.push("### Hold utilization per ship (median across seeds)");
+    lines.push("");
+    const shipIds = [...new Set(policy.runs.flatMap((r) => r.metrics.holdUtilization.byShip.map((s) => s.shipId)))];
+    lines.push("| Ship | Median utilization |");
+    lines.push("| --- | --- |");
+    for (const shipId of shipIds) {
+      const utils = policy.runs.map(
+        (r) => r.metrics.holdUtilization.byShip.find((s) => s.shipId === shipId)?.meanUtilization ?? 0,
+      );
+      lines.push(`| ${shipId} | ${pct(aggregateStat(utils).median)} |`);
+    }
+    lines.push("");
+
+    lines.push("### Settlement outcomes (guild contracts, summed across all seeds)");
+    lines.push("");
+    const settled = policy.runs.reduce(
+      (acc, r) => ({
+        met: acc.met + r.metrics.settlementCounts.met,
+        missed: acc.missed + r.metrics.settlementCounts.missed,
+        breached: acc.breached + r.metrics.settlementCounts.breached,
+        resigned: acc.resigned + r.metrics.settlementCounts.resigned,
+      }),
+      { met: 0, missed: 0, breached: 0, resigned: 0 },
+    );
+    lines.push(
+      `Met: ${settled.met}, missed: ${settled.missed}, breached: ${settled.breached}, resigned: ${settled.resigned}.`,
+    );
+    lines.push("");
+
+    lines.push("### Guild rank/points at Run end (median final points across seeds, only guilds ever engaged)");
+    lines.push("");
+    const guildIds = [...new Set(policy.runs.flatMap((r) => r.metrics.guildStandings.map((g) => g.guildId)))];
+    if (guildIds.length === 0) {
+      lines.push("No guild ever enrolled or settled a contract in this Batch.");
+    } else {
+      lines.push("| Guild | Median final points | Median final rank |");
+      lines.push("| --- | --- | --- |");
+      for (const guildId of guildIds) {
+        const points = policy.runs.map(
+          (r) => r.metrics.guildStandings.find((g) => g.guildId === guildId)?.finalPoints ?? 0,
+        );
+        const ranks = policy.runs.map(
+          (r) => r.metrics.guildStandings.find((g) => g.guildId === guildId)?.finalRank ?? 1,
+        );
+        lines.push(`| ${guildId} | ${aggregateStat(points).median} | ${aggregateStat(ranks).median} |`);
+      }
+    }
+    lines.push("");
+
+    lines.push("### Active-contract load (median count of contracts held at once, across all daily samples and seeds)");
+    lines.push("");
+    const loads = policy.runs.flatMap((r) => r.metrics.activeContractLoad.map((p) => p.count));
+    lines.push(
+      loads.length > 0
+        ? `Median ${aggregateStat(loads).median}, min ${aggregateStat(loads).min}, max ${aggregateStat(loads).max}.`
+        : "No daily samples (a zero-day Run).",
+    );
+    lines.push("");
+
     lines.push("Replay any single Run with the command printed in its own record in `report.json`.");
     lines.push("");
   }

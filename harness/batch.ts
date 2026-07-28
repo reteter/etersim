@@ -73,9 +73,14 @@ export interface RunRecord {
   readonly ledger: readonly LedgerEvent[];
 }
 
+/** Builds a literal, copy-pasteable command that reproduces exactly this one
+ *  Run. `--seeds ${seed},` (a trailing comma) is deliberate, not a typo — it
+ *  is what `parseSeeds` (`harness/runCommand.ts`) requires to read a single
+ *  seed as an explicit one-element list rather than as "seeds 1..N"; a bare
+ *  `--seeds ${seed}` would replay N Runs starting at seed 1, not this Run. */
 function replayCommandFor(policy: string, params: Readonly<Record<string, unknown>>, seed: number, days: number): string {
   const paramsFlag = Object.keys(params).length > 0 ? ` --params '${JSON.stringify(params)}'` : "";
-  return `npm run harness -- run --policy ${policy}${paramsFlag} --seeds ${seed} --days ${days}`;
+  return `npm run harness -- run --policy ${policy}${paramsFlag} --seeds ${seed}, --days ${days} --out <dir>`;
 }
 
 /** Runs one Policy over one seed, returning its full record. */
@@ -120,7 +125,7 @@ function median(sorted: readonly number[]): number {
   return n % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
 
-function aggregateStat(values: readonly number[]): AggregateStat {
+export function aggregateStat(values: readonly number[]): AggregateStat {
   if (values.length === 0) return { median: 0, min: 0, max: 0 };
   const sorted = [...values].sort((a, b) => a - b);
   return { median: median(sorted), min: sorted[0], max: sorted[sorted.length - 1] };

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { advanceDays, createWorld } from "../src/sim/index.ts";
 import { reconcileThalers } from "./metrics.ts";
 import { runBatchRun, runOne, runPolicyBatch } from "./batch.ts";
+import { parseSeeds } from "./runCommand.ts";
 import { gradientLoop } from "./policies/gradientLoop.ts";
 import { doNothing } from "./policies/doNothing.ts";
 
@@ -74,9 +75,19 @@ describe("runOne — determinism (spec §Testing: same policy + seed + days ⇒ 
     }
   });
 
-  it("doNothing's replay command round-trips through the registry with no --params flag", () => {
+  it("doNothing's replay command has no --params flag and its --seeds value round-trips to exactly the one seed", () => {
     const run = runOne("doNothing", {}, 3, DAYS);
-    expect(run.replayCommand).toBe("npm run harness -- run --policy doNothing --seeds 3 --days 30");
+    expect(run.replayCommand).not.toContain("--params");
+    const seedsFlag = /--seeds ([^ ]+)/.exec(run.replayCommand)![1];
+    // The bug this guards: a bare "--seeds 3" parses as seeds 1..3, not seed 3.
+    expect(parseSeeds(seedsFlag)).toEqual([3]);
+  });
+
+  it("gradientLoop's replay command carries --params and the same --seeds round-trip guarantee", () => {
+    const run = runOne("gradientLoop", { good: "grain" }, 12, DAYS);
+    expect(run.replayCommand).toContain(`--params '${JSON.stringify({ good: "grain" })}'`);
+    const seedsFlag = /--seeds ([^ ]+)/.exec(run.replayCommand)![1];
+    expect(parseSeeds(seedsFlag)).toEqual([12]);
   });
 
   it("rejects an unknown policy name", () => {

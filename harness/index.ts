@@ -49,6 +49,7 @@ export {
   type ThalerReconciliation,
 } from "./metrics.ts";
 export { compareAllPairs, compareBatches, type PolicyComparison } from "./compare.ts";
+export { parseSeeds, printHelp, runCommand, type RunCommandResult } from "./runCommand.ts";
 export {
   buildReport,
   renderMarkdown,

@@ -20,10 +20,12 @@ consumer — the sim never imports the harness (ADR-0002). Nothing here reaches
 
 ```
 npm run harness -- run --policy <name[,name2,...]> [--params <json>] --seeds <n|list> --days <d> --out <dir>
-npm run harness -- <script.ts>    # runs any harness entry point with tsx
 ```
 
 `harness run --help` prints the flag reference and the known policy names.
+The npm script is bound to `harness/cli.ts` (`"harness": "tsx harness/cli.ts"`,
+slice 2 #233) — a throwaway script of your own runs with `npx tsx <script.ts>`
+instead.
 
 ## What exists today (slice 1 #232 + slice 2 #233)
 
