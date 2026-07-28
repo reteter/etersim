@@ -12,10 +12,17 @@ import type { GoodId } from "../sim";
  * depends on `store` (never the reverse) — putting it here keeps that
  * direction intact instead of introducing a `store` → `ui` import.
  *
- * Coined by the coder, not ratified at a grill — CONTEXT.md's "The five E2
- * goods" entry carries the same flag: translating "grain" isn't a new
- * domain concept, but nobody had picked the Polish word before this pair of
- * files. Flag for owner review.
+ * Coder-proposed, owner-ratified 2026-07-28 — see CONTEXT.md's "The five E2
+ * goods" entry for the per-good rationale (`timber → drewno`'s deliberate
+ * collision with Clearwood included).
+ *
+ * These are **nominative, capitalized label forms only** (CONTEXT.md's "Good
+ * name grammar", owner decision 2026-07-28) — correct for `Zboże: 40/60` or
+ * an aria-label, wrong inside a sentence. Callers embedding a name in running
+ * text must restructure around `<Nazwa> ×<qty>`, never `<qty> <Nazwa>` — see
+ * `LedgerOverlay.tsx`'s `describeTransaction` and `TopBar.tsx`'s
+ * `routedSaleNote` for the pattern. No second, inflected table — ever, for
+ * any future good.
  */
 export const GOOD_NAME_PL: Record<GoodId, string> = {
   grain: "Zboże",

@@ -88,8 +88,8 @@ test.describe('Ledger overlay (#86)', () => {
     // older one (qty 5), proving actual chronological ordering rather than
     // trivially passing with a single row.
     await expect(rows).toHaveCount(2);
-    await expect(rows.nth(0).locator('.ledger-list__desc')).toContainText('Kupiono 3 Zboże');
-    await expect(rows.nth(1).locator('.ledger-list__desc')).toContainText('Kupiono 5 Zboże');
+    await expect(rows.nth(0).locator('.ledger-list__desc')).toContainText('Kupiono: Zboże ×3');
+    await expect(rows.nth(1).locator('.ledger-list__desc')).toContainText('Kupiono: Zboże ×5');
   });
 
   test('ship filter keeps only the selected ship\'s events, across every shipId-carrying kind', async ({
@@ -122,7 +122,7 @@ test.describe('Ledger overlay (#86)', () => {
     await expect(rows).toHaveCount(3);
     await expect(rows.nth(0).locator('.ledger-list__desc')).toContainText('Dostarczono');
     await expect(rows.nth(1).locator('.ledger-list__desc')).toContainText('Opłata dokowa');
-    await expect(rows.nth(2).locator('.ledger-list__desc')).toContainText('Kupiono 5 Zboże');
+    await expect(rows.nth(2).locator('.ledger-list__desc')).toContainText('Kupiono: Zboże ×5');
 
     await filter.selectOption({ value: 'all' });
     await expect(rows).toHaveCount(11);

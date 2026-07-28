@@ -132,16 +132,20 @@ function shipName(world: World, shipId: ShipId): string {
  *  PriceBoardOverlay, PortPanel). */
 function describeTransaction(event: TransactionEvent, world: World): string {
   switch (event.kind) {
+    // #184 grammar fix (2026-07-28 owner decision): a good name is never
+    // preceded by a bare number or followed by an inflected agreement —
+    // `GOOD_NAME_PL` holds nominative, capitalized forms only, so the
+    // sentence is restructured around `<Nazwa> ×<qty>` instead.
     case "trade":
-      return `${event.side === "buy" ? "Kupiono" : "Sprzedano"} ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+      return `${event.side === "buy" ? "Kupiono" : "Sprzedano"}: ${GOOD_NAME_PL[event.good]} ×${event.qty} w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "dockingFee":
       return `Opłata dokowa w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "autoDraw":
-      return `Auto-zakup: ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)}`;
+      return `Auto-zakup: ${GOOD_NAME_PL[event.good]} ×${event.qty} w porcie ${portName(world, event.portId)}`;
     case "rush":
-      return `Zakup ekspresowy: ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)}`;
+      return `Zakup ekspresowy: ${GOOD_NAME_PL[event.good]} ×${event.qty} w porcie ${portName(world, event.portId)}`;
     case "delivery":
-      return `Dostarczono ${event.qty} ${GOOD_NAME_PL[event.good]} na plac budowy w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+      return `Dostarczono: ${GOOD_NAME_PL[event.good]} ×${event.qty} na plac budowy w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "laborFee":
       return "Robocizna (złożono zlecenie budowy)";
     case "founding":
@@ -188,9 +192,9 @@ function describeTransaction(event: TransactionEvent, world: World): string {
     // file) — no dedicated Storehouse UI treatment here (issue #101, out of
     // this sim-only scope wall; flagged in the completion report).
     case "store":
-      return `Złożono ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+      return `Złożono: ${GOOD_NAME_PL[event.good]} ×${event.qty} w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "withdraw":
-      return `Pobrano ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+      return `Pobrano: ${GOOD_NAME_PL[event.good]} ×${event.qty} w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "completed":
       return `Ukończono budowę w porcie ${portName(world, event.portId)}`;
   }

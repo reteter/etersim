@@ -212,8 +212,8 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
     const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
     await expect(grainRow.getByRole('button', { name: /buy max/i })).toHaveCount(0);
     await expect(grainRow.getByRole('button', { name: /sell max/i })).toHaveCount(0);
-    // The Sell action's aria-label stays "Sell <good>" (existing selector
-    // contract); its visible text is the Polish "Sprzedaj" label.
+    // The Sell action's aria-label is the Polish "Sprzedaj <good>" (#184);
+    // its visible text is the same "Sprzedaj" label.
     await expect(grainRow.getByRole('button', { name: 'Sprzedaj Zboże', exact: true })).toContainText(
       'Sprzedaj',
     );

@@ -173,18 +173,26 @@ _Avoid_:
 item, resource, commodity
 
 **The five E2 goods** — display names for `src/sim/goods.ts`'s `GoodId`s, added for the #184
-UI language sweep (`src/ui/goodDisplay.ts`'s `GOOD_NAME_PL`). **Coined by the coder, not
-ratified at a grill — flag for owner review** (§Laws 4: translating "grain" is not a new
-concept, but nobody had picked the Polish word before this entry):
+UI language sweep (`src/ui/goodDisplay.ts`'s `GOOD_NAME_PL`). **Owner-ratified 2026-07-28**
+(coder-proposed, all five confirmed as-is):
 - **grain** (PL: zboże)
 - **textiles** (PL: tekstylia)
 - **aetherSalt** (PL: sól eteryczna — *eteryczny* is this glossary's word for natural aether
   goods, see Aether ice's vocabulary law below; aetherSalt is mined, i.e. natural, not
   industrial)
 - **electronics** (PL: elektronika)
-- **timber** (PL: drewno — weakest of the five: it is also the head noun of *przezroczyste
-  drewno* (Clearwood), so "drewno" alone now means both "the E2 timber good" and the wood
-  half of a Clearwood compound; flag if this reads ambiguously in play)
+- **timber** (PL: drewno — deliberately shares its head noun with *przezroczyste drewno*
+  (Clearwood, owner decision 2026-07-28): clearwood literally *is* processed wood, so the
+  pair mirrors the English lineage rather than colliding by accident)
+
+**Good name grammar** (owner decision 2026-07-28, #184 review): `GOOD_NAME_PL` holds
+nominative, capitalized forms only — correct for a label (`Zboże: 40/60`, `Sprzedaj Zboże`)
+but wrong inside a sentence, where Polish needs an oblique case and a mid-sentence capital is
+also wrong. Rejected fix: a second, inflected name table (doubles every future good's entries,
+and E15 adds two shortly). **The law instead: restructure running text as `<Nazwa> ×<qty>`,
+never `<qty> <Nazwa>`** — the good name is never preceded by a bare number or followed by an
+inflected agreement, in any surface, forever. Label-style uses (a bare name, a name before a
+count with no verb, an aria-label) are unaffected — this only binds sentences.
 
 **Arcane good** (PL: towar magiczny):
 A category of goods of magical origin or use.

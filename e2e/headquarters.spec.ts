@@ -305,10 +305,10 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     // sale note (#398, pause-cause kin — #130) records it: legible in the
     // moment, not a silent cargo wipe.
     await expect(page.locator('.top-bar__routed-sale-note')).toContainText(
-      `${bName}: sprzedano całość ${GOOD_NAME_PL.grain}`,
+      `${bName}: sprzedano całość — ${GOOD_NAME_PL.grain} ×`,
       { timeout: 30_000 },
     );
-    await expect(page.locator('.top-bar__routed-sale-note')).toContainText('szt.) — przystanek 2');
+    await expect(page.locator('.top-bar__routed-sale-note')).toContainText('— przystanek 2');
   });
 
   test('edit propagates from the next Stop: an in-flight ship redirects to the edited Stop port', async ({
