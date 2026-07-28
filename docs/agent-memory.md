@@ -121,3 +121,22 @@ PRD/specs (direction),
 incidents (scars). The owner works from the terminal CLI; `gh` is the sync mechanism
 between machines. Don't assume frontier-tier capacity when planning scope —
 `design-frontier` items wait for an owner-led grill.
+
+## Bulk doc edits: snapshot what must survive, verify per item (feedback, 2026-07-28)
+
+A mechanical strip across many documents **will** eat something load-bearing that happens
+to sit inside the pattern. Observed in s29: removing every `_Implementation_` block from
+`CONTEXT.md` also removed `Course`'s `_Avoid_` block, because it began mid-line inside one.
+Nothing in the diff looked wrong — the entry still had a term, a definition and a heading.
+
+The discipline that caught it, and the one to repeat: **before** the edit, snapshot the
+invariants as a list (every glossary term, every `_Avoid_` block, every heading name, every
+LIVE/HIST status); **after** the edit, diff that list per item, not the file as a whole.
+Restore from the pre-cut snapshot rather than rewriting from memory.
+
+Two corollaries that also earned themselves in s29: heading names are an **API** — repo
+docs cite `FILE.md §Name` across dozens of sites, so cut bodies and keep headings, or fix
+every citation in the same commit. And a citation breaks because a **different** file
+changed, so it is never findable by reading the file you edited (this is what issue #432's
+`check:citations` is for). Prefer surgical edits over a script whenever the item count is
+small enough to hand-verify; the script is for hundreds of edits, not for twenty.
