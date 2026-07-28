@@ -103,9 +103,33 @@ export function PriceBoardOverlay({
   // (commands.ts). New-route authoring only (#394 scope note #3) — loading
   // an existing Route into the board editor is #393's roster "Edytuj →" seam.
   const [draft, setDraft] = useState<Route | null>(null);
-  // Progressive disclosure (spec §Attaching orders): which (stopIndex, good)
-  // cells have their qty/minMargin fields expanded via "więcej".
+  // Progressive disclosure (spec §Attaching orders): which cells have their
+  // qty/minMargin fields expanded via "więcej". Keyed `${portId}:${good}` —
+  // not `${stopIndex}:${good}` (#405 nit 1): every cell-level gesture in
+  // this file (attach/flip/remove/patch, via `lastStopIndexForPort`) already
+  // targets "the port's most recent Stop", so portId is exactly as stable an
+  // identity for this cell as everything else here already assumes. A
+  // positional index isn't — reorder/remove shifts it, silently collapsing
+  // an expanded panel or (rarer) flipping it onto a different Stop sharing
+  // the new index.
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // Contextual focus (#395, spec §Information density): one good, or none.
+  // Set automatically the moment an order is attached/edited for a good
+  // (`setFocusedGood` calls below) and by a manual header click — deliberately
+  // one shared piece of state rather than two precedence-ranked ones: the
+  // simplest rule that doesn't leave the manual control "dead" while
+  // authoring is "latest gesture wins" (an attach always wins *at the
+  // moment it fires*, since that's the task the player is mid-doing; but a
+  // manual click right after is a real gesture too and takes back the
+  // wheel). Reset whenever a draft starts/ends — "reverts when not
+  // building" per the AC — a stale focus from mid-authoring shouldn't
+  // linger into a fresh session or a closed board.
+  const [focusedGood, setFocusedGood] = useState<GoodId | null>(null);
+  // Column pinning (#395): goods hidden from the grid. Purely a display
+  // filter — never touches `draft`/orders/the sim (an already-attached
+  // order on a hidden good stays committed; it just isn't shown while
+  // hidden). Not persisted (UI-local only, per the task package).
+  const [hiddenGoods, setHiddenGoods] = useState<Set<GoodId>>(new Set());
 
   if (!world) return null;
 
@@ -136,10 +160,12 @@ export function PriceBoardOverlay({
   const startDraft = () => {
     setDraft({ id: nextRouteId(world), name: `Trasa ${world.company.routes.length + 1}`, stops: [] });
     setExpanded(new Set());
+    setFocusedGood(null);
   };
   const cancelDraft = () => {
     setDraft(null);
     setExpanded(new Set());
+    setFocusedGood(null);
   };
   const saveDraft = () => {
     if (!draft || !isValidRouteDraft(draft)) return;
@@ -147,6 +173,7 @@ export function PriceBoardOverlay({
     selectRoute(draft.id);
     setDraft(null);
     setExpanded(new Set());
+    setFocusedGood(null);
   };
 
   // Port-row click (spec §Construction is port-centric — the port-centric
@@ -156,6 +183,28 @@ export function PriceBoardOverlay({
   const handleRowClick = (portId: PortId) => {
     if (!draft) return;
     setDraft(appendStop(draft, portId));
+  };
+
+  // Removes the Stop at `index` (ribbon's "Usuń"/reorder dock, and the
+  // 1-stop draft's standalone remove affordance, #405 nit 2). Also prunes
+  // any "więcej" expansion for that port if the port no longer appears
+  // anywhere in the draft afterward — otherwise a later re-add of the same
+  // port would reappear pre-expanded, which would read as a stray bug even
+  // though it can't corrupt anything (the key is portId-scoped, #405 nit 1).
+  const removeStopFromDraft = (index: number) => {
+    if (!draft) return;
+    const removedPortId = draft.stops[index].portId;
+    const nextDraft = removeStop(draft, index);
+    setDraft(nextDraft);
+    if (!nextDraft.stops.some((s) => s.portId === removedPortId)) {
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        for (const key of prev) {
+          if (key.startsWith(`${removedPortId}:`)) next.delete(key);
+        }
+        return next;
+      });
+    }
   };
 
   // Good-cell click (spec §Attaching orders): attaches an order to the most
@@ -173,11 +222,13 @@ export function PriceBoardOverlay({
     const kind = existingKind === "buy" || existingKind === "sell" ? existingKind : inferOrderKind(entry);
     if (kind === null) return;
     setDraft(setStopOrder(draft, stopIndex, good, kind));
+    setFocusedGood(good); // contextual focus (#395): attaching follows the task
   };
 
   const flipOrderKind = (stopIndex: number, good: GoodId, current: "buy" | "sell") => {
     if (!draft) return;
     setDraft(setStopOrder(draft, stopIndex, good, current === "buy" ? "sell" : "buy"));
+    setFocusedGood(good);
   };
 
   const removeOrder = (stopIndex: number, good: GoodId) => {
@@ -185,16 +236,42 @@ export function PriceBoardOverlay({
     setDraft(removeStopOrder(draft, stopIndex, good));
   };
 
-  const toggleExpanded = (key: string) => {
+  const toggleExpanded = (key: string, good: GoodId) => {
     setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
       return next;
     });
+    setFocusedGood(good); // editing qty/minMargin is squarely "attaching"
+  };
+
+  // Manual contextual focus (#395 AC2): the whole header cell toggles focus
+  // on/off for its good, independent of authoring. "Latest gesture wins"
+  // (see the `focusedGood` state comment above) — a manual click always
+  // takes over, even mid-authoring.
+  const toggleManualFocus = (good: GoodId) => {
+    setFocusedGood((prev) => (prev === good ? null : good));
+  };
+
+  // Column pinning (#395 AC3): display-only, recoverable. Hiding the
+  // currently-focused good is handled by `effectiveFocus` below (derived,
+  // not an extra effect) rather than by clearing `focusedGood` here — that
+  // way un-hiding the same good later resumes its focus for free.
+  const hideGood = (good: GoodId) => {
+    setHiddenGoods((prev) => new Set(prev).add(good));
+  };
+  const restoreHiddenGoods = () => {
+    setHiddenGoods(new Set());
   };
 
   const isValid = draft ? isValidRouteDraft(draft) : false;
+  const visibleGoodIds = GOOD_IDS.filter((good) => !hiddenGoods.has(good));
+  // Never dims/focuses a good that's currently hidden — a hidden column has
+  // nothing to emphasize against, and the board would otherwise read as
+  // uniformly dimmed with nothing standing out.
+  const effectiveFocus: GoodId | null =
+    focusedGood !== null && !hiddenGoods.has(focusedGood) ? focusedGood : null;
 
   const ribbonNodes: RouteRibbonNode[] = (draft?.stops ?? []).map((stop) => {
     const port = ports.find((p) => p.id === stop.portId)!;
@@ -224,6 +301,14 @@ export function PriceBoardOverlay({
       ) : (
         <>
           <p className="price-board__legend">{TREND_LEGEND}</p>
+          {hiddenGoods.size > 0 && (
+            <div className="price-board__hidden-note">
+              <span>Ukryte kolumny: {hiddenGoods.size}</span>
+              <button type="button" className="menu-btn" onClick={restoreHiddenGoods}>
+                Pokaż wszystkie
+              </button>
+            </div>
+          )}
           <div className="price-board__authoring-bar">
             {!authoring ? (
               <button type="button" className="menu-btn" onClick={startDraft}>
@@ -252,14 +337,42 @@ export function PriceBoardOverlay({
               </>
             )}
           </div>
-          <div className="price-board" role="table" aria-label="Region price board">
+          <div
+            className="price-board"
+            role="table"
+            aria-label="Region price board"
+            style={{ "--good-count": visibleGoodIds.length } as CSSProperties}
+          >
           <div className="price-board__row price-board__row--header" role="row">
             <span className="price-board__port-header">Port</span>
-            {GOOD_IDS.map((good) => (
-              <span key={good} className="price-board__good-header" title={TREND_LEGEND}>
-                {GOODS[good].name}
-              </span>
-            ))}
+            {visibleGoodIds.map((good) => {
+              const focused = effectiveFocus === good;
+              const dim = effectiveFocus !== null && !focused;
+              return (
+                <span key={good} className="price-board__good-col">
+                  <button
+                    type="button"
+                    className={
+                      dim ? "price-board__good-header price-board__good-header--dim" : "price-board__good-header"
+                    }
+                    title={TREND_LEGEND}
+                    aria-pressed={focused}
+                    aria-label={`Skup uwagę na: ${GOODS[good].name}`}
+                    onClick={() => toggleManualFocus(good)}
+                  >
+                    {GOODS[good].name}
+                  </button>
+                  <button
+                    type="button"
+                    className="menu-btn price-board__good-hide-btn"
+                    aria-label={`Ukryj kolumnę: ${GOODS[good].name}`}
+                    onClick={() => hideGood(good)}
+                  >
+                    ✕
+                  </button>
+                </span>
+              );
+            })}
           </div>
           {ports.map((port) => {
             const docked = port.id === dockedPortId;
@@ -300,7 +413,7 @@ export function PriceBoardOverlay({
                     </span>
                   )}
                 </span>
-                {GOOD_IDS.map((good) => {
+                {visibleGoodIds.map((good) => {
                   const cell = cellsByPort[port.id][good];
                   const isBestAsk = signal.entries[port.id][good].buyTier === "strong";
                   const isBestBid = signal.entries[port.id][good].sellTier === "strong";
@@ -308,7 +421,10 @@ export function PriceBoardOverlay({
                     stopIndex !== null
                       ? draft!.stops[stopIndex].orders.find((o) => o.good === good)
                       : undefined;
-                  const cellKey = `${stopIndex}:${good}`;
+                  // Stable identity for the "więcej" expansion (#405 nit 1):
+                  // portId, not stopIndex — see the `expanded` state comment.
+                  const cellKey = `${port.id}:${good}`;
+                  const dim = effectiveFocus !== null && effectiveFocus !== good;
                   const cellContent = (
                     <>
                       <span
@@ -334,7 +450,11 @@ export function PriceBoardOverlay({
                     </>
                   );
                   return (
-                    <span key={good} className="price-board__cell" role="cell">
+                    <span
+                      key={good}
+                      className={dim ? "price-board__cell price-board__cell--dim" : "price-board__cell"}
+                      role="cell"
+                    >
                       {authoring && inDraft ? (
                         <button
                           type="button"
@@ -379,7 +499,7 @@ export function PriceBoardOverlay({
                             type="button"
                             className="menu-btn"
                             aria-label={`${GOODS[good].name}: więcej opcji`}
-                            onClick={() => toggleExpanded(cellKey)}
+                            onClick={() => toggleExpanded(cellKey, good)}
                           >
                             więcej
                           </button>
@@ -447,10 +567,31 @@ export function PriceBoardOverlay({
                 routeName={draft.name}
                 nodes={ribbonNodes}
                 edit={{
-                  onRemoveStop: (index) => setDraft(removeStop(draft, index)),
+                  onRemoveStop: removeStopFromDraft,
                   onMoveStop: (index, direction) => setDraft(moveStop(draft, index, direction)),
                 }}
               />
+            </div>
+          )}
+          {/* #405 nit 2: RouteRibbon's editable dock only renders at >=2
+              Stops (its loop-closure graphic needs at least two nodes), so a
+              1-stop draft had no way to remove a mis-clicked first Stop
+              short of "Anuluj" (discarding the whole draft). This standalone
+              affordance covers exactly that gap — same remove semantics and
+              label convention as the ribbon's own edit row. */}
+          {authoring && draft && draft.stops.length === 1 && (
+            <div className="price-board__single-stop-dock">
+              <span className="price-board__single-stop-name">
+                #1 {ports.find((p) => p.id === draft.stops[0].portId)?.name}
+              </span>
+              <button
+                type="button"
+                className="menu-btn"
+                aria-label={`Usuń przystanek 1: ${ports.find((p) => p.id === draft.stops[0].portId)?.name}`}
+                onClick={() => removeStopFromDraft(0)}
+              >
+                Usuń
+              </button>
             </div>
           )}
         </>

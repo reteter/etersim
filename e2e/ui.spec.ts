@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { createWorld, type Ship, type World } from '../src/sim';
+import { createWorld, GOOD_IDS, type Ship, type World } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
 
 async function startNewGame(page: Page) {
@@ -740,6 +740,191 @@ test.describe('price board — port-centric route authoring (#394, docs/specs/E1
 
     await expect(dialog.getByRole('button', { name: 'Nowa trasa' })).toBeVisible();
     await expect(dialog.locator('.route-ribbon')).toHaveCount(0);
+  });
+});
+
+test.describe('price board — density tools (#395, docs/specs/E16-workbench.md §Information density)', () => {
+  test.beforeEach(async ({ page }) => {
+    await startNewGame(page);
+  });
+
+  test('contextual focus: attaching an order auto-focuses its column and dims the rest; closing the draft reverts it', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const portCount = await rows.count();
+
+    // Nothing dimmed before any authoring starts.
+    await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(0);
+
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+    const firstRow = rows.first();
+    await firstRow.click(); // Stop 1
+
+    // Attach an order on the first good column (GOOD_IDS[0]) — the
+    // "attaching an order for good X" gesture (spec §Information density).
+    await firstRow.locator('.price-board__cell-btn').first().click();
+
+    const headers = dialog.locator('.price-board__good-header');
+    await expect(headers.nth(0)).not.toHaveClass(/price-board__good-header--dim/);
+    await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(GOOD_IDS.length - 1);
+
+    // Every non-focused cell across every port row is dimmed; the focused
+    // column's cells never are (exact counts, not just "some").
+    await expect(dialog.locator('.price-board__cell--dim')).toHaveCount(
+      portCount * (GOOD_IDS.length - 1),
+    );
+    for (let i = 0; i < portCount; i++) {
+      await expect(
+        rows.nth(i).locator('.price-board__cell').nth(0),
+      ).not.toHaveClass(/price-board__cell--dim/);
+    }
+
+    // Closing the draft reverts the emphasis — "not building" per the AC.
+    await dialog.getByRole('button', { name: 'Anuluj' }).click();
+    await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(0);
+    await expect(dialog.locator('.price-board__cell--dim')).toHaveCount(0);
+  });
+
+  test('contextual focus: manual header click focuses a good outside authoring; the latest gesture wins over authoring focus', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    const headers = dialog.locator('.price-board__good-header');
+
+    // Manual focus works with no draft active at all.
+    await headers.nth(0).click();
+    await expect(headers.nth(0)).toHaveAttribute('aria-pressed', 'true');
+    await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(GOOD_IDS.length - 1);
+
+    // Toggling the same header off clears focus entirely.
+    await headers.nth(0).click();
+    await expect(headers.nth(0)).toHaveAttribute('aria-pressed', 'false');
+    await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(0);
+
+    // Re-focus manually, then start authoring and attach an order on a
+    // *different* good — the authoring attach wins at the moment it fires.
+    await headers.nth(0).click();
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const firstRow = rows.first();
+    await firstRow.click();
+    await firstRow.locator('.price-board__cell-btn').nth(1).click(); // good index 1
+    await expect(headers.nth(1)).toHaveAttribute('aria-pressed', 'true');
+    await expect(headers.nth(0)).toHaveAttribute('aria-pressed', 'false');
+    await expect(headers.nth(1)).not.toHaveClass(/price-board__good-header--dim/);
+
+    // A later manual header click, still mid-authoring, wins back — the
+    // two gestures don't fight; the latest one is what's visible.
+    await headers.nth(0).click();
+    await expect(headers.nth(0)).toHaveAttribute('aria-pressed', 'true');
+    await expect(headers.nth(0)).not.toHaveClass(/price-board__good-header--dim/);
+    await expect(headers.nth(1)).toHaveClass(/price-board__good-header--dim/);
+  });
+
+  test('pinning: hiding a column narrows the grid and is recoverable via the hidden-columns affordance', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    const headers = dialog.locator('.price-board__good-header');
+    await expect(headers).toHaveCount(GOOD_IDS.length);
+    await expect(dialog.locator('.price-board__hidden-note')).toHaveCount(0);
+
+    const headerRow = dialog.locator('.price-board__row--header');
+    const columnsBefore = await headerRow.evaluate(
+      (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
+    );
+
+    await dialog.locator('.price-board__good-hide-btn').last().click();
+
+    await expect(headers).toHaveCount(GOOD_IDS.length - 1);
+    const note = dialog.locator('.price-board__hidden-note');
+    await expect(note).toBeVisible();
+    await expect(note).toContainText('1');
+
+    const columnsAfter = await headerRow.evaluate(
+      (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
+    );
+    expect(columnsAfter).toBe(columnsBefore - 1);
+
+    // Recoverable: the affordance restores every hidden column.
+    await note.getByRole('button').click();
+    await expect(headers).toHaveCount(GOOD_IDS.length);
+    await expect(dialog.locator('.price-board__hidden-note')).toHaveCount(0);
+  });
+
+  test('pinning: hiding the currently-focused good clears the emphasis instead of dimming the whole board', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    const headers = dialog.locator('.price-board__good-header');
+
+    await headers.nth(0).click(); // focus GOOD_IDS[0]
+    await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(GOOD_IDS.length - 1);
+
+    await dialog.locator('.price-board__good-hide-btn').nth(0).click();
+    await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(0);
+    await expect(dialog.locator('.price-board__cell--dim')).toHaveCount(0);
+  });
+
+  test('a stale positional key never collapses or misattributes the qty/margin expansion after a Stop is removed (#405 nit 1)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const rowA = rows.nth(0);
+    const rowB = rows.nth(1);
+    const rowC = rows.nth(2);
+
+    await rowA.click(); // Stop 1 = A
+    await rowB.click(); // Stop 2 = B
+    // Attach an order for B's first good and expand its qty/margin panel.
+    await rowB.locator('.price-board__cell-btn').first().click();
+    await rowB.getByRole('button', { name: /więcej opcji/ }).click();
+    const qtyInput = rowB.locator('.price-board__order-more input').first();
+    await expect(qtyInput).toBeVisible();
+    await qtyInput.fill('7');
+
+    await rowC.click(); // Stop 3 = C, no order — nothing to expand there.
+    await expect(rowC.locator('.price-board__order-more')).toHaveCount(0);
+
+    // Remove Stop 1 (A) via the ribbon — B's positional stopIndex shifts
+    // from 1 to 0. A stable (non-positional) key must survive this.
+    await dialog.getByRole('button', { name: /Usuń przystanek 1/ }).click();
+
+    await expect(rowB.locator('.price-board__order-more')).toBeVisible();
+    await expect(rowB.locator('.price-board__order-more input').first()).toHaveValue('7');
+    // Nothing leaked onto C's cell for the same good.
+    await expect(rowC.locator('.price-board__order-more')).toHaveCount(0);
+  });
+
+  test('a 1-stop draft can remove its only Stop without discarding the whole draft (#405 nit 2)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const firstRow = rows.first();
+    await firstRow.click();
+    await expect(firstRow).toHaveClass(/price-board__row--in-draft/);
+    await expect(dialog.locator('.route-ribbon')).toHaveCount(0); // ribbon needs >=2 Stops
+
+    await dialog.getByRole('button', { name: /Usuń przystanek 1/ }).click();
+
+    await expect(firstRow).not.toHaveClass(/price-board__row--in-draft/);
+    // Still authoring (draft not discarded) — "Nowa trasa" hasn't come back.
+    await expect(dialog.getByRole('button', { name: 'Nowa trasa' })).toHaveCount(0);
+    await expect(dialog.getByRole('button', { name: 'Zapisz trasę' })).toBeDisabled();
   });
 });
 
