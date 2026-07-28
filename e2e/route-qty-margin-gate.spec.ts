@@ -36,7 +36,7 @@ async function openTrasyTab(page: Page) {
   await page.locator('g.port').first().click({ force: true });
   await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
   await page.getByRole('button', { name: /^Headquarters$/ }).click();
-  const dialog = page.getByRole('dialog', { name: /headquarters/i });
+  const dialog = page.getByRole('dialog', { name: /siedziba/i });
   await dialog.getByRole('tab', { name: 'Trasy' }).click();
   return dialog;
 }

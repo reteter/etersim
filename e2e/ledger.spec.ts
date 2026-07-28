@@ -53,7 +53,7 @@ async function openDockedPortMarket(page: Page) {
 async function importLedgerScenario(page: Page) {
   await startNewGame(page);
   const json = readFileSync('./e2e/fixtures/ledger-scenario.json', 'utf-8');
-  await page.locator('input[aria-label="Import save file"]').setInputFiles({
+  await page.locator('input[aria-label="Importuj plik zapisu"]').setInputFiles({
     name: 'ledger-scenario.json',
     mimeType: 'application/json',
     buffer: Buffer.from(json),
@@ -70,7 +70,7 @@ test.describe('Ledger overlay (#86)', () => {
     await expect(dialog.getByRole('tab', { name: 'Transakcje' })).toBeVisible();
     await expect(dialog.getByRole('tab', { name: 'Wartość firmy' })).toBeVisible();
 
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
     await expect(dialog).not.toBeVisible();
   });
 
@@ -170,7 +170,7 @@ test.describe('Ledger overlay (#86)', () => {
     await dialog.getByRole('tab', { name: 'Wartość firmy' }).click();
     // Day 1, before any day boundary — no netWorth snapshot exists yet.
     await expect(dialog.locator('.ledger-chart__point')).toHaveCount(0);
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
 
     await page.getByRole('button', { name: '100x' }).click();
     await expect

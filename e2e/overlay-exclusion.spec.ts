@@ -27,10 +27,10 @@ test.describe('Overlay mutual exclusion (#320)', () => {
   test('opening a second overlay closes the first — two overlays never stack', async ({ page }) => {
     await startNewGame(page);
 
-    const priceBoard = page.getByRole('dialog', { name: /price board/i });
-    const ledger = page.getByRole('dialog', { name: /ledger/i });
+    const priceBoard = page.getByRole('dialog', { name: /tablica cen/i });
+    const ledger = page.getByRole('dialog', { name: /księga/i });
 
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
+    await page.getByRole('button', { name: /^Księga$/ }).click();
     await expect(ledger).toBeVisible();
 
     // "b" opens the Price Board. With one shared `activeOverlay` field the
@@ -44,9 +44,9 @@ test.describe('Overlay mutual exclusion (#320)', () => {
   test('Esc closes the active overlay', async ({ page }) => {
     await startNewGame(page);
 
-    const priceBoard = page.getByRole('dialog', { name: /price board/i });
+    const priceBoard = page.getByRole('dialog', { name: /tablica cen/i });
 
-    await page.getByRole('button', { name: /^Price Board$/ }).click();
+    await page.getByRole('button', { name: /^Tablica cen$/ }).click();
     await expect(priceBoard).toBeVisible();
 
     await page.keyboard.press('Escape');

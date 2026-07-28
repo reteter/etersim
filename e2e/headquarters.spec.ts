@@ -154,7 +154,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     // PortPanel's Headquarters section shows a build progress bar once a
     // build exists — place one from the panel first.
     await headquartersBtn.click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
     const placeBtn = dialog.getByRole('button', { name: /Zleć budowę/ });
     await expect(placeBtn).toBeEnabled();
@@ -183,7 +183,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await page.locator('g.port').first().click({ force: true });
     await expect(page.locator('.headquarters-section .headquarters-progress__row')).toHaveCount(5);
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
 
     // Rush shows a live quote (nonzero — deep purse, nothing bought yet)
     // and executes: the purse drops by exactly the quoted amount.
@@ -208,7 +208,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
 
     await dialog.getByRole('button', { name: /Zleć budowę/ }).click();
     await expect(dialog.locator('.headquarters-stall')).toContainText(/stanie na rezerwie ₸500/);
@@ -238,7 +238,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // Create a two-Stop route: buy grain at A, sell grain at B.
@@ -265,7 +265,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await page.getByRole('button', { name: '100x' }).click();
 
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
     await dialog2.getByRole('tab', { name: 'Trasy' }).click();
     await expect(dialog2.locator('.route-row__result')).not.toContainText('no loop yet', {
       timeout: 30_000,
@@ -289,7 +289,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // buy grain (Stop 1, A) → sell grain (Stop 2, B), both greedy (no qty).
@@ -323,7 +323,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // Route: buy grain at A, sell grain at B.
@@ -346,7 +346,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     // B: move Stop 2 from B to a third port C.
     await page.getByRole('button', { name: '⏸' }).click();
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
     await dialog2.getByRole('tab', { name: 'Trasy' }).click();
     await dialog2
       .locator('.route-row')
@@ -382,7 +382,7 @@ test.describe('Headquarters overlay scroll (#176, via OverlayShell #181)', () =>
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
@@ -428,7 +428,7 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
 
     // `dialog` is the `.overlay` backdrop itself (role="dialog" sits on the
@@ -450,7 +450,7 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
 
     await page.keyboard.press('Escape');
@@ -465,7 +465,7 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
     await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     const budowa = dialog.getByRole('tab', { name: 'Budowa' });
     const trasy = dialog.getByRole('tab', { name: 'Trasy' });
 
