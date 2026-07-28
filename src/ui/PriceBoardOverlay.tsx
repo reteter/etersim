@@ -371,10 +371,9 @@ export function PriceBoardOverlay({
               const focused = effectiveFocus === good;
               const dim = effectiveFocus !== null && !focused;
               return (
-                <span key={good} className="price-board__good-col">
+                <span key={good} className="price-board__good-col" role="columnheader">
                   <button
                     type="button"
-                    role="columnheader"
                     className={
                       dim ? "price-board__good-header price-board__good-header--dim" : "price-board__good-header"
                     }

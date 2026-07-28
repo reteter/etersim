@@ -940,6 +940,11 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
     // Attach an order for the second good column (index 1) — leave the
     // first good (index 0) order-free so the negative case below is real.
     await firstRow.locator('.price-board__cell-btn').nth(1).click();
+    // Confirm the order actually attached before hiding anything —
+    // `handleCellClick` can no-op (inferOrderKind === null), and without
+    // this the strand assertions below could pass/fail for the wrong
+    // reason entirely.
+    await expect(firstRow.locator('.price-board__order-chip')).toHaveCount(1);
 
     // Hiding an order-free column: no strand — the badge stays plain.
     await dialog.locator('.price-board__good-hide-btn').nth(0).click();
@@ -976,12 +981,21 @@ test.describe('price board — grid a11y + focus emphasis (#414)', () => {
     const headerRow = table.locator('[role="row"].price-board__row--header');
     await expect(headerRow).toHaveCount(1);
 
+    // The columnheader role sits on the wrapping cell (`.price-board__good-col`),
+    // not the interactive button — an explicit `role` on the button would
+    // replace its implicit button role and orphan `aria-pressed` (not a
+    // supported attribute on columnheader), silently un-announcing #395's
+    // focus toggle to assistive tech.
     const columnHeaders = headerRow.locator('[role="columnheader"]');
     await expect(columnHeaders).toHaveCount(GOOD_IDS.length);
-    // The columnheader role must land on the same interactive button that
-    // already carries aria-pressed (#395), not a wrapping/duplicate node.
-    await expect(columnHeaders.first()).toHaveAttribute('aria-pressed', 'false');
-    await expect(columnHeaders.first()).toHaveClass(/price-board__good-header/);
+    await expect(columnHeaders.first().locator('.price-board__good-header')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+
+    // Regression guard: the focus-toggle button must still resolve as a
+    // real button by role, not just by CSS class.
+    await expect(dialog.getByRole('button', { name: /Skup uwagę na/ })).toHaveCount(GOOD_IDS.length);
   });
 
   test('good-header focus emphasis rides opacity/weight, not color (#414, ADR-0006)', async ({ page }) => {
