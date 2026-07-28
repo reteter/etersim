@@ -511,7 +511,26 @@ acknowledged anywhere before this).
 
 | Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 07-28 | #421 | #397 | 2 | 0 code; 2 docs (routed, not fix loop) | 0 | pending owner merge | `src/store/offerLabels.ts` selector reads `computeMarketSignal` read-only (never recomputes). *rzadkie* = producer scarcity (region producer-count ≤1 for the good's archetype) since every port's market carries every good, so presence can't encode scarcity — reviewer independently confirmed against `ARCHETYPE_PROFILES`. *pilne* = accepted contract with quota outstanding this period (sell-side, `applyTrade` crediting verified) rather than period-end proximity, which would need exporting a private `src/sim/contract.ts` function E16's UI+store-bridge boundary forbids. Mutation-tested (5/8 unit tests red on disabling push logic). Hue-free (ADR-0006) — reused existing neutral text color, no new hex. |
+| 07-28 | #421 | #397 | 2 | 0 code; 2 docs (routed, not fix loop) | 0 | pass | `src/store/offerLabels.ts` selector reads `computeMarketSignal` read-only (never recomputes). *rzadkie* = producer scarcity (region producer-count ≤1 for the good's archetype) since every port's market carries every good, so presence can't encode scarcity — reviewer independently confirmed against `ARCHETYPE_PROFILES`. *pilne* = accepted contract with quota outstanding this period (sell-side, `applyTrade` crediting verified) rather than period-end proximity, which would need exporting a private `src/sim/contract.ts` function E16's UI+store-bridge boundary forbids. Mutation-tested (5/8 unit tests red on disabling push logic). Hue-free (ADR-0006) — reused existing neutral text color, no new hex. Merged `f28107f`. |
+
+## E16 — #413 + #414 board polish (2026-07-28, s28)
+
+One Sonnet coder, background + `isolation: "worktree"`, batched per WORKFLOW §Batching (both
+findings from the #395/#405 tier-2 review, same file). **The coder caught its own ARIA defect
+mid-task**: a first pass put `role="columnheader"` directly on the `<button aria-pressed>`,
+which replaces the button's implicit role and orphans `aria-pressed` (invalid on
+`columnheader`) — an advisor consult flagged it, the coder moved the role to the wrapping
+`<span>` instead (`table > row > columnheader`, button nested inside keeping its own implicit
+role), and added a regression guard test so the mistake can't silently return. The reviewer
+independently verified the fix is the correct ARIA pattern rather than accepting the coder's
+self-correction at face value. Tier-2 review: **MERGE**, zero blocking findings; one SHOULD-FIX
+(spec text at two lines + the index row still called both issues open findings) applied as a
+docs-sync follow-up commit on the same branch; one NIT (port-header/port-name share the same
+role-less gap #414 fixed for good-headers) routed as a candidate follow-up, not filed.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-28 | #422 | #413, #414 | 2 | 0 code; 1 docs (routed, not fix loop) | 0 | pending owner merge | #413: `hiddenGoodsHaveOrders` derives from `draft.stops.some(...).some(order => hiddenGoods.has(order.good))`, badges "Ukryte kolumny" with bold/full-opacity styling matching the existing `.market-row__trade-btn--bright/--faded` convention. #414: `role="columnheader"` on `.price-board__good-col` wrapper (not the button — see self-caught defect above); `.price-board__good-header:hover`/`[aria-pressed]` emphasis moved `color` → `font-weight`. Both hue-free (ADR-0006). 91 e2e tests swept (`ui.spec.ts`/`kontrakty.spec.ts`/`market.spec.ts`), 3 new specs red-before-green verified. |
 
 ## Reading the sample
 
