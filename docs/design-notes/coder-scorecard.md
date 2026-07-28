@@ -496,6 +496,23 @@ implementation rather than reconstructed after it.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 07-28 | #415 | #395, #405 | 2 | 0 code; 1 process (spec drift) | 1 (docs only) | pass | Board density (contextual focus + column pinning) + the two #394 authoring nits. Focus precedence: one shared `focusedGood`, **latest gesture wins** — the coder's advisor killed the naive "authoring always wins" rule, which would have made the manual control dead exactly mid-authoring; derived `effectiveFocus` suppresses emphasis when the focused good is hidden, so focus+hide never dims the whole board. Intensity-only, hue-free (ADR-0006 / incident 0002 hold). Scope walls held: UI-local state only, **nothing persisted** (`persistence.ts` untouched → ADR-0007's SAVE_VERSION rule never in play), no `src/sim`. Reviewer verified the `${portId}:${good}` keying against the render loop incl. the `p1`/`p10` prefix case (see above), and confirmed the repo's recurring `dispatchEvent` e2e smell is **absent** — real `.click()`/`.fill()`, exact-count assertions. Two nits routed to issues rather than the fix loop: **#413** (hiding a column strands a live attached order — invisible but committable; satisfies AC3 literally, so a discoverability gap, not this PR's bug) and **#414** (interactive good headers lack `role="columnheader"` — pre-existing; focus emphasis rides `color` not opacity/weight — grayscale, so no ADR-0006 collision, but a third channel meaning "emphasis" where the spec names two). |
 
+## E16 — #397 offer labels (2026-07-28, s28)
+
+One Sonnet coder, background + `isolation: "worktree"`, solo issue (#227's E16 fold-in).
+Tier-2 review (Sonnet, distilled package): **MERGE**, zero blocking findings on either axis.
+Two SHOULD-FIX items were both docs gaps the coder had already flagged as scope calls in its
+own report rather than silently resolved — the review verified each against `src/sim` (region
+archetype production, contract quota crediting) instead of taking the coder's word, then
+routed both to the Orchestrator per the "reviewers don't relitigate spec in a diff" rule. The
+Orchestrator applied both as a docs-only follow-up commit on the same branch (spec + CONTEXT.md
+recording the as-built label semantics, and flagging an unresolved "pilne" naming collision with
+the unrelated #226 Kontrakty desperation-clause label — same word, different concept, not yet
+acknowledged anywhere before this).
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-28 | #421 | #397 | 2 | 0 code; 2 docs (routed, not fix loop) | 0 | pending owner merge | `src/store/offerLabels.ts` selector reads `computeMarketSignal` read-only (never recomputes). *rzadkie* = producer scarcity (region producer-count ≤1 for the good's archetype) since every port's market carries every good, so presence can't encode scarcity — reviewer independently confirmed against `ARCHETYPE_PROFILES`. *pilne* = accepted contract with quota outstanding this period (sell-side, `applyTrade` crediting verified) rather than period-end proximity, which would need exporting a private `src/sim/contract.ts` function E16's UI+store-bridge boundary forbids. Mutation-tested (5/8 unit tests red on disabling push logic). Hue-free (ADR-0006) — reused existing neutral text color, no new hex. |
+
 ## Reading the sample
 
 Judge on trend, not single rows: findings-per-PR and fix-loop rounds at
