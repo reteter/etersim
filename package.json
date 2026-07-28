@@ -14,7 +14,8 @@
     "docs:normalize": "node scripts/normalize-markdown.mjs",
     "check:behavior-preserving": "node scripts/check-behavior-preserving.mjs",
     "check:triggers": "node scripts/check-unpark-triggers.mjs",
-    "check:glossary": "node scripts/check-glossary-anchoring.mjs"
+    "check:glossary": "node scripts/check-glossary-anchoring.mjs",
+    "selfcheck": "node scripts/selfcheck.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",
