@@ -926,6 +926,81 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
     await expect(dialog.getByRole('button', { name: 'Nowa trasa' })).toHaveCount(0);
     await expect(dialog.getByRole('button', { name: 'Zapisz trasę' })).toBeDisabled();
   });
+
+  test('hiding a column that carries a live draft order badges the hidden-columns affordance (#413)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+
+    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const firstRow = rows.first();
+    await firstRow.click(); // Stop 1
+    // Attach an order for the second good column (index 1) — leave the
+    // first good (index 0) order-free so the negative case below is real.
+    await firstRow.locator('.price-board__cell-btn').nth(1).click();
+
+    // Hiding an order-free column: no strand — the badge stays plain.
+    await dialog.locator('.price-board__good-hide-btn').nth(0).click();
+    const note = dialog.locator('.price-board__hidden-note');
+    await expect(note).toBeVisible();
+    await expect(note).not.toHaveClass(/price-board__hidden-note--strand/);
+
+    // Hiding the good that actually carries the attached order: the badge
+    // must turn distinct, and stay that way — the order is still fully
+    // committable but now invisible on the grid.
+    await dialog.locator('.price-board__good-hide-btn').nth(0).click(); // now good index 1
+    await expect(note).toHaveClass(/price-board__hidden-note--strand/);
+    await expect(note).toContainText('zlecen'); // Polish stem: zlecenie/zlecenia/zleceń
+
+    // Restoring the hidden columns clears the strand along with the note.
+    await note.getByRole('button', { name: 'Pokaż wszystkie' }).click();
+    await expect(dialog.locator('.price-board__hidden-note')).toHaveCount(0);
+  });
+});
+
+test.describe('price board — grid a11y + focus emphasis (#414)', () => {
+  test.beforeEach(async ({ page }) => {
+    await startNewGame(page);
+  });
+
+  test('interactive good headers expose role="columnheader" inside role="table" > role="row" (#414)', async ({
+    page,
+  }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+
+    const table = dialog.locator('[role="table"].price-board');
+    await expect(table).toHaveCount(1);
+    const headerRow = table.locator('[role="row"].price-board__row--header');
+    await expect(headerRow).toHaveCount(1);
+
+    const columnHeaders = headerRow.locator('[role="columnheader"]');
+    await expect(columnHeaders).toHaveCount(GOOD_IDS.length);
+    // The columnheader role must land on the same interactive button that
+    // already carries aria-pressed (#395), not a wrapping/duplicate node.
+    await expect(columnHeaders.first()).toHaveAttribute('aria-pressed', 'false');
+    await expect(columnHeaders.first()).toHaveClass(/price-board__good-header/);
+  });
+
+  test('good-header focus emphasis rides opacity/weight, not color (#414, ADR-0006)', async ({ page }) => {
+    await page.getByRole('button', { name: /price board/i }).click();
+    const dialog = page.getByRole('dialog', { name: /price board/i });
+    const header = dialog.locator('.price-board__good-header').first();
+
+    const restColor = await header.evaluate((el) => getComputedStyle(el).color);
+    const restWeight = await header.evaluate((el) => getComputedStyle(el).fontWeight);
+
+    await header.click(); // aria-pressed="true"
+    await expect(header).toHaveAttribute('aria-pressed', 'true');
+    const pressedColor = await header.evaluate((el) => getComputedStyle(el).color);
+    const pressedWeight = await header.evaluate((el) => getComputedStyle(el).fontWeight);
+
+    // The emphasis signal is weight (or opacity), never a color shift.
+    expect(pressedColor).toBe(restColor);
+    expect(pressedWeight).not.toBe(restWeight);
+  });
 });
 
 test.describe('trading interactions (when docked)', () => {

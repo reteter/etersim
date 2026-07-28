@@ -1040,9 +1040,15 @@ body {
   cursor: pointer;
 }
 
+/* #414: the emphasis signal for "interactive/focused" is weight, not color
+   (docs/specs/E16-workbench.md §"Visual channel — intensity, not hue"; #395
+   AC1) — a `color` shift here would be a second, grayscale-but-still-hue way
+   of saying "emphasis" alongside the opacity convention already used for
+   dim/best-quote elsewhere in this file. `color: inherit` (unchanged from
+   the base rule) stays untouched; only `font-weight` moves. */
 .price-board__good-header:hover,
 .price-board__good-header[aria-pressed="true"] {
-  color: #e6e6e6;
+  font-weight: 700;
 }
 
 .price-board__good-hide-btn {
@@ -1080,6 +1086,17 @@ body {
   margin-bottom: 0.5rem;
   font-size: 0.8rem;
   color: #8891a3;
+  opacity: 0.75;
+}
+
+/* Strand badge (#413): at least one hidden column carries a live draft
+   order — invisible on the grid but still fully committable via "Zapisz
+   trasę". Same opacity/weight intensity pairing as
+   .market-row__trade-btn--bright/--faded above (no new hue, ADR-0006): full
+   opacity plus bold weight against the note's own dimmer baseline. */
+.price-board__hidden-note--strand {
+  opacity: 1;
+  font-weight: 700;
 }
 
 /* #405 nit 2: the 1-stop draft's standalone remove affordance — same dock

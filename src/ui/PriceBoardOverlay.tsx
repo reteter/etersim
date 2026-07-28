@@ -271,6 +271,14 @@ export function PriceBoardOverlay({
 
   const isValid = draft ? isValidRouteDraft(draft) : false;
   const visibleGoodIds = GOOD_IDS.filter((good) => !hiddenGoods.has(good));
+  // Strand detection (#413): a hidden column can still carry a live draft
+  // order — it's fully committable via "Zapisz trasę" while invisible on
+  // the grid. Purely a read of `draft`, never a mutation (hiding stays the
+  // display-only filter #395 established) — badges the existing
+  // hidden-columns affordance instead of restricting or auto-unhiding.
+  const hiddenGoodsHaveOrders =
+    draft !== null &&
+    draft.stops.some((stop) => stop.orders.some((order) => hiddenGoods.has(order.good)));
   // Never dims/focuses a good that's currently hidden — a hidden column has
   // nothing to emphasize against, and the board would otherwise read as
   // uniformly dimmed with nothing standing out.
@@ -306,8 +314,18 @@ export function PriceBoardOverlay({
         <>
           <p className="price-board__legend">{TREND_LEGEND}</p>
           {hiddenGoods.size > 0 && (
-            <div className="price-board__hidden-note">
-              <span>Ukryte kolumny: {hiddenGoods.size}</span>
+            <div
+              className={
+                hiddenGoodsHaveOrders
+                  ? "price-board__hidden-note price-board__hidden-note--strand"
+                  : "price-board__hidden-note"
+              }
+            >
+              <span>
+                Ukryte kolumny: {hiddenGoods.size}
+                {hiddenGoodsHaveOrders &&
+                  " · zawiera zlecenie w trasie — pozostaje zapisywalne mimo ukrycia"}
+              </span>
               <button type="button" className="menu-btn" onClick={restoreHiddenGoods}>
                 Pokaż wszystkie
               </button>
@@ -356,6 +374,7 @@ export function PriceBoardOverlay({
                 <span key={good} className="price-board__good-col">
                   <button
                     type="button"
+                    role="columnheader"
                     className={
                       dim ? "price-board__good-header price-board__good-header--dim" : "price-board__good-header"
                     }
