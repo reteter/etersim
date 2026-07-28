@@ -1,6 +1,5 @@
 import { useState, type CSSProperties } from "react";
 import {
-  GOODS,
   shortestCourse,
   type LaneId,
   type Port,
@@ -11,6 +10,7 @@ import {
   type Voyage,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { ARCHETYPE_ICONS, ShipIcon } from "./icons";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 import { projectToViewBox } from "./mapProjection";
@@ -115,7 +115,7 @@ function RefitBubble({ region, ships, shipyard }: { region: Region; ships: reado
   const tooltip = [
     `Przebudowa: ${data.shipName}`,
     `Docelowa ładownia: ${data.targetHold}`,
-    ...data.remaining.map((r) => `${GOODS[r.good].name}: brakuje ${r.remaining}`),
+    ...data.remaining.map((r) => `${GOOD_NAME_PL[r.good]}: brakuje ${r.remaining}`),
   ].join("\n");
 
   return (
@@ -225,7 +225,7 @@ export function RegionMap({
       className="region-map"
       viewBox={`0 0 ${VIEW_SIZE} ${VIEW_SIZE}`}
       role="img"
-      aria-label="Region map"
+      aria-label="Mapa regionu"
     >
       <defs>
         <radialGradient id="star-gradient" cx="50%" cy="50%" r="50%">

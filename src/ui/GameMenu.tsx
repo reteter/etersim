@@ -39,31 +39,31 @@ export function GameMenu() {
     try {
       loadWorld(parseWorldJson(await file.text()));
     } catch {
-      window.alert("Could not import that file — it is not a valid etersim save.");
+      window.alert("Nie udało się zaimportować pliku — to nie jest prawidłowy zapis etersim.");
     }
   };
 
   return (
-    <div className="top-bar__menu" role="group" aria-label="Game menu">
+    <div className="top-bar__menu" role="group" aria-label="Menu gry">
       <button type="button" className="menu-btn" onClick={onExport} disabled={!world}>
-        Export
+        Eksportuj
       </button>
       <button type="button" className="menu-btn" onClick={() => fileInput.current?.click()}>
-        Import
+        Importuj
       </button>
       <input
         ref={fileInput}
         className="menu-file"
         type="file"
         accept="application/json,.json"
-        aria-label="Import save file"
+        aria-label="Importuj plik zapisu"
         onChange={onImportFile}
       />
       <button type="button" className="menu-btn" onClick={() => setOptionsOpen(true)}>
-        Options
+        Opcje
       </button>
       <button type="button" className="menu-btn" onClick={() => setCreditsOpen(true)}>
-        Credits
+        Autorzy
       </button>
       {optionsOpen && <OptionsOverlay onClose={() => setOptionsOpen(false)} />}
       {creditsOpen && <CreditsOverlay onClose={() => setCreditsOpen(false)} />}

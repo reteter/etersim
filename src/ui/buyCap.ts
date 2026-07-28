@@ -40,9 +40,9 @@ export function buyCapReason(holdSpace: number, stock: number, buyMax: number): 
 export function buyCapHint(reason: BuyCapReason, holdSpace: number, stock: number, buyMax: number): string {
   switch (reason) {
     case "hold":
-      return holdSpace <= 0 ? "Hold full" : `Only ${holdSpace} hold space left`;
+      return holdSpace <= 0 ? "Ładownia pełna" : `Zostało tylko ${holdSpace} miejsca w ładowni`;
     case "stock":
-      return stock <= 0 ? "Out of stock" : `Only ${stock} in stock`;
+      return stock <= 0 ? "Brak zapasu" : `W zapasie tylko ${stock}`;
     case "thalers":
       return buyMax <= 0 ? "Nie stać cię na żaden zakup" : `Kasa ogranicza zakup do ${buyMax}`;
   }

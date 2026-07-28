@@ -33,12 +33,12 @@ async function continueWithWorld(page: Page, world: World) {
     { key: AUTOSAVE_KEY, json: saveJson(world) },
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /continue/i }).click();
+  await page.getByRole('button', { name: /kontynuuj/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
 async function openKontrakty(page: Page) {
-  await page.getByRole('button', { name: 'Price Board' }).click();
+  await page.getByRole('button', { name: 'Tablica cen' }).click();
   await expect(page.locator('.overlay__panel')).toBeVisible();
   await page.getByRole('tab', { name: 'Kontrakty' }).click();
 }

@@ -66,8 +66,8 @@ describe("PortPanel fleet resolution (#319)", () => {
     // The Sail control is rendered for the RESOLVED ship and carries its name.
     // Controlled is the second ship (Beta), so the panel resolved past the
     // ships[0] fallback (Alpha) — the exact behaviour #319 must preserve.
-    expect(screen.getByRole("button", { name: /Sail Beta Runner here/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Sail Alpha Runner here/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Płyń tu — Beta Runner/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Płyń tu — Alpha Runner/ })).toBeNull();
   });
 
   it("single-ship render is stable (preserved surface)", () => {
@@ -94,22 +94,22 @@ describe("TopBar overlays — single-overlay behaviour (#320)", () => {
     render(<TopBar />);
 
     // Nothing open initially.
-    expect(screen.queryByRole("table", { name: "Region price board" })).toBeNull();
+    expect(screen.queryByRole("table", { name: "Regionalna tablica cen" })).toBeNull();
 
     // Button opens the Price Board; the "b" hotkey toggles it back closed.
-    await user.click(screen.getByRole("button", { name: "Price Board" }));
-    expect(screen.getByRole("table", { name: "Region price board" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Tablica cen" }));
+    expect(screen.getByRole("table", { name: "Regionalna tablica cen" })).toBeInTheDocument();
     await user.keyboard("b");
-    expect(screen.queryByRole("table", { name: "Region price board" })).toBeNull();
+    expect(screen.queryByRole("table", { name: "Regionalna tablica cen" })).toBeNull();
 
     // Ledger and Headquarters each open from their own button. We assert only
     // that the opened overlay is present — never a two-overlays-open state,
     // which #320 deliberately replaces with mutual exclusion.
-    await user.click(screen.getByRole("button", { name: "Ledger" }));
-    expect(screen.getByRole("table", { name: "Transactions" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Księga" }));
+    expect(screen.getByRole("table", { name: "Transakcje" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Headquarters" }));
-    expect(screen.getByRole("dialog", { name: /headquarters/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Siedziba" }));
+    expect(screen.getByRole("dialog", { name: /siedziba/i })).toBeInTheDocument();
   });
 });
 

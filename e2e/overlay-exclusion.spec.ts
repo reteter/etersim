@@ -19,7 +19,7 @@ import { test, expect, type Page } from '@playwright/test';
  */
 async function startNewGame(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: /new game/i }).click();
+  await page.getByRole('button', { name: /nowa gra/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 

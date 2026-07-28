@@ -33,7 +33,7 @@ async function continueWithWorld(page: Page, world: World) {
     { key: AUTOSAVE_KEY, json: saveJson(world) },
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /continue/i }).click();
+  await page.getByRole('button', { name: /kontynuuj/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -75,8 +75,8 @@ function withActiveGranary(seed: string): { world: World; agrarianPortId: string
 }
 
 async function openBoardAuthoring(page: Page) {
-  await page.getByRole('button', { name: /price board/i }).click();
-  const dialog = page.getByRole('dialog', { name: /price board/i });
+  await page.getByRole('button', { name: /tablica cen/i }).click();
+  const dialog = page.getByRole('dialog', { name: /tablica cen/i });
   await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
   return dialog;
 }
@@ -104,7 +104,7 @@ test.describe('price board — market-free order kinds (#419, docs/specs/E16-wor
     const chip = grainCell.locator('.price-board__order-chip');
 
     await grainCell.getByRole('button', { name: /więcej opcji/ }).click();
-    await grainCell.getByRole('button', { name: 'Grain: ustaw zlecenie na Złóż' }).click();
+    await grainCell.getByRole('button', { name: 'Zboże: ustaw zlecenie na Złóż' }).click();
 
     // Chip now reads the market-free kind, with no ⇄ shortcut (AC4).
     await expect(chip.locator('.price-board__order-chip-label')).toHaveText('Złóż');
@@ -121,18 +121,18 @@ test.describe('price board — market-free order kinds (#419, docs/specs/E16-wor
     const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
     await expect(saveBtn).toBeEnabled();
     await saveBtn.click();
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
 
     // Round-trip: the saved Route's Stop 1 (agrarian port, added first)
     // carries the `store` order, read through the Trasy editor's own
     // chip (independent rendering — this is not the board reading itself
     // back, it is the sim's stored Route confirmed via `RoutesTab`).
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const hqDialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const hqDialog = page.getByRole('dialog', { name: /siedziba/i });
     await hqDialog.getByRole('tab', { name: 'Trasy' }).click();
-    await hqDialog.locator('.route-row').first().getByRole('button', { name: /^Edit$/ }).click();
+    await hqDialog.locator('.route-row').first().getByRole('button', { name: /^Edytuj$/ }).click();
 
-    const storeChip = hqDialog.getByRole('button', { name: /^Grain store at Stop 1$/ });
+    const storeChip = hqDialog.getByRole('button', { name: /^Zboże Złóż — przystanek 1$/ });
     await expect(storeChip).toBeVisible();
     await expect(storeChip).toHaveAttribute('aria-pressed', 'true');
   });
@@ -190,8 +190,8 @@ test.describe('price board — market-free order kinds (#419, docs/specs/E16-wor
     const { world, agrarianPortId, otherPortId } = withActiveGranary('board-storehouse-marker');
     await continueWithWorld(page, world);
 
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
     const agrarianIdx = world.region.ports.findIndex((p) => p.id === agrarianPortId);
     const otherIdx = world.region.ports.findIndex((p) => p.id === otherPortId);

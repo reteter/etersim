@@ -5,15 +5,15 @@
  */
 export function CreditsOverlay({ onClose }: { onClose: () => void }) {
   return (
-    <div className="overlay" role="dialog" aria-label="Credits" aria-modal="true">
+    <div className="overlay" role="dialog" aria-label="Autorzy" aria-modal="true">
       <div className="overlay__panel">
-        <h2 className="overlay__title">Credits</h2>
+        <h2 className="overlay__title">Autorzy</h2>
         <p className="overlay__text">
-          Ship and port icons by{" "}
+          Ikony statków i portów:{" "}
           <a href="https://game-icons.net/1x1/lorc/galleon.html" target="_blank" rel="noreferrer">
             Lorc
           </a>{" "}
-          and{" "}
+          oraz{" "}
           <a
             href="https://game-icons.net/1x1/delapouite/modern-city.html"
             target="_blank"
@@ -21,22 +21,22 @@ export function CreditsOverlay({ onClose }: { onClose: () => void }) {
           >
             Delapouite
           </a>
-          , from{" "}
+          , z{" "}
           <a href="https://game-icons.net" target="_blank" rel="noreferrer">
             game-icons.net
           </a>
-          , licensed under{" "}
+          , na licencji{" "}
           <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">
             CC BY 3.0
           </a>
           .
         </p>
         <p className="overlay__text">
-          Good icons: Grain (
+          Ikony towarów: Zboże (
           <a href="https://game-icons.net/1x1/lorc/triple-corn.html" target="_blank" rel="noreferrer">
             Triple corn
           </a>
-          ) and Aether Salt (
+          ) oraz Sól eteryczna (
           <a
             href="https://game-icons.net/1x1/lorc/crystal-cluster.html"
             target="_blank"
@@ -44,15 +44,15 @@ export function CreditsOverlay({ onClose }: { onClose: () => void }) {
           >
             Crystal cluster
           </a>
-          ) and Electronics (
+          ) oraz Elektronika (
           <a href="https://game-icons.net/1x1/lorc/microchip.html" target="_blank" rel="noreferrer">
             Microchip
           </a>
-          ) by Lorc; Textiles (
+          ) autorstwa Lorc; Tekstylia (
           <a href="https://game-icons.net/1x1/delapouite/wool.html" target="_blank" rel="noreferrer">
             Wool
           </a>
-          ) and Timber (
+          ) oraz Drewno (
           <a
             href="https://game-icons.net/1x1/delapouite/wood-pile.html"
             target="_blank"
@@ -60,18 +60,18 @@ export function CreditsOverlay({ onClose }: { onClose: () => void }) {
           >
             Wood pile
           </a>
-          ) by Delapouite, from{" "}
+          ) autorstwa Delapouite, z{" "}
           <a href="https://game-icons.net" target="_blank" rel="noreferrer">
             game-icons.net
           </a>
-          , licensed under{" "}
+          , na licencji{" "}
           <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">
             CC BY 3.0
           </a>
           .
         </p>
         <button type="button" className="menu-btn" onClick={onClose}>
-          Close
+          Zamknij
         </button>
       </div>
     </div>

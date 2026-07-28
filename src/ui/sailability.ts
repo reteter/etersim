@@ -29,12 +29,12 @@ export function sailability(
     return { disabledHint: "W przebudowie w stoczni — postój zablokowany.", eta: null };
   }
   if (ship.location.kind !== "docked") {
-    return { disabledHint: "Underway — dock to sail elsewhere.", eta: null };
+    return { disabledHint: "W drodze — musi zadokować, by popłynąć gdzie indziej.", eta: null };
   }
   if (ship.location.portId === portId) {
-    return { disabledHint: "Already docked here.", eta: null };
+    return { disabledHint: "Już tu zadokowany.", eta: null };
   }
   const eta = previewCourseTicks(region, ship.location.portId, portId);
-  if (eta === null) return { disabledHint: "No course to this port.", eta: null };
+  if (eta === null) return { disabledHint: "Brak kursu do tego portu.", eta: null };
   return { disabledHint: null, eta };
 }

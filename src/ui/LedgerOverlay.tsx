@@ -1,9 +1,20 @@
 import { useState } from "react";
-import { GOODS, type LedgerEvent, type PortId, type Ship, type ShipId, type World } from "../sim";
+import { type LedgerEvent, type PortId, type Ship, type ShipId, type World } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { OverlayShell } from "./OverlayShell";
 import { Tabs } from "./Tabs";
 import { formatWorldDate } from "./worldDate";
+
+/** Polish labels for `SettlementEvent.outcome` (src/sim/ledger.ts) — the sim
+ *  keeps its own English enum, this is the one UI-side display mapping
+ *  (same precedent as `GOOD_NAME_PL`/`GUILD_NAME_PL`). */
+const OUTCOME_LABEL_PL: Record<"met" | "missed" | "breached" | "resigned", string> = {
+  met: "zaliczony",
+  missed: "chybiony",
+  breached: "zerwany",
+  resigned: "rozwiązany",
+};
 
 type Tab = "transactions" | "value";
 
@@ -116,47 +127,50 @@ function shipName(world: World, shipId: ShipId): string {
   return world.company.ships.find((s) => s.id === shipId)?.name ?? shipId;
 }
 
-/** Human-readable, English description of one Ledger event (matches the
- *  rest of the shipped UI's language — see PriceBoardOverlay, PortPanel). */
+/** Human-readable, Polish description of one Ledger event (#184 UI language
+ *  sweep — matches the rest of the shipped UI's language, see
+ *  PriceBoardOverlay, PortPanel). */
 function describeTransaction(event: TransactionEvent, world: World): string {
   switch (event.kind) {
     case "trade":
-      return `${event.side === "buy" ? "Bought" : "Sold"} ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+      return `${event.side === "buy" ? "Kupiono" : "Sprzedano"} ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "dockingFee":
-      return `Docking fee at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+      return `Opłata dokowa w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "autoDraw":
-      return `Auto-draw: ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)}`;
+      return `Auto-zakup: ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)}`;
     case "rush":
-      return `Rush buy: ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)}`;
+      return `Zakup ekspresowy: ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)}`;
     case "delivery":
-      return `Delivered ${event.qty} ${GOODS[event.good].name} to the build site at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+      return `Dostarczono ${event.qty} ${GOOD_NAME_PL[event.good]} na plac budowy w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "laborFee":
-      return "Labor fee (build order placed)";
+      return "Robocizna (złożono zlecenie budowy)";
     case "founding":
-      return `Founded Headquarters at ${portName(world, event.portId)}`;
+      return `Założono Siedzibę w porcie ${portName(world, event.portId)}`;
     case "launch":
-      return `Launched ${shipName(world, event.shipId)} at ${portName(world, event.portId)}`;
+      return `Zwodowano ${shipName(world, event.shipId)} w porcie ${portName(world, event.portId)}`;
     // enrollmentFee (E3, #92): minimal, mechanical exhaustiveness fix so this
     // shared UI file keeps typechecking after the LedgerEvent union extension
     // in src/sim/ledger.ts — no dedicated guild UI treatment, out of this
     // issue's scope wall; flagged in the completion report.
     case "enrollmentFee":
-      return `Enrolled in a guild (guildId: ${event.guildId})`;
+      return `Wstąpiono do gildii (guildId: ${event.guildId})`;
     // upkeep (E3, #95): same minimal-exhaustiveness precedent as enrollmentFee
     // above — no dedicated Kontrakty-tab-adjacent UI polish, out of this
     // issue's scope wall (sim-only task); flagged in the completion report.
     case "upkeep":
-      return `Upkeep fee (${shipName(world, event.shipId)})`;
+      return `Utrzymanie (${shipName(world, event.shipId)})`;
     // contractFee/settlement (E3, #94/#94-fix): same minimal-exhaustiveness
     // precedent as enrollmentFee/upkeep above — no dedicated Kontrakty-tab UI
     // treatment; out of this sim-only issue's scope wall, flagged in the
     // completion report. `settlement.outcome` now widens to "met" | "missed" |
     // "breached" | "resigned" (owner decision — termination is part of the
-    // audit stream) — this generic interpolation covers all four unchanged.
+    // audit stream) — this generic interpolation covers all four unchanged,
+    // mapped through `OUTCOME_LABEL_PL` (#184 — the sim keeps its own English
+    // enum, this file's display-only translation).
     case "contractFee":
-      return `Contract fee (contract ${event.contractId})`;
+      return `Opłata kontraktowa (kontrakt ${event.contractId})`;
     case "settlement":
-      return `Contract ${event.contractId} settlement: ${event.outcome} (${event.pointsDelta >= 0 ? "+" : ""}${event.pointsDelta} pts)`;
+      return `Rozliczenie kontraktu ${event.contractId}: ${OUTCOME_LABEL_PL[event.outcome]} (${event.pointsDelta >= 0 ? "+" : ""}${event.pointsDelta} pkt)`;
     // shipyardBuilt/refitStart/refitComplete (E14, #275): minimal, mechanical
     // exhaustiveness fix (same precedent as every prior LedgerEvent-union
     // extension in this file) — no dedicated Shipyard UI treatment here
@@ -164,21 +178,21 @@ function describeTransaction(event: TransactionEvent, world: World): string {
     case "shipyardBuilt":
       // #286 fix: this event now fires when the Shipyard's own construction
       // site completes (activation), not at commission time.
-      return `Shipyard built at ${portName(world, event.portId)}`;
+      return `Zbudowano stocznię w porcie ${portName(world, event.portId)}`;
     case "refitStart":
-      return `Refit started for ${shipName(world, event.shipId)} at ${portName(world, event.portId)}`;
+      return `Rozpoczęto przebudowę ${shipName(world, event.shipId)} w porcie ${portName(world, event.portId)}`;
     case "refitComplete":
-      return `Refit completed for ${shipName(world, event.shipId)}: Hold -> ${event.hold}`;
+      return `Zakończono przebudowę ${shipName(world, event.shipId)}: ładownia -> ${event.hold}`;
     // store/withdraw/completed (E13, #100): minimal, mechanical exhaustiveness
     // fix (same precedent as every prior LedgerEvent-union extension in this
     // file) — no dedicated Storehouse UI treatment here (issue #101, out of
     // this sim-only scope wall; flagged in the completion report).
     case "store":
-      return `Stored ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+      return `Złożono ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "withdraw":
-      return `Withdrew ${event.qty} ${GOODS[event.good].name} at ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
+      return `Pobrano ${event.qty} ${GOOD_NAME_PL[event.good]} w porcie ${portName(world, event.portId)} (${shipName(world, event.shipId)})`;
     case "completed":
-      return `Building completed at ${portName(world, event.portId)}`;
+      return `Ukończono budowę w porcie ${portName(world, event.portId)}`;
   }
 }
 
@@ -196,13 +210,13 @@ function TransactionsTab({ world }: { world: World }) {
   return (
     <div>
       <div className="ledger__filter-row">
-        <label htmlFor="ledger-ship-filter">Ship</label>
+        <label htmlFor="ledger-ship-filter">Statek</label>
         <select
           id="ledger-ship-filter"
           value={filter}
           onChange={(e) => setFilter(e.target.value as ShipFilter)}
         >
-          <option value={ALL_SHIPS}>All ships</option>
+          <option value={ALL_SHIPS}>Wszystkie statki</option>
           {world.company.ships.map((ship: Ship) => (
             <option key={ship.id} value={ship.id}>
               {ship.name}
@@ -210,9 +224,9 @@ function TransactionsTab({ world }: { world: World }) {
           ))}
         </select>
       </div>
-      <div className="ledger-list" role="table" aria-label="Transactions">
+      <div className="ledger-list" role="table" aria-label="Transakcje">
         {events.length === 0 ? (
-          <p className="overlay__text">No transactions yet.</p>
+          <p className="overlay__text">Brak transakcji.</p>
         ) : (
           events.map((event, i) => {
             const delta = transactionDelta(event);
@@ -259,7 +273,7 @@ function ValueTab({ world }: { world: World }) {
   );
 
   if (points.length === 0) {
-    return <p className="overlay__text">No net-worth snapshots yet — check back after Day 1.</p>;
+    return <p className="overlay__text">Brak jeszcze migawek wartości — sprawdź po Dniu 1.</p>;
   }
 
   const width = 640;
@@ -283,7 +297,7 @@ function ValueTab({ world }: { world: World }) {
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label="Company value chart"
+        aria-label="Wykres wartości firmy"
         className="ledger-chart"
       >
         <line
@@ -306,7 +320,7 @@ function ValueTab({ world }: { world: World }) {
           </circle>
         ))}
       </svg>
-      <p className="overlay__text">Company value: ₸{Math.round(latest.total)}</p>
+      <p className="overlay__text">Wartość firmy: ₸{Math.round(latest.total)}</p>
     </div>
   );
 }
@@ -326,13 +340,13 @@ export function LedgerOverlay({ onClose }: { onClose: () => void }) {
 
   return (
     <OverlayShell
-      ariaLabel="Ledger"
-      title="Ledger"
+      ariaLabel="Księga"
+      title="Księga"
       onClose={onClose}
       wide
       tabs={
         <Tabs
-          ariaLabel="Ledger tabs"
+          ariaLabel="Zakładki księgi"
           active={tab}
           onChange={setTab}
           tabs={[

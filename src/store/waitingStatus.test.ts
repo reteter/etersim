@@ -24,7 +24,7 @@ describe("formatWaitingGates", () => {
       { good: "textiles", minMargin: 2, liveMargin: null },
     ];
     const text = formatWaitingGates(gates);
-    expect(text).toBe("Grain: czeka na marżę ≥ ₸1 (teraz ₸5); Textiles: czeka na marżę ≥ ₸2 (teraz —)");
+    expect(text).toBe("Zboże: czeka na marżę ≥ ₸1 (teraz ₸5); Tekstylia: czeka na marżę ≥ ₸2 (teraz —)");
   });
 
   it("returns an empty string for no gates", () => {

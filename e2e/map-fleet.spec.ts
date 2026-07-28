@@ -15,7 +15,7 @@ const AUTOSAVE_KEY = 'etersim.autosave';
 
 async function startNewGame(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: /new game/i }).click();
+  await page.getByRole('button', { name: /nowa gra/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -83,7 +83,7 @@ async function loadTwoShipFleetWithUnderwayShip(page: Page) {
   };
   save.world.company.ships = [ship0, secondShip];
 
-  const fileInput = page.getByLabel('Import save file');
+  const fileInput = page.getByLabel('Importuj plik zapisu');
   await fileInput.setInputFiles({
     name: 'e2e-map-fleet-save.json',
     mimeType: 'application/json',
@@ -120,7 +120,7 @@ test.describe('RegionMap renders the whole fleet (#174)', () => {
     // and opens its ShipPanel.
     await page.locator('g.ship:not(.ship--docked) .ship__hit-target').click();
 
-    await expect(page.getByLabel('Ship name')).toHaveValue(secondShipName);
+    await expect(page.getByLabel('Nazwa statku')).toHaveValue(secondShipName);
     // Gold moved: still exactly one Controlled Ship on the map, and it's now
     // the underway one, not the docked one.
     await expect(page.locator('g.ship--controlled')).toHaveCount(1);
@@ -145,6 +145,6 @@ test.describe('RegionMap renders the whole fleet (#174)', () => {
     await page.locator('g.ship--docked .ship__hit-target').click({ force: true });
 
     await expect(page.locator('.market')).toBeVisible();
-    await expect(page.getByLabel('Ship name')).not.toBeVisible();
+    await expect(page.getByLabel('Nazwa statku')).not.toBeVisible();
   });
 });

@@ -497,6 +497,15 @@ body {
 .side-panel__subtitle {
   margin: 0.15rem 0 1rem;
   color: #8891a3;
+}
+
+/* #184: capitalize used to sit on `.side-panel__subtitle` itself, but that
+   class is shared with ShipPanel's plain-text "Docked at"/"Underway to" line
+   — now multi-word Polish ("Zadokowany w porcie …") — which `capitalize`
+   would title-case word-by-word. Scoped down to PortPanel's own archetype
+   label (still a single word: agrarian/industrial/urban/mining/verdant/"Free
+   port") so only that span still gets its leading capital. */
+.port-panel__archetype-label {
   text-transform: capitalize;
 }
 

@@ -37,19 +37,19 @@ describe("buyCapReason", () => {
 
 describe("buyCapHint", () => {
   it("names the hold constraint as full at zero remaining space", () => {
-    expect(buyCapHint("hold", 0, 12, 0)).toBe("Hold full");
+    expect(buyCapHint("hold", 0, 12, 0)).toBe("Ładownia pełna");
   });
 
   it("quantifies the hold constraint when some space remains", () => {
-    expect(buyCapHint("hold", 5, 12, 5)).toBe("Only 5 hold space left");
+    expect(buyCapHint("hold", 5, 12, 5)).toBe("Zostało tylko 5 miejsca w ładowni");
   });
 
   it("names the stock constraint as out of stock at zero", () => {
-    expect(buyCapHint("stock", 20, 0, 0)).toBe("Out of stock");
+    expect(buyCapHint("stock", 20, 0, 0)).toBe("Brak zapasu");
   });
 
   it("quantifies the stock constraint when some stock remains", () => {
-    expect(buyCapHint("stock", 20, 12, 12)).toBe("Only 12 in stock");
+    expect(buyCapHint("stock", 20, 12, 12)).toBe("W zapasie tylko 12");
   });
 
   it("names the truly-can't-afford-any case with an absolute message (#375)", () => {
@@ -66,9 +66,9 @@ describe("buyCapHint", () => {
     // buyMax varies (0 vs a positive value) while the structural reason/wording
     // must not: proves the hold/stock branches genuinely ignore buyMax rather
     // than merely never having been asked with a nonzero one.
-    expect(buyCapHint("hold", 0, 12, 0)).toBe("Hold full");
-    expect(buyCapHint("hold", 0, 12, 5)).toBe("Hold full");
-    expect(buyCapHint("stock", 20, 0, 0)).toBe("Out of stock");
-    expect(buyCapHint("stock", 20, 0, 5)).toBe("Out of stock");
+    expect(buyCapHint("hold", 0, 12, 0)).toBe("Ładownia pełna");
+    expect(buyCapHint("hold", 0, 12, 5)).toBe("Ładownia pełna");
+    expect(buyCapHint("stock", 20, 0, 0)).toBe("Brak zapasu");
+    expect(buyCapHint("stock", 20, 0, 5)).toBe("Brak zapasu");
   });
 });

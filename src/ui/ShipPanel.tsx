@@ -4,7 +4,6 @@ import {
   cargoUsed,
   etaTicks,
   GOOD_IDS,
-  GOODS,
   isUnderRefit,
   MAX_SHIP_NAME_LENGTH,
   type PortId,
@@ -12,6 +11,7 @@ import {
   type ShipId,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { portName } from "./portName";
 
 /**
@@ -42,7 +42,7 @@ function ShipNameField({ ship }: { ship: Ship }) {
       type="text"
       value={value}
       maxLength={MAX_SHIP_NAME_LENGTH}
-      aria-label="Ship name"
+      aria-label="Nazwa statku"
       onChange={(e) => setValue(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
@@ -58,8 +58,9 @@ function ShipNameField({ ship }: { ship: Ship }) {
  * layout): hold contents, and destination with ETA in ticks while underway.
  * Market access lives in the port view (Harbor + Sail control, #33) — this
  * panel no longer hosts an "Open market" shortcut. The heading stays the
- * generic "Ship" label; the ship's own (editable) name lives in the field
- * right below it (#54/#83 — no raw id anywhere in the UI).
+ * generic "Statek" label (#184: Polish); the ship's own (editable) name
+ * lives in the field right below it (#54/#83 — no raw id anywhere in the
+ * UI).
  */
 export function ShipPanel({ shipId }: { shipId: ShipId }) {
   const world = useGameStore((s) => s.world);
@@ -75,8 +76,9 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
   const location = ship.location;
 
   // Opens the named Port's panel — the same `select` action the map's port
-  // nodes dispatch (RegionMap.tsx `onClick`) — so the "Docked at"/"Underway
-  // to" line doubles as a shortcut instead of a plain-text dead end (#196).
+  // nodes dispatch (RegionMap.tsx `onClick`) — so the "Zadokowany w
+  // porcie"/"W drodze do" line doubles as a shortcut instead of a plain-text
+  // dead end (#196).
   const portLink = (portId: PortId) => (
     <button
       type="button"
@@ -89,7 +91,7 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
 
   return (
     <>
-      <h2 className="side-panel__title">Ship</h2>
+      <h2 className="side-panel__title">Statek</h2>
       <ShipNameField key={ship.id} ship={ship} />
       {isUnderRefit(world, ship.id) && (
         // "w przebudowie" status (#276, ADR-0006 — same violet as
@@ -98,23 +100,23 @@ export function ShipPanel({ shipId }: { shipId: ShipId }) {
         <p className="ship-panel__status ship-panel__status--refit">W przebudowie</p>
       )}
       {location.kind === "docked" ? (
-        <p className="side-panel__subtitle">Docked at {portLink(location.portId)}</p>
+        <p className="side-panel__subtitle">Zadokowany w porcie {portLink(location.portId)}</p>
       ) : (
         <p className="side-panel__subtitle">
-          Underway to {portLink(location.destination)} — ETA {etaTicks(ship, world.region)} ticks
+          W drodze do {portLink(location.destination)} — ETA {etaTicks(ship, world.region)} ticków
         </p>
       )}
 
       <h3 className="side-panel__heading">
-        Hold {used}/{ship.hold}
+        Ładownia {used}/{ship.hold}
       </h3>
       {loaded.length === 0 ? (
-        <p className="side-panel__hint">Empty</p>
+        <p className="side-panel__hint">Pusta</p>
       ) : (
         <ul className="hold">
           {loaded.map((good) => (
             <li key={good} className="hold__item">
-              <span>{GOODS[good].name}</span>
+              <span>{GOOD_NAME_PL[good]}</span>
               <span>{amountOf(ship.cargo, good)}</span>
             </li>
           ))}

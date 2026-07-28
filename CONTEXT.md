@@ -172,6 +172,20 @@ A tradable commodity type (e.g. grain, aether salt).
 _Avoid_:
 item, resource, commodity
 
+**The five E2 goods** — display names for `src/sim/goods.ts`'s `GoodId`s, added for the #184
+UI language sweep (`src/ui/goodDisplay.ts`'s `GOOD_NAME_PL`). **Coined by the coder, not
+ratified at a grill — flag for owner review** (§Laws 4: translating "grain" is not a new
+concept, but nobody had picked the Polish word before this entry):
+- **grain** (PL: zboże)
+- **textiles** (PL: tekstylia)
+- **aetherSalt** (PL: sól eteryczna — *eteryczny* is this glossary's word for natural aether
+  goods, see Aether ice's vocabulary law below; aetherSalt is mined, i.e. natural, not
+  industrial)
+- **electronics** (PL: elektronika)
+- **timber** (PL: drewno — weakest of the five: it is also the head noun of *przezroczyste
+  drewno* (Clearwood), so "drewno" alone now means both "the E2 timber good" and the wood
+  half of a Clearwood compound; flag if this reads ambiguously in play)
+
 **Arcane good** (PL: towar magiczny):
 A category of goods of magical origin or use.
 Flows through the same market mechanisms as any other good —

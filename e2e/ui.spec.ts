@@ -4,7 +4,7 @@ import { SAVE_VERSION } from '../src/store/persistence';
 
 async function startNewGame(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: /new game/i }).click();
+  await page.getByRole('button', { name: /nowa gra/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -50,10 +50,10 @@ test.describe('etersim start screen', () => {
     await expect(page).toHaveTitle(/etersim/i);
     await expect(page.getByRole('heading', { name: /etersim/i })).toBeVisible();
     await expect(page.getByText(/aether-punk trading venture/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /new game/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /nowa gra/i })).toBeVisible();
     await expect(page.getByLabel(/seed/i)).toBeVisible();
 
-    await page.getByRole('button', { name: /new game/i }).click();
+    await page.getByRole('button', { name: /nowa gra/i }).click();
     await expect(page.locator('svg.region-map')).toBeVisible();
   });
 });
@@ -1198,7 +1198,7 @@ test.describe('ambient osmosis skiffs on the map (#161, replaces the pulses #63)
     // under it for hundreds of ticks — a stable active + quiet mix (verified
     // by running the sim standalone for this PR; not asserted elsewhere).
     await page.getByLabel(/seed/i).fill('66');
-    await page.getByRole('button', { name: /new game/i }).click();
+    await page.getByRole('button', { name: /nowa gra/i }).click();
   }
 
   /** Locates the first skiff of whichever lane is currently active, pinned by
@@ -1335,7 +1335,7 @@ test.describe('pause-cause note (#130)', () => {
       { key: AUTOSAVE_KEY, json },
     );
     await page.goto('/');
-    await page.getByRole('button', { name: /continue/i }).click();
+    await page.getByRole('button', { name: /kontynuuj/i }).click();
     await expect(page.locator('svg.region-map')).toBeVisible();
   }
 

@@ -35,17 +35,17 @@ function statusLabel(ship: Ship, world: World): string {
   const loc = ship.location;
   const locDetail =
     loc.kind === "docked"
-      ? `at ${portName(region, loc.portId)}`
-      : `to ${portName(region, loc.destination)} · ~${etaTicks(ship, region)}`;
+      ? `w porcie ${portName(region, loc.portId)}`
+      : `do ${portName(region, loc.destination)} · ~${etaTicks(ship, region)}`;
   if (isUnderRefit(world, ship.id)) return `W przebudowie — ${locDetail}`;
-  if (ship.assignment?.suspended) return `Suspended — ${locDetail}`;
+  if (ship.assignment?.suspended) return `Wstrzymany — ${locDetail}`;
   if (ship.assignment?.waiting) {
     const gates = waitingGates(world, ship);
     const gateText = gates.length > 0 ? formatWaitingGates(gates) : "czeka na marżę";
     return `${gateText} — ${locDetail}`;
   }
-  if (ship.assignment) return `On route — ${locDetail}`;
-  return loc.kind === "docked" ? `Docked ${locDetail}` : `Underway ${locDetail}`;
+  if (ship.assignment) return `Na trasie — ${locDetail}`;
+  return loc.kind === "docked" ? `Zadokowany ${locDetail}` : `W drodze ${locDetail}`;
 }
 
 /** The assigned Route's display name, or null if unassigned or (edge case)
@@ -69,7 +69,7 @@ export function FleetList() {
 
   return (
     <div className="fleet-list">
-      <h3 className="side-panel__heading fleet-list__heading">Fleet</h3>
+      <h3 className="side-panel__heading fleet-list__heading">Flota</h3>
       <ul className="fleet-list__items">
         {ships.map((ship) => {
           const controlled = ship.id === controlledShipId;
@@ -80,7 +80,7 @@ export function FleetList() {
                 type="button"
                 className={controlled ? "fleet-list__item fleet-list__item--controlled" : "fleet-list__item"}
                 onClick={() => openShip(ship.id)}
-                aria-label={`Ship ${ship.name}`}
+                aria-label={`Statek ${ship.name}`}
               >
                 <ShipIcon
                   className={

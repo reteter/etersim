@@ -32,7 +32,7 @@ async function continueWithWorld(page: Page, world: World) {
     { key: AUTOSAVE_KEY, json: saveJson(world) },
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /continue/i }).click();
+  await page.getByRole('button', { name: /kontynuuj/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -238,7 +238,7 @@ test.describe('Notice strip (#97, 2026-07-14 UI grill lock 1)', () => {
     // Open the board on its default Ceny tab first (the "Price Board"
     // button, unrelated entry point) — this is the state the rider fixes:
     // the board is already open, on the wrong tab, when the notice is clicked.
-    await page.getByRole('button', { name: 'Price Board' }).click();
+    await page.getByRole('button', { name: 'Tablica cen' }).click();
     await expect(page.getByRole('tab', { name: 'Ceny' })).toHaveAttribute('aria-selected', 'true');
 
     // Keyboard, not a mouse click: OverlayShell's backdrop (`.overlay
