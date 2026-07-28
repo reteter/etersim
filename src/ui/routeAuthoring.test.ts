@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { GoodId, PortId, Route, RouteId, World } from "../sim";
+import { GUILDS, emptyStore, type CompanyBuilding, type GoodId, type PortId, type Route, type RouteId, type World } from "../sim";
 import type { MarketSignal, MarketSignalEntry } from "../store/marketSignal";
 import {
   appendStop,
   inferOrderKind,
   isValidRouteDraft,
   lastStopIndexForPort,
+  legalOrderKinds,
   moveStop,
   nextRouteId,
   parseMinMarginInput,
@@ -13,6 +14,8 @@ import {
   patchStopOrder,
   removeStop,
   setStopOrder,
+  setStopOrderKind,
+  storehouseAt,
   suggestedPairingPortIds,
 } from "./routeAuthoring";
 
@@ -260,6 +263,73 @@ describe("routeAuthoring — lastStopIndexForPort", () => {
       ],
     };
     expect(lastStopIndexForPort(draft, P1)).toBe(2);
+  });
+});
+
+describe("routeAuthoring — setStopOrderKind (#419: complete kind-picker, never toggles off)", () => {
+  const draft: Route = {
+    id: "r1" as RouteId,
+    name: "Draft",
+    stops: [{ portId: P1, orders: [] }],
+  };
+
+  it("attaches a new order for a good with no prior order", () => {
+    const next = setStopOrderKind(draft, 0, GRAIN, "store");
+    expect(next.stops[0].orders).toEqual([{ kind: "store", good: GRAIN }]);
+  });
+
+  it("re-picking the already-active kind is a no-op-shaped SET, never a toggle-off delete", () => {
+    const withStore = setStopOrderKind(draft, 0, GRAIN, "store");
+    const next = setStopOrderKind(withStore, 0, GRAIN, "store");
+    // The bug this exists to prevent: setStopOrder would have removed the
+    // order here (`current?.kind === kind` toggle rule) — a radio-style
+    // "complete kind picker" must not double as a delete gesture.
+    expect(next.stops[0].orders).toEqual([{ kind: "store", good: GRAIN }]);
+  });
+
+  it("switching kind drops qty/minMargin (route.ts: market-free kinds take neither field)", () => {
+    const withBuy = { ...draft, stops: [{ portId: P1, orders: [{ kind: "buy" as const, good: GRAIN, qty: 5, minMargin: 2 }] }] };
+    const next = setStopOrderKind(withBuy, 0, GRAIN, "store");
+    expect(next.stops[0].orders).toEqual([{ kind: "store", good: GRAIN }]);
+  });
+});
+
+describe("routeAuthoring — storehouseAt / legalOrderKinds (#419 AC7, shared with RoutesTab)", () => {
+  const granaryDomain = GUILDS.agrarian.domain; // "grain" — E13 ships one good per variant
+  const otherGood = "timber" as GoodId;
+  const granary: CompanyBuilding = { type: "storehouse", variant: "agrarian", portId: P1, store: emptyStore() };
+
+  it("storehouseAt finds the Company's activated Storehouse at a port, undefined elsewhere", () => {
+    expect(storehouseAt([granary], P1)).toBe(granary);
+    expect(storehouseAt([granary], P2)).toBeUndefined();
+    expect(storehouseAt([], P1)).toBeUndefined();
+  });
+
+  it("legalOrderKinds always offers buy/sell/deliver, with no board-side tightening on market presence", () => {
+    expect(legalOrderKinds([], P1, granaryDomain)).toEqual(["buy", "sell", "deliver"]);
+  });
+
+  it("legalOrderKinds adds store/withdraw only at a Storehouse port, for goods in its own storehouseFilter", () => {
+    expect(legalOrderKinds([granary], P1, granaryDomain)).toEqual([
+      "buy",
+      "sell",
+      "deliver",
+      "store",
+      "withdraw",
+    ]);
+  });
+
+  it("legalOrderKinds withholds store/withdraw for a good outside the Building's filter", () => {
+    expect(legalOrderKinds([granary], P1, otherGood)).toEqual(["buy", "sell", "deliver"]);
+  });
+
+  it("legalOrderKinds withholds store/withdraw at a port with no activated Storehouse", () => {
+    expect(legalOrderKinds([granary], P2, granaryDomain)).toEqual(["buy", "sell", "deliver"]);
+  });
+
+  it("deliver is never gated on the Storehouse check (spec point 5 — deliberately not gated on a build site either)", () => {
+    expect(legalOrderKinds([], P1, granaryDomain)).toContain("deliver");
+    expect(legalOrderKinds([granary], P2, granaryDomain)).toContain("deliver");
   });
 });
 

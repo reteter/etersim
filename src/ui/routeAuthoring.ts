@@ -1,4 +1,14 @@
-import type { GoodId, PortId, Route, RouteId, Stop, StopOrder, World } from "../sim";
+import {
+  storehouseFilter,
+  type CompanyBuilding,
+  type GoodId,
+  type PortId,
+  type Route,
+  type RouteId,
+  type Stop,
+  type StopOrder,
+  type World,
+} from "../sim";
 import type { MarketSignal, MarketSignalEntry, SignalTier } from "../store/marketSignal";
 
 /**
@@ -122,6 +132,25 @@ export function setStopOrder(
   return patchStop(draft, stopIndex, { ...stop, orders: nextOrders });
 }
 
+/** Sets (never toggles off) `good`'s order at the Stop `stopIndex` to `kind`
+ *  — the drawer's kind-picker gesture (#419, spec §The market-free kinds
+ *  point 3: "the drawer is the complete truth about kind"). Unlike
+ *  `setStopOrder`, re-picking the already-active kind is a no-op-shaped set,
+ *  never a delete: a radio-style complete picker must not double as a toggle
+ *  (a `store` order picked again would otherwise vanish). Always drops
+ *  `qty`/`minMargin` on a kind change, matching `⇄`'s existing buy↔sell
+ *  behavior and `route.ts`'s "market-free kinds take no fields" rule. */
+export function setStopOrderKind(
+  draft: Route,
+  stopIndex: number,
+  good: GoodId,
+  kind: StopOrder["kind"],
+): Route {
+  const stop = draft.stops[stopIndex];
+  const withoutGood = stop.orders.filter((o) => o.good !== good);
+  return patchStop(draft, stopIndex, { ...stop, orders: [...withoutGood, { kind, good }] });
+}
+
 /** Removes any order for `good` at the Stop `stopIndex` (no-op if none). */
 export function removeStopOrder(draft: Route, stopIndex: number, good: GoodId): Route {
   const stop = draft.stops[stopIndex];
@@ -191,6 +220,42 @@ export function lastStopIndexForPort(draft: Route, portId: PortId): number | nul
     if (draft.stops[i].portId === portId) return i;
   }
   return null;
+}
+
+/**
+ * Shared store/withdraw legality rule (#419, spec §The market-free kinds
+ * point 5 — "legality mirrors the Trasy editor one-to-one, with no
+ * board-side tightening"; #394 pin — one copy consumed by both
+ * `PriceBoardOverlay.tsx` and `RoutesTab.tsx` so the two authoring surfaces
+ * cannot drift while they coexist ahead of #393). Relocated verbatim from
+ * `RoutesTab.tsx`'s `StopRow` (`buildings.find((b) => b.portId === ...)`) —
+ * `world.company.buildings` holds only **activated** Storehouses.
+ */
+export function storehouseAt(
+  buildings: readonly CompanyBuilding[],
+  portId: PortId,
+): CompanyBuilding | undefined {
+  return buildings.find((b) => b.portId === portId);
+}
+
+/**
+ * Every `StopOrder["kind"]` legal for `good` at `portId`: `buy`/`sell`/
+ * `deliver` unconditionally (deliberately *not* gated on market presence or
+ * an active build site — spec point 5's "deliver is offered everywhere");
+ * `store`/`withdraw` only when the Company has an activated Storehouse here
+ * whose own `storehouseFilter` includes `good`.
+ */
+export function legalOrderKinds(
+  buildings: readonly CompanyBuilding[],
+  portId: PortId,
+  good: GoodId,
+): readonly StopOrder["kind"][] {
+  const kinds: StopOrder["kind"][] = ["buy", "sell", "deliver"];
+  const building = storehouseAt(buildings, portId);
+  if (building && storehouseFilter(building.variant).includes(good)) {
+    kinds.push("store", "withdraw");
+  }
+  return kinds;
 }
 
 export function suggestedPairingPortIds(draft: Route, signal: MarketSignal): Set<PortId> {

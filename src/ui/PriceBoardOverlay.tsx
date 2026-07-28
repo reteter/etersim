@@ -8,6 +8,7 @@ import {
   type Port,
   type PortId,
   type Route,
+  type StopOrder,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { computeMarketSignal, quotePortGood } from "../store/marketSignal";
@@ -21,6 +22,7 @@ import {
   inferOrderKind,
   isValidRouteDraft,
   lastStopIndexForPort,
+  legalOrderKinds,
   moveStop,
   nextRouteId,
   parseMinMarginInput,
@@ -29,6 +31,8 @@ import {
   removeStop,
   removeStopOrder,
   setStopOrder,
+  setStopOrderKind,
+  storehouseAt,
   suggestedPairingPortIds,
 } from "./routeAuthoring";
 import { RouteRibbon, type RouteRibbonNode } from "./RouteRibbon";
@@ -60,7 +64,17 @@ function portCells(port: Port, snapshot: Record<GoodId, number>): Record<GoodId,
   return cells;
 }
 
-const ORDER_KIND_LABEL: Record<"buy" | "sell", string> = { buy: "Kup", sell: "Sprzedaj" };
+// Widened to all five kinds (#419): the market-free three reuse RoutesTab's
+// exact Polish labels (`stop-row` STORE_ORDER_KIND_LABEL/ORDER_KIND_LABEL) —
+// no new player-facing strings for the same concept on two surfaces.
+const ORDER_KIND_LABEL: Record<StopOrder["kind"], string> = {
+  buy: "Kup",
+  sell: "Sprzedaj",
+  deliver: "Dostarcz",
+  store: "Złóż",
+  withdraw: "Pobierz",
+};
+const MARKET_FREE_KINDS = new Set<StopOrder["kind"]>(["deliver", "store", "withdraw"]);
 
 /**
  * Region price board (#62): a bid/ask overview across every port and good so
@@ -217,12 +231,21 @@ export function PriceBoardOverlay({
   // handled by `inferOrderKind`). A cell for a port with no Stop yet in the
   // draft does nothing — the player must place the Stop first (port-centric
   // spine, not good-centric wiring).
+  //
+  // #419 AC3 — market-free cells are click-inert: a cell whose good already
+  // carries `deliver`/`store`/`withdraw` returns early, **before** reaching
+  // `inferOrderKind`. That inference always resolves to buy/sell when the
+  // good has any market at all (routeAuthoring.ts), so falling through would
+  // silently overwrite the market-free order with no cue — the exact bug
+  // #404/#419 exist to close. Removal is the chip's `×` only; changing kind
+  // goes through the drawer (`setStopOrderKind` below).
   const handleCellClick = (portId: PortId, good: GoodId) => {
     if (!draft) return;
     const stopIndex = lastStopIndexForPort(draft, portId);
     if (stopIndex === null) return;
-    const entry = signal.entries[portId][good];
     const existingKind = draft.stops[stopIndex].orders.find((o) => o.good === good)?.kind;
+    if (existingKind !== undefined && MARKET_FREE_KINDS.has(existingKind)) return;
+    const entry = signal.entries[portId][good];
     const kind = existingKind === "buy" || existingKind === "sell" ? existingKind : inferOrderKind(entry);
     if (kind === null) return;
     setDraft(setStopOrder(draft, stopIndex, good, kind));
@@ -232,6 +255,17 @@ export function PriceBoardOverlay({
   const flipOrderKind = (stopIndex: number, good: GoodId, current: "buy" | "sell") => {
     if (!draft) return;
     setDraft(setStopOrder(draft, stopIndex, good, current === "buy" ? "sell" : "buy"));
+    setFocusedGood(good);
+  };
+
+  // Drawer's kind picker (#419 AC1: "the drawer is the complete truth about
+  // kind", every legal kind including buy/sell). `setStopOrderKind` always
+  // *sets* — never toggles off on re-picking the active kind, unlike the
+  // plain-click `setStopOrder` path, so a `store` order can't vanish from a
+  // radio-style re-click of its own kind.
+  const pickOrderKind = (stopIndex: number, good: GoodId, kind: StopOrder["kind"]) => {
+    if (!draft) return;
+    setDraft(setStopOrderKind(draft, stopIndex, good, kind));
     setFocusedGood(good);
   };
 
@@ -401,6 +435,13 @@ export function PriceBoardOverlay({
             const stopIndex = authoring && draft ? lastStopIndexForPort(draft, port.id) : null;
             const inDraft = stopIndex !== null;
             const suggested = authoring && suggestedPortIds.has(port.id) && !inDraft;
+            // Storehouse marker (#419, spec — "port row header carries a
+            // marker ... whenever the Company has a Storehouse at that
+            // port"): port-level (not per-cell), visible always — not
+            // gated on `authoring` — since it states a fact about the
+            // Company's own holdings, not a market suggestion (§Signal
+            // boundary). Hue-free glyph, ADR-0006.
+            const hasStorehouse = storehouseAt(world.company.buildings, port.id) !== undefined;
             const rowClasses = ["price-board__row"];
             if (docked) rowClasses.push("price-board__row--docked");
             if (inDraft) rowClasses.push("price-board__row--in-draft");
@@ -428,6 +469,12 @@ export function PriceBoardOverlay({
               >
                 <span className="price-board__port-name">
                   {port.name}
+                  {hasStorehouse && (
+                    <span className="price-board__storehouse-marker" title="Firma posiada tu Skład">
+                      {" "}
+                      ▣
+                    </span>
+                  )}
                   {suggested && (
                     <span className="price-board__pairing-hint" title="Sugerowany kolejny przystanek">
                       {" "}
@@ -489,6 +536,19 @@ export function PriceBoardOverlay({
                       )}
                     </>
                   );
+                  // #419 AC3: a cell already carrying a market-free order is
+                  // click-inert — the button stays a real <button> (#414's
+                  // grid ARIA/focus contract), but its label stops promising
+                  // an action it won't perform.
+                  const isMarketFree = order !== undefined && MARKET_FREE_KINDS.has(order.kind);
+                  const cellAriaLabel = isMarketFree
+                    ? `${GOODS[good].name} w ${port.name}: zlecenie ${ORDER_KIND_LABEL[order!.kind]} — zmień przez „więcej”`
+                    : `${GOODS[good].name} w ${port.name}: dodaj zlecenie`;
+                  // Drawer's complete kind set (#419 AC1/AC7) — computed for
+                  // every cell that has an active order, shared with
+                  // RoutesTab via `legalOrderKinds` (routeAuthoring.ts).
+                  const legalKinds =
+                    order !== undefined ? legalOrderKinds(world.company.buildings, port.id, good) : [];
                   return (
                     <span
                       key={good}
@@ -499,7 +559,7 @@ export function PriceBoardOverlay({
                         <button
                           type="button"
                           className="price-board__cell-btn"
-                          aria-label={`${GOODS[good].name} w ${port.name}: dodaj zlecenie`}
+                          aria-label={cellAriaLabel}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCellClick(port.id, good);
@@ -510,7 +570,7 @@ export function PriceBoardOverlay({
                       ) : (
                         cellContent
                       )}
-                      {order && order.kind !== "deliver" && order.kind !== "store" && order.kind !== "withdraw" && (
+                      {order && (
                         <span
                           className="price-board__order-chip"
                           onClick={(e) => e.stopPropagation()}
@@ -527,14 +587,19 @@ export function PriceBoardOverlay({
                                   order.qty === undefined ? "" : ` · ${order.qty} szt.`
                                 }`}
                           </span>
-                          <button
-                            type="button"
-                            className="menu-btn"
-                            aria-label={`${GOODS[good].name}: zmień na ${order.kind === "buy" ? "sprzedaż" : "kupno"}`}
-                            onClick={() => flipOrderKind(stopIndex!, good, order.kind as "buy" | "sell")}
-                          >
-                            ⇄
-                          </button>
+                          {/* #419 AC4: ⇄ stays a binary buy↔sell shortcut,
+                              omitted for the market-free three — changing
+                              their kind goes through the drawer only. */}
+                          {(order.kind === "buy" || order.kind === "sell") && (
+                            <button
+                              type="button"
+                              className="menu-btn"
+                              aria-label={`${GOODS[good].name}: zmień na ${order.kind === "buy" ? "sprzedaż" : "kupno"}`}
+                              onClick={() => flipOrderKind(stopIndex!, good, order.kind as "buy" | "sell")}
+                            >
+                              ⇄
+                            </button>
+                          )}
                           <button
                             type="button"
                             className="menu-btn"
@@ -553,24 +618,49 @@ export function PriceBoardOverlay({
                           </button>
                           {expanded.has(cellKey) && (
                             <span className="price-board__order-more">
-                              <input
-                                type="number"
-                                min={1}
-                                step={1}
-                                placeholder="ile"
-                                title="Ile jednostek (puste = maksymalnie)"
-                                aria-label={`${GOODS[good].name} ile sztuk`}
-                                value={order.qty ?? ""}
-                                onChange={(e) => {
-                                  const result = parseQtyInput(e.target.value);
-                                  if (result.kind === "ignore" || !draft) return;
-                                  setDraft(
-                                    patchStopOrder(draft, stopIndex!, good, {
-                                      qty: result.kind === "set" ? result.qty : undefined,
-                                    }),
-                                  );
-                                }}
-                              />
+                              {/* #419 AC1: the drawer is the complete kind
+                                  picker — every kind legal in this cell,
+                                  buy/sell included. */}
+                              <span className="price-board__order-kind-picker">
+                                {legalKinds.map((kind) => (
+                                  <button
+                                    key={kind}
+                                    type="button"
+                                    aria-pressed={order.kind === kind}
+                                    aria-label={`${GOODS[good].name}: ustaw zlecenie na ${ORDER_KIND_LABEL[kind]}`}
+                                    className={
+                                      order.kind === kind ? "menu-btn menu-btn--active" : "menu-btn"
+                                    }
+                                    onClick={() => pickOrderKind(stopIndex!, good, kind)}
+                                  >
+                                    {ORDER_KIND_LABEL[kind]}
+                                  </button>
+                                ))}
+                              </span>
+                              {/* #419 AC4/AC6: deliver/store/withdraw take
+                                  neither qty nor minMargin (route.ts) — the
+                                  drawer holds the kind picker above and
+                                  nothing else for them. */}
+                              {(order.kind === "buy" || order.kind === "sell") && (
+                                <input
+                                  type="number"
+                                  min={1}
+                                  step={1}
+                                  placeholder="ile"
+                                  title="Ile jednostek (puste = maksymalnie)"
+                                  aria-label={`${GOODS[good].name} ile sztuk`}
+                                  value={order.qty ?? ""}
+                                  onChange={(e) => {
+                                    const result = parseQtyInput(e.target.value);
+                                    if (result.kind === "ignore" || !draft) return;
+                                    setDraft(
+                                      patchStopOrder(draft, stopIndex!, good, {
+                                        qty: result.kind === "set" ? result.qty : undefined,
+                                      }),
+                                    );
+                                  }}
+                                />
+                              )}
                               {order.kind === "buy" && (
                                 <input
                                   type="number"

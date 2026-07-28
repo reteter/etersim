@@ -3,7 +3,6 @@ import {
   GOOD_IDS,
   GOODS,
   resolveReferencePort,
-  storehouseFilter,
   type CompanyBuilding,
   type GoodId,
   type Port,
@@ -17,7 +16,13 @@ import {
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { computeLoopMetrics } from "../store/routeMetrics";
-import { nextRouteId, parseMinMarginInput, parseQtyInput } from "./routeAuthoring";
+import {
+  legalOrderKinds,
+  nextRouteId,
+  parseMinMarginInput,
+  parseQtyInput,
+  storehouseAt,
+} from "./routeAuthoring";
 
 /** Column headers for the per-good order table (Polish, 2026-07-14 UI grill:
  *  new visible labels ship Polish). The chip buttons underneath keep their
@@ -75,8 +80,10 @@ function StopRow({
   onChange: (next: Stop) => void;
   onRemove: () => void;
 }) {
-  const building = buildings.find((b) => b.portId === stop.portId);
-  const storehouseGoods = building ? new Set(storehouseFilter(building.variant)) : null;
+  // Legality shared with the board (#419, spec §The market-free kinds point
+  // 7 — one copy, `routeAuthoring.ts`, so this editor and the board cannot
+  // drift while both authoring surfaces coexist ahead of #393).
+  const building = storehouseAt(buildings, stop.portId);
   const kinds = building ? [...ORDER_KINDS, ...STORE_ORDER_KINDS] : [...ORDER_KINDS];
   const kindLabel = (kind: (typeof kinds)[number]): string =>
     (ORDER_KIND_LABEL as Record<string, string>)[kind] ??
@@ -160,12 +167,13 @@ function StopRow({
               </th>
               {kinds.map((kind) => {
                 // A store/withdraw column only offers a chip for goods in
-                // the Building's own goods filter (`storehouseGoods`) — a
-                // good outside it (e.g. textiles at a Granary) would only
-                // ever no-op against the Building's StorePolicy, so no chip
-                // renders for it at all rather than a dead control.
+                // the Building's own goods filter — a good outside it (e.g.
+                // textiles at a Granary) would only ever no-op against the
+                // Building's StorePolicy, so no chip renders for it at all
+                // rather than a dead control. `legalOrderKinds` is the
+                // shared source of truth (#419).
                 const isStoreKind = kind === "store" || kind === "withdraw";
-                if (isStoreKind && storehouseGoods && !storehouseGoods.has(good)) {
+                if (isStoreKind && !legalOrderKinds(buildings, stop.portId, good).includes(kind)) {
                   return <td key={kind} className="stop-row__good-cell" />;
                 }
                 const active = kindOf(good) === kind;
