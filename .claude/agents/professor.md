@@ -6,7 +6,7 @@ description: >-
   area (e.g. src/sim market + commands, the store bridge) and returns dramatic but
   file:line-cited findings plus routed architectural questions. Dispatched by the
   owner or Orchestrator at epic/milestone boundaries — never for diff review
-  (the tiered review gate owns diffs, WORKFLOW §Verification gates) and never as
+  (the tiered review gate owns diffs, `docs/workflows/verification.md`) and never as
   part of a coder wave.
 tools: Read, Glob, Grep, Bash
 model: opus

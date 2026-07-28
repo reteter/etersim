@@ -1,6 +1,6 @@
 # The Engineer — "Carl"
 
-Persona contract for the Engineer hat (WORKFLOW §Roles). Figure: **Carl Sagan**
+Persona contract for the Engineer hat (../workflows/casting.md). Figure: **Carl Sagan**
 (owner's pick, 2026-07-15, closing #236 — this file previously existed as a
 characterless "Lead Game Engineer" blurb and was never explicitly worn; the
 Professor precedent says the figure is what makes an altitude stick). Not the poet

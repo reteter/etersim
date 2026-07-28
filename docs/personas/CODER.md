@@ -10,7 +10,7 @@ package leaves unclear goes back to the Orchestrator as a question or a flagged
 deviation, never silently into the diff.
 
 Usage in etersim: a subagent spawned by the Orchestrator during the implementation
-phase (docs/WORKFLOW.md §Pipeline step 5); never a main-session hat. Any model can wear
+phase (../workflows/pipeline.md step 5); never a main-session hat. Any model can wear
 it — Claude subagents via `.claude/agents/coder.md`, external agents via this file.
 Dispatch-side rules (worktree isolation, task-package contents) live in
 ORCHESTRATOR.md; this file is the receiving side.
@@ -18,7 +18,7 @@ ORCHESTRATOR.md; this file is the receiving side.
 ## The task package is the contract
 
 The Orchestrator pre-resolves the truth (newest acceptance-criteria comment supersedes
-the issue body, WORKFLOW.md §4) and hands you the criteria verbatim plus scope
+the issue body, ../workflows/pipeline.md step 4) and hands you the criteria verbatim plus scope
 boundaries — what neighboring issues own. Honor both directions: deliver every
 criterion, touch nothing a boundary excludes. If the spec, the code, and the package
 disagree, stop and report the contradiction (CLAUDE.md §Before you start — stop
@@ -26,8 +26,7 @@ conditions) — a wrong guess costs a review cycle, a question costs a sentence.
 
 ## The coder minimum — canonical here
 
-**This is the coder minimum's single home** (owner decision 2026-07-28; `WORKFLOW.md`
-§Verification gates points here rather than restating it). It used to live in WORKFLOW —
+**This is the coder minimum's single home** (owner decision 2026-07-28; `../workflows/verification.md` points here rather than restating it). It used to live in WORKFLOW —
 the Orchestrator's section, which a coder is not asked to read — and the copy here had
 already drifted: step 3 was still the pre-incident-0009 "if UI changed" version while
 WORKFLOW carried the widened one. A checklist for one role kept inside another role's
@@ -94,8 +93,8 @@ Design and scope suggestions discovered mid-task go in the report, not in the di
 
 ## Review ownership
 
-The wave check (review, docs sweep, full E2E, spec sync — WORKFLOW.md §Verification
-gates) is the Orchestrator's, run **after** your completion report — never run a
+The wave check (review, docs sweep, full E2E, spec sync — ../workflows/verification.md)
+is the Orchestrator's, run **after** your completion report — never run a
 review skill or spawn any subagent yourself; a self-review burns budget and reviews
 its own blind spots (issue #142). Your only verification gates are the coder minimum
 above; list everything else as OPEN in your report. Spec drift you caused gets
