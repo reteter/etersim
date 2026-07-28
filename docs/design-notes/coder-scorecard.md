@@ -530,7 +530,25 @@ role-less gap #414 fixed for good-headers) routed as a candidate follow-up, not 
 
 | Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 07-28 | #422 | #413, #414 | 2 | 0 code; 1 docs (routed, not fix loop) | 0 | pending owner merge | #413: `hiddenGoodsHaveOrders` derives from `draft.stops.some(...).some(order => hiddenGoods.has(order.good))`, badges "Ukryte kolumny" with bold/full-opacity styling matching the existing `.market-row__trade-btn--bright/--faded` convention. #414: `role="columnheader"` on `.price-board__good-col` wrapper (not the button — see self-caught defect above); `.price-board__good-header:hover`/`[aria-pressed]` emphasis moved `color` → `font-weight`. Both hue-free (ADR-0006). 91 e2e tests swept (`ui.spec.ts`/`kontrakty.spec.ts`/`market.spec.ts`), 3 new specs red-before-green verified. |
+| 07-28 | #422 | #413, #414 | 2 | 0 code; 1 docs (routed, not fix loop) | 0 | pass | #413: `hiddenGoodsHaveOrders` derives from `draft.stops.some(...).some(order => hiddenGoods.has(order.good))`, badges "Ukryte kolumny" with bold/full-opacity styling matching the existing `.market-row__trade-btn--bright/--faded` convention. #414: `role="columnheader"` on `.price-board__good-col` wrapper (not the button — see self-caught defect above); `.price-board__good-header:hover`/`[aria-pressed]` emphasis moved `color` → `font-weight`. Both hue-free (ADR-0006). 91 e2e tests swept (`ui.spec.ts`/`kontrakty.spec.ts`/`market.spec.ts`), 3 new specs red-before-green verified. Merged `5ff3b21`. |
+
+## E16 — #419 market-free order kinds (2026-07-28, s28)
+
+One Sonnet coder, background + `isolation: "worktree"`, solo issue — the largest single package
+of the s28 queue (6 files, ~500 lines), the #404 decision's deliverable and the last piece
+before #393 (its hard merge-order gate). Tier-2 review (Sonnet) gave the two load-bearing ACs
+line-by-line code tracing rather than pattern-matching: **AC3** (market-free cells click-inert —
+the exact bug this issue exists to kill) traced through every path into `handleCellClick` to
+confirm the early-return genuinely precedes `inferOrderKind`; **AC7** (legality shared between
+the board and `RoutesTab.tsx`, not re-derived) diffed the `RoutesTab` refactor against its
+pre-change behavior to confirm it's behavior-preserving, not just similar-looking. The reviewer
+also ran the new e2e suite live rather than reading it for plausibility. Zero blocking or
+should-fix findings; one style nit (unhoisted per-row computation, cheap, non-blocking). One
+docs-sync item (spec-index row still called #419 pending) applied as a follow-up commit.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 07-28 | #423 | #419 | 2 | 0 code; 1 docs (routed, not fix loop); 1 nit | 0 | pending owner merge | `handleCellClick` early-returns on `MARKET_FREE_KINDS.has(existingKind)` before the `inferOrderKind` call — verified the single-path guarantee (no side-channel read). `legalOrderKinds`/`storehouseAt` extracted into `routeAuthoring.ts`, consumed identically by both `PriceBoardOverlay.tsx` and the refactored `RoutesTab.tsx`'s `StopRow` (old `storehouseGoods`-set derivation removed). `deliver` unconditional, `store`/`withdraw` gated on an **activated** `company.buildings` entry + `storehouseFilter(variant)`. Storehouse marker `▣`, hue-free, port-level, always visible. Test-group-1's literal wording ("Route carrying a store order, opened in the board editor") describes a seam #393 hasn't shipped yet — coder substituted an equivalent round-trip proof (author via drawer → save → reopen in `RoutesTab.tsx`, a genuinely different read path) — reviewer judged this a faithful substitute for the AC's intent. |
 
 ## Reading the sample
 
