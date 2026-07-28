@@ -3,8 +3,9 @@
 Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript +
 React + Zustand.
 
-See `AGENTS.md` / `CLAUDE.md` for the project rules and source-of-truth map,
-and `docs/PRD.md` for the vision and roadmap.
+See `CLAUDE.md` for the project rules and source-of-truth map (`AGENTS.md` is the
+vendor-neutral entry point and only points at it), and `docs/PRD.md` for the vision
+and roadmap.
 
 ## Development
 

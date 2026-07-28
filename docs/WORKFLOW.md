@@ -334,6 +334,8 @@ auto-memory** (same decision) — that channel is only for what is true of this 
 this owner.
 
 > **Open, needs an owner call:** the start-of-session rewrite is a commit that the
-> session-close exception above does not cover, and `AGENTS.md`'s hard floor says *never
-> commit to `main`*. Two harnesses will read this oppositely, both correctly. Until it is
-> settled, the safe reading is `AGENTS.md`.
+> session-close exception above does not cover. (The former `AGENTS.md`/`CLAUDE.md`
+> contradiction on committing to `main` is gone — owner decision 2026-07-28 stripped
+> `AGENTS.md` of rules of its own, so `CLAUDE.md` is the only authority. What remains is
+> narrow: either the exception widens to both session boundaries, or the start-of-session
+> rewrite stays uncommitted until close.)

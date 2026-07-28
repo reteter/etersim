@@ -1,28 +1,22 @@
 # etersim — agent entry point (any model, any harness)
 
-This is the vendor-neutral bootstrap. Whether your harness auto-loaded this file
-(AGENTS.md is the emerging cross-vendor convention) or the owner opened the session
-with *"Read AGENTS.md and follow it"* — do this, in order:
+This is the vendor-neutral bootstrap: a pointer file, nothing more. Whether your harness
+auto-loaded it (AGENTS.md is the emerging cross-vendor convention) or the owner opened the
+session with *"Read AGENTS.md and follow it"* — read these, in order:
 
-1. **Read `CLAUDE.md`** — the project rules. The filename is historical (this repo
-   was built with Claude Code); treat it as PROJECT.md — nothing in it is
-   Claude-specific: source-of-truth map, laws, git/worktree rules, commands.
-2. **Read `docs/HANDOFF.md`** — a ~15-line orientation note, written and overwritten by
-   the session-driving model at session start and close (owner decision 2026-07-28,
-   replacing the 2026-07-16 owner-request rule). It carries only what `git log` / `gh`
-   cannot derive — the owner-agreed order, why the last session stopped where it did, and
-   promises that are not tasks. Read `git log` / `gh issue list` directly for the current
-   commit and open work; this file never claims them.
-3. **Before any task**: run the checklist in `docs/SELFCHECK.md` (§1–§5) and post
-   its report before touching anything. It is explicitly written for any model.
+1. **`CLAUDE.md`** — the project rules: source-of-truth map, laws, git/worktree rules,
+   commands. The filename is historical (this repo was built with Claude Code); treat it as
+   PROJECT.md — nothing in it is Claude-specific.
+2. **`docs/HANDOFF.md`** — a ~15-line orientation note, rewritten by the session-driving
+   model at session start and close. It carries only what `git log` / `gh` cannot derive;
+   read those directly for the current commit and open work.
+3. **`docs/SELFCHECK.md`** — the pre-work checklist (§1–§5). Run it and post its report
+   before touching anything. It is explicitly written for any model.
 
-Hard floor, valid even before you read anything else:
-
-- Work on feature branches; **never commit to `main`**. The owner merges every PR.
-- `src/sim` is pure and deterministic: no `Math.random`, no `Date.now`, no
-  React/DOM imports there, ever. TDD for `src/sim`.
-- English in code/docs/commits/issues; **Polish in conversation with the owner**;
-  player-facing UI strings in Polish.
-- New domain concept ⇒ `CONTEXT.md` glossary entry first; identifiers use its terms.
-- Roadmap items labeled `design-frontier` (docs/PRD.md §Roadmap labels) are not
-  task-queue work — they wait for an owner-led design conversation.
+**This file states no rules of its own, deliberately** (owner decision, 2026-07-28). It
+used to repeat a "hard floor" — never commit to `main`, determinism, glossary-first — and
+that copy drifted against `CLAUDE.md` until the two contradicted each other on committing to
+`main`, so two harnesses could behave oppositely and both be right. A second copy of a law
+is a second thing to keep true. **`CLAUDE.md` is the authority; if this file ever seems to
+say otherwise, `CLAUDE.md` wins — and the fix is to delete the copy here, not to reconcile
+it.** Resist the urge to be helpful by restating the laws below step 1.

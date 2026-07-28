@@ -28,9 +28,10 @@ merged. Outside E16 the owner-agreed order stands: **E11 v1** (#232 → #233 →
   coder would get a conflicting contract. Refresh the spec **before #232**.
 - **E15's spec says SAVE_VERSION v14, which E13 already consumed** — grill OQ8 settled v15.
   A spec instructing a broken migration, not merely a stale line (ADR-0007 territory).
-- **`AGENTS.md` and `CLAUDE.md` contradict each other on committing to `main`** — hard
-  "never" vs. the session-close exception. Two harnesses will behave oppositely, both
-  correctly. Unresolved; the safe reading is `AGENTS.md`.
+- **Open, one owner call:** the start-of-session HANDOFF rewrite is a commit no exception
+  covers yet — widen the session-close exception to both boundaries, or leave the start
+  rewrite uncommitted until close. (The `AGENTS.md`/`CLAUDE.md` contradiction behind this is
+  resolved: `AGENTS.md` now states no rules, `CLAUDE.md` is the only authority.)
 - **Owner framings are parked in `docs/owner-framings-PARKED.md`** — they need a permanent
   home (PRD / WORKFLOW / own file). Owner decision pending.
 - **Bet to settle at E13 close:** did #100 visibly shrink? If not, "running-in" is a feeling,
