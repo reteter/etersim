@@ -15,13 +15,24 @@ read `git log` and `gh issue list` directly — this file no longer claims them.
 Written for any model in any harness;
 Claude Code's per-machine auto-memory is the day-to-day working channel.
 
-_Last update: 2026-07-23 s24 (owner-requested) — **E16 (Workbench) implementation opened.** Enabler
-#392 (market-quality signal selector + read-only RouteRibbon) and core #394 (port-centric board
-authoring — the #376 heart) both shipped, tier-2 Sonnet coders, clean waves. #376 is fulfilled
-(→ E16 spec). ~~New gate: **#404 blocks #393** — board authoring is buy/sell-only, so deliver/store/
+_Last update: 2026-07-28 s28 (owner-requested) — **the #404 fan-out queue is clear.** A pure
+LCM implementation session (no design calls, no grill): #397 (offer labels), the batched
+#413+#414 (board polish), and #419 (the #404 decision's deliverable — market-free order kinds on
+the board, drawer-only kind picker, click-inert market-free cells, Storehouse port-row marker,
+legality shared between the board and `RoutesTab.tsx` via `routeAuthoring.ts`) shipped as three
+sequential tier-2 waves (PRs #421/#422/#423), each coder dispatched only after the prior wave's
+PR merged (all three touch `PriceBoardOverlay.tsx`, so overlap risk ruled out parallelizing).
+Every wave's review routed its docs-sync findings back as follow-up commits on the same branch
+rather than silent gaps — the spec and CONTEXT.md now record the as-built `rzadkie`/`pilne`
+label semantics, a flagged (unresolved) "pilne" naming collision with #226's unrelated
+desperation-clause label, and #413/#414's resolution. Full cert after all three merged: 842
+vitest / 133 e2e / typecheck / lint clean, `postmerge.ps1` CLEAN, main @ `df6820f`.
+**#393's hard gate (#419 merged) is now satisfied — it is the only remaining E16 fan-out item.**
+~~New gate: **#404 blocks #393** — board authoring is buy/sell-only, so deliver/store/
 withdraw lose their authoring home the moment #393 removes the RoutesTab editor; parked for a grill.~~
 **Struck 2026-07-28 (s27): #404 is decided** — the kinds are authored on the board via the "więcej"
-drawer; #393 is now gated on the **merge** of #419, not on a decision
+drawer; ~~#393 is now gated on the **merge** of #419, not on a decision~~ (struck 2026-07-28 s28:
+#419 merged, gate cleared)
 ([grill record](design-notes/nonmarket-order-authoring-grill-2026-07-28.md)).
 Process: the worktree-isolation mystery is **root-caused** (incident 0025) — `isolation: "worktree"`
 provisions only for **background** coders; CLAUDE.md gained the §Session-start hat/casting cue and the
@@ -67,13 +78,15 @@ Statuses are **not** listed here — run `gh issue list` for what is open.
 2. Then **E15 — Processing** (#281 → #284; its spec depends on E13.0 + E13, both now closed).
 
 In flight (owner ran it this session, ahead of the E11/E15 order above): **E16 — Workbench**
-(#376 fulfilled). Enabler #392 + core #394 merged; fan-out remaining — ~~**#393 gated by the #404
+(#376 fulfilled). Enabler #392 + core #394 merged; ~~fan-out remaining — **#393 gated by the #404
 decision**~~ (struck 2026-07-28 s27: #404 decided, #393 now gated on **#419's merge**), plus
 ~~#395/#396/#227/#398 (independent)~~ — struck 2026-07-28: #396 and #398 shipped
-in s25, #227 is superseded by #397 and closed; what remains is #395+#405 (batched), #397 (solo) and
-#393. Run `gh issue list` for the live set. E11 v1 → E15 stay the standing order for the
-non-E16 track. Small non-blocking tails: #374 (multi-seed storehouse guardrail), #384 (full
-markdown-normalizer sweep, one pass).
+in s25, #227 is superseded by #397 and closed; ~~what remains is #395+#405 (batched), #397 (solo) and
+#393~~ — struck 2026-07-28 s28: #395+#405 (s26), #397, #413+#414, and #419 all shipped.
+**#393 (Trasy tab → read-only roster) is now the only E16 fan-out item left**, its hard gate
+(#419 merged) satisfied. Run `gh issue list` for the live set. E11 v1 → E15 stay the standing
+order for the non-E16 track. Small non-blocking tails: #374 (multi-seed storehouse guardrail),
+#384 (full markdown-normalizer sweep, one pass).
 
 ## Watch — non-derivable only
 
