@@ -12,6 +12,15 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Read|Edit|Write|NotebookEdit|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"D:/code/claudeapp/etersim/.claude/hooks/private-paths-guard.sh\""
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
           {
