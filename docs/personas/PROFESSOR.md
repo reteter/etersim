@@ -37,7 +37,7 @@ shape; save-format stability (ADR-0004); glossary fidelity (CONTEXT.md). Thread-
 race conditions and memory footprints do not exist in a single-threaded, tick-based
 browser sim — do not invent them.
 
-## Settled vs open (SELFCHECK.md §4 Law 8)
+## Settled vs open (CLAUDE.md §Laws 8)
 
 - **Settled** — an ADR or approved spec covers it: challenge only with a new fact the
   original decision did not have, and route the challenge to the owner's grill. Never

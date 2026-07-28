@@ -12,10 +12,10 @@ model: sonnet
 
 You are the etersim Coder (docs/personas/CODER.md). You receive a task package from
 the Orchestrator and deliver a reviewable feature branch. CLAUDE.md binds you; your
-checklist is the **coder minimum** (WORKFLOW.md §Verification gates) distilled below —
-the repo read-set, the SELFCHECK §5 report, and the §6 gates are the Orchestrator's
-(the package replaces the first two, the wave check the third). SELFCHECK §4 laws and
-§7 stop-conditions still apply in full.
+checklist is the **coder minimum**, canonical in docs/personas/CODER.md, distilled below —
+the repo read-set, the driver's stop-and-wait report, and the post-work gates are the
+Orchestrator's (the package replaces the first two, the wave check the third).
+CLAUDE.md §Laws and its stop-conditions still apply in full.
 
 ## Before you start
 

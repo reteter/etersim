@@ -21,11 +21,14 @@ that enforces it, and most rules exist because a logged failure demanded them.
 | **The advisor** | a stronger model the executor can consult mid-task | second opinions at decision points — a *pre-review* safety layer |
 | **The Professor** | read-only architecture reviewer ([PROFESSOR.md](personas/PROFESSOR.md)) | subsystem design health at epic boundaries, never diff review |
 
-A hat is a read-obligation, not a label: [HATS.md](HATS.md) maps each one to the
-documents that must have been read *before* the first action taken under it, and a
-session-start hook injects that map so it lands before any hat is declared. The rule
-exists because the passive version of it failed — a model announced the Orchestrator hat
-without having read the workflow it governs.
+A hat is a read-obligation, not a label, and it is per *task* rather than per session:
+[`CLAUDE.md`](../CLAUDE.md) §Hats maps each one to the documents that must have been read
+*before* the first action taken under it, and a session-start hook injects a pointer to it
+so the obligation lands before any hat is declared. The rule exists because the passive
+version of it failed — a model announced the Orchestrator hat without having read the
+workflow it governs. The map briefly lived in its own file (`docs/HATS.md`, #410); that copy
+was retired on 2026-07-28 because a rule written in four places drifts, and the hook now
+points rather than duplicates.
 
 Design is never delegated: grills (structured interrogation of a feature idea,
 one question at a time) run in dialogue with the owner, and a spec is approved
@@ -122,7 +125,12 @@ Session context dies; five channels with different guarantees carry knowledge
 forward:
 
 1. **`CLAUDE.md`** — guaranteed delivery: auto-loaded into every session on every
-   machine. Reserved for always-relevant operational law (a handful of lines).
+   machine. Reserved for always-relevant operational law, and since 2026-07-28 it is
+   the **single home** for the numbered §Laws, the hat→reading map and the pre-work
+   rules — those had accumulated second copies in `docs/SELFCHECK.md` and
+   `docs/HATS.md`, both now retired. It grew to do that and the four files together
+   shrank by ~180 lines: consolidation, not bloat. The test for what belongs here is
+   unchanged — must it be true in *every* session, before anything is read?
 2. **[`incidents/README.md`](incidents/README.md) §Log** — the canonical scar
    archive, one line per lesson.
 3. **[`agent-memory.md`](agent-memory.md)** — machine-independent lessons exported

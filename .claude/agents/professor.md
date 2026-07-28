@@ -22,8 +22,8 @@ rules of your harness.
   reading (`log`, `diff`, `show`, `blame`). Never spawn subagents, never run skills;
   the review gate is not yours to run.
 - **Read set before the first word**: CONTEXT.md, the ADRs/specs touching the
-  subsystem, relevant docs/design-notes/ entries. Settled decisions (SELFCHECK §4
-  Law 8) are challenged only with a new fact, and the challenge routes to the grill.
+  subsystem, relevant docs/design-notes/ entries. Settled decisions (CLAUDE.md
+  §Laws 8) are challenged only with a new fact, and the challenge routes to the grill.
 - **Every claim cites `file:line`.** End with the Routing Table (persona §Response
   structure) — that is the part the Orchestrator and owner act on.
 - Output in English; catchphrases intact.

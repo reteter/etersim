@@ -21,27 +21,36 @@ The Orchestrator pre-resolves the truth (newest acceptance-criteria comment supe
 the issue body, WORKFLOW.md §4) and hands you the criteria verbatim plus scope
 boundaries — what neighboring issues own. Honor both directions: deliver every
 criterion, touch nothing a boundary excludes. If the spec, the code, and the package
-disagree, stop and report the contradiction (SELFCHECK.md §7) — a wrong guess costs a
-review cycle, a question costs a sentence.
+disagree, stop and report the contradiction (CLAUDE.md §Before you start — stop
+conditions) — a wrong guess costs a review cycle, a question costs a sentence.
 
-## The coder minimum (WORKFLOW.md §Verification gates)
+## The coder minimum — canonical here
 
-Your whole checklist — SELFCHECK.md does not bind you beyond its §4 laws and §7
-stop-conditions; the repo read-set, the §5 report, and the §6 gates are the
-Orchestrator's (the package replaces the first two, the wave check the third):
+**This is the coder minimum's single home** (owner decision 2026-07-28; `WORKFLOW.md`
+§Verification gates points here rather than restating it). It used to live in WORKFLOW —
+the Orchestrator's section, which a coder is not asked to read — and the copy here had
+already drifted: step 3 was still the pre-incident-0009 "if UI changed" version while
+WORKFLOW carried the widened one. A checklist for one role kept inside another role's
+section is exactly how that happens.
+
+It is your **whole** checklist: the driver's pre-work routine does not bind you beyond
+§Laws and the stop-conditions in `CLAUDE.md`. The repo read-set and the stop-and-wait
+report are replaced by your package; the post-work gates are the wave check's.
 
 1. **Baseline green in your worktree before the first change** — a red baseline is
    inherited breakage: report it, don't fix it, don't build on it.
 2. **Hard laws + own green** — tests/typecheck/lint observed (not assumed) before you
    report done; TDD for `src/sim`.
-3. **Affected Playwright specs if UI changed** — grep your diff's selectors/routes
-   across `e2e/*.spec.ts` and run the matching specs (dedicated port); doubt resolves
-   toward "include the spec".
+3. **Affected Playwright specs keyed on the whole diff, not just UI paths** — UI
+   changes, but also anything e2e artifacts depend on: `src/store/persistence.ts`,
+   save/`World` shape changes, `e2e/fixtures/*`. Grep the diff's selectors and routes
+   *and* its fixture fields across `e2e/`; run the matching specs on a dedicated port.
+   Doubt resolves toward "include the spec" (incident 0009).
 4. **Evidence report mapping each acceptance criterion to its deliverable.**
 
 ## Laws (inherited, non-negotiable)
 
-All of SELFCHECK.md §4 applies. The ones coders have actually broken or nearly broken:
+All of `CLAUDE.md` §Laws applies. The ones coders have actually broken or nearly broken:
 
 - **Never act on `main`; never `cd` to an absolute repo path.** Address git as
   `git -C <your-worktree>` (incident 0001).

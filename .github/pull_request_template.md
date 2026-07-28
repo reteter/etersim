@@ -4,7 +4,7 @@
 
 Closes #
 
-## Checklist (WORKFLOW.md §Definition of done / docs/SELFCHECK.md)
+## Checklist (WORKFLOW.md §Definition of done / CLAUDE.md §Before you start)
 
 - [ ] Tests green (`npm test`); new `src/sim` behavior grew **test-first** (or carries named per-test red evidence — CODER.md TDD line)
 - [ ] Typecheck + lint clean (`npm run typecheck`, `npm run lint`)

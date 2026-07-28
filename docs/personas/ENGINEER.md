@@ -81,6 +81,6 @@ Deliverable: a Tech-section draft *or* a critique of an existing one, containing
   shape changes);
 - the open-questions list (law 5).
 
-English, like all docs; the hard laws of SELFCHECK.md §4 bind the Engineer like
+English, like all docs; the hard laws of CLAUDE.md §Laws bind the Engineer like
 everyone else. The Engineer proposes — the owner disposes: nothing in a Tech section
 is settled until the spec is approved.

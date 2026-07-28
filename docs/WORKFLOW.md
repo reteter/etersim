@@ -96,18 +96,12 @@ grill, [design-notes/tiered-verification-gates-2026-07-14.md](design-notes/tiere
 The Orchestrator dispatches coders with self-contained packages, then closes the
 repo-level gates **once per wave** — not once per issue.
 
-**Coder minimum** (the coder's entire checklist; receiving side in personas/CODER.md):
-
-1. Baseline green in the assigned worktree before the first change.
-2. Hard laws (SELFCHECK §4) + own green: tests/typecheck/lint observed, TDD for `src/sim`.
-3. Affected Playwright specs keyed on the **whole diff**, not just UI paths: UI
-   changes, but also anything e2e artifacts depend on — `src/store/persistence.ts`,
-   save/`World` shape changes, `e2e/fixtures/*` (grep the diff's selectors/routes
-   *and* fixture fields across `e2e/`; doubt resolves toward "include the spec";
-   incident 0009).
-4. Evidence report mapping each acceptance criterion to its deliverable.
-
-No repo read-set, no SELFCHECK §5 stop-and-wait, no §6 gates — those move up.
+**Coder minimum** — the coder's entire checklist, and it lives in
+[personas/CODER.md](personas/CODER.md) §The coder minimum, not here (owner decision
+2026-07-28). Keeping one role's canonical checklist inside another role's section is what
+let the two copies drift, and it is what made "read WORKFLOW by section, per hat"
+impossible. The Orchestrator's obligation is to hand it to the coder in the package; the
+driver's own pre-work routine (`CLAUDE.md` §Before you start) does not bind the coder.
 
 **Wave check** (Orchestrator, after coder reports, before merges). The tier follows
 mechanically from the wave's combined `git diff --stat`; escalate up freely, never
@@ -308,10 +302,10 @@ nothing else drifted. (Codified 2026-07-07 — the E10 sweep touched six files.)
 
 Lightweight by design (ceremony slim, owner decision 2026-07-16):
 
-- **Start:** read `docs/HANDOFF.md`, check `gh issue list`, prune merged branches, then
-  selfcheck (`docs/SELFCHECK.md`; short form is the default — full form for epics,
-  `src/sim`, external agents). Recap locked decisions in one line and declare the working
-  hat. Once the work is named, **rewrite HANDOFF with this session's intent** before acting.
+- **Start:** read `docs/HANDOFF.md`, check `gh issue list`, prune merged branches, then run
+  `npm run selfcheck -- --kind=<…>` and post the one-line report it prints (`CLAUDE.md`
+  §Before you start). Recap locked decisions in one line and declare the working hat. Once
+  the work is named, **rewrite HANDOFF with this session's intent** before acting.
 - **During grills:** label branches ("**Branch 2.3 — …**"), one focused question at a
   time, consistent decision language ("Locked:" / "Open branch:" / "Extracting to
   issue #NN"). After each decision: update spec / CONTEXT.md / issues immediately.
@@ -337,5 +331,5 @@ this owner.
 covers **`docs/HANDOFF.md` alone, at either session boundary** — one file, one commit, so
 `git show --stat` naming anything else is the violation. The start-of-session rewrite is
 committed rather than left in the working tree: an uncommitted HANDOFF dirties the baseline
-`SELFCHECK` §3 requires for every later task in the session, and invites the file into an
+`npm run selfcheck` reports for every later task in the session, and invites the file into an
 unrelated feature commit.

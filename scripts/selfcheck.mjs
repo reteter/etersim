@@ -255,7 +255,8 @@ function main() {
   const v = verdict(rows);
   console.log(`\n${v.label} — ${v.why}`);
   console.log(
-    `\nPaste this, filled in, before your first edit (CLAUDE.md §Rules — post it and wait,\n` +
+    `\nPaste this, filled in, before your first edit (CLAUDE.md §Before you start — post it\n` +
+    `and wait,\n` +
     `especially when it feels unnecessary; incident 0022):\n\n` +
     `  Selfcheck: <task> → gate ${kindArg} | env: ${rows.find((r) => r.label === "branch")?.headline ?? "?"}, ` +
     `baseline ${rows.some((r) => r.group === "baseline") ? (rows.filter((r) => r.group === "baseline").every((r) => r.status === "pass") ? "green" : "RED") : "n/a"} | plan: <one line>`

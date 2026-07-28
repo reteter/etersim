@@ -10,8 +10,9 @@ session with *"Read AGENTS.md and follow it"* — read these, in order:
 2. **`docs/HANDOFF.md`** — a ~15-line orientation note, rewritten by the session-driving
    model at session start and close. It carries only what `git log` / `gh` cannot derive;
    read those directly for the current commit and open work.
-3. **`docs/SELFCHECK.md`** — the pre-work checklist (§1–§5). Run it and post its report
-   before touching anything. It is explicitly written for any model.
+3. **`npm run selfcheck -- --kind=<docs|impl|design|analysis>`** — the pre-work check. Run
+   it and post the one-line report it prints before touching anything. It works for any
+   model in any harness; the rules around it are `CLAUDE.md` §Before you start.
 
 **This file states no rules of its own, deliberately** (owner decision, 2026-07-28). It
 used to repeat a "hard floor" — never commit to `main`, determinism, glossary-first — and
