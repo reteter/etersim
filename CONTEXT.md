@@ -432,6 +432,10 @@ generalizing the Price board's cheapest-ask / highest-bid extremes.
 Computed **once** and rendered in three surfaces:
 Price board cell emphasis, PortPanel buy/sell action shading, and offer labels (okazja / rzadkie /
 pilne).
+Note: "pilne" here (a Price-board cell label, market-signal-derived) shares its Polish word with the
+unrelated desperation-clause "Pilne" story label on Kontrakty offer cards below — same word, two
+concepts, flagged unresolved in the #397 tier-2 review (docs/specs/E16-workbench.md §Market-quality
+signal).
 Its visual channel is **intensity (opacity + weight), deliberately hue-free**, so "best market"
 means the same on every surface and never collides with archetype tints, price trend, or gold
 (one-color-one-meaning, ADR-0006).
