@@ -10,7 +10,7 @@ package leaves unclear goes back to the Orchestrator as a question or a flagged
 deviation, never silently into the diff.
 
 Usage in etersim: a subagent spawned by the Orchestrator during the implementation
-phase (../workflows/pipeline.md step 5); never a main-session hat. Any model can wear
+phase (../workflows/pipeline.md step 6); never a main-session hat. Any model can wear
 it — Claude subagents via `.claude/agents/coder.md`, external agents via this file.
 Dispatch-side rules (worktree isolation, task-package contents) live in
 ORCHESTRATOR.md; this file is the receiving side.

@@ -387,7 +387,7 @@ UI epic → **Playwright E2E** is the gate (no sim TDD; nothing in `src/sim` cha
 board *feel* faster than the old editor, and does the master stop opening Trasy? Cut small, playtest,
 iterate (the UI-grill-corrects-by-playtest rule). Also eyeball the intensity-only signal for
 legibility against the existing color load, and the refit-violet/mining-violet proximity flagged in
-`docs/owner-framings-PARKED.md` §Watch items in transit (it was HANDOFF §Watch until 2026-07-28).
+**#429** (it was a HANDOFF §Watch item until 2026-07-28, then filed so it has an owner).
 
 ---
 

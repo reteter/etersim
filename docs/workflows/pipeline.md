@@ -16,13 +16,23 @@ idea → grill → feature spec → user approval → GH issues → implementati
    `type:feat|bug|infra|spec|docs` + `area:sim|ui|docs`. When criteria are refined after filing
    (a later grill, re-scoping), post the final version as an issue **comment** — **the newest
    acceptance-criteria comment supersedes the body**, and coders and reviewers read it first.
-5. **Implementation** — branch `feat/<issue>-<slug>` (or `fix/`, `chore/`). Conventional
+5. **Spec-vs-code check** — before the epic's **first** coder dispatch, verify that what the
+   spec *names* still exists in the code in that form: the types and interfaces its §Tech
+   section names, the module and function signatures it hands to a coder, and its
+   `SAVE_VERSION` target. **Write the result down** — each drift found, or the words "zero
+   drift" — in the first task package or as a comment on the epic's first issue.
+   *Narrow on purpose:* not "read the spec against the code", which degrades into re-reading
+   the spec (the substitution shape of incident 0031), but a check with a named output that a
+   later reader can see was run. It exists because two specs reached this state unnoticed —
+   #424 (E11's `LedgerEvent` union) and #425 (E15's `SAVE_VERSION` v14, already consumed) —
+   each of which would have handed a coder a contract the code contradicts.
+6. **Implementation** — branch `feat/<issue>-<slug>` (or `fix/`, `chore/`). Conventional
    commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`). Sim code grows test-first
    (TDD, Vitest; the evidence alternative lives in the CODER.md TDD line).
-6. **PR** — body links `Closes #<n>`. Before merge: tests green, typecheck + lint clean, and
+7. **PR** — body links `Closes #<n>`. Before merge: tests green, typecheck + lint clean, and
    the wave check for the change's tier closed ([verification.md](verification.md)). The user
    merges — final call on every PR.
-7. **Spec sync** — if implementation drifted from the spec, updating the spec is part of the
+8. **Spec sync** — if implementation drifted from the spec, updating the spec is part of the
    task, not optional cleanup.
 
 ## Merging: independent vs stacked PRs
