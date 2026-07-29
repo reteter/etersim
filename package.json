@@ -13,6 +13,7 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "docs:normalize": "node scripts/normalize-markdown.mjs",
+    "docs:normalize:check": "node scripts/normalize-markdown.mjs --check",
     "check:behavior-preserving": "node scripts/check-behavior-preserving.mjs",
     "check:triggers": "node scripts/check-unpark-triggers.mjs",
     "check:glossary": "node scripts/check-glossary-anchoring.mjs",

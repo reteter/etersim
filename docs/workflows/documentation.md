@@ -87,9 +87,21 @@ plus a 100-character soft fallback for any segment between hard separators;
 never at an arbitrary width (owner ruling 2026-07-21, #341).
 
 **This is `npm run docs:normalize`'s job, never a hand-reflow.** Wrap position anchored to meaning
-is what makes `^`-anchored greps against docs trustworthy, and every law above depends on that.
-Enforced via `--check` against an allowlist of already-migrated files, not repo-wide;
-#384 carries the owner's override of the segment-by-segment rollout.
+is what makes `^`-anchored greps against docs trustworthy, and every law above depends on that. **Enforced repo-wide.**
+#384 discharged the owner's override of the segment-by-segment rollout in one sweep (2026-07-29):
+every doc is migrated, the allowlist is retired, and the tool discovers repo-root Markdown plus
+`docs/**` at any depth —
+so a doc added tomorrow is gated the moment it exists.
+`docs/souvenirs/` is excluded in code.
+`npm run docs:normalize:check` runs as a selfcheck detector (#457), and its red names its own
+remedy:
+`npm run docs:normalize` rewrites the listed files in place.
+
+The tool refuses to write on two independent properties, because the sweep shipped corrupt once and
+passed the first:
+the whitespace-normalized **word stream** must match, *and* the document's **parsed structure** must
+match.
+Word equality alone cannot see prose becoming a list when a wrap puts `+` at a line start.
 
 ## Docs sync sweep (before committing a spec or decision batch)
 
