@@ -13,4 +13,4 @@ Closes #
 - [ ] CONTEXT.md updated if a new domain term appeared; spec updated if behavior drifted (spec sync is part of the task)
 - [ ] Determinism preserved: no `Math.random` / `Date.now` in `src/sim`; sim imports no React/DOM
 - [ ] Docs sync sweep done for docs/spec changes (no stale cross-references)
-- [ ] The owner merges — do not self-merge
+- [ ] Every box above is checked — the driver merges its own PR only then (ADR-0010); coder subagents never merge

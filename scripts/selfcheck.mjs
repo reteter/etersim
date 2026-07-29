@@ -54,13 +54,13 @@ const SURFACERS = {
 const TASK_KINDS = {
   docs: {
     label: "Docs-only change",
-    gate: "Branch + PR (exceptions: session-close batch, and docs/HANDOFF.md alone at a session boundary); sweep for stale cross-references",
+    gate: "Branch + PR (exception: the session-close docs batch); sweep for stale cross-references",
     requires: ["env", "detectors"],
     skips: { baseline: "docs-only diff cannot break tests, typecheck or lint" },
   },
   impl: {
     label: "Implementation (issue)",
-    gate: "Approved spec + issue in a milestone; TDD for src/sim; feature branch + PR; the owner merges",
+    gate: "Approved spec + issue in a milestone; TDD for src/sim; feature branch + PR; the driver merges once every PR-checklist gate is closed (ADR-0010)",
     requires: ["env", "baseline", "detectors"],
     skips: {},
   },

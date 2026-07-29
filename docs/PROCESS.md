@@ -50,7 +50,7 @@ model**: a cheaper coder shifts load onto review and gates, not onto hope.
 
 ```
 idea → grill → feature spec → owner approval → GitHub issues (milestone = epic)
-     → coder waves → tiered wave check → owner merges → spec sync
+     → coder waves → tiered wave check → driver merges (ADR-0010) → spec sync
 ```
 
 Two structural rules do a lot of work here:

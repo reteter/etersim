@@ -2,7 +2,8 @@
 
 ## Roles (hybrid model)
 
-- **User (Jakub)** — product owner; final call on design, scope and merges.
+- **User (Jakub)** — product owner; final call on design and scope. Merging moved to the driver
+  on 2026-07-29 ([ADR-0010](../adr/0010-the-driver-merges.md)).
 - **Designer / Engineer** ([personas/](../personas/)) — hats worn in dialogue with the user
   during grilling and spec writing. Design and architecture are conversations, never delegated.
 - **Analyst** ([ANALYST.md](../personas/ANALYST.md)) — after owner playtests: verifies each
@@ -69,6 +70,8 @@ Levers, in order of impact:
 - **Resume over fresh** for reviewers and fix-loop coders — a hard rule in LCM.
 - **Long runs in the background** (full Playwright, builds) — never spend a driver turn waiting.
 
-LCM must **not** touch verification tiers, TDD, cert points or the owner-merge law: cut
+LCM must **not** touch verification tiers, TDD, cert points or the merge preconditions of
+[ADR-0010](../adr/0010-the-driver-merges.md) — the gates that now carry what the manual
+owner-merge read used to carry, and are therefore the last thing a cheap session may thin: cut
 coordination and cold starts, never gates. And no budget-triggered automatics — LCM is
 declared, never silently inferred mid-wave (incident 0022).

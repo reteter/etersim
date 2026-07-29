@@ -94,7 +94,10 @@ only **after** its base has merged, already retargeted to `main` (incident 0010)
 
 Coders push branches and report; **PRs open only after the wave check closes** — the
 Orchestrator opens them, or explicitly instructs the coder to. An open PR invites a merge on
-sight of green CI, which inverts the gate order (owner decision 2026-07-14).
+sight of green CI, which inverts the gate order (owner decision 2026-07-14). This rule got
+*more* load-bearing on 2026-07-29, not less: since the driver now merges its own PRs
+([ADR-0010](../adr/0010-the-driver-merges.md)), no human stands between an early-opened PR and
+`main`. Timing is what protects the gate order.
 
 ## Definition of done (per issue)
 
