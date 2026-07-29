@@ -6,7 +6,17 @@
 
 ## What happened
 
-Same session as 0025: after `cd`-ing into `fix-375-buy-cap-hint` to mutation-test a fix, the Orchestrator moved on to an unrelated docs task and ran a bare `git checkout -b docs/378-...` without re-verifying location. It landed inside the stale worktree, and the subsequent `git add`/`commit`/`push` created a real, empty-content branch on origin under a misleading name. Caught by the `git add` pathspec error, not by any check — recovered (branch deleted locally and on origin, worktree switched back, redone correctly with `git -C`). Same class as 0008 (cwd persists across an implicit task boundary) and 0021 (task-switch, not budget pressure, is the trigger) — third occurrence, despite 0008 having been read and cited in this very session shortly before.
+Same session as 0025:
+after `cd`-ing into `fix-375-buy-cap-hint` to mutation-test a fix, the Orchestrator moved on to an
+unrelated docs task and ran a bare `git checkout -b docs/378-...` without re-verifying location.
+It landed inside the stale worktree, and the subsequent `git add`/`commit`/`push` created a real,
+empty-content branch on origin under a misleading name.
+Caught by the `git add` pathspec error, not by any check —
+recovered (branch deleted locally and on origin, worktree switched back, redone correctly with
+`git -C`).
+Same class as 0008 (cwd persists across an implicit task boundary) and 0021 (task-switch, not budget
+pressure, is the trigger) —
+third occurrence, despite 0008 having been read and cited in this very session shortly before.
 
 ## Impact
 
@@ -16,7 +26,11 @@ Same session as 0025: after `cd`-ing into `fix-375-buy-cap-hint` to mutation-tes
 
 ## Recurrence
 
-High until mechanized — this is the third instance of the identical structural driver (soft, prose-only precondition that must be re-applied at every git call, forgotten under task-switching). Prose incidents don't fire at the moment of risk; only a mechanism does.
+High until mechanized —
+this is the third instance of the identical structural driver (soft, prose-only precondition that
+must be re-applied at every git call, forgotten under task-switching).
+Prose incidents don't fire at the moment of risk;
+only a mechanism does.
 
 ## Recommendation
 
@@ -26,4 +40,7 @@ High until mechanized — this is the third instance of the identical structural
 
 ## Follow-up
 
-Hook + script committed. Needs `/hooks` (owner-only UI action) before it's live in the current session; verified correct via direct pipe-testing, not yet via a real harness-fired block (that check is pending the reload).
+Hook + script committed.
+Needs `/hooks` (owner-only UI action) before it's live in the current session;
+verified correct via direct pipe-testing, not yet via a real harness-fired block (that check is
+pending the reload).

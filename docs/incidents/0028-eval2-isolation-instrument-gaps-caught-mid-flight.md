@@ -7,8 +7,9 @@
 ## What happened
 
 Running eval-2 (delegation eval on a behavior-preserving refactor, #379), three isolation/instrument
-gaps surfaced that the frozen pre-registration had not anticipated. None reached a measurement — each
-was caught in the window between setup and dispatch.
+gaps surfaced that the frozen pre-registration had not anticipated.
+None reached a measurement —
+each was caught in the window between setup and dispatch.
 
 1. **Tip-only strip left the rubric in git history, and "temporal isolation is free" broke when the OS
    arm ran first.** `eval2-baseline` was derived by `git rm` of `docs/design-notes/` + `HANDOFF.md` on a
@@ -39,10 +40,11 @@ was caught in the window between setup and dispatch.
 
 ## Recurrence
 
-Medium, and structural: the pre-registration reasoned about *content* isolation (strip the files) and
-about *ordering* (freeze the OS package first), but not about **git-history reachability**, **arm
-sequencing turning a control into a reference solution**, or **harness-assigned branch names**. These
-are setup-level properties easy to assume rather than verify.
+Medium, and structural:
+the pre-registration reasoned about *content* isolation (strip the files) and about *ordering*
+(freeze the OS package first), but not about **git-history reachability**, **arm sequencing turning a control into a reference solution**,
+or **harness-assigned branch names**.
+These are setup-level properties easy to assume rather than verify.
 
 ## Recommendation
 
@@ -61,6 +63,9 @@ are setup-level properties easy to assume rather than verify.
 
 ## Follow-up
 
-Landed same session: all three fixes applied and dry-run-verified; results recorded in the eval doc's
-RESULTS §; this report. The "read HANDOFF" probe was reclassified from an arm conformance defect to a
-shared instrument artifact in the eval verdict.
+Landed same session:
+all three fixes applied and dry-run-verified;
+results recorded in the eval doc's RESULTS §;
+this report.
+The "read HANDOFF" probe was reclassified from an arm conformance defect to a shared instrument
+artifact in the eval verdict.

@@ -1,29 +1,40 @@
 # Professor review — the construction subsystem, end-to-end (2026-07-17)
 
-Dispatch: sim construction (sites, commissioning, build progress, stalls, delivery,
-refit), its commands, save v13, and the store→UI bridge. Persona:
-docs/personas/PROFESSOR.md. Read set: CONTEXT.md, ADR-0002/0003/0004, E14 spec,
-E13/E15 specs where they touch the seam, ab-276-shipyard-ui.md, issues #290/#292
-(known port-arm-A items — referenced, not re-reported).
+Dispatch:
+sim construction (sites, commissioning, build progress, stalls, delivery, refit), its commands, save
+v13, and the store→UI bridge.
+Persona:
+docs/personas/PROFESSOR.md.
+Read set:
+CONTEXT.md, ADR-0002/0003/0004, E14 spec, E13/E15 specs where they touch the seam,
+ab-276-shipyard-ui.md, issues #290/#292 (known port-arm-A items — referenced, not re-reported).
 
 ## 1. The Dramatic Opening
 
-Watch it carefully now! Three construction sites — a hull at the Headquarters, the
-Shipyard building itself, a Refit against a docked ship — and every one of them fills
-through **one** engine (`drawConstructionSite`, `quoteConstructionSiteRush`,
-`applyDeliveryToConstructionSite`, src/sim/building.ts:333, 171, 122), quotes with the
-same function that charges, and never once reaches for the RNG. The #99 seam did what
-a seam is supposed to do: the second and third callers arrived and the engine did not
-move. The determinism suite pins a deep-equal world mid-refit
-(src/sim/shipyard.test.ts:858-887); the persistence suite round-trips a mid-refit
-world through the real envelope (src/store/persistence.test.ts:234-252). This is
-physics done properly.
+Watch it carefully now!
+Three construction sites —
+a hull at the Headquarters, the Shipyard building itself, a Refit against a docked ship —
+and every one of them fills through **one** engine (`drawConstructionSite`,
+`quoteConstructionSiteRush`, `applyDeliveryToConstructionSite`, src/sim/building.ts:333, 171, 122),
+quotes with the same function that charges, and never once reaches for the RNG.
+The #99 seam did what a seam is supposed to do:
+the second and third callers arrived and the engine did not move.
+The determinism suite pins a deep-equal world mid-refit (src/sim/shipyard.test.ts:858-887);
+the persistence suite round-trips a mid-refit world through the real envelope
+(src/store/persistence.test.ts:234-252).
+This is physics done properly.
 
-And yet — heed it! — the subsystem enforces its own scarcity law at two sim gates but
-tells the player about only one of them; it enumerates "what is a construction site"
-in **five separate hand-maintained lists**; and it stores half of a Refit's target
-while deriving the other half. The engine is deep; the bookkeeping around it is
-starting to shallow out. Why is it so?! Let us see.
+And yet —
+heed it!
+—
+the subsystem enforces its own scarcity law at two sim gates but tells the player about only one of
+them;
+it enumerates "what is a construction site" in **five separate hand-maintained lists**;
+and it stores half of a Refit's target while deriving the other half.
+The engine is deep;
+the bookkeeping around it is starting to shallow out.
+Why is it so?!
+Let us see.
 
 ## 2. The Immediate Analysis
 
@@ -61,98 +72,114 @@ starting to shallow out. Why is it so?! Let us see.
 
 ### F1 — DEFECT: the scarcity law is UI-mirrored in only one direction (silent no-op)
 
-The one-Build-Order-per-Company law is enforced at two sim gates: `placeBuildOrder`
-rejects while `shipyard.site` is active (src/sim/commands.ts:226) and
-`commissionShipyard` rejects while `headquarters.buildOrder` is active
-(src/sim/commands.ts:427). The Shipyard side surfaces its gate properly —
-disabled-with-reason (src/ui/PortPanel.tsx:571-577), the very precedent arm B was
-merged for honoring. But the Headquarters side does not: `canPlace` at
-src/ui/HeadquartersPanel.tsx:52 checks only `!buildOrder` and the purse. While the
-Shipyard is under construction, the Budowa tab's "Zleć budowę" button is
-**enabled**, the confirm dialog opens, the player confirms — and `applyCommand`
-returns the world unchanged. A paying-attention player watches a confirmation do
-nothing. This is precisely the "never a silent no-op" rule (#124 precedent, cited in
-PortPanel.tsx:555 itself!) — violated one panel over, by the sibling of the code that
-honors it. Not covered by #290 or #292 (their scope is the deliver-chain internals
-and the arm-A ports; #292 item 6 is the market rows, not this button).
+The one-Build-Order-per-Company law is enforced at two sim gates:
+`placeBuildOrder` rejects while `shipyard.site` is active (src/sim/commands.ts:226) and
+`commissionShipyard` rejects while `headquarters.buildOrder` is active (src/sim/commands.ts:427).
+The Shipyard side surfaces its gate properly —
+disabled-with-reason (src/ui/PortPanel.tsx:571-577), the very precedent arm B was merged for
+honoring.
+But the Headquarters side does not:
+`canPlace` at src/ui/HeadquartersPanel.tsx:52 checks only `!buildOrder` and the purse.
+While the Shipyard is under construction, the Budowa tab's "Zleć budowę" button is **enabled**, the
+confirm dialog opens, the player confirms —
+and `applyCommand` returns the world unchanged.
+A paying-attention player watches a confirmation do nothing.
+This is precisely the "never a silent no-op" rule (#124 precedent, cited in PortPanel.tsx:555
+itself!) —
+violated one panel over, by the sibling of the code that honors it.
+Not covered by #290 or #292 (their scope is the deliver-chain internals and the arm-A ports; #292
+item 6 is the market rows, not this button).
 
 ### F2 — DEFECT (small): a disabled reason that contradicts the glossary
 
-src/ui/PortPanel.tsx:574 disables the Shipyard commission with "Budowa siedziby
-wciąż trwa". But `headquarters.buildOrder` is a **ship** under construction — the
-Headquarters itself is never under construction (CONTEXT.md — Headquarters: "active
-immediately"; the HQ is the one instant Building, E14 spec counter-erratum). The
-string tells the player their siedziba is still being built, which is impossible.
-Should read as ship construction ("Trwa budowa statku w siedzibie" or kin). Glossary
-fidelity is law; a player-facing string that names the wrong concept is a defect,
-not polish.
+src/ui/PortPanel.tsx:574 disables the Shipyard commission with "Budowa siedziby wciąż trwa".
+But `headquarters.buildOrder` is a **ship** under construction —
+the Headquarters itself is never under construction (CONTEXT.md — Headquarters: "active
+immediately"; the HQ is the one instant Building, E14 spec counter-erratum).
+The string tells the player their siedziba is still being built, which is impossible.
+Should read as ship construction ("Trwa budowa statku w siedzibie" or kin).
+Glossary fidelity is law;
+a player-facing string that names the wrong concept is a defect, not polish.
 
 ### F3 — Edge defect: the stall readout is blind to same-tick cross-site sequencing
 
-`deriveSiteStallReason` (src/store/siteStall.ts:42-43) tests each good's 1-unit cost
-against the **current** purse. But the tick draws sites in fixed order — HQ first,
-then Shipyard construction, then Refit (src/sim/tick.ts:452-461) — from one shared
-purse. An HQ hull build and a Refit *can* be concurrently active (the scarcity law
-deliberately excludes the RefitOrder — E14 spec §Scarcity; tested at
-src/sim/shipyard.test.ts:726). With a thin purse, the Refit's stall readout can show
-"no stall" (or "brak towaru" instead of "rezerwa") for a tick in which the HQ's
-draws will floor the purse before the Refit ever walks. Within one site the
-derivation is sound (any-good-affordable matches the sim's first affordable draw);
-across sites it is not modeled, and no test visits it. A small honesty gap — in a
-feature whose entire purpose is honesty. The natural moment to fix it is #292 item 1
-(the stall-walk collapse), which is why I flag it now rather than after that port.
+`deriveSiteStallReason` (src/store/siteStall.ts:42-43) tests each good's 1-unit cost against the **current**
+purse.
+But the tick draws sites in fixed order —
+HQ first, then Shipyard construction, then Refit (src/sim/tick.ts:452-461) —
+from one shared purse.
+An HQ hull build and a Refit *can* be concurrently active (the scarcity law deliberately excludes
+the RefitOrder — E14 spec §Scarcity; tested at src/sim/shipyard.test.ts:726).
+With a thin purse, the Refit's stall readout can show "no stall" (or "brak towaru" instead of
+"rezerwa") for a tick in which the HQ's draws will floor the purse before the Refit ever walks.
+Within one site the derivation is sound (any-good-affordable matches the sim's first affordable
+draw);
+across sites it is not modeled, and no test visits it.
+A small honesty gap —
+in a feature whose entire purpose is honesty.
+The natural moment to fix it is #292 item 1 (the stall-walk collapse), which is why I flag it now
+rather than after that port.
 
 ### F4 — Structural: "what is a site" lives in five hand-maintained enumerations
 
-Count them: (1) the tick phase trio (src/sim/tick.ts:452-461); (2) the deliver
-priority chain (src/sim/commands.ts:280-413, three near-identical blocks — #290
-already owns the dedup); (3) the netWorth `stores` array
-(src/sim/ledger.ts:211-215); (4) the rush command trio (commands.ts:242/445/529);
+Count them:
+(1) the tick phase trio (src/sim/tick.ts:452-461);
+(2) the deliver priority chain (src/sim/commands.ts:280-413, three near-identical blocks — #290
+already owns the dedup);
+(3) the netWorth `stores` array (src/sim/ledger.ts:211-215);
+(4) the rush command trio (commands.ts:242/445/529);
 (5) the UI section branches (PortPanel.tsx:620/645 plus HeadquartersPanel's tab).
-E13's Storehouse and E15's Plant each add a site to **all five**. The typechecker
-guards none of them — forget the netWorth array entry for the Storehouse site and
-the company-value chart silently under-reports, with no red anywhere. The engine
-(#99) was generalized; the *registry of its callers* was not. E13's own spec already
-gestures at a generalized `BuildOrder` target-kind union (E14 spec §Scarcity notes
-it as unimplemented) — that refactor should carry an **ordered Company-sites
-iterator** that tick, deliver, rush, netWorth and the stall derivation all walk, so
-a new site type is one list entry, not five edits.
+E13's Storehouse and E15's Plant each add a site to **all five**.
+The typechecker guards none of them —
+forget the netWorth array entry for the Storehouse site and the company-value chart silently
+under-reports, with no red anywhere.
+The engine (#99) was generalized;
+the *registry of its callers* was not.
+E13's own spec already gestures at a generalized `BuildOrder` target-kind union (E14 spec §Scarcity
+notes it as unimplemented) —
+that refactor should carry an **ordered Company-sites iterator** that tick, deliver, rush, netWorth
+and the stall derivation all walk, so a new site type is one list entry, not five edits.
 
 ### F5 — Structural: rebuild-not-spread `Shipyard` literals
 
 Every transition reconstructs the `Shipyard` literal field-by-field:
-`completeShipyardIfDone` (src/sim/shipyard.ts:180), `completeRefitIfDone`
-(shipyard.ts:279), `runShipyardAutoDraw` (shipyard.ts:317-320),
-`runShipyardConstructionAutoDraw` (shipyard.ts:217), and the command handlers
-(src/sim/commands.ts:347, 390, 436, 477, 512, 563) — roughly ten literals. Because
-every `Shipyard` field beyond `portId` is optional (shipyard.ts:131-135), the day
-the type grows a field (refit cancellation is an explicit save-compatible v2
-extension, E14 spec non-goals!), the compiler will flag **none** of these sites as
-silently dropping it. Today the drop is the intent ("clear `site`") — but the
-intent is implicit in an object literal, not named. One transition helper (or a
-discriminated state union: commissioned / active / refitting) makes each drop a
-decision. File this alongside #290's dedup pass — same shape of debt, same fix
-window.
+`completeShipyardIfDone` (src/sim/shipyard.ts:180), `completeRefitIfDone` (shipyard.ts:279),
+`runShipyardAutoDraw` (shipyard.ts:317-320), `runShipyardConstructionAutoDraw` (shipyard.ts:217),
+and the command handlers (src/sim/commands.ts:347, 390, 436, 477, 512, 563) —
+roughly ten literals.
+Because every `Shipyard` field beyond `portId` is optional (shipyard.ts:131-135), the day the type
+grows a field (refit cancellation is an explicit save-compatible v2 extension, E14 spec non-goals!),
+the compiler will flag **none** of these sites as silently dropping it.
+Today the drop is the intent ("clear `site`") —
+but the intent is implicit in an object literal, not named.
+One transition helper (or a discriminated state union: commissioned / active / refitting) makes each
+drop a decision.
+File this alongside #290's dedup pass —
+same shape of debt, same fix window.
 
 ### F6 — Hidden assumption: `RefitOrder` stores half its truth and derives the other half
 
-`targetHold` is frozen at commission (src/sim/commands.ts:511) while the recipe is
-recomputed live on every read — `refitRecipe(ship)` at shipyard.ts:245,
-commands.ts:375/544, PortPanel.tsx:651, refitBubble.ts:51 — from `nextHoldStep`'s
-walk over the **current** `HOLD_LADDER` (shipyard.ts:62-68). Today they cannot
-diverge: the lock freezes `hold`. But `HOLD_LADDER` is declared a *tuning constant*
-(shipyard.ts:28-31; spec: "tuning is not spec drift") — and the moment it is tuned
-under a loaded mid-refit save, the live recipe (new ladder) and the stored
-completion target (old ladder) split: the ship completes to a `hold` that may sit
-between the new ladder's rungs, and its derived refit level shifts. The comment at
-shipyard.ts:110-114 proudly says "nothing to drift out of sync" — true of the
-*store*, not of the *ladder*. Either all-stored (freeze the recipe at commission,
-like `targetHold`) or all-derived (recompute `targetHold` too) is self-consistent;
-half-and-half is the one shape that can split. The stored `targetHold` is itself in
-the spec (E14 Tech, `RefitOrder { targetHold }`), so this routes as a
-settled-adjacent watch, not a fix: the new fact is the divergence-under-tuning of a
-mixed derivation, and it matters only if ladder tuning is ever actually on the
-table.
+`targetHold` is frozen at commission (src/sim/commands.ts:511) while the recipe is recomputed live
+on every read —
+`refitRecipe(ship)` at shipyard.ts:245, commands.ts:375/544, PortPanel.tsx:651, refitBubble.ts:51 —
+from `nextHoldStep`'s walk over the **current** `HOLD_LADDER` (shipyard.ts:62-68).
+Today they cannot diverge:
+the lock freezes `hold`.
+But `HOLD_LADDER` is declared a *tuning constant* (shipyard.ts:28-31; spec: "tuning is not spec
+drift") —
+and the moment it is tuned under a loaded mid-refit save, the live recipe (new ladder) and the
+stored completion target (old ladder) split:
+the ship completes to a `hold` that may sit between the new ladder's rungs, and its derived refit
+level shifts.
+The comment at shipyard.ts:110-114 proudly says "nothing to drift out of sync" —
+true of the *store*, not of the *ladder*.
+Either all-stored (freeze the recipe at commission, like `targetHold`) or all-derived (recompute
+`targetHold` too) is self-consistent;
+half-and-half is the one shape that can split.
+The stored `targetHold` is itself in the spec (E14 Tech, `RefitOrder { targetHold }`), so this
+routes as a settled-adjacent watch, not a fix:
+the new fact is the divergence-under-tuning of a mixed derivation, and it matters only if ladder
+tuning is ever actually on the table.
 
 ## 3. The "Why is it so?!" Dilemma
 
@@ -188,14 +215,16 @@ table.
 | F7 | Deliver addressing is inexpressible intent once E15 plants coexist with sites | **Settled-decision challenge — grill agenda** | Label: E15 spec Deliver targeting rule; new fact: four-deep chain makes the convention gameplay-significant |
 | — | Determinism, purity, v13, Reserve, ledger grammar, quote/charge discipline: verified sound | No routing needed | — |
 
-**Update 2026-07-29 — F5 and F6 now have an issue: [#441](../../../issues/441).** This note stays
-**LIVE** for exactly those two, and the obligation no longer lives only here. #441 schedules the
-next Professor pass on this same subsystem (construction / stores / buildings) immediately **before
-the first E15 coder dispatch**, and names F5 and F6 as findings that pass must resolve or re-route.
+**Update 2026-07-29 — F5 and F6 now have an issue: [#441](../../../issues/441).** This note stays **LIVE**
+for exactly those two, and the obligation no longer lives only here.
+#441 schedules the next Professor pass on this same subsystem (construction / stores / buildings)
+immediately **before the first E15 coder dispatch**, and names F5 and F6 as findings that pass must
+resolve or re-route.
 
-The sequencing reason is F5's own condition. F5 says optional fields mean the compiler cannot flag a
-dropped field *when the type grows* — and **E15 grows that type**, adding Processing Plants on the
-E13.0 `GoodsStore`/`StorePolicy` foundation with plant stores folding into `buildingStoreValue`.
+The sequencing reason is F5's own condition.
+F5 says optional fields mean the compiler cannot flag a dropped field *when the type grows* —
+and **E15 grows that type**, adding Processing Plants on the E13.0 `GoodsStore`/`StorePolicy`
+foundation with plant stores folding into `buildingStoreValue`.
 Reviewing the floor before adding a storey is cheaper than reviewing it after, which is why the pass
 is a gate on E15 rather than a follow-up to it.
 
@@ -203,5 +232,4 @@ Flipping this note to HIST requires F5 and F6 to be discharged, not merely filed
 ([documentation.md](../workflows/documentation.md) — before marking a note HIST, if flipping it
 would hide an obligation, file the obligation *then* flip).
 
-*The Professor reads, cites and questions; he edits nothing. These findings reach
-the codebase through the owner's pipeline — grill, spec, issues — never directly.*
+*The Professor reads, cites and questions; he edits nothing. These findings reach the codebase through the owner's pipeline — grill, spec, issues — never directly.*

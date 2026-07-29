@@ -1,9 +1,10 @@
 # SVG icon strategy: vendored, tintable, gold = Controlled Ship
 
-Game-world entities (the Ship, the five Port archetypes) need icons that read clearly at
-small sizes and can be tinted by state. Text-like UI chrome (`▲ ▼ – ⏸ ₸`) doesn't need
-this — it's mono glyphs already, and tinting it is a plain CSS `color` change. Decided
-with the owner alongside docs/specs/E10-orrery-view.md (#34, 2026-07-07).
+Game-world entities (the Ship, the five Port archetypes) need icons that read clearly at small sizes
+and can be tinted by state.
+Text-like UI chrome (`▲ ▼ – ⏸ ₸`) doesn't need this —
+it's mono glyphs already, and tinting it is a plain CSS `color` change.
+Decided with the owner alongside docs/specs/E10-orrery-view.md (#34, 2026-07-07).
 
 ## Decision
 

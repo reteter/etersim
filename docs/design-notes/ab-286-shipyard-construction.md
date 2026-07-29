@@ -1,11 +1,12 @@
 # A/B experiment: #286 implemented independently by Opus and Sonnet (2026-07-17)
 
-The first same-task paired trial in this repo's coder-model evaluation. One issue
-(#286: Shipyard constructed via ConstructionSite, not bought instantly — tier 3,
-`src/sim`, save-shape decision, spec counter-erratum in the same task), one task
-package, one baseline (`main @ 1808706`), two coders dispatched cold in isolated
-worktrees. Owner context: subscription billing makes **% of a session limit** the
-canonical cost metric (Opus tokens weigh ~2× Sonnet's per Anthropic).
+The first same-task paired trial in this repo's coder-model evaluation.
+One issue (#286: Shipyard constructed via ConstructionSite, not bought instantly — tier 3,
+`src/sim`, save-shape decision, spec counter-erratum in the same task), one task package, one
+baseline (`main @ 1808706`), two coders dispatched cold in isolated worktrees.
+Owner context:
+subscription billing makes **% of a session limit** the canonical cost metric (Opus tokens weigh ~2×
+Sonnet's per Anthropic).
 
 ## Protocol
 
@@ -33,11 +34,17 @@ canonical cost metric (Opus tokens weigh ~2× Sonnet's per Anthropic).
 | TDD | third self-reported order deviation (mutation-verified fix) | clean |
 | Cost | ~30% session limit (169k tokens, advisor ×2) | **~21% session limit** (254k tokens, advisor ×1) |
 
-**Outcome (owner-ratified):** merge B — #289; #288 closed unmerged; A's portable
-strengths filed as #290. The tiebreak: of all divergence axes, only SAVE_VERSION has
-a *written* repo answer (ADR-0007: bump for an additive absent-safe field, "version
-tracks World shape" stays honest), and the cheaper arm got it right. Everything else
-was both-defensible. n=1 — a datapoint, not a ruling.
+**Outcome (owner-ratified):** merge B —
+#289;
+#288 closed unmerged;
+A's portable strengths filed as #290.
+The tiebreak:
+of all divergence axes, only SAVE_VERSION has a *written* repo answer (ADR-0007: bump for an
+additive absent-safe field, "version tracks World shape" stays honest), and the cheaper arm got it
+right.
+Everything else was both-defensible.
+n=1 —
+a datapoint, not a ruling.
 
 ## Threats to validity
 

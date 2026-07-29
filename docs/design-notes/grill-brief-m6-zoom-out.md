@@ -1,12 +1,14 @@
 # Grill brief — M6 First zoom-out
 
-A **grill brief** is the scenario for a future owner grill: the questions that grill
-must resolve, the rails already locked, and the known traps. Written at the
-fantasy-roadmap grill (2026-07-16). M6 is behind the credits — grill it after M5 is
-specced; its **first question is architectural and hard to reverse**.
+A **grill brief** is the scenario for a future owner grill:
+the questions that grill must resolve, the rails already locked, and the known traps.
+Written at the fantasy-roadmap grill (2026-07-16).
+M6 is behind the credits —
+grill it after M5 is specced;
+its **first question is architectural and hard to reverse**.
 
-**This grill decides:** the recursion architecture, the administrator mechanic, the
-second region's opening, and long inter-region crossings.
+**This grill decides:** the recursion architecture, the administrator mechanic, the second region's
+opening, and long inter-region crossings.
 
 ## Rails (locked, don't relitigate — link, build on)
 

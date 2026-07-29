@@ -6,13 +6,15 @@
 > parked-automation→§Non-goals). Kept for provenance — the brief is the *questions*, E16 is the
 > *answers*. Crux was port-centric construction (validated in the grill mockup).
 
-A **grill brief** is the scenario for a future owner grill: the questions that grill
-must resolve, the rails already locked, and the known traps. It hands the *questions*,
-not the answers — the owner answers at the table. Written at the fantasy-roadmap
-grill (2026-07-16) for whichever orchestrator leads the M4 grills.
+A **grill brief** is the scenario for a future owner grill:
+the questions that grill must resolve, the rails already locked, and the known traps.
+It hands the *questions*, not the answers —
+the owner answers at the table.
+Written at the fantasy-roadmap grill (2026-07-16) for whichever orchestrator leads the M4 grills.
 
-**This grill decides:** how the Price board becomes the game's control center — route
-planning, dispatch and reading in one surface — and what the region map keeps.
+**This grill decides:** how the Price board becomes the game's control center —
+route planning, dispatch and reading in one surface —
+and what the region map keeps.
 
 ## Rails (locked, don't relitigate — link, build on)
 

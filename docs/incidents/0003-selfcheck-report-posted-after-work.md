@@ -6,15 +6,16 @@
 
 ## What happened
 
-An external coding agent was asked to run the selfcheck per `docs/SELFCHECK.md` and
-then take issue #79 (pure rename, `src/sim` + UI). The agent executed the entire
-task — selfcheck reads, baseline, branch, all edits, commit — in a single turn, and
-posted the §5 "Selfcheck complete" report **together with the completion summary**,
+An external coding agent was asked to run the selfcheck per `docs/SELFCHECK.md` and then take issue
+#79 (pure rename, `src/sim` + UI).
+The agent executed the entire task —
+selfcheck reads, baseline, branch, all edits, commit —
+in a single turn, and posted the §5 "Selfcheck complete" report **together with the completion summary**,
 after the commit already existed.
 
-§5's purpose is to catch misunderstandings "while they are still free": the owner
-sees how the model understood the task *before* any file changes. Posting the report
-after the work turns it into a receipt instead of a checkpoint.
+§5's purpose is to catch misunderstandings "while they are still free":
+the owner sees how the model understood the task *before* any file changes.
+Posting the report after the work turns it into a receipt instead of a checkpoint.
 
 ## Impact
 
@@ -30,8 +31,10 @@ after the work turns it into a receipt instead of a checkpoint.
 
 ## Recurrence
 
-High — structural. Agent harnesses that run tools-then-reply in one turn will always
-produce this unless the checklist explicitly demands a pause before the first edit.
+High —
+structural.
+Agent harnesses that run tools-then-reply in one turn will always produce this unless the checklist
+explicitly demands a pause before the first edit.
 The old §5 wording never said "stop".
 
 ## Recommendation

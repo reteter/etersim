@@ -6,16 +6,20 @@
 
 ## What happened
 
-#306's golden-run digest test (`e13-0-equivalence.test.ts`) passed on the coder's
-Windows worktree and passed the tier-3 review (also run locally, same platform).
-It failed CI on `main` after merge: two `electronics` values in the fixture
-mismatched in the 15th-16th significant digit
-(`182.97495270109954` vs `...57`). Every other digest field — thalers, tick,
-every other good, both site stores — matched exactly. Root cause: `market.ts`
-prices via `** PRICE_CURVE_EXPONENT` (a non-integer exponent); `Math.pow`/`**`
-is not guaranteed bit-identical across platforms or Node/V8 versions the way
-`+ - * /` are. The digest formatted floats with bare `toString()`, so it
-compared full float64 precision instead of the behavior contract.
+#306's golden-run digest test (`e13-0-equivalence.test.ts`) passed on the coder's Windows worktree
+and passed the tier-3 review (also run locally, same platform).
+It failed CI on `main` after merge:
+two `electronics` values in the fixture mismatched in the 15th-16th significant digit
+(`182.97495270109954` vs `...57`).
+Every other digest field —
+thalers, tick, every other good, both site stores —
+matched exactly.
+Root cause:
+`market.ts` prices via `** PRICE_CURVE_EXPONENT` (a non-integer exponent);
+`Math.pow`/`**` is not guaranteed bit-identical across platforms or Node/V8 versions the way
+`+ - * /` are.
+The digest formatted floats with bare `toString()`, so it compared full float64 precision instead of
+the behavior contract.
 
 ## Impact
 
@@ -37,9 +41,10 @@ compared full float64 precision instead of the behavior contract.
 
 ## Recurrence
 
-Medium — structural driver: this repo's local dev machine (Windows) and CI
-runner (Linux) will keep differing, and any *future* golden/pinned test that
-formats a float via bare `toString()`/template interpolation is exposed the
+Medium —
+structural driver:
+this repo's local dev machine (Windows) and CI runner (Linux) will keep differing, and any *future*
+golden/pinned test that formats a float via bare `toString()`/template interpolation is exposed the
 same way, silently, until it happens to touch a `Math.pow`-derived value.
 
 ## Recommendation
@@ -57,5 +62,6 @@ same way, silently, until it happens to touch a `Math.pow`-derived value.
 
 ## Follow-up
 
-Landed same session: `fmtFloat` rounding in `e13-0-equivalence.test.ts`
-(feat/306-golden-run-digest, folded into PR #351 before merge).
+Landed same session:
+`fmtFloat` rounding in `e13-0-equivalence.test.ts` (feat/306-golden-run-digest, folded into PR #351
+before merge).

@@ -1,9 +1,10 @@
 # Playtest 2026-07-14 — routes, fleet visibility, price-board UX
 
-Owner playtest (multi-ship, route-driven mid-game), analysed the same day. Analyst
-gate: every observation verified against code before classification; routes below,
-decisions stay with the owner. Verification citations from the read-only sweep are
-inline.
+Owner playtest (multi-ship, route-driven mid-game), analysed the same day.
+Analyst gate:
+every observation verified against code before classification;
+routes below, decisions stay with the owner.
+Verification citations from the read-only sweep are inline.
 
 ## Verified observations & routing
 
@@ -22,30 +23,34 @@ inline.
 
 ## Grill cluster A — route automation (resolved)
 
-Playtest input: manual producer→consumer wiring is tedious at fleet scale; the owner
-wants "pick producers, then explicit consumers or auto-sell at the region's best
-price". **Resolved 2026-07-21 (#357):** split into conditional Stops (rejected — lock
-reaffirmed) and dynamic auto-sell-at-best (out of scope, already has a home at E9's
-"supplier ship automation" non-goal / PRD Horizon). Full reasoning:
-[route-automation-grill-2026-07-21.md](route-automation-grill-2026-07-21.md). The
-underlying UX signal is routed to **Grill cluster B** below, not resolved by building
+Playtest input:
+manual producer→consumer wiring is tedious at fleet scale;
+the owner wants "pick producers, then explicit consumers or auto-sell at the region's best price". **Resolved 2026-07-21 (#357):**
+split into conditional Stops (rejected — lock reaffirmed) and dynamic auto-sell-at-best (out of
+scope, already has a home at E9's "supplier ship automation" non-goal / PRD Horizon).
+Full reasoning:
+[route-automation-grill-2026-07-21.md](route-automation-grill-2026-07-21.md).
+The underlying UX signal is routed to **Grill cluster B** below, not resolved by building
 automation.
 
 ## Grill cluster B — the region's economic surface vs the route editor
 
-One UX cluster, three symptoms: the route editor lacks price context (4/6), the
-Price Board wants a readability pass (11, overlaps #127/#74), and route order
-execution is illegible in the moment (10 — "sell all" reads as a cargo wipe).
-Common question: what single surface shows "what to haul where, and what my routes
-are doing about it"? E3's Kontrakty tab (#96) is about to make the Price Board the
-region's economic surface — grill B should ride the same wave or immediately after.
-**Unpark trigger tracked as #358** (filed 2026-07-21, #326 audit).
+One UX cluster, three symptoms:
+the route editor lacks price context (4/6), the Price Board wants a readability pass (11, overlaps
+#127/#74), and route order execution is illegible in the moment (10 — "sell all" reads as a cargo
+wipe).
+Common question:
+what single surface shows "what to haul where, and what my routes are doing about it"?
+E3's Kontrakty tab (#96) is about to make the Price Board the region's economic surface —
+grill B should ride the same wave or immediately after. **Unpark trigger tracked as #358**
+(filed 2026-07-21, #326 audit).
 
 ## Issue log
 
-Filed this session: #173 (skiff easing + toning), #174 (render whole fleet — bug),
-#175 (routes-tab keybind), #176 (overlay scroll — bug), #177 (ShipPanel route
-status + suspend). Comment added to #128 (Budowa names its output). Cluster A
-resolved 2026-07-21 (#357, lock reaffirmed — see
-[route-automation-grill-2026-07-21.md](route-automation-grill-2026-07-21.md)); Cluster B
-(#358) still awaiting its own grill.
+Filed this session:
+#173 (skiff easing + toning), #174 (render whole fleet — bug), #175 (routes-tab keybind), #176
+(overlay scroll — bug), #177 (ShipPanel route status + suspend).
+Comment added to #128 (Budowa names its output).
+Cluster A resolved 2026-07-21 (#357, lock reaffirmed — see
+[route-automation-grill-2026-07-21.md](route-automation-grill-2026-07-21.md));
+Cluster B (#358) still awaiting its own grill.

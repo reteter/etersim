@@ -1,39 +1,44 @@
 # E9 — Fleet & routes
 
-Feature spec for epic E9 (milestone M2 — Living Region, [PRD](../PRD.md)). Terms per
-[CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-09.
+Feature spec for epic E9 (milestone M2 — Living Region, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on 2026-07-09.
 Status: **approved (2026-07-09)**.
 
-Grill inputs: [playtest-2026-07-09-living.md](../design-notes/playtest-2026-07-09-living.md)
-(progression pull — bigger hold, routes, upgrades; natural play speed 10×; owner follow-up
-inputs: regulated money sink, company performance board), CONTEXT.md Route/Course naming
-collision note, PRD §M2 E9 bullet (fleet-lite, absorbed E4 draft).
+Grill inputs:
+[playtest-2026-07-09-living.md](../design-notes/playtest-2026-07-09-living.md) (progression pull —
+bigger hold, routes, upgrades; natural play speed 10×; owner follow-up inputs: regulated money sink,
+company performance board), CONTEXT.md Route/Course naming collision note, PRD §M2 E9 bullet
+(fleet-lite, absorbed E4 draft).
 
-Scope in one line: the Company grows from one ship into an orchestrated fleet — a
-Headquarters building unlocks Route templates (looping buy/sell/deliver stops) and ship
-construction fed by the living market (auto-draw, player deliveries, market-priced rush),
-paid for through docking fees and a full Ledger with an in-game performance board.
+Scope in one line:
+the Company grows from one ship into an orchestrated fleet —
+a Headquarters building unlocks Route templates (looping buy/sell/deliver stops) and ship
+construction fed by the living market (auto-draw, player deliveries, market-priced rush), paid for
+through docking fees and a full Ledger with an in-game performance board.
 
-Explicit non-goals: **flat cash ship purchase** (never built — construction replaced it
-at the grill, superseding the PRD wording "ship purchase is v2's money sink"); route
-wait/price conditionals (PRD: route rot *is* the gameplay — **reaffirmed 2026-07-21
-against fresh playtest evidence**, [route-automation-grill-2026-07-21](../design-notes/route-automation-grill-2026-07-21.md));
-additional building types,
-build queue, assembly time, Headquarters relocation/demolition, hull classes (M3 as
-locked 2026-07-09 ships guild building types via E13; the rest stays parked);
+Explicit non-goals: **flat cash ship purchase**
+(never built — construction replaced it at the grill, superseding the PRD wording "ship purchase is
+v2's money sink");
+route wait/price conditionals (PRD: route rot *is* the gameplay — **reaffirmed 2026-07-21 against fresh playtest evidence**,
+[route-automation-grill-2026-07-21](../design-notes/route-automation-grill-2026-07-21.md));
+additional building types, build queue, assembly time, Headquarters relocation/demolition, hull
+classes (M3 as locked 2026-07-09 ships guild building types via E13; the rest stays parked);
 branch offices per region + region administrator (multi-region hooks, PRD Beyond);
 "supplier" ship automation (parked hook — the deliver order is its foundation);
-map-drawn route editing (list editor ships; map only highlights); trade taxes (the
-spread already is one); ship upkeep (parked at this grill; later spec'd in E3 —
-approved 2026-07-09); save migration (pre-1.0, E8/E10 precedent).
+map-drawn route editing (list editor ships; map only highlights);
+trade taxes (the spread already is one);
+ship upkeep (parked at this grill; later spec'd in E3 — approved 2026-07-09);
+save migration (pre-1.0, E8/E10 precedent).
 
 ## Design
 
 ### Principle: buildings introduce mechanics
 
-Owner's design law, locked at the grill: a new gameplay layer arrives with a Building,
-not with a tutorial. E9 is its first application — the progression beat is
-**manual trader → founder → orchestrator**:
+Owner's design law, locked at the grill:
+a new gameplay layer arrives with a Building, not with a tutorial.
+E9 is its first application —
+the progression beat is **manual trader → founder → orchestrator**:
 
 1. The game opens exactly as today (E8 manual trading — playtest-confirmed fun).
 2. Founding the **Headquarters** is the moment the shipper becomes a company: it unlocks
@@ -41,21 +46,23 @@ not with a tutorial. E9 is its first application — the progression beat is
 3. From there the player's attention shifts from clicking trades to tuning loops,
    watching the Ledger, and growing the fleet — the observe-and-orchestrate fantasy.
 
-Everything below hangs off this beat. Future buildings (M3) each carry their own
-mechanic; other regions will get theirs via branch offices (PRD hook).
+Everything below hangs off this beat.
+Future buildings (M3) each carry their own mechanic;
+other regions will get theirs via branch offices (PRD hook).
 
 ### Course vs Route (naming resolution)
 
-The old internal `route` (a pathfinding result — the lane Voyages of one `sailTo`) is
-renamed **Course**; **Route** now exclusively means the player-facing loop. E10's UI
-identifiers (`courseVoyages`, `isCourseAccented`, `.lane--course-accent`) turn out
-correct under the new vocabulary and stay unchanged. Pure mechanical refactor under
-existing tests; no behavior change.
+The old internal `route` (a pathfinding result — the lane Voyages of one `sailTo`) is renamed **Course**; **Route**
+now exclusively means the player-facing loop.
+E10's UI identifiers (`courseVoyages`, `isCourseAccented`, `.lane--course-accent`) turn out correct
+under the new vocabulary and stay unchanged.
+Pure mechanical refactor under existing tests;
+no behavior change.
 
 ### Routes: Company-level templates, assigned by reference
 
-A **Route** is a Company entity, not ship state — created and edited in the
-Headquarters' Route panel, assigned to any number of Ships **by reference**:
+A **Route** is a Company entity, not ship state —
+created and edited in the Headquarters' Route panel, assigned to any number of Ships **by reference**:
 
 - **Editing propagates to the fleet**: every assigned ship picks up the change from its
   next Stop. Tune a loop once, five ships follow — orchestration, not micromanagement
@@ -72,8 +79,8 @@ Headquarters' Route panel, assigned to any number of Ships **by reference**:
 
 ### Stops: buy / sell / deliver, best-effort
 
-A Stop is a Port plus orders named after their economic effect (glossary updated at the
-grill — the old load/unload wording became ambiguous once deliver existed):
+A Stop is a Port plus orders named after their economic effect (glossary updated at the grill — the
+old load/unload wording became ambiguous once deliver existed):
 
 - **buy(good)** — fill available Hold at the normal ask (`quoteBuy`), paid from the
   Company purse.
@@ -121,15 +128,18 @@ Rules, all locked:
 
 ### Ship construction: the market builds your fleet
 
-Commissioning a hull at the Headquarters creates a **Build Order** (one at a time in
-E9). The **Recipe** spans all five goods — much grain (provisions), medium textiles
-(rigging) and aether salt (hull infusion), a little electronics (instruments) and a
-little **timber: the living-wood keel**, the recipe's prestigious top — plus a flat
-**labor fee** in thalers charged when the order is placed.
+Commissioning a hull at the Headquarters creates a **Build Order** (one at a time in E9).
+The **Recipe** spans all five goods —
+much grain (provisions), medium textiles (rigging) and aether salt (hull infusion), a little
+electronics (instruments) and a little **timber: the living-wood keel**, the recipe's prestigious
+top —
+plus a flat **labor fee** in thalers charged when the order is placed.
 
-**Corrects the `goods.ts` setting comment** ("timber is a luxury freight here, not a
-building commodity"): owner verdict 2026-07-09 — aether ships *must* have living wood at
-the keel, and that is precisely *why* timber is the most expensive good in the world.
+**Corrects the `goods.ts` setting comment** ("timber is a luxury freight here, not a building
+commodity"):
+owner verdict 2026-07-09 —
+aether ships *must* have living wood at the keel, and that is precisely *why* timber is the most
+expensive good in the world.
 Fleet growth is meant to feel exceptional.
 
 The build site's material store fills from three sources:
@@ -156,20 +166,25 @@ The build site's material store fills from three sources:
    the market would be the only point in the game where goods bypass the economy
    (anti-pillar 1).
 
-The ship **launches the moment the Recipe completes**: docked at the Headquarters port,
-empty, routeless, named (see UX). Payback target for the second ship on a healthy
-reference lane: **~40–60 world days**, lane-conditional by design (see Pacing —
-Market impact) (tuning ≠ spec drift).
+The ship **launches the moment the Recipe completes**:
+docked at the Headquarters port, empty, routeless, named (see UX).
+Payback target for the second ship on a healthy reference lane: **~40–60 world days**,
+lane-conditional by design (see Pacing — Market impact) (tuning ≠ spec drift).
 
 ### The Reserve: construction never touches starting capital
 
-Locked at the #122 grill (2026-07-12), after the first fresh-eyes playtest reached a
-dead state — ₸0, empty hold, docked; no income-generating action exists from there
-([playtest note](../design-notes/playtest-2026-07-12-fresh-eyes-kacper.md)). The
-original stall rule above was spec-compliant with that outcome: it never asked what
-happens at ₸0. Root philosophy locked with the fix: **agency guarantee** — from every
-reachable state a path to income exists; the game may slow down, never die. No
-bankruptcy screen; a dead state is a defect by definition.
+Locked at the #122 grill (2026-07-12), after the first fresh-eyes playtest reached a dead state —
+₸0, empty hold, docked;
+no income-generating action exists from there
+([playtest note](../design-notes/playtest-2026-07-12-fresh-eyes-kacper.md)).
+The original stall rule above was spec-compliant with that outcome:
+it never asked what happens at ₸0.
+Root philosophy locked with the fix: **agency guarantee**
+—
+from every reachable state a path to income exists;
+the game may slow down, never die.
+No bankruptcy screen;
+a dead state is a defect by definition.
 
 - **One rule, four enforcement points**: no construction spend may take the purse
   below the **Reserve** (CONTEXT.md; `CONSTRUCTION_RESERVE = 500` — equal to
@@ -197,11 +212,13 @@ bankruptcy screen; a dead state is a defect by definition.
 
 ### Docking fee: the fixed cost of activity
 
-A flat per-docking charge, differentiated per port (by archetype), paid on **every**
-docking — manual or routed; sailing through an intermediate port without docking stays
-free. No trade tax: the spread already taxes every transaction proportionally, and a
-second proportional knob teaches nothing new. The docking fee creates pressure the
-spread cannot:
+A flat per-docking charge, differentiated per port (by archetype), paid on **every** docking —
+manual or routed;
+sailing through an intermediate port without docking stays free.
+No trade tax:
+the spread already taxes every transaction proportionally, and a second proportional knob teaches
+nothing new.
+The docking fee creates pressure the spread cannot:
 
 - **Stop count becomes a decision** — two short loops vs one long loop differ in fixed
   cost at equal turnover.
@@ -211,13 +228,16 @@ spread cannot:
 - **Route rot gets legible sooner** — a loop barely above water after the spread turns
   plainly negative after fees, and the Ledger shows fees as their own line.
 
-No debt in E9: an empty purse pays what it has. Fee schedule (tuning ≠ spec drift):
+No debt in E9:
+an empty purse pays what it has.
+Fee schedule (tuning ≠ spec drift):
 urban ₸20, industrial ₸15, mining ₸12, agrarian ₸8, verdant ₸5.
 
 ### Ledger and the performance board
 
-The Ledger (glossary) lands in E9 as the canonical event stream; the E11 Harness will
-consume the same schema — one schema, two consumers.
+The Ledger (glossary) lands in E9 as the canonical event stream;
+the E11 Harness will consume the same schema —
+one schema, two consumers.
 
 - **Every thaler or goods movement is an event**: trades (manual and routed), docking
   fees, auto-draw purchases, rush purchases, deliveries, labor fees, the Headquarters
@@ -303,11 +323,12 @@ consume the same schema — one schema, two consumers.
 
 ### Course rename (`src/sim/pathfinding.ts`, `ship.ts`, `commands.ts`, `src/ui/`)
 
-Mechanical, behavior-free, first PR of the epic: `shortestRoute` → `shortestCourse`,
-`Ship.location.route` → `course`, `routeTicks` → `courseTicks`, UI `routePreview.ts` →
-`coursePreview.ts` (+ identifiers inside). E10's `course*` identifiers in
-`RegionMap.tsx` untouched. Existing tests renamed alongside; the `goods.ts` timber
-comment is corrected in the same PR (setting verdict above).
+Mechanical, behavior-free, first PR of the epic:
+`shortestRoute` → `shortestCourse`, `Ship.location.route` → `course`, `routeTicks` → `courseTicks`,
+UI `routePreview.ts` → `coursePreview.ts` (+ identifiers inside).
+E10's `course*` identifiers in `RegionMap.tsx` untouched.
+Existing tests renamed alongside;
+the `goods.ts` timber comment is corrected in the same PR (setting verdict above).
 
 ### Route & Stop (`src/sim/route.ts`, new; `commands.ts`, `ship.ts`, `tick.ts`)
 
@@ -516,9 +537,12 @@ Milestone **E9 — Fleet & routes** (filed 2026-07-09).
 | #86 | ui | `feat(ui)`: performance board overlay (transactions + company value chart) | #82 |
 | #56 | ui | speed/pause hotkeys (existing issue, pulled into the milestone) | — |
 
-Sequencing note: E9 closes M2 — it runs on top of E8's gradients (routes are frozen bets
-on them) and E10's geometry (Course dispatch, Stop highlighting). The rename is the
-keystone PR; the two sim tracks (routes, construction) parallelize after it, meeting in
-the Ledger issue; UI tracks parallelize against sim as their dependencies land. After E9
-ships: re-review the E11 draft against the shipped Ledger schema (owner decision,
-2026-07-09).
+Sequencing note:
+E9 closes M2 —
+it runs on top of E8's gradients (routes are frozen bets on them) and E10's geometry (Course
+dispatch, Stop highlighting).
+The rename is the keystone PR;
+the two sim tracks (routes, construction) parallelize after it, meeting in the Ledger issue;
+UI tracks parallelize against sim as their dependencies land.
+After E9 ships:
+re-review the E11 draft against the shipped Ledger schema (owner decision, 2026-07-09).

@@ -5,14 +5,19 @@ Copy to docs/specs/E<n>-<slug>.md, replace every <placeholder>, delete the guida
 comments. Keep the section order. Terms per CONTEXT.md — a new concept means adding
 the glossary entry first (Documentation law, WORKFLOW.md). -->
 
-Feature spec for epic E<n> (milestone <M?> — <name>, [PRD](../PRD.md)). Terms per
-[CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on <date>.
+Feature spec for epic E<n> (milestone <M?> — <name>, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on <date>.
 Status: **draft** | **approved (<date>)**.
 
-Grill inputs: <issues, design notes, playtest observations that fed the grill — link them>.
+Grill inputs:
+<issues, design notes, playtest observations that fed the grill —
+link them>.
 
-Scope in one line: <what ships>. Explicit non-goals: <what does NOT ship, and where
-each deferred item is parked (epic / design note)>.
+Scope in one line:
+<what ships>.
+Explicit non-goals:
+<what does NOT ship, and where each deferred item is parked (epic / design note)>.
 
 ## Design
 
@@ -63,5 +68,6 @@ Milestone **E<n> — <name>** (filed <date>).
 | --- | --- | --- | --- |
 | #<n> | sim/ui/docs | `feat(<area>)`: <one-line scope> | <#deps or —> |
 
-Sequencing note: <where this epic sits relative to neighboring epics and why — owner
-call with date>.
+Sequencing note:
+<where this epic sits relative to neighboring epics and why —
+owner call with date>.

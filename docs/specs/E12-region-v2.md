@@ -1,43 +1,55 @@
 # E12 — Region v2
 
-Feature spec for epic E12 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)). Terms
-per [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-09.
+Feature spec for epic E12 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on 2026-07-09.
 Status: **approved (2026-07-09)**.
 
-Grill inputs: M3 grill (contract geometry wants more ports and shortage diversity; owner
-raised the port-count question and the neutral-port idea), E10 spec §orbit rings
-(ring-packing retry finding and the anticipated recalibration decision).
+Grill inputs:
+M3 grill (contract geometry wants more ports and shortage diversity; owner raised the port-count
+question and the neutral-port idea), E10 spec §orbit rings (ring-packing retry finding and the
+anticipated recalibration decision).
 
-Scope in one line: HEARTLAND grows to 7–9 ports including exactly one **Free port** (the
-sixth archetype — the region's neutral ground), with orrery geometry recalibrated and
-E8/E9 calibration tests re-anchored to the new template.
+Scope in one line:
+HEARTLAND grows to 7–9 ports including exactly one **Free port** (the sixth archetype — the region's
+neutral ground), with orrery geometry recalibrated and E8/E9 calibration tests re-anchored to the
+new template.
 
-Explicit non-goals: a second region or multi-region anything (PRD Horizon); a second
-region template; real orbital motion (parked E5); information fog (parked E6); guilds
-themselves (E3 — the Free port's guild meaning is *defined* here but *consumed* there);
-save migration (pre-1.0 precedent — old saves and the old playtest seed are invalidated,
-a new standard playtest seed is picked after worldgen settles).
+Explicit non-goals:
+a second region or multi-region anything (PRD Horizon);
+a second region template;
+real orbital motion (parked E5);
+information fog (parked E6);
+guilds themselves (E3 — the Free port's guild meaning is *defined* here but *consumed* there);
+save migration (pre-1.0 precedent — old saves and the old playtest seed are invalidated, a new
+standard playtest seed is picked after worldgen settles).
 
 ## Design
 
 ### Why this epic runs first
 
-The E10 precedent, repeated deliberately: geometry lands *under* the playtests that
-follow it. E3's contract generator is sized from real distances and E13's storehouse
-siting is a geography decision — calibrating them on 5–6 ports and re-calibrating on
-7–9 would mean doing the work twice. E12 is small and strictly enabling.
+The E10 precedent, repeated deliberately:
+geometry lands *under* the playtests that follow it.
+E3's contract generator is sized from real distances and E13's storehouse siting is a geography
+decision —
+calibrating them on 5–6 ports and re-calibrating on 7–9 would mean doing the work twice.
+E12 is small and strictly enabling.
 
 ### Port count 7–9
 
-`portCountRange` is template data by design — no ADR freezes it. 7–9 ports gives:
-archetype duplicates (two agrarian ports differing only by jitter — the first time the
-player compares *siblings*), longer hauls, more simultaneous shortages for the E3
-generator to read, and a real choice of guild geography. Known cost: ring packing (see
-Tech) and invalidated calibrations (see Testing).
+`portCountRange` is template data by design —
+no ADR freezes it.
+7–9 ports gives:
+archetype duplicates (two agrarian ports differing only by jitter — the first time the player
+compares *siblings*), longer hauls, more simultaneous shortages for the E3 generator to read, and a
+real choice of guild geography.
+Known cost:
+ring packing (see Tech) and invalidated calibrations (see Testing).
 
 ### The Free port
 
-The sixth Port archetype (glossary: Free port). Exactly one per region.
+The sixth Port archetype (glossary: Free port).
+Exactly one per region.
 
 - **Economy**: no production, light balanced consumption (stock breathes, no gradients
   originate here), price bias 1.0 across all goods (no jitter — neutrality is the

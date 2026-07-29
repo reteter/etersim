@@ -1,8 +1,10 @@
 # etersim — agent entry point (any model, any harness)
 
-This is the vendor-neutral bootstrap: a pointer file, nothing more. Whether your harness
-auto-loaded it (AGENTS.md is the emerging cross-vendor convention) or the owner opened the
-session with *"Read AGENTS.md and follow it"* — read these, in order:
+This is the vendor-neutral bootstrap:
+a pointer file, nothing more.
+Whether your harness auto-loaded it (AGENTS.md is the emerging cross-vendor convention) or the owner
+opened the session with *"Read AGENTS.md and follow it"* —
+read these, in order:
 
 1. **`CLAUDE.md`** — the project rules: source-of-truth map, laws, git/worktree rules,
    commands. The filename is historical (this repo was built with Claude Code); treat it as
@@ -16,10 +18,10 @@ session with *"Read AGENTS.md and follow it"* — read these, in order:
    it and post the one-line report it prints before touching anything. It works for any
    model in any harness; the rules around it are `CLAUDE.md` §Before you start.
 
-**This file states no rules of its own, deliberately** (owner decision, 2026-07-28). It
-used to repeat a "hard floor" — never commit to `main`, determinism, glossary-first — and
-that copy drifted against `CLAUDE.md` until the two contradicted each other on committing to
-`main`, so two harnesses could behave oppositely and both be right. A second copy of a law
-is a second thing to keep true. **`CLAUDE.md` is the authority; if this file ever seems to
-say otherwise, `CLAUDE.md` wins — and the fix is to delete the copy here, not to reconcile
-it.** Resist the urge to be helpful by restating the laws below step 1.
+**This file states no rules of its own, deliberately** (owner decision, 2026-07-28).
+It used to repeat a "hard floor" —
+never commit to `main`, determinism, glossary-first —
+and that copy drifted against `CLAUDE.md` until the two contradicted each other on committing to
+`main`, so two harnesses could behave oppositely and both be right.
+A second copy of a law is a second thing to keep true. **`CLAUDE.md` is the authority; if this file ever seems to say otherwise, `CLAUDE.md` wins — and the fix is to delete the copy here, not to reconcile it.**
+Resist the urge to be helpful by restating the laws below step 1.

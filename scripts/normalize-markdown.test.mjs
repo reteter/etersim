@@ -7,10 +7,20 @@
 
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { reflowMarkdown, ALLOWLIST } from "./normalize-markdown.mjs";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
+import {
+  reflowMarkdown,
+  collectTargets,
+  assertContentPreserved,
+  assertStructurePreserved,
+} from "./normalize-markdown.mjs";
+
+const parseMd = (s) => unified().use(remarkParse).use(remarkGfm).parse(s);
 
 describe("reflowMarkdown — content preservation", () => {
   it("never adds, drops or reorders words (whitespace-normalized content is byte-for-byte equal)", () => {
@@ -35,6 +45,86 @@ describe("reflowMarkdown — content preservation", () => {
     const twice = reflowMarkdown(once);
     expect(twice).toBe(once);
   });
+});
+
+describe("reflowMarkdown — hard line breaks (the #384 sweep bug)", () => {
+  // Found by the corpus sweep, not by review: the two-space hard break was
+  // emitted as a placeholder *in place of* its own whitespace, so the words
+  // either side of it fused into one token — "session)**Origin**". Content
+  // loss, in a tool whose whole contract is "whitespace only".
+  it("keeps the words either side of a two-space hard break separate", () => {
+    const source = "**Created**: 2026-07-07 (during a session)  \n**Origin**: somewhere else";
+    const out = reflowMarkdown(source);
+    expect(out).not.toContain("session)**Origin**");
+    expect(() => assertContentPreserved(source, out, "x.md")).not.toThrow();
+  });
+
+  it("still forces a break at that point rather than reflowing across it", () => {
+    const source = "Short line one.  \nShort line two.";
+    const out = reflowMarkdown(source);
+    expect(out.split("\n").length).toBeGreaterThan(1);
+  });
+
+  // The author's explicit break outranks every cosmetic micro-rule. Found in
+  // icon-implementation-handoff.md: the bold-span rule deferred the break past
+  // "**Origin**:", moving the <br> a line later and regrouping the metadata.
+  it("does not let the bold micro-rule move a hard break past the bold span", () => {
+    const source = "**Created**: 2026-07-07 (during a session)  \n**Origin**: somewhere else";
+    const out = reflowMarkdown(source);
+    const hardBreakLine = out.split("\n").find((l) => l.endsWith("  "));
+    expect(hardBreakLine).toBeDefined();
+    expect(hardBreakLine).toContain("session)");
+    expect(hardBreakLine).not.toContain("**Origin**");
+  });
+
+  // The whitespace-normalized guard is blind to this one: trailing spaces
+  // normalize away on both sides, so a silently downgraded `<br>` would pass it.
+  it("preserves the hard break itself, not just the newline (a <br> stays a <br>)", () => {
+    const source = "Short line one.  \nShort line two.";
+    const out = reflowMarkdown(source);
+    expect(out).toContain("Short line one.  \n");
+  });
+
+  it("handles a backslash hard break the same way", () => {
+    const source = "First half\\\nSecond half";
+    const out = reflowMarkdown(source);
+    expect(() => assertContentPreserved(source, out, "x.md")).not.toThrow();
+  });
+});
+
+describe("reflowMarkdown — line-start reparse hazard (#384 corpus sweep)", () => {
+  // The whole-corpus sweep created thousands of new line starts, and a token
+  // that is harmless mid-line can be block syntax at line start. Found in
+  // incident 0012: prose "worktree + branch" wrapped so that "+" led a line,
+  // turning it into a bullet list. Both content checks pass this — the words
+  // are identical — which is why the real gate is an AST-shape comparison.
+  const shapeOf = (s) => {
+    const out = [];
+    const walk = (n) => {
+      out.push(n.type);
+      (n.children || []).forEach(walk);
+    };
+    walk(parseMd(s));
+    return out.join(",");
+  };
+
+  // 20 four-letter words + 19 spaces = 99 chars, so the *next* token always
+  // lands at 101 > SOFT_LIMIT and the wrap falls exactly on it. Without this
+  // each case would silently not exercise the boundary — a test that cannot
+  // fail is the thing this whole PR is about.
+  const padTo99 = Array(20).fill("word").join(" ");
+
+  for (const marker of ["+", "-", "*", ">", "1."]) {
+    it(`never lets a bare "${marker}" lead a wrapped line`, () => {
+      const source = `${padTo99} ${marker} branch, and the sentence continues well past here afterwards.`;
+      expect(padTo99.length).toBe(99); // the boundary is real, not assumed
+      const out = reflowMarkdown(source);
+      for (const line of out.split("\n")) {
+        expect(line.startsWith(marker)).toBe(false);
+      }
+      expect(shapeOf(out)).toBe(shapeOf(source));
+    });
+  }
 });
 
 describe("reflowMarkdown — bold-span micro-rule (the #341 bug fix)", () => {
@@ -143,9 +233,9 @@ describe("CLI — docs:normalize", () => {
     }
   }
 
-  it("--check exits 1 when the allowlisted file would change, 0 once migrated", () => {
+  it("--check exits 1 when a discovered file would change, 0 once migrated", () => {
     withTempRepo((dir) => {
-      const target = join(dir, ALLOWLIST[0]);
+      const target = join(dir, "CONTEXT.md");
       const unmigrated =
         "**Aether** (PL: eter):\nThe physical medium filling the space between worlds; ships sail through it like an ocean.";
       writeFileSync(target, unmigrated, "utf8");
@@ -173,5 +263,112 @@ describe("CLI — docs:normalize", () => {
       const after = readFileSync(target, "utf8");
       expect(after).toBe(before);
     });
+  });
+});
+
+describe("collectTargets — what the sweep is allowed to touch (#384)", () => {
+  function withTree(files, fn) {
+    const dir = mkdtempSync(join(tmpdir(), "normalize-md-targets-"));
+    try {
+      for (const [rel, body] of Object.entries(files)) {
+        const abs = join(dir, rel);
+        mkdirSync(join(abs, ".."), { recursive: true });
+        writeFileSync(abs, body, "utf8");
+      }
+      fn(dir);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("finds root docs and everything under docs/, at any depth", () => {
+    withTree(
+      {
+        "CLAUDE.md": "# a",
+        "CONTEXT.md": "# b",
+        "docs/PRD.md": "# c",
+        "docs/adr/0001-x.md": "# d",
+        "docs/workflows/nested/deep.md": "# e",
+      },
+      (dir) => {
+        expect(collectTargets(dir).sort()).toEqual([
+          "CLAUDE.md",
+          "CONTEXT.md",
+          "docs/PRD.md",
+          "docs/adr/0001-x.md",
+          "docs/workflows/nested/deep.md",
+        ]);
+      },
+    );
+  });
+
+  it("never returns anything under docs/souvenirs — the owner's private material", () => {
+    withTree(
+      {
+        "docs/PRD.md": "# keep",
+        "docs/souvenirs/private.md": "# never",
+        "docs/souvenirs/deeper/also-private.md": "# never",
+      },
+      (dir) => {
+        expect(collectTargets(dir)).toEqual(["docs/PRD.md"]);
+      },
+    );
+  });
+
+  it("ignores non-markdown and directories the sweep has no business in", () => {
+    withTree(
+      {
+        "docs/PRD.md": "# keep",
+        "docs/diagram.svg": "<svg/>",
+        "node_modules/pkg/README.md": "# never",
+        ".git/COMMIT_EDITMSG.md": "# never",
+      },
+      (dir) => {
+        expect(collectTargets(dir)).toEqual(["docs/PRD.md"]);
+      },
+    );
+  });
+});
+
+describe("assertContentPreserved — the sweep's corruption guard (#384)", () => {
+  it("passes when only whitespace moved", () => {
+    expect(() =>
+      assertContentPreserved("a b\nc d", "a b c\nd", "x.md"),
+    ).not.toThrow();
+  });
+
+  it("throws when a word is dropped", () => {
+    expect(() => assertContentPreserved("a b c", "a c", "x.md")).toThrow(/x\.md/);
+  });
+
+  it("throws when a word is added", () => {
+    expect(() => assertContentPreserved("a b", "a b c", "x.md")).toThrow(/x\.md/);
+  });
+
+  it("throws when words are reordered", () => {
+    expect(() => assertContentPreserved("a b", "b a", "x.md")).toThrow(/x\.md/);
+  });
+});
+
+describe("assertStructurePreserved — the property word-equality cannot see (#384)", () => {
+  it("passes when only line positions moved", () => {
+    expect(() =>
+      assertStructurePreserved("one two three four", "one two\nthree four", "x.md"),
+    ).not.toThrow();
+  });
+
+  // The exact corruption the corpus sweep shipped once: identical words,
+  // prose turned into a bullet list. assertContentPreserved passes this.
+  it("throws when a wrap turns prose into a list, which the content check passes", () => {
+    const before = "removed the worktree + branch, and verified";
+    const after = "removed the worktree\n+ branch, and verified";
+    expect(() => assertContentPreserved(before, after, "x.md")).not.toThrow();
+    expect(() => assertStructurePreserved(before, after, "x.md")).toThrow(/x\.md/);
+  });
+
+  it("throws when prose acquires a blockquote", () => {
+    expect(() =>
+      assertStructurePreserved("see the note > here", "see the note\n> here", "x.md"),
+    ).toThrow(/x\.md/);
   });
 });

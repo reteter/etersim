@@ -7,13 +7,15 @@
 ## What happened
 
 While ticking the review checkbox in PR #135's body, the body was piped through
-`gh pr view -q .body | python -c ... | gh pr edit --body`. On Windows, Python
-read stdin in the locale encoding (cp1250), so every non-ASCII character in the
-UTF-8 body (₸, —, §, →, …) was silently re-encoded as mojibake ("â‚¸", "â€”",
-"Â§") and written back to GitHub.
+`gh pr view -q .body | python -c ... | gh pr edit --body`.
+On Windows, Python read stdin in the locale encoding (cp1250), so every non-ASCII character in the
+UTF-8 body (₸, —, §, →, …) was silently re-encoded as mojibake ("â‚¸", "â€”", "Â§") and written back
+to GitHub.
 
-Related near-miss in the same session: `git add -A` swept a local
-`.claude/launch.json` into a commit — caught pre-push; the file is now gitignored.
+Related near-miss in the same session:
+`git add -A` swept a local `.claude/launch.json` into a commit —
+caught pre-push;
+the file is now gitignored.
 
 ## Impact
 
@@ -28,8 +30,10 @@ Related near-miss in the same session: `git add -A` swept a local
 
 ## Recurrence
 
-Medium — structural driver: Windows locale (cp1250) vs the repo's UTF-8
-everywhere; any pipe with python/PowerShell in the middle re-encodes silently.
+Medium —
+structural driver:
+Windows locale (cp1250) vs the repo's UTF-8 everywhere;
+any pipe with python/PowerShell in the middle re-encodes silently.
 The hazard sits in the default toolchain, not in a one-off command.
 
 ## Recommendation
@@ -44,6 +48,8 @@ The hazard sits in the default toolchain, not in a one-off command.
 
 ## Follow-up
 
-Landed with this report: §Log line in `docs/incidents/README.md`. The
-`--body-file` habit is already standing practice in orchestrator sessions
-(scratchpad file + `--body-file` for every PR since). Closes #136.
+Landed with this report:
+§Log line in `docs/incidents/README.md`.
+The `--body-file` habit is already standing practice in orchestrator sessions (scratchpad file +
+`--body-file` for every PR since).
+Closes #136.

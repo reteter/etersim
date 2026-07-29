@@ -1,11 +1,13 @@
 # Professor review — src/sim guilds + contracts (2026-07-14, E3 close)
 
 Epic-boundary architecture review (owner-invoked) of the subsystem E3 shipped:
-`guild.ts`, `contract.ts`, the contract/enrollment command paths, the day-boundary
-settlement integration, and the new Ledger kinds. Overall verdict: *"came to find
-rot and found mostly good timber"* — determinism kept (substream quarantine, single
-main-stream advance pinned by test), settlement compounding correct, state shape
-scales. Four findings, one of them load-bearing for E13.
+`guild.ts`, `contract.ts`, the contract/enrollment command paths, the day-boundary settlement
+integration, and the new Ledger kinds.
+Overall verdict:
+*"came to find rot and found mostly good timber"* —
+determinism kept (substream quarantine, single main-stream advance pinned by test), settlement
+compounding correct, state shape scales.
+Four findings, one of them load-bearing for E13.
 
 ## Findings & routing
 
@@ -16,9 +18,12 @@ scales. Four findings, one of them load-bearing for E13.
 | 3 | **Settle→refresh→netWorth ordering asserted only by proxy** (`dayBoundary.test.ts:179` proves upkeep-before-snapshot; the spec-carrying "fees inside the day's curve point" for settlements has no direct test). Not a god-phase yet — six named pure phases — but the ordering law is prose + one proxy. | LOW | **Grill / test backlog** — direct assertion; consider a structural phase-list as boundaries stack (E13). |
 | 4 | **`pickSource` recomputes frozen topology every boundary** (`contract.ts:121-133,199`): O(ports² · goods · shortestCourse) daily over a post-worldgen-static lane graph. Harmless at HEARTLAND scale; a tick-cost cliff at multiregion. | LOW | ~~**Parked here** — memoize round-trip distances when it starts to matter; revisit at multiregion.~~ → **#322** (2026-07-19, sweep F5): trigger unchanged (multiregion), moved out of this note so the deferral has a home a reader will meet. |
 
-Benign note (no action): mid-day-accepted contracts settle at the first boundary
-*after* `periodEndTick`, so the first period runs slightly long; at most one period
-elapses per boundary. Correct; the docstring's "settles on schedule" is aspirational.
+Benign note (no action):
+mid-day-accepted contracts settle at the first boundary *after* `periodEndTick`, so the first period
+runs slightly long;
+at most one period elapses per boundary.
+Correct;
+the docstring's "settles on schedule" is aspirational.
 
 ## Routed architectural questions (Professor → owner)
 
@@ -39,13 +44,15 @@ elapses per boundary. Correct; the docstring's "settles on schedule" is aspirati
 - Ledger sub-grammar rule (+ `enrollmentFee.thalers` retrofit) — findings 2 + 4Q.
 - Day-boundary ordering: direct settlement-in-netWorth assertion, phase-list idea.
 
-E3's closed status is undisturbed — the epic stands. Finding 1 is the plank the
-next epic builds on.
+E3's closed status is undisturbed —
+the epic stands.
+Finding 1 is the plank the next epic builds on.
 
 ## Disposition (sweep F5, s14, 2026-07-19)
 
-Checked during F5's re-check of HIST rows, because this note is marked HIST and was still
-holding a parking. All four findings are now accounted for:
+Checked during F5's re-check of HIST rows, because this note is marked HIST and was still holding a
+parking.
+All four findings are now accounted for:
 
 | Finding | Where it went |
 | --- | --- |
@@ -54,6 +61,7 @@ holding a parking. All four findings are now accounted for:
 | 3 — settle→refresh→netWorth ordering asserted only by proxy | **#204**, closed |
 | 4 — `pickSource` recomputes frozen topology | **#322**, open and parked to multiregion |
 
-Finding 4's trigger had **not** fired, so unlike the UI/store review this note cost nothing
-— but the mechanism was identical, and it would have fired at multiregion, into a note the
-index tells readers to skip. Moved out for that reason, not because the deferral was wrong.
+Finding 4's trigger had **not** fired, so unlike the UI/store review this note cost nothing —
+but the mechanism was identical, and it would have fired at multiregion, into a note the index tells
+readers to skip.
+Moved out for that reason, not because the deferral was wrong.

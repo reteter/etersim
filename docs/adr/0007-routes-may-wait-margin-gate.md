@@ -1,14 +1,17 @@
 # Routes may wait: the Margin Gate exception to E9 equivalence
 
-E9 shipped Routes under an **equivalence guarantee**: a routed Stop executes by dispatching
-the very same buy/sell/deliver Commands a manual player could issue, so a route can do nothing
-a player couldn't do by hand (ADR-0005; E9 spec, `route.ts`, the docking-phase pass in
-`tick.ts`). The E9.1 grill (2026-07-15, from #254) added two route features — a per-good
-**quantity** (`qty`, "up to N") and a **Margin Gate** (`minMargin` on buy orders: wait in port
-until a good's predicted per-unit margin clears a threshold). `qty` stays inside the guarantee
-("buy N" / "sell N" are ordinary Commands). The Margin Gate does **not**: there is no single
-manual Command meaning "wait for margin," so a gated route expresses intent the sim could not
-express before. Decided with the owner alongside `docs/specs/E9.1-route-qty-and-margin-gate.md`.
+E9 shipped Routes under an **equivalence guarantee**:
+a routed Stop executes by dispatching the very same buy/sell/deliver Commands a manual player could
+issue, so a route can do nothing a player couldn't do by hand (ADR-0005; E9 spec, `route.ts`, the
+docking-phase pass in `tick.ts`).
+The E9.1 grill (2026-07-15, from #254) added two route features —
+a per-good **quantity** (`qty`, "up to N") and a **Margin Gate** (`minMargin` on buy orders: wait in
+port until a good's predicted per-unit margin clears a threshold).
+`qty` stays inside the guarantee ("buy N" / "sell N" are ordinary Commands).
+The Margin Gate does **not**:
+there is no single manual Command meaning "wait for margin," so a gated route expresses intent the
+sim could not express before.
+Decided with the owner alongside `docs/specs/E9.1-route-qty-and-margin-gate.md`.
 
 ## Decision
 

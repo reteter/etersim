@@ -1,16 +1,17 @@
 # The driver merges its own PRs
 
-From the first epic until 2026-07-29, `§Laws 5` ended with a bright line: **"The owner merges —
-never merge your own PR without explicit owner consent."** It was a real gate, not decoration:
+From the first epic until 2026-07-29, `§Laws 5` ended with a bright line: **"The owner merges — never merge your own PR without explicit owner consent."**
+It was a real gate, not decoration:
 incident 0022 records a session that crossed it under budget pressure, and the crossing was
-classified High precisely because that line was the last one standing when everything softer
-had already dissolved.
+classified High precisely because that line was the last one standing when everything softer had
+already dissolved.
 
-The owner retired it on 2026-07-29 (s30), after a milestone's worth of evidence that the tiered
-wave check catches what the manual read was there to catch. This ADR records the decision, and —
-more importantly — records **what each of the retired gate's two jobs was replaced by**, so that
-a later reader finding a thin rule where a thick one used to be can see that the thickness moved
-rather than evaporated.
+The owner retired it on 2026-07-29 (s30), after a milestone's worth of evidence that the tiered wave
+check catches what the manual read was there to catch.
+This ADR records the decision, and —
+more importantly —
+records **what each of the retired gate's two jobs was replaced by**, so that a later reader finding
+a thin rule where a thick one used to be can see that the thickness moved rather than evaporated.
 
 ## What the gate actually did
 
@@ -21,9 +22,11 @@ Two jobs, and they have different successors:
 2. **A second pair of eyes reading the diff** before it became history — one human read that
    no amount of green could substitute for.
 
-The operational cost was concentrated on the owner: merge gates are *sequential and blocking*.
-Three of them in one session meant the driver idled between waves while the owner was the
-critical path — at 4:35 AM, in the session that prompted this decision.
+The operational cost was concentrated on the owner:
+merge gates are *sequential and blocking*.
+Three of them in one session meant the driver idled between waves while the owner was the critical
+path —
+at 4:35 AM, in the session that prompted this decision.
 
 ## Decision
 
@@ -50,13 +53,13 @@ critical path — at 4:35 AM, in the session that prompted this decision.
 
 ## The residual risk, named
 
-The owner's own session review of 2026-07-29 put it plainly: **the driver is the one actor in
-this process nobody reviews.** It authors the task package, it dispatches, it closes the wave
-check, and now it merges. Every other role has a gate above it; the driver has an advisor it
-chooses to call.
+The owner's own session review of 2026-07-29 put it plainly: **the driver is the one actor in this process nobody reviews.**
+It authors the task package, it dispatches, it closes the wave check, and now it merges.
+Every other role has a gate above it;
+the driver has an advisor it chooses to call.
 
-This ADR does not pretend otherwise. It records the risk as accepted with two named
-counterweights and one falsifier:
+This ADR does not pretend otherwise.
+It records the risk as accepted with two named counterweights and one falsifier:
 
 - **Counterweight A — the mirror.** A bad merge is recoverable, so the failure mode is cost,
   not loss.

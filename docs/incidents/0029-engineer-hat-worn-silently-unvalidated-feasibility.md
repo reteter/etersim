@@ -6,9 +6,10 @@
 
 ## What happened
 
-The E16 Workbench and #390 profitability sessions were framed and run as **Designer** grills
-(the owner's "co", Engineer's "jak" to follow). Q1–Q4 stayed correctly at the Designer altitude
-(mechanics, UX, which metrics). But two of #390's forks were **feasibility questions in disguise**:
+The E16 Workbench and #390 profitability sessions were framed and run as **Designer** grills (the
+owner's "co", Engineer's "jak" to follow).
+Q1–Q4 stayed correctly at the Designer altitude (mechanics, UX, which metrics).
+But two of #390's forks were **feasibility questions in disguise**:
 
 - **Q1** locked net margin as "gross − route docking" with the aside that docking was "derivable
   cleanly, doesn't need per-ship attribution" — an **Engineer claim about the data**, presented as a
@@ -16,18 +17,21 @@ The E16 Workbench and #390 profitability sessions were framed and run as **Desig
 - **Q2** locked ROI *velocity* as "markup × loops-per-period" — which silently assumes a **loop
   count exists in the data**.
 
-Neither claim was checked against the Ledger/route model at the time it was made. The Engineer
-altitude was thus worn **without the ENGINEER.md-required explicit announcement** ("Zakładam
-kapelusz Engineera"), and **ENGINEER.md working-law 1** ("every claim names the test that proves it;
-a claim with no nameable test goes on the open-questions list") was skipped.
+Neither claim was checked against the Ledger/route model at the time it was made.
+The Engineer altitude was thus worn **without the ENGINEER.md-required explicit announcement**
+("Zakładam kapelusz Engineera"), and **ENGINEER.md working-law 1** ("every claim names the test that
+proves it; a claim with no nameable test goes on the open-questions list") was skipped.
 
 The defect surfaced at the pre-writeup `advisor` call, which performed the Engineer feasibility pass
-that should have been conscious: the `dockingFee` `routeId` tag gives a *sum* but not a *loop
-boundary*, and `ShipAssignment` (`{routeId, nextStopIndex, suspended, waiting}`) plus the Ledger
-union carry **no loop counter and no loop-close event** — so "per loop" was underivable without a
-*second* sim change. This forced two corrections grilled after the fact: **Q5** (tag `dockingFee`
-rather than approximate) and **Q6** (reframe velocity to per-**day**, dropping "loop"). The owner
-then flagged the implicit hat-switch as the root process slip.
+that should have been conscious:
+the `dockingFee` `routeId` tag gives a *sum* but not a *loop boundary*, and `ShipAssignment`
+(`{routeId, nextStopIndex, suspended, waiting}`) plus the Ledger union carry **no loop counter and no loop-close event**
+—
+so "per loop" was underivable without a *second* sim change.
+This forced two corrections grilled after the fact: **Q5**
+(tag `dockingFee` rather than approximate) and **Q6** (reframe velocity to per-**day**, dropping
+"loop").
+The owner then flagged the implicit hat-switch as the root process slip.
 
 ## Impact
 
@@ -44,11 +48,13 @@ then flagged the implicit hat-switch as the root process slip.
 
 ## Recurrence
 
-**Medium** — structural driver: feasibility-shaped forks arrive *inside* Designer grills (a "what"
-question whose answer secretly depends on "how"), and a flowing grill's momentum (owner: "pomysły
-idą, żelki dobrze wprowadziły cukier") is a solvent on the announce-the-hat ceremony — the same
-soft-precondition-dissolves-under-flow shape as 0022 (budget pressure dissolved the selfcheck) and
-0021 (task-boundary discipline).
+**Medium** —
+structural driver:
+feasibility-shaped forks arrive *inside* Designer grills (a "what" question whose answer secretly
+depends on "how"), and a flowing grill's momentum (owner: "pomysły idą, żelki dobrze wprowadziły
+cukier") is a solvent on the announce-the-hat ceremony —
+the same soft-precondition-dissolves-under-flow shape as 0022 (budget pressure dissolved the
+selfcheck) and 0021 (task-boundary discipline).
 
 ## Recommendation
 

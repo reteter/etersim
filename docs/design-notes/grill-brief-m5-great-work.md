@@ -1,14 +1,15 @@
 # Grill brief — M5 The Great Work (the Expedition)
 
-A **grill brief** is the scenario for a future owner grill: the questions that grill
-must resolve, the rails already locked, and the known traps. Written at the
-fantasy-roadmap grill (2026-07-16). This is **the big one** — budget a full session;
-run it only after M4's Processing has shipped and been playtested (the funnel's
-feeder must exist before the funnel is sized).
+A **grill brief** is the scenario for a future owner grill:
+the questions that grill must resolve, the rails already locked, and the known traps.
+Written at the fantasy-roadmap grill (2026-07-16).
+This is **the big one** —
+budget a full session;
+run it only after M4's Processing has shipped and been playtested (the funnel's feeder must exist
+before the funnel is sized).
 
-**This grill decides:** the commissioning flow, the construction machinery at Great
-Work scale, contract-system integration, pacing to credits, and the staging of the
-finale.
+**This grill decides:** the commissioning flow, the construction machinery at Great Work scale,
+contract-system integration, pacing to credits, and the staging of the finale.
 
 ## Rails (locked, don't relitigate — link, build on)
 

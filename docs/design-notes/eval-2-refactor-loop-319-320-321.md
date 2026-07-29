@@ -1,11 +1,15 @@
 # Eval-2 — delegating a behavior-preserving REFACTOR loop (#319/#320/#321), pre-registered
 
-**Date:** 2026-07-22 (s22). **Status:** LIVE — pre-registered; frozen before any arm runs.
-**Baseline:** `1f33866` on `main` (PR #385 — the commit that adds the frozen render-altitude
-characterization net; §Pre-work steps 1–2 done: net authored, no-op check passed, determinism
-verified). **Arms' baseline:** the `eval2-baseline` branch, derived from `1f33866` with
-`docs/design-notes/` and `docs/HANDOFF.md` stripped (§Isolation) — this, not the net-baseline, is
-what the solo arms are handed. **Tracked by:** #379.
+**Date:** 2026-07-22 (s22). **Status:**
+LIVE —
+pre-registered;
+frozen before any arm runs. **Baseline:**
+`1f33866` on `main` (PR #385 — the commit that adds the frozen render-altitude characterization net;
+§Pre-work steps 1–2 done: net authored, no-op check passed, determinism verified). **Arms' baseline:**
+the `eval2-baseline` branch, derived from `1f33866` with `docs/design-notes/` and `docs/HANDOFF.md`
+stripped (§Isolation) —
+this, not the net-baseline, is what the solo arms are handed. **Tracked by:**
+#379.
 
 > This is eval **2**, deliberately a **different task-shape** from eval-1
 > ([`eval-gpt-5.6-solo-driver-e13.md`](eval-gpt-5.6-solo-driver-e13.md) — a *feature*: sim +
@@ -17,20 +21,27 @@ what the solo arms are handed. **Tracked by:** #379.
 
 ## The decision this eval feeds
 
-**Is the casting verdict from eval-1 — _pipeline > solo; the cheap tier degrades_ — invariant
-across task-shape?** Concretely: does it carry from a *feature* to a *behavior-preserving
-refactor*, and if not, in which direction and why?
+**Is the casting verdict from eval-1 — _pipeline > solo; the cheap tier degrades_ — invariant across task-shape?**
+Concretely:
+does it carry from a *feature* to a *behavior-preserving refactor*, and if not, in which direction
+and why?
 
-Value ordering (owner, this grill): **(1) task-shape invariance of the verdict** — primary;
-**(2) consistency** — reproducibility of the pre-registered instrument itself (the exact place
-eval-1 was bitten by the instrument-parity threat, GAP-1); **(3) n>1** — each arm is also a
-fresh datapoint on delegation viability in general.
+Value ordering (owner, this grill): **(1) task-shape invariance of the verdict**
+—
+primary; **(2) consistency**
+—
+reproducibility of the pre-registered instrument itself (the exact place eval-1 was bitten by the
+instrument-parity threat, GAP-1); **(3) n>1**
+—
+each arm is also a fresh datapoint on delegation viability in general.
 
-Why a refactor is not a re-run of eval-1: it **inverts the failure profile.** A feature's risk
-is *under-reach* (a named feature skipped — the gap that sank Terra, GAP-2). A refactor's risk
-is a *silent behavior regression* no gate catches, **on top of** the subjective "did the
-structure actually improve." Eval-2 therefore tests a different failure mode and asks whether
-the tier curve (pipeline > frontier-solo > cheap-solo) holds when the task is more mechanical.
+Why a refactor is not a re-run of eval-1:
+it **inverts the failure profile.** A feature's risk is *under-reach* (a named feature skipped — the
+gap that sank Terra, GAP-2).
+A refactor's risk is a *silent behavior regression* no gate catches, **on top of** the subjective
+"did the structure actually improve." Eval-2 therefore tests a different failure mode and asks
+whether the tier curve (pipeline > frontier-solo > cheap-solo) holds when the task is more
+mechanical.
 
 ═══════════════════════════════════ FROZEN ═══════════════════════════════════
 
@@ -62,25 +73,29 @@ the tier curve (pipeline > frontier-solo > cheap-solo) holds when the task is mo
 
 ## Frozen control (OS) package — pre-registered to close the ordering confound
 
-Because the Orchestrator sees the solo arms' branches before the head-to-head, the OS
-decomposition and scope are **frozen here now** (no teaching-to-the-test). OS runs a
-**sequential 3-PR stack in issue order — #319 → #320 → #321** (the two store-touching
-refactors first, the pure route-domain UI cleave riding on top) — one Sonnet coder per PR,
-Opus wave-check per PR (tier-2 per each issue), **aggregated to whole-unit** for the
-head-to-head. Each PR's operative AC = the issue body's Acceptance criteria
-(no newer amendment comments exist as of freeze). The exact internal store-coupling between #320
-and #319 is an execution detail the coder package resolves; it is **not** a rubric term.
+Because the Orchestrator sees the solo arms' branches before the head-to-head, the OS decomposition
+and scope are **frozen here now** (no teaching-to-the-test).
+OS runs a **sequential 3-PR stack in issue order — #319 → #320 → #321** (the two store-touching
+refactors first, the pure route-domain UI cleave riding on top) —
+one Sonnet coder per PR, Opus wave-check per PR (tier-2 per each issue), **aggregated to whole-unit**
+for the head-to-head.
+Each PR's operative AC = the issue body's Acceptance criteria (no newer amendment comments exist as
+of freeze).
+The exact internal store-coupling between #320 and #319 is an execution detail the coder package
+resolves;
+it is **not** a rubric term.
 
-**Backlog reservation (binding).** #319/#320/#321 are reserved as eval material — **do NOT ship
-them via the normal coder path outside this eval.** The eval's **OS arm is** the sanctioned ship
-path: its winning branch becomes the real #319/#320/#321 on `main`. Shipping any of them another
-way first burns the reference and destroys the eval.
+**Backlog reservation (binding).** #319/#320/#321 are reserved as eval material — **do NOT ship them via the normal coder path outside this eval.**
+The eval's **OS arm is** the sanctioned ship path:
+its winning branch becomes the real #319/#320/#321 on `main`.
+Shipping any of them another way first burns the reference and destroys the eval.
 
 ## Pre-registered rubric
 
-Each arm delivers a branch at the baseline. What an arm *can* run (coder-minimum,
-harness-agnostic): typecheck / lint / unit / build green, affected e2e, and an
-**AC→deliverable evidence report**. What it *cannot* run is measured out-of-band here.
+Each arm delivers a branch at the baseline.
+What an arm *can* run (coder-minimum, harness-agnostic):
+typecheck / lint / unit / build green, affected e2e, and an **AC→deliverable evidence report**.
+What it *cannot* run is measured out-of-band here.
 
 | Axis | What it measures | How scored |
 | --- | --- | --- |
@@ -93,11 +108,12 @@ harness-agnostic): typecheck / lint / unit / build green, affected e2e, and an
 
 ### Behavior invariant (Axis 2) — the spine, enumerated
 
-**Altitude = render/DOM only.** A store-API golden is self-defeating here: the store API is
-*the thing being refactored* (#320 turns three booleans into `activeOverlay`; #319 introduces a
-selector that does not yet exist), so no store-reading golden can be byte-identical across arms
-without an arm editing its own instrument. The only altitude stable across all three arms is
-what renders — which is already the e2e anchor.
+**Altitude = render/DOM only.** A store-API golden is self-defeating here:
+the store API is *the thing being refactored* (#320 turns three booleans into `activeOverlay`; #319
+introduces a selector that does not yet exist), so no store-reading golden can be byte-identical
+across arms without an arm editing its own instrument.
+The only altitude stable across all three arms is what renders —
+which is already the e2e anchor.
 
 **Frame: preserve-except-named-deltas ∧ effect-named-deltas**, per target:
 
@@ -107,21 +123,25 @@ what renders — which is already the e2e anchor.
 | **#319** fleet selector | single-ship behavior | multi-ship resolution unified. **Frozen (a):** measured **structurally only** (selector exists ∧ single-ship preserved); the multi-ship *behavior* is NOT pinned — pinning it would turn this into a feature-spec for an undesigned multi-ship model. |
 | **#320** `activeOverlay` | single-overlay behavior (open/Esc/hotkey with one overlay) | multi-overlay: today all three stack freely → replaced by **mutual exclusion + Esc-closes-active**; a **new** "two overlays cannot stack" e2e is an **arm deliverable** (it is RED on baseline, so it cannot live in the frozen net) |
 
-**Measurement:** (1) **golden-master render diff** — a frozen deterministic interaction trace
-(seeded sim → store dispatches → rendered projection), snapshotted at baseline; the preserved
-surface must be byte-identical on each arm's branch. (2) full e2e + characterization net green.
-(3) **deltas effected** — #320's mutual-exclusion/Esc-topmost works and its no-stack e2e exists
-and passes; #319's selector exists and single-ship is preserved.
+**Measurement:** (1) **golden-master render diff** —
+a frozen deterministic interaction trace (seeded sim → store dispatches → rendered projection),
+snapshotted at baseline;
+the preserved surface must be byte-identical on each arm's branch.
+(2) full e2e + characterization net green.
+(3) **deltas effected** —
+#320's mutual-exclusion/Esc-topmost works and its no-stack e2e exists and passes;
+#319's selector exists and single-ship is preserved.
 
-**Named limit:** the net is only as strong as its trace coverage. Where the trace does not
-exercise a surface, the invariant is blind there — recorded, not papered over.
+**Named limit:** the net is only as strong as its trace coverage.
+Where the trace does not exercise a surface, the invariant is blind there —
+recorded, not papered over.
 
 ### Structure conformance (Axis 3) — eliminative predicates, frozen
 
-Each Professor finding → a **two-member** predicate (**artifact created ∧ old pattern fully
-eliminated**), grep/AST-checkable, run **measurement-side** (never baked into the arm's
-baseline — that would leak the solution shape and collapse Axis 4). Phrased on the **outcome
-pattern**, not a named artifact:
+Each Professor finding → a **two-member** predicate (**artifact created ∧ old pattern fully eliminated**),
+grep/AST-checkable, run **measurement-side** (never baked into the arm's baseline — that would leak
+the solution shape and collapse Axis 4).
+Phrased on the **outcome pattern**, not a named artifact:
 
 - **#319 (F4):** a single fleet-resolution answer exists in `src/store/` **∧** the `ships[0]`
   fallback appears in **≤1** production site (baseline: `PortPanel.tsx:837`, `gameStore.ts:139`
@@ -132,10 +152,9 @@ pattern**, not a named artifact:
   lives in its own module **∧** `HeadquartersPanel.tsx` retains overlay-shell + build-domain
   only, with route-refs/LOC dropped (baseline: 605 lines, 7 components).
 
-**Constructive quality** (seam placement, no leaky abstraction, no circular import) is **ruler
-color / minors only — it does NOT move the trinary** (the eval-1 discipline: keep the subjective
-instrument off the objective spine), unless it rises to a real defect the behavior net catches
-or the owner adjudicates.
+**Constructive quality** (seam placement, no leaky abstraction, no circular import) is **ruler color / minors only — it does NOT move the trinary**
+(the eval-1 discipline: keep the subjective instrument off the objective spine), unless it rises to
+a real defect the behavior net catches or the owner adjudicates.
 
 ### Conformance threshold (Axis 1) — frozen
 
@@ -149,8 +168,8 @@ or the owner adjudicates.
 
 ## Decision rule (frozen) — refactor-specific
 
-The behavior net lives **in the baseline** every arm inherits and runs. That gives it a **dual
-role** that defines NO-GO:
+The behavior net lives **in the baseline** every arm inherits and runs.
+That gives it a **dual role** that defines NO-GO:
 
 - **Arm breaks the net and ships anyway** → its own `npm test`/e2e was RED and it delivered a
   branch claiming behavior-preserving. That is **disarming the safety net / dishonesty** →
@@ -175,18 +194,23 @@ role** that defines NO-GO:
 ### Verdict inference asymmetry (n=1) — frozen
 
 One paired run **falsifies strongly, confirms weakly.** A hard-law breach or a verified silent
-regression is **dispositive** (NO-GO from n=1 is trustworthy). A clean pass is
-**provisional-pending-more-n** — it licenses "continue under observation," not unattended
-delegation. This is also where the n>1 value (priority 3) accrues: each arm is a datapoint.
+regression is **dispositive** (NO-GO from n=1 is trustworthy).
+A clean pass is **provisional-pending-more-n** —
+it licenses "continue under observation," not unattended delegation.
+This is also where the n>1 value (priority 3) accrues:
+each arm is a datapoint.
 
 ## Attribution rule (Axis 2/3) — trinary, frozen
 
-An arm-specific gap (present in this arm, absent in the OS control) is exactly one of: **(1)
-task difficulty** — *only if* OS hit the same finding category with the same root cause; **(2)
-model/harness capability** — weighs on the verdict; **(3) missing pipeline layer** (absent
-advisor / no Orchestrator pre-resolution) → **CONDITIONAL**. A gap present in **both** an arm
-and OS is task difficulty by definition. **Hunt each arm's gaps symmetrically** — do not check
-only "does OS have what *this* arm was dinged for" (the bias eval-1 flagged).
+An arm-specific gap (present in this arm, absent in the OS control) is exactly one of: **(1) task difficulty**
+—
+*only if* OS hit the same finding category with the same root cause; **(2) model/harness capability**
+—
+weighs on the verdict; **(3) missing pipeline layer**
+(absent advisor / no Orchestrator pre-resolution) → **CONDITIONAL**.
+A gap present in **both** an arm and OS is task difficulty by definition. **Hunt each arm's gaps symmetrically**
+—
+do not check only "does OS have what *this* arm was dinged for" (the bias eval-1 flagged).
 
 ## Isolation & session topology (upgrade over eval-1)
 
@@ -230,8 +254,8 @@ only "does OS have what *this* arm was dinged for" (the bias eval-1 flagged).
 
 ## Pre-work (before the baseline is frozen)
 
-Authored & committed by the decision session **before** the baseline SHA is recorded — all arms
-inherit it:
+Authored & committed by the decision session **before** the baseline SHA is recorded —
+all arms inherit it:
 
 1. **Render-altitude characterization net + golden-master render trace** covering all three
    surfaces (especially fleet-resolution across panels, where existing e2e is thin). Behavior
@@ -283,7 +307,9 @@ inherit it:
 
 ## §Paste-kits (frozen prompts)
 
-Byte-identical committed artifacts (playbook §1). **Do not edit per run** — reuse verbatim.
+Byte-identical committed artifacts (playbook §1). **Do not edit per run**
+—
+reuse verbatim.
 
 ### Arm prompt — GPT 5.6 (used VERBATIM for BOTH Sol and Terra; only the harness tier differs)
 
@@ -360,13 +386,16 @@ Output: a findings list (severity + file:line each), your gate numbers, and a ha
 result. No verdict.
 ```
 
-═══════════════════════════════════ RESULTS (append below; never edit the frozen section) ═══════════════════════════════════
+═══════════════════════════════════ RESULTS (append below; never edit the frozen section)
+═══════════════════════════════════
 
 ## Results (2026-07-22 s23) — all three arms measured & adjudicated
 
-**Baselines:** OS from net-baseline `1f33866`; GPT Sol & Terra from `eval2-baseline` `1c22340`
-(design-notes + HANDOFF stripped). **Rulers ×3** — memory-OFF, byte-identical frozen prompt, one
-fresh instance per arm, each in an isolated shallow single-branch clone (cross-arm blind).
+**Baselines:** OS from net-baseline `1f33866`;
+GPT Sol & Terra from `eval2-baseline` `1c22340` (design-notes + HANDOFF stripped). **Rulers ×3**
+—
+memory-OFF, byte-identical frozen prompt, one fresh instance per arm, each in an isolated shallow
+single-branch clone (cross-arm blind).
 
 ### Scorecard
 
@@ -379,10 +408,12 @@ fresh instance per arm, each in an isolated shallow single-branch clone (cross-a
 | **5 Incident** | none | none | ships green-but-incomplete + claims done — a class **no gate, incl. lint, catches** |
 | **6 Cost** (not ranked) | orchestration heavy (below) | ~2% weekly (med) | ~2% weekly (med) |
 
-\* Both solos read `docs/HANDOFF.md` despite the prompt's "do not read" → reclassified a **shared
-instrument artifact**: the prompt told them to read `CLAUDE.md`, whose §Rules itself says "session
-start: read HANDOFF." Isolation held (stripped from `eval2-baseline`) — they went looking, found
-nothing. Not an arm conformance defect; a prompt↔repo-doc conflict (→ incident 0028).
+\* Both solos read `docs/HANDOFF.md` despite the prompt's "do not read" → reclassified a **shared instrument artifact**:
+the prompt told them to read `CLAUDE.md`, whose §Rules itself says "session start:
+read HANDOFF." Isolation held (stripped from `eval2-baseline`) —
+they went looking, found nothing.
+Not an arm conformance defect;
+a prompt↔repo-doc conflict (→ incident 0028).
 
 ### Verdicts (trinary)
 
@@ -429,16 +460,20 @@ nothing. Not an arm conformance defect; a prompt↔repo-doc conflict (→ incide
 ### Instrument gaps caught mid-flight (→ incident 0028)
 
 Three isolation/instrument gaps were found and closed **before** any measurement was contaminated:
-(1) the tip-only strip left the rubric reachable in git *history* + "temporal isolation is free" broke
-the moment OS ran first as arm 1 — fixed with **shallow single-branch clones** for every arm and ruler;
-(2) the prompt↔CLAUDE.md "read HANDOFF" conflict (reclassified above); (3) GPT/Codex auto-named
-Terra's branch `codex/…`, leaking authorship to the ruler — fixed with an **author-neutral alias**
-before ruler dispatch.
+(1) the tip-only strip left the rubric reachable in git *history* + "temporal isolation is free"
+broke the moment OS ran first as arm 1 —
+fixed with **shallow single-branch clones** for every arm and ruler;
+(2) the prompt↔CLAUDE.md "read HANDOFF" conflict (reclassified above);
+(3) GPT/Codex auto-named Terra's branch `codex/…`, leaking authorship to the ruler —
+fixed with an **author-neutral alias** before ruler dispatch.
 
 ### Cost (Axis 6 — reported, never ranked into the verdict)
 
-Effort held **constant (med)** across Sol and Terra; only the model tier varied (the single manipulated
-variable). Both ~2% of the weekly limit. Claude orchestration (pre-work + OS drive + 3 adjudications):
-~31% of a 5h window. The pipeline costs more in aggregate and yields a mergeable, complete result; the
-cheap solo is comparably cheap and yields a fake-refactor — cost-per-viable-output diverges, kept out
-of the verdict by construction (playbook threat #5).
+Effort held **constant (med)** across Sol and Terra;
+only the model tier varied (the single manipulated variable).
+Both ~2% of the weekly limit.
+Claude orchestration (pre-work + OS drive + 3 adjudications):
+~31% of a 5h window.
+The pipeline costs more in aggregate and yields a mergeable, complete result;
+the cheap solo is comparably cheap and yields a fake-refactor —
+cost-per-viable-output diverges, kept out of the verdict by construction (playbook threat #5).

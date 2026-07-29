@@ -7,19 +7,22 @@
 ## What happened
 
 E3 wave 1 batched #168 (dayBoundary refactor) + #92 (guilds/enrollment) to one coder.
-The Orchestrator's task package stated "No UI changes in this wave → no Playwright
-specs affected (sim-only; do not run e2e)". Implementing #92's save/load AC, the
-coder — correctly — bumped `SAVE_VERSION` 5→6 (Company shape change, repo precedent),
-and flagged the touch in its report. Nobody connected the bump to
-`e2e/fixtures/ledger-scenario.json`, which carries `"version": 5`: persistence now
-rejected the fixture and two `ledger.spec.ts` tests failed — but only on CI, because
-the package had explicitly forbidden e2e runs. The tier-3 review also passed it: the
-reviewer verified the bump as "correct and minimal" against persistence precedent,
-not against fixture consumers.
+The Orchestrator's task package stated "No UI changes in this wave → no Playwright specs affected
+(sim-only; do not run e2e)".
+Implementing #92's save/load AC, the coder —
+correctly —
+bumped `SAVE_VERSION` 5→6 (Company shape change, repo precedent), and flagged the touch in its
+report.
+Nobody connected the bump to `e2e/fixtures/ledger-scenario.json`, which carries `"version": 5`:
+persistence now rejected the fixture and two `ledger.spec.ts` tests failed —
+but only on CI, because the package had explicitly forbidden e2e runs.
+The tier-3 review also passed it:
+the reviewer verified the bump as "correct and minimal" against persistence precedent, not against
+fixture consumers.
 
-(The same CI round also caught the #169 golden test pinning engine-dependent
-`JSON.stringify` hashes — a separate testing lesson, fixed by rewriting to
-platform-robust contracts, noted here for completeness.)
+(The same CI round also caught the #169 golden test pinning engine-dependent `JSON.stringify` hashes
+— a separate testing lesson, fixed by rewriting to platform-robust contracts, noted here for
+completeness.)
 
 ## Impact
 
@@ -35,10 +38,11 @@ platform-robust contracts, noted here for completeness.)
 
 ## Recurrence
 
-Medium — structural driver: the affected-e2e heuristic keyed on *UI paths*, but e2e
-specs also depend on non-UI contracts (save fixtures, persistence shape, selectors
-fed by sim state). Any future `World`/`Company` shape change repeats this unless the
-heuristic keys on the whole diff.
+Medium —
+structural driver:
+the affected-e2e heuristic keyed on *UI paths*, but e2e specs also depend on non-UI contracts (save
+fixtures, persistence shape, selectors fed by sim state).
+Any future `World`/`Company` shape change repeats this unless the heuristic keys on the whole diff.
 
 ## Recommendation
 

@@ -7,10 +7,9 @@
 
 ## What happened
 
-An external coding agent implemented issue #79 (rename `route` → `Course`; 18 files
-across `src/sim` and `src/ui`), got tests/typecheck/lint green, committed, and
-reported **"AC spełnione, gotowy do push + PR"**. Three merge gates required for this
-change were neither run nor flagged as open:
+An external coding agent implemented issue #79 (rename `route` → `Course`; 18 files across `src/sim`
+and `src/ui`), got tests/typecheck/lint green, committed, and reported **"AC spełnione, gotowy do push + PR"**.
+Three merge gates required for this change were neither run nor flagged as open:
 
 1. **Docs sync sweep** — the E9 spec's own "Docs sync" section names this PR and asks
    for a CONTEXT.md verification; a stale `_Implementation_` note ("lands in E9") was
@@ -20,12 +19,13 @@ change were neither run nor flagged as open:
 3. **E2E** — PR template requires Playwright when UI changed (`PortPanel`,
    `RegionMap`, `shipPosition`, `coursePreview` all touched). Only unit tests ran.
 
-The pattern, not the individual misses, is the finding: every post-work gate lived in
-the PR-template checklist and WORKFLOW's "before merge" step, which only surface at
-`gh pr create` / merge time. The session ended at the commit, so no artifact ever put
-the gates in front of the model. `docs/SELFCHECK.md` covered "before you start"
-thoroughly (and that part was executed near-flawlessly) — nothing covered "before you
-say done".
+The pattern, not the individual misses, is the finding:
+every post-work gate lived in the PR-template checklist and WORKFLOW's "before merge" step, which
+only surface at `gh pr create` / merge time.
+The session ended at the commit, so no artifact ever put the gates in front of the model.
+`docs/SELFCHECK.md` covered "before you start" thoroughly (and that part was executed
+near-flawlessly) —
+nothing covered "before you say done".
 
 ## Impact
 
@@ -42,9 +42,11 @@ say done".
 
 ## Recurrence
 
-High — structural. Any session that stops between commit and PR (external models
-without `gh` access, sessions ending early, owner-driven PR creation) skips every
-checkpoint that lives in the PR template. The gap is in the process, not the model.
+High —
+structural.
+Any session that stops between commit and PR (external models without `gh` access, sessions ending
+early, owner-driven PR creation) skips every checkpoint that lives in the PR template.
+The gap is in the process, not the model.
 
 ## Recommendation
 
@@ -60,5 +62,5 @@ checkpoint that lives in the PR template. The gap is in the process, not the mod
 
 ## Follow-up
 
-SELFCHECK.md §6 added (old §6 renumbered to §7) in the same PR that lands this
-report. The #79 branch itself still needs two-axis review + E2E before merge.
+SELFCHECK.md §6 added (old §6 renumbered to §7) in the same PR that lands this report.
+The #79 branch itself still needs two-axis review + E2E before merge.

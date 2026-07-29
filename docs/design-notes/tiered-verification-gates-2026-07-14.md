@@ -1,16 +1,20 @@
 # Tiered verification gates — process grill record (2026-07-14)
 
-Grill of #162. Process grill (no persona — Orchestrator + owner). Trigger: owner
-observation that subagents spend more time checking than coding. Agreed diagnosis
-(recorded in the issue): verification *should* dominate wall-time in agent-driven
-development — the defect was that the gates were **flat instead of progressive**, so a
-60-line UI diff paid the same ceremony as a sim-engine change. Data point: #157
-(~60 LOC, UI-only) spent ~66k tokens on two review subagents that each re-derived repo
-context from zero to surface one inline-catchable finding.
+Grill of #162.
+Process grill (no persona — Orchestrator + owner).
+Trigger:
+owner observation that subagents spend more time checking than coding.
+Agreed diagnosis (recorded in the issue):
+verification *should* dominate wall-time in agent-driven development —
+the defect was that the gates were **flat instead of progressive**, so a 60-line UI diff paid the
+same ceremony as a sim-engine change.
+Data point:
+#157 (~60 LOC, UI-only) spent ~66k tokens on two review subagents that each re-derived repo context
+from zero to surface one inline-catchable finding.
 
 The grill pivoted early on an owner proposal that superseded the issue's knob list:
-instead of tiering the *coder's* ceremony, strip the coder to a thin executor and
-centralize all repo-level gates in the Orchestrator, closed **once per wave**.
+instead of tiering the *coder's* ceremony, strip the coder to a thin executor and centralize all
+repo-level gates in the Orchestrator, closed **once per wave**.
 
 ## Decision tree
 
@@ -33,12 +37,14 @@ centralize all repo-level gates in the Orchestrator, closed **once per wave**.
 - **0005** (green ≠ correct): the wave check reads diffs against ACs, never trusts the coder's report; external agents keep the full SELFCHECK.
 - **0001/0006** (worktree/main hygiene): untouched — cheap, stays in the coder def.
 
-Non-goals from #162 confirmed kept: baseline-green before work, determinism/purity
-laws, owner-merge, docs sync sweep (moves to the wave check, not deleted), incident
-reporting.
+Non-goals from #162 confirmed kept:
+baseline-green before work, determinism/purity laws, owner-merge, docs sync sweep (moves to the wave
+check, not deleted), incident reporting.
 
 ## Docs sync (this PR)
 
-WORKFLOW.md §Pipeline 6 + new §Verification gates; SELFCHECK.md §5 short form + §6
-pointer; personas/CODER.md + `.claude/agents/coder.md` new minimum; CLAUDE.md Rules
-one-liner. Closes #162.
+WORKFLOW.md §Pipeline 6 + new §Verification gates;
+SELFCHECK.md §5 short form + §6 pointer;
+personas/CODER.md + `.claude/agents/coder.md` new minimum;
+CLAUDE.md Rules one-liner.
+Closes #162.

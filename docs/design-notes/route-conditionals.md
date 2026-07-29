@@ -1,18 +1,20 @@
 # Route order conditionals — "hold the sale until …" (resolved, do not implement)
 
-Raised by the owner during the M3/E3 grill (2026-07-09), while locking guild contract
-mechanics. **Resolved 2026-07-21 (#357 grill): lock reaffirmed, no design change** — see
-[route-automation-grill-2026-07-21.md](route-automation-grill-2026-07-21.md) for the full
-reasoning (breaks the no-wait-in-port lock, reproduces E8's autopilot degeneracy, and E3's
-contract quota already covers the adjacent need on contract-bound routes). Kept below for
-history; do not re-litigate without new facts.
+Raised by the owner during the M3/E3 grill (2026-07-09), while locking guild contract mechanics. **Resolved 2026-07-21 (#357 grill): lock reaffirmed, no design change**
+—
+see [route-automation-grill-2026-07-21.md](route-automation-grill-2026-07-21.md) for the full
+reasoning (breaks the no-wait-in-port lock, reproduces E8's autopilot degeneracy, and E3's contract
+quota already covers the adjacent need on contract-bound routes).
+Kept below for history;
+do not re-litigate without new facts.
 
 ## The ask
 
-The owner starts to see a need for a conditional sell mechanism on Routes: a Stop order
-in the spirit of "wait with selling until \<condition\>" (e.g. a price threshold).
-Origin context: continuous guild contracts (E3 direction) make Routes carry standing
-obligations, which sharpens the question of *when* a loop should realize its margin.
+The owner starts to see a need for a conditional sell mechanism on Routes:
+a Stop order in the spirit of "wait with selling until \<condition\>" (e.g. a price threshold).
+Origin context:
+continuous guild contracts (E3 direction) make Routes carry standing obligations, which sharpens the
+question of *when* a loop should realize its margin.
 
 ## Why this is a real decision, not a tweak
 

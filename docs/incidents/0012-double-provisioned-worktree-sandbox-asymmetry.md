@@ -11,14 +11,24 @@ The Orchestrator dispatched two parallel coders (#218 UI, #154 sim) and provisio
 1. Manual `git worktree add` → `.claude/worktrees/agent-218`, `.claude/worktrees/agent-154`, with those paths **hardcoded in the task prompts**.
 2. `isolation: "worktree"` passed to the Agent tool.
 
-The `isolation: "worktree"` flag makes the **harness cut its own per-agent worktree** (`.claude/worktrees/agent-<agentId>` on branch `worktree-agent-<agentId>`) and **sandbox the agent's Edit/Write tools to that directory**. Each coder's prompt pointed it at the *manual* worktree, which the sandbox refused for Edit/Write ("This agent is isolated in the worktree agent-<id>"). The agent-id-named worktrees appearing in `git worktree list` — which the Orchestrator never created — were the proof.
+The `isolation: "worktree"` flag makes the **harness cut its own per-agent worktree**
+(`.claude/worktrees/agent-<agentId>` on branch `worktree-agent-<agentId>`) and **sandbox the agent's Edit/Write tools to that directory**.
+Each coder's prompt pointed it at the *manual* worktree, which the sandbox refused for Edit/Write
+("This agent is isolated in the worktree agent-<id>").
+The agent-id-named worktrees appearing in `git worktree list` —
+which the Orchestrator never created —
+were the proof.
 
 The two coders diverged in their workaround:
 
 - **#154** used **Bash (`node -e` + heredocs)** to write into the prompt-named `agent-154` worktree — Bash was **not** subject to the same sandbox — landing `fbace89` on `refactor/154-...`, pushed. The harness worktree was transient and auto-cleaned.
 - **#218** accepted the harness worktree, committed there (`worktree-agent-a48967...`), and pushed by refspec `git push HEAD:feat/218-...`. The manual `agent-218` worktree stayed empty at the base SHA.
 
-Recovery: both branches carried the correct work on origin. The Orchestrator reset the stale local `agent-218` to origin, removed the orphaned harness worktree + branch, and verified both diffs (including #154's Bash-heredoc-written files for escaping corruption — none found) before opening PRs #248 / #249.
+Recovery:
+both branches carried the correct work on origin.
+The Orchestrator reset the stale local `agent-218` to origin, removed the orphaned harness worktree +
+branch, and verified both diffs (including #154's Bash-heredoc-written files for escaping corruption
+— none found) before opening PRs #248 / #249.
 
 ## Impact
 
@@ -33,13 +43,27 @@ Recovery: both branches carried the correct work on origin. The Orchestrator res
 
 ## Bonus lesson — resume-after-crash can silently drop an in-flight advisor call
 
-Coder #154's advisor call was **in flight** when an API error killed the turn ("Advising using Opus 4.8" → "Connection closed mid-response"). On resume, the coder continued straight into the work ("Step 1: write the failing test") **without re-invoking the advisor** — not a conscious decision to skip it, but a consequence of resuming into a transcript whose advisor result never arrived. The resumed agent had no signal that the consult had been lost. (A separate advisor call near completion did land — but the mid-work consult was gone.)
+Coder #154's advisor call was **in flight** when an API error killed the turn ("Advising using Opus
+4.8" → "Connection closed mid-response").
+On resume, the coder continued straight into the work ("Step 1: write the failing test") **without re-invoking the advisor**
+—
+not a conscious decision to skip it, but a consequence of resuming into a transcript whose advisor
+result never arrived.
+The resumed agent had no signal that the consult had been lost.
+(A separate advisor call near completion did land — but the mid-work consult was gone.)
 
-**Watch:** when resuming a subagent after a mid-response API error, the resume message should name any tool call that was in flight and instruct the agent to redo it. A dropped advisor call is a silently skipped gate.
+**Watch:** when resuming a subagent after a mid-response API error, the resume message should name
+any tool call that was in flight and instruct the agent to redo it.
+A dropped advisor call is a silently skipped gate.
 
 ## Recurrence
 
-Medium — structural. The double-provisioning is easy to repeat because pre-creating worktrees *feels* like the careful thing to do, and `isolation: "worktree"` is the documented requirement for parallel coders — the two look complementary until they collide. The resume-drops-advisor hazard recurs whenever a subagent crashes mid-advisor.
+Medium —
+structural.
+The double-provisioning is easy to repeat because pre-creating worktrees *feels* like the careful
+thing to do, and `isolation: "worktree"` is the documented requirement for parallel coders —
+the two look complementary until they collide.
+The resume-drops-advisor hazard recurs whenever a subagent crashes mid-advisor.
 
 ## Recommendation
 

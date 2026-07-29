@@ -1,25 +1,30 @@
 # E16 — Workbench
 
-Feature spec for epic E16 (milestone M4 — Region mastery, [PRD](../PRD.md)). Terms per
-[CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-22.
+Feature spec for epic E16 (milestone M4 — Region mastery, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on 2026-07-22.
 Status: **approved (2026-07-22)**.
 
-Grill inputs: #376 (fuse route planning into the Price Board — the parent ask),
-[grill-brief-m4-workbench.md](../design-notes/grill-brief-m4-workbench.md) (the questions this
-grill had to resolve + the locked rails), [playtest-2026-07-14-routes-fleet-ux.md](../design-notes/playtest-2026-07-14-routes-fleet-ux.md)
+Grill inputs:
+#376 (fuse route planning into the Price Board — the parent ask),
+[grill-brief-m4-workbench.md](../design-notes/grill-brief-m4-workbench.md) (the questions this grill
+had to resolve + the locked rails),
+[playtest-2026-07-14-routes-fleet-ux.md](../design-notes/playtest-2026-07-14-routes-fleet-ux.md)
 §Grill cluster B (the three symptoms this epic answers) and its cluster-A resolution
 [route-automation-grill-2026-07-21.md](../design-notes/route-automation-grill-2026-07-21.md) (what
 stays **locked out**), #227 (offer labels), #177 (ShipPanel route status), #173 (skiff easing —
 stays map-side), and Professor ui-store review
 [Finding 4](../design-notes/professor-review-ui-store-2026-07-14.md) (the "re-derive per surface vs.
-one selector" anti-pattern this epic's signal must not repeat). Visual reference: the grill mockup
-(`m4-workbench-mockup.html`, published as an Artifact 2026-07-22) — a working demo of the
-port-centric build gesture, the ribbon, and the signal's three renderings.
+one selector" anti-pattern this epic's signal must not repeat).
+Visual reference:
+the grill mockup (`m4-workbench-mockup.html`, published as an Artifact 2026-07-22) —
+a working demo of the port-centric build gesture, the ribbon, and the signal's three renderings.
 
-Scope in one line: the Price Board becomes the game's **workbench** — routes are authored on it by
-placing port Stops and attaching orders against live prices, ships are dispatched from it, a single
-**market-quality signal** reads across the board / PortPanel / offer labels, and the Headquarters
-Trasy tab shrinks to a read-only **route ribbon** roster.
+Scope in one line:
+the Price Board becomes the game's **workbench** —
+routes are authored on it by placing port Stops and attaching orders against live prices, ships are
+dispatched from it, a single **market-quality signal** reads across the board / PortPanel / offer
+labels, and the Headquarters Trasy tab shrinks to a read-only **route ribbon** roster.
 
 Explicit non-goals (each parked with its home):
 - **No new route conditionals / auto-sell-at-best / wait-until-full.** Route semantics stay frozen
@@ -40,10 +45,10 @@ Explicit non-goals (each parked with its home):
 
 ### Core principle — the board is the workbench; the map keeps the pleasure
 
-M4's success measure (PRD §M4, fantasy-roadmap lock 1) is behavioral: **a master spends more time on
-the Price Board than in the route editor.** E16 earns that by moving route *authoring* onto the
-board, where the prices already are, and demoting the separate list editor. The dividing line with
-the map is sharp and load-bearing:
+M4's success measure (PRD §M4, fantasy-roadmap lock 1) is behavioral: **a master spends more time on the Price Board than in the route editor.**
+E16 earns that by moving route *authoring* onto the board, where the prices already are, and
+demoting the separate list editor.
+The dividing line with the map is sharp and load-bearing:
 
 - **Board / ribbon = editable, price-dense, no decorative motion.** Everything you *decide* — what to
   haul, where, in what order, which ship — happens here.
@@ -52,32 +57,39 @@ the map is sharp and load-bearing:
   map-click stays (an inherently spatial gesture); the selected Route's Stops still highlight on the
   map (reading, not editing).
 
-The ribbon (below) is deliberately **schematic** — an umowna, distance-hinting rail, *not* real
-orrery geometry — so it never competes with the map's spatial beauty. Two languages, two jobs.
+The ribbon (below) is deliberately **schematic** —
+an umowna, distance-hinting rail, *not* real orrery geometry —
+so it never competes with the map's spatial beauty.
+Two languages, two jobs.
 
 ### The route ribbon — one visual language for authoring and inspection
 
 A **Route ribbon** (PL: *wstążka trasy*) renders a Route as its ordered Stops laid along a rail:
 each Stop is a planet-style node in its port's archetype color, connected by the route line, with
-the assigned Ship gliding along it. The ribbon is the single visual language for two surfaces:
+the assigned Ship gliding along it.
+The ribbon is the single visual language for two surfaces:
 
 - **Editable** in the board (the authoring canvas — this section + the next three).
 - **Read-only** in the Headquarters Trasy tab (the roster — one ribbon per Route).
 
-A master learns *one* idiom — "planet-Stops in order, ship sails the line" — and reads it everywhere.
+A master learns *one* idiom —
+"planet-Stops in order, ship sails the line" —
+and reads it everywhere.
 
-**Loop closure.** A Route is a loop, so the ribbon must read as a cycle, not a dead-end line: the
-return leg (last Stop → Stop 1) is drawn as a subtle return arc plus a **↻** marker. The gliding
-Ship actually *returns* home along that arc — it does not only travel left→right. For a Route with
-**more than two Stops**, during the return phase the **intermediate Stops dim** while the Ship
-travels back to the origin, so the return reads as a direct trip home (passing over, not stopping
-at, the middle Stops). (Owner production note, 2026-07-22.)
+**Loop closure.** A Route is a loop, so the ribbon must read as a cycle, not a dead-end line:
+the return leg (last Stop → Stop 1) is drawn as a subtle return arc plus a **↻** marker.
+The gliding Ship actually *returns* home along that arc —
+it does not only travel left→right.
+For a Route with **more than two Stops**, during the return phase the **intermediate Stops dim**
+while the Ship travels back to the origin, so the return reads as a direct trip home (passing over,
+not stopping at, the middle Stops).
+(Owner production note, 2026-07-22.)
 
 ### Construction is port-centric (the crux)
 
 **A Route is authored as an ordered sequence of ports; orders attach per Stop.** This is the spine;
-good-centric wiring is *reading assist only*, never the construction gesture. Locked hard after the
-owner validated the gesture in the mockup.
+good-centric wiring is *reading assist only*, never the construction gesture.
+Locked hard after the owner validated the gesture in the mockup.
 
 Why port-centric wins (the two phrasings "fuse into the price board" [good-columns] and "port-icon
 editor" [port-sequence] collided here; this resolves it):
@@ -93,13 +105,14 @@ editor" [port-sequence] collided here; this resolves it):
    already shows.
 
 **The gesture:** click a port's row (its name / left header) in the board → the port appends to the
-ribbon as a Stop. Then attach orders to it (next section). A Route needs ≥ 2 Stops over ≥ 2 distinct
-ports to be assignable (unchanged, `route.ts`).
+ribbon as a Stop.
+Then attach orders to it (next section).
+A Route needs ≥ 2 Stops over ≥ 2 distinct ports to be assignable (unchanged, `route.ts`).
 
 ### Attaching orders — inferred kind, progressive disclosure, highlight-only pairing
 
-Click a good's cell for a Stop's port → an order attaches to that Stop. The gesture is *guided, not
-dumb, not magic*:
+Click a good's cell for a Stop's port → an order attaches to that Stop.
+The gesture is *guided, not dumb, not magic*:
 
 - **Kind inferred from economic context, always overridable.** Clicking in a *best-ask* context
   defaults to **buy**; a *best-bid* context defaults to **sell**. The common case is one click; the
@@ -114,10 +127,11 @@ dumb, not magic*:
 
 #### The market-free kinds — deliver / store / withdraw (#404 grill, 2026-07-28)
 
-Inference reads the *market*, and `deliver` / `store` / `withdraw` have no market to read. They are
-authored on the board too — the board is the only authoring surface after (b) removes the Trasy list
-editor — but through a **deliberately asymmetric** gesture, so the frequent case does not pay for the
-rare one.
+Inference reads the *market*, and `deliver` / `store` / `withdraw` have no market to read.
+They are authored on the board too —
+the board is the only authoring surface after (b) removes the Trasy list editor —
+but through a **deliberately asymmetric** gesture, so the frequent case does not pay for the rare
+one.
 
 1. **The default click is unchanged.** One click, kind inferred, `⇄` flips buy↔sell and stays
    **binary**. Extending `⇄` into a five-way menu was rejected: it would tax every routine buy with a
@@ -150,31 +164,38 @@ rare one.
    cell's chip renders label + `×` with **no** `⇄`.
 
 **Storehouse discoverability — a port-row marker.** With the kinds behind a drawer, nothing on the
-board would reveal *where* `store` / `withdraw` are possible; the Trasy editor answered this
-structurally, by growing two extra columns on a Stop whose port had a Storehouse. The board's columns
-are region-wide goods and cannot do that. So the **port row header** carries a marker (glyph +
-`title`, beside the existing `★` pairing hint) whenever the Company has a Storehouse at that port.
-Port-level, not cell-level: the cells already carry trend glyph, ask, best-ask/bid highlight, signal
-intensity and focus emphasis, and #414 (resolved 2026-07-28: `role="columnheader"` + focus emphasis
-moved to opacity/weight) was a finding about exactly that channel load — the
-per-good precision belongs in the drawer, where the choice is made anyway. **Visible always, not only
-in authoring mode**: this is a fact about your own holdings, not a market suggestion, so §Signal
-boundary's *data ≠ suggestion* line puts it on the permitted side. Hue-free glyph, so ADR-0006 is
-untouched.
+board would reveal *where* `store` / `withdraw` are possible;
+the Trasy editor answered this structurally, by growing two extra columns on a Stop whose port had a
+Storehouse.
+The board's columns are region-wide goods and cannot do that.
+So the **port row header** carries a marker (glyph + `title`, beside the existing `★` pairing hint)
+whenever the Company has a Storehouse at that port.
+Port-level, not cell-level:
+the cells already carry trend glyph, ask, best-ask/bid highlight, signal intensity and focus
+emphasis, and #414 (resolved 2026-07-28: `role="columnheader"` + focus emphasis moved to
+opacity/weight) was a finding about exactly that channel load —
+the per-good precision belongs in the drawer, where the choice is made anyway. **Visible always, not only in authoring mode**:
+this is a fact about your own holdings, not a market suggestion, so §Signal boundary's
+*data ≠ suggestion* line puts it on the permitted side.
+Hue-free glyph, so ADR-0006 is untouched.
 
-**Why this was a blocking decision (#404).** The board does not merely *lack* these kinds today — it
-**silently destroys them**. `handleCellClick` falls through to `inferOrderKind` for any kind that is
-not `buy`/`sell` (`PriceBoardOverlay.tsx:221-222`), `setStopOrder` then *replaces* rather than merges
+**Why this was a blocking decision (#404).** The board does not merely *lack* these kinds today —
+it **silently destroys them**.
+`handleCellClick` falls through to `inferOrderKind` for any kind that is not `buy`/`sell`
+(`PriceBoardOverlay.tsx:221-222`), `setStopOrder` then *replaces* rather than merges
 (`routeAuthoring.ts:118-121`), and no chip renders for the market-free kinds at all
-(`PriceBoardOverlay.tsx:473`) — so one click turns a `store` order into a `buy` with no cue that
-anything was there. The path is **unreachable today** (the board only ever builds fresh drafts:
-`nextRouteId`, `stops: []`, `createRoute`), and **(b)'s "Edytuj →" seam is precisely what makes it
-reachable.** Hence the ordering law in §Issue cut: (h) merges before (b).
+(`PriceBoardOverlay.tsx:473`) —
+so one click turns a `store` order into a `buy` with no cue that anything was there.
+The path is **unreachable today** (the board only ever builds fresh drafts: `nextRouteId`,
+`stops: []`, `createRoute`), and **(b)'s "Edytuj →" seam is precisely what makes it reachable.**
+Hence the ordering law in §Issue cut:
+(h) merges before (b).
 
 ### Dispatch from the board
 
-The board owns **route dispatch**; the PortPanel keeps **transactional trade**. The boundary
-prevents rebuilding the whole trade UI in the board:
+The board owns **route dispatch**;
+the PortPanel keeps **transactional trade**.
+The boundary prevents rebuilding the whole trade UI in the board:
 
 - **On the board (first-class, via the ribbon / roster):** assign / unassign a Ship to a Route,
   suspend / resume. These fold in #177 (a selected Ship shows its assigned Route + suspend control) —
@@ -186,22 +207,29 @@ prevents rebuilding the whole trade UI in the board:
 
 ### The market-quality signal — one signal, three renderings
 
-There is **one** concept — *how good is this (port, good, direction) relative to the region, on a
-gradient* — computed once and rendered in three places. This is the unification the owner spotted
-mid-grill; it is the same shape Professor Finding 4 named for ship-resolution ("re-derived inline in
-each surface" vs. "one selector"), applied here so the signal is not re-computed three ways.
+There is **one** concept —
+*how good is this (port, good, direction) relative to the region, on a gradient* —
+computed once and rendered in three places.
+This is the unification the owner spotted mid-grill;
+it is the same shape Professor Finding 4 named for ship-resolution ("re-derived inline in each
+surface" vs. "one selector"), applied here so the signal is not re-computed three ways.
 
-**Market-quality signal** (PL: *sygnał jakości rynku*): a per-(port, good, direction) rank derived
-from the region's price spread — generalizing the board's existing best-ask / best-bid extremes into
-a graded scale (best / near-best / possible-but-worse). Three renderings:
+**Market-quality signal** (PL: *sygnał jakości rynku*):
+a per-(port, good, direction) rank derived from the region's price spread —
+generalizing the board's existing best-ask / best-bid extremes into a graded scale (best / near-best
+/ possible-but-worse).
+Three renderings:
 
 **The selector grades three tiers; the rendering is binary** (as-built #392/#394/#396, ratified
-2026-07-28 via #409 option (a)). `computeMarketSignal` returns `strong` / `mid` / `weak` — `mid`
-being the near-best band, `NEAR_BEST_BAND = 0.08` — but every surface renders **`strong` bright,
-`mid` and `weak` plain**. The middle level is computed and deliberately not drawn: two levels
-already carry "is this the market to act in", and a third shade competes with the existing color
-load for a distinction the player does not act on differently. Rendering it later is a rendering
-change, not a selector change — the tier is already there to read.
+2026-07-28 via #409 option (a)).
+`computeMarketSignal` returns `strong` / `mid` / `weak` —
+`mid` being the near-best band, `NEAR_BEST_BAND = 0.08` —
+but every surface renders **`strong` bright, `mid` and `weak` plain**.
+The middle level is computed and deliberately not drawn:
+two levels already carry "is this the market to act in", and a third shade competes with the
+existing color load for a distinction the player does not act on differently.
+Rendering it later is a rendering change, not a selector change —
+the tier is already there to read.
 
 1. **Board — cell emphasis.** The `strong` tier is the current best-ask/best-bid highlight; `mid`
    and `weak` render plain. (Generalizes `columnExtremes`.)
@@ -227,15 +255,19 @@ change, not a selector change — the tier is already there to read.
    neither acknowledges the other. Flagged for a Designer look, not blocking.
 
 **Visual channel — intensity, not hue.** The signal rides **opacity + weight (bright ↔ faded)** and
-is deliberately **hue-free**. This keeps one-color-one-meaning (ADR-0006, incident 0002): a new
-quality hue would collide with archetype tints, the trend up/down colors, best-ask/bid, and gold
-(Controlled Ship). "Bright = best market" then means exactly the same thing on every surface,
-enforced by construction. The signal is **informational only** — it never trades or wires anything.
+is deliberately **hue-free**.
+This keeps one-color-one-meaning (ADR-0006, incident 0002):
+a new quality hue would collide with archetype tints, the trend up/down colors, best-ask/bid, and
+gold (Controlled Ship).
+"Bright = best market" then means exactly the same thing on every surface, enforced by construction.
+The signal is **informational only** —
+it never trades or wires anything.
 
 ### Information density — contextual focus + pinning (surviving E15)
 
 The board must stay readable as goods multiply (E15 adds provisions + clearwood; Aether ice comes
-with the events epic). Two tools, over full data (no fog):
+with the events epic).
+Two tools, over full data (no fog):
 
 - **Contextual focus.** While attaching or editing an order for good X (attach, flip kind, or open
   the qty/Margin-Gate "więcej" panel), the board emphasizes X's column and dims the rest —
@@ -246,9 +278,10 @@ with the events epic). Two tools, over full data (no fog):
 
 ### Runtime execution legibility (cluster B symptom c)
 
-Playtest obs #10 — a Stop's "sell all" read as a *cargo wipe* because the player couldn't see why
-the hold emptied. This is a runtime-feedback gap, not a planning-surface one, and it ships **in this
-epic** (not parked):
+Playtest obs #10 —
+a Stop's "sell all" read as a *cargo wipe* because the player couldn't see why the hold emptied.
+This is a runtime-feedback gap, not a planning-surface one, and it ships **in this epic** (not
+parked):
 
 - The sell order chip on the ribbon reads legibly as **"sprzedaj całość · {good}"**, not an opaque
   "sell" — the greedy semantics are visible at authoring time.
@@ -260,84 +293,109 @@ epic** (not parked):
 
 ## Tech
 
-E16 is UI + store-bridge only. No `src/sim` module changes. The route model, Commands, Margin Gate,
-and market pricing are all reused as-is.
+E16 is UI + store-bridge only.
+No `src/sim` module changes.
+The route model, Commands, Margin Gate, and market pricing are all reused as-is.
 
 ### Store bridge — the market-quality signal selector (`src/store`)
 
 Compute the signal **once**, in a store-bridge selector, not inline per surface (Professor Finding 4
 discipline; the fleet-resolution selector shipped in the #319 refactor is the precedent to follow).
-Shape: a function of `(ports)` returning, per (port, good), the buy-quality and
-sell-quality tier (strong / mid / weak) plus the best-ask/best-bid port ids for pairing. (As-built
-#392: the tier reads only the current cross-port quotes at qty 1; `priceSnapshots` feeds the board's
-trend arrows, not the quality tier, so it is not a selector input.) This
-subsumes and replaces `PriceBoardOverlay.tsx`'s local `columnExtremes` (that inline helper becomes a
-consumer of the selector, or is deleted in its favor). PortPanel action shading and any offer-label
-computation read the *same* selector — three renderings, one source.
+Shape:
+a function of `(ports)` returning, per (port, good), the buy-quality and sell-quality tier (strong /
+mid / weak) plus the best-ask/best-bid port ids for pairing.
+(As-built #392: the tier reads only the current cross-port quotes at qty 1; `priceSnapshots` feeds
+the board's trend arrows, not the quality tier, so it is not a selector input.) This subsumes and
+replaces `PriceBoardOverlay.tsx`'s local `columnExtremes` (that inline helper becomes a consumer of
+the selector, or is deleted in its favor).
+PortPanel action shading and any offer-label computation read the *same* selector —
+three renderings, one source.
 
 ### Route ribbon component (`src/ui`)
 
 A reusable `RouteRibbon` component rendering an ordered Stop list as archetype-colored nodes + route
-line + loop arc/↻ + optional gliding Ship. Two modes: **read-only** (roster rows) and **editable**
-(board authoring — add/remove Stops, attach/edit orders, reorder). Ship animation honors
-`prefers-reduced-motion` and the sim-time/pause law (no motion while paused — kin to the skiff
-anchoring #161). The return-leg intermediate-dimming is a render state of this component. Shares the
-planet/archetype icon set already vendored (`icons/index.ts`; ADR-0006).
+line + loop arc/↻ + optional gliding Ship.
+Two modes: **read-only**
+(roster rows) and **editable** (board authoring — add/remove Stops, attach/edit orders, reorder).
+Ship animation honors `prefers-reduced-motion` and the sim-time/pause law (no motion while paused —
+kin to the skiff anchoring #161).
+The return-leg intermediate-dimming is a render state of this component.
+Shares the planet/archetype icon set already vendored (`icons/index.ts`; ADR-0006).
 
 ### Board fusion (`src/ui/PriceBoardOverlay.tsx`)
 
-The "Ceny" surface gains the authoring layer: port-row click → append Stop; good-cell click → attach
-order; contextual focus + column pinning; the editable ribbon docked below the grid. Reuses the
-`OverlayShell` + `Tabs` shells (Professor Finding 2 extraction, shipped) rather than growing a new
-frame. The `activeOverlay` store field (#320) governs its open state. Consider whether the board's
-tab set changes ("Ceny" now implies "Ceny · Trasa").
+The "Ceny" surface gains the authoring layer:
+port-row click → append Stop;
+good-cell click → attach order;
+contextual focus + column pinning;
+the editable ribbon docked below the grid.
+Reuses the `OverlayShell` + `Tabs` shells (Professor Finding 2 extraction, shipped) rather than
+growing a new frame.
+The `activeOverlay` store field (#320) governs its open state.
+Consider whether the board's tab set changes ("Ceny" now implies "Ceny · Trasa").
 
-**Market-free kinds (h).** The eligibility rule is not net-new logic — it already exists in
-`RoutesTab.tsx` and moves surface: a `CompanyBuilding` looked up by `stop.portId` over
-`world.company.buildings` (line 78), narrowed per good by `storehouseFilter(building.variant)` (line
-168). Extract it beside the other shared draft helpers in `src/ui/routeAuthoring.ts` (the module
-#394 created for exactly this — one copy consumed by both surfaces) rather than re-deriving it in
-the board; the board and the editor must not drift on legality while both exist. Three code-level
-consequences of the §Attaching orders lock, each named so the diff is checkable against it:
+**Market-free kinds (h).** The eligibility rule is not net-new logic —
+it already exists in `RoutesTab.tsx` and moves surface:
+a `CompanyBuilding` looked up by `stop.portId` over `world.company.buildings` (line 78), narrowed
+per good by `storehouseFilter(building.variant)` (line 168).
+Extract it beside the other shared draft helpers in `src/ui/routeAuthoring.ts` (the module #394
+created for exactly this — one copy consumed by both surfaces) rather than re-deriving it in the
+board;
+the board and the editor must not drift on legality while both exist.
+Three code-level consequences of the §Attaching orders lock, each named so the diff is checkable
+against it:
 `handleCellClick` must **return early** when the good's existing order is a market-free kind instead
-of falling through to `inferOrderKind`; the chip at `PriceBoardOverlay.tsx:473` must render for all
-five kinds, omitting `⇄` for the market-free three; and the drawer's kind picker is built from the
-cell's legal-kind set, not from a constant. **No `src/sim` change** — the five `StopOrder` kinds,
-`storehouseFilter` and the no-op semantics all already exist (epic non-goal upheld).
+of falling through to `inferOrderKind`;
+the chip at `PriceBoardOverlay.tsx:473` must render for all five kinds, omitting `⇄` for the
+market-free three;
+and the drawer's kind picker is built from the cell's legal-kind set, not from a constant. **No `src/sim` change**
+—
+the five `StopOrder` kinds, `storehouseFilter` and the no-op semantics all already exist (epic
+non-goal upheld).
 
 **Reaching the workbench (keybinds are settled — extend, don't redesign; M4 rail).** The board opens
-via its existing `B` hotkey, unchanged. #175 (a keybind to open the Trasy tab) is **closed (owner,
-2026-07-22)**: Headquarters is the un-suggested operational-oversight room, so inspecting a register
-is meant to be a conscious, slightly effortful act — a frictionless hotkey to a read-only roster
-works against that intent. The board (authoring) keeps `B`; the roster needs no hotkey. This epic
-adds no new keybinding scheme.
+via its existing `B` hotkey, unchanged.
+#175 (a keybind to open the Trasy tab) is **closed (owner, 2026-07-22)**:
+Headquarters is the un-suggested operational-oversight room, so inspecting a register is meant to be
+a conscious, slightly effortful act —
+a frictionless hotkey to a read-only roster works against that intent.
+The board (authoring) keeps `B`;
+the roster needs no hotkey.
+This epic adds no new keybinding scheme.
 
 **Signal boundary (owner framing, 2026-07-22).** The market-quality signal renders only on the
-*action* surfaces — the board and the PortPanel — never inside the Headquarters registers. HQ is the
-raw operational-data room where nothing is suggested; it may grow rich *analytics* (route
-profitability — total / last-30-days / current / ROI, parked as a follow-up issue) but those are
-**data, not suggestions**. Data ≠ suggestion is the line: the roster shows what your routes *are*,
-the board signals where the *opportunity* is.
+*action* surfaces —
+the board and the PortPanel —
+never inside the Headquarters registers.
+HQ is the raw operational-data room where nothing is suggested;
+it may grow rich *analytics* (route profitability — total / last-30-days / current / ROI, parked as
+a follow-up issue) but those are **data, not suggestions**.
+Data ≠ suggestion is the line:
+the roster shows what your routes *are*, the board signals where the *opportunity* is.
 
 ### Trasy roster (`src/ui/HeadquartersPanel.tsx`)
 
-The Trasy tab's list-based Stop editor is **removed**; the tab becomes a read-only roster of
-`RouteRibbon` rows (one per Route) with per-row metadata (assigned Ship count, suspend/resume) and an
-**"Edytuj →"** entry point that opens that Route in the board editor (the roster→board seam — without
-it, editing an existing Route has no home). Route-domain code already cleaved out of build-domain in
-the #321 refactor, which eases this.
+The Trasy tab's list-based Stop editor is **removed**;
+the tab becomes a read-only roster of `RouteRibbon` rows (one per Route) with per-row metadata
+(assigned Ship count, suspend/resume) and an **"Edytuj →"** entry point that opens that Route in the
+board editor (the roster→board seam — without it, editing an existing Route has no home).
+Route-domain code already cleaved out of build-domain in the #321 refactor, which eases this.
 
-**Hard precondition (#404, 2026-07-28): (h) merges before this removal.** The list editor is the only
-surface that authors `deliver` / `store` / `withdraw` today, and the board both fails to render them
-and silently overwrites them (§Attaching orders → §The market-free kinds). Removing the editor before
-the board can hold those kinds would leave a Route needing a Storehouse Stop unauthorable *and*
-corruptible. This is written as an ordering between two PRs rather than as a promise inside one,
-because a promise inside one diff is unverifiable — a merged commit order is a fact.
+**Hard precondition (#404, 2026-07-28): (h) merges before this removal.** The list editor is the
+only surface that authors `deliver` / `store` / `withdraw` today, and the board both fails to render
+them and silently overwrites them (§Attaching orders → §The market-free kinds).
+Removing the editor before the board can hold those kinds would leave a Route needing a Storehouse
+Stop unauthorable *and* corruptible.
+This is written as an ordering between two PRs rather than as a promise inside one, because a
+promise inside one diff is unverifiable —
+a merged commit order is a fact.
 
 ### PortPanel action shading (`src/ui/PortPanel.tsx`)
 
 Buy/sell action affordances read the market-quality selector and shade bright/faded by signal, gated
-by Cargo + free Hold for availability. No trade-logic change — presentation only.
+by Cargo + free Hold for availability.
+No trade-logic change —
+presentation only.
 
 ### Docs sync
 
@@ -383,25 +441,30 @@ UI epic → **Playwright E2E** is the gate (no sim TDD; nothing in `src/sim` cha
 - **Reduced-motion / pause:** ribbon Ship animation stops under `prefers-reduced-motion` and while
   paused.
 
-**Manual playtest (milestone law):** the real test is the M4 success measure — does authoring on the
-board *feel* faster than the old editor, and does the master stop opening Trasy? Cut small, playtest,
-iterate (the UI-grill-corrects-by-playtest rule). Also eyeball the intensity-only signal for
-legibility against the existing color load, and the refit-violet/mining-violet proximity flagged in
-**#429** (it was a HANDOFF §Watch item until 2026-07-28, then filed so it has an owner).
+**Manual playtest (milestone law):** the real test is the M4 success measure —
+does authoring on the board *feel* faster than the old editor, and does the master stop opening
+Trasy?
+Cut small, playtest, iterate (the UI-grill-corrects-by-playtest rule).
+Also eyeball the intensity-only signal for legibility against the existing color load, and the
+refit-violet/mining-violet proximity flagged in **#429** (it was a HANDOFF §Watch item until
+2026-07-28, then filed so it has an owner).
 
 ---
 
 ## Issue cut
 
-Filed after approval; milestone = epic E16. Prefer parallel, file-disjoint packages. Numbers filled
-after `gh issue create`. Final acceptance criteria live in each issue's newest criteria comment
-(WORKFLOW §Pipeline step 4).
+Filed after approval;
+milestone = epic E16.
+Prefer parallel, file-disjoint packages.
+Numbers filled after `gh issue create`.
+Final acceptance criteria live in each issue's newest criteria comment (WORKFLOW §Pipeline step 4).
 
 **On #376, #177, #227.** #376 is a *grill+spec* meta-ticket ("needs its own grill+spec before any
-code", HANDOFF's then-existing §Queue) — this spec is its deliverable. **Owner decision (2026-07-22): #376 closes as
-fulfilled, and implementation is filed as fresh E16 issues** (not a rename). #177 (ShipPanel route
-status + suspend) is a genuine implementation ticket and folds into (b). #227 (offer labels) becomes
-(f).
+code", HANDOFF's then-existing §Queue) —
+this spec is its deliverable. **Owner decision (2026-07-22): #376 closes as fulfilled, and implementation is filed as fresh E16 issues**
+(not a rename).
+#177 (ShipPanel route status + suspend) is a genuine implementation ticket and folds into (b).
+#227 (offer labels) becomes (f).
 
 Milestone **E16 — Workbench** (to be filed).
 
@@ -416,23 +479,31 @@ Milestone **E16 — Workbench** (to be filed).
 | (g) | ui | `feat(ui)`: runtime execution-legibility note + "sprzedaj całość" chip label (cluster B symptom c) | — |
 | (h) | ui | `feat(ui)`: market-free order kinds on the board — drawer kind picker, click-inert market-free cells, chips for all five kinds, Storehouse port-row marker (#404's decision) | (c) |
 
-Sequencing note: E16 is **UI-only**, so it is file-disjoint from the sim-heavy E11/E15 and can run in
-parallel with them — but its priority slot against the owner-agreed order (E11 v1 → E15, recorded in
-the milestone descriptions) is an **owner call**, made when this spec is approved. It is not a blocker for either. (a) is the enabling package;
+Sequencing note:
+E16 is **UI-only**, so it is file-disjoint from the sim-heavy E11/E15 and can run in parallel with
+them —
+but its priority slot against the owner-agreed order (E11 v1 → E15, recorded in the milestone
+descriptions) is an **owner call**, made when this spec is approved.
+It is not a blocker for either.
+(a) is the enabling package;
 (b)–(h) fan out from it, with (c) the largest and the true heart of #376.
 
-**Ordering law (#404, 2026-07-28): (h) merges before (b).** Not a preference — (b) removes the only
-surface that authors the market-free kinds, and (h) is what gives them a new one *and* closes the
-silent-overwrite path (§Trasy roster, §Attaching orders). Kept as two issues rather than folded into
-(b) so the ordering is a fact in the merge history instead of an unverifiable promise inside one
-diff — the same reasoning incident 0030 records about detectors that encode a law without being
-wired to anything that runs.
+**Ordering law (#404, 2026-07-28): (h) merges before (b).** Not a preference —
+(b) removes the only surface that authors the market-free kinds, and (h) is what gives them a new
+one *and* closes the silent-overwrite path (§Trasy roster, §Attaching orders).
+Kept as two issues rather than folded into (b) so the ordering is a fact in the merge history
+instead of an unverifiable promise inside one diff —
+the same reasoning incident 0030 records about detectors that encode a law without being wired to
+anything that runs.
 
-Engineer-pass note (2026-07-22, Carl at the table — incident 0029): (a) #392 is not purely
-`store` — extracting the signal selector forces a **behavior-neutral** swap of
-`PriceBoardOverlay.tsx`'s local `columnExtremes` for the selector, and that same file is edited
-heavily by (c) #394. So **(a) → (c) is a sequential dependency edge, not a parallel pair** — merge
-(a) with its minimal consume-site edit first, then (c) adds authoring. Two further open questions
-for #390 part 2 (the profitability register) live in #390's issue, not here: the Total/30d derivation
-must not be O(full-retention Ledger) per render (memoize or accumulate), and net margin's docking is
-exact only from the #391 tag forward (older saves need a "net accounted from day N" signal).
+Engineer-pass note (2026-07-22, Carl at the table — incident 0029):
+(a) #392 is not purely `store` —
+extracting the signal selector forces a **behavior-neutral** swap of `PriceBoardOverlay.tsx`'s local
+`columnExtremes` for the selector, and that same file is edited heavily by (c) #394.
+So **(a) → (c) is a sequential dependency edge, not a parallel pair** —
+merge (a) with its minimal consume-site edit first, then (c) adds authoring.
+Two further open questions for #390 part 2 (the profitability register) live in #390's issue, not
+here:
+the Total/30d derivation must not be O(full-retention Ledger) per render (memoize or accumulate),
+and net margin's docking is exact only from the #391 tag forward (older saves need a "net accounted
+from day N" signal).

@@ -1,13 +1,16 @@
 # Fantasy-roadmap grill — 2026-07-16
 
-Owner (Jakub) + frontier Analyst/Designer. Context: the follow-up session the
-farewell-roadmap grill (2026-07-15) left pending — deepen the 1.0 fantasy and turn it
-into an executable roadmap an Opus-tier orchestrator can drive after frontier access
-lapses (2026-07-19). Session deliverable locked up front: **(b)+(c)** — no parallel
-roadmap document; the PRD stays the single roadmap canon, deepened in place, with a
-**grill brief** attached to every `design-frontier` item (the scenario for the grill
-Opus will lead with the owner), and a frontier pre-grill to spec for exactly one
-topic (see lock 10).
+Owner (Jakub) + frontier Analyst/Designer.
+Context:
+the follow-up session the farewell-roadmap grill (2026-07-15) left pending —
+deepen the 1.0 fantasy and turn it into an executable roadmap an Opus-tier orchestrator can drive
+after frontier access lapses (2026-07-19).
+Session deliverable locked up front: **(b)+(c)**
+—
+no parallel roadmap document;
+the PRD stays the single roadmap canon, deepened in place, with a **grill brief** attached to every
+`design-frontier` item (the scenario for the grill Opus will lead with the owner), and a frontier
+pre-grill to spec for exactly one topic (see lock 10).
 
 ## Locks
 

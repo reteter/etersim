@@ -1,18 +1,27 @@
 # Playtest 2026-07-12 — seed `watermelon` (fresh eyes: first outside player)
 
-First playtest by someone outside the process: the owner's brother (Kacper — this
-machine's owner), no prior exposure to specs, grills or the glossary. Protocol: no
-prompting during play; his notes are unmodified (`playtest-Kacper-seed-watermelon.md` —
-raw player log, Polish, kept verbatim as source material; item numbers below refer to
-it). Screenshots: `tmp/ss/playtest_kacper-watermelon_1..3.png` (local-only; `tmp/` is
-gitignored). Build: `main` @ 3463a3a — the first session ever to exercise the
-Headquarters UI (#119). Terms per [CONTEXT.md](../../CONTEXT.md); process per
-[WORKFLOW.md](../WORKFLOW.md).
+First playtest by someone outside the process:
+the owner's brother (Kacper — this machine's owner), no prior exposure to specs, grills or the
+glossary.
+Protocol:
+no prompting during play;
+his notes are unmodified (`playtest-Kacper-seed-watermelon.md` — raw player log, Polish, kept
+verbatim as source material; item numbers below refer to it).
+Screenshots:
+`tmp/ss/playtest_kacper-watermelon_1..3.png` (local-only; `tmp/` is gitignored).
+Build:
+`main` @ 3463a3a —
+the first session ever to exercise the Headquarters UI (#119).
+Terms per [CONTEXT.md](../../CONTEXT.md);
+process per [WORKFLOW.md](../WORKFLOW.md).
 
-Why this session matters: the owner cannot test Pillar 4 ("readable depth") on himself —
-he always knows why a price moved. This is the project's first true legibility
-measurement, and it reached Day 44, Price Board discovery, HQ founding and a route
-attempt with **zero tutorial**. The funnel works; the labels on it mostly don't (yet).
+Why this session matters:
+the owner cannot test Pillar 4 ("readable depth") on himself —
+he always knows why a price moved.
+This is the project's first true legibility measurement, and it reached Day 44, Price Board
+discovery, HQ founding and a route attempt with **zero tutorial**.
+The funnel works;
+the labels on it mostly don't (yet).
 
 ---
 
@@ -27,14 +36,18 @@ attempt with **zero tutorial**. The funnel works; the labels on it mostly don't 
 > input (E3 spec §Upkeep, #95); the stockpile/investment-policy idea raised at the
 > grill is parked as its own issue.
 
-Dead state on Day 44: **₸0, hold 0/50, ship docked** — no income-generating action
-exists from there. Verified against code: `runBuildSiteAutoDraw` never overdrafts but
-has no reserve floor (`src/sim/building.ts:200` stalls silently only *after* spending
-the last thaler), and `placeBuildOrder` gives no upfront cost estimate. This is the
-default new-player path, not an edge case — and E3's daily ship upkeep (#95) will make
-it strictly easier to reach. **Owner decision: grill in a fresh session** against the
-E9 spec and ADRs before any fix; candidate directions are listed on the issue. Also
-grill-input to E3 (insolvency design vs the no-debt precedent).
+Dead state on Day 44: **₸0, hold 0/50, ship docked**
+—
+no income-generating action exists from there.
+Verified against code:
+`runBuildSiteAutoDraw` never overdrafts but has no reserve floor (`src/sim/building.ts:200` stalls
+silently only *after* spending the last thaler), and `placeBuildOrder` gives no upfront cost
+estimate.
+This is the default new-player path, not an edge case —
+and E3's daily ship upkeep (#95) will make it strictly easier to reach. **Owner decision: grill in a fresh session**
+against the E9 spec and ADRs before any fix;
+candidate directions are listed on the issue.
+Also grill-input to E3 (insolvency design vs the no-debt precedent).
 
 ## Routing table
 
@@ -74,5 +87,4 @@ grill-input to E3 (insolvency design vs the no-debt precedent).
 
 ---
 
-*(Session 2026-07-12, second fresh-eyes-capable session on this machine. Raw log
-committed alongside this note; screenshots remain local per `.gitignore`.)*
+*(Session 2026-07-12, second fresh-eyes-capable session on this machine. Raw log committed alongside this note; screenshots remain local per `.gitignore`.)*

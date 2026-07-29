@@ -6,15 +6,16 @@
 
 ## What happened
 
-The session ran on a shared machine with two GitHub accounts authenticated (the
-machine owner's and the repo owner's). At session start the driver ran
-`gh auth switch --user <repo-owner>`; `gh auth status` confirmed it and kept showing
-the correct active account all session.
+The session ran on a shared machine with two GitHub accounts authenticated (the machine owner's and
+the repo owner's).
+At session start the driver ran `gh auth switch --user <repo-owner>`;
+`gh auth status` confirmed it and kept showing the correct active account all session.
 
-A coder subagent then pushed and got `403: Permission to <owner>/etersim.git denied to
-<machine-owner>`. `gh auth switch` moves gh's own active account but **not** git's
-credential-helper cache, which still handed git the other account's token. The coder
-resolved it with `gh auth setup-git` and pushed successfully.
+A coder subagent then pushed and got
+`403: Permission to <owner>/etersim.git denied to <machine-owner>`.
+`gh auth switch` moves gh's own active account but **not** git's credential-helper cache, which
+still handed git the other account's token.
+The coder resolved it with `gh auth setup-git` and pushed successfully.
 
 Two things surfaced only when the driver wrote this report:
 
@@ -41,7 +42,8 @@ Two things surfaced only when the driver wrote this report:
 
 ## Recurrence
 
-**High** — two structural drivers, and the second is the interesting one:
+**High** —
+two structural drivers, and the second is the interesting one:
 
 - `gh auth status` is not a statement about git's push identity. Two tools, two
   caches, one plausible-looking confirmation.
@@ -50,11 +52,12 @@ Two things surfaced only when the driver wrote this report:
   not other harnesses. This project explicitly expects work on borrowed machines, so
   machine-shaped lessons belong in repo docs, which every dispatch can be pointed at.
 
-**Third time in this family** (owner observation at filing). Same failure shape as
-[0017](0017-casting-override-lived-only-in-prose.md) — an authoritative fact living in
-prose/memory while the operative source was elsewhere — and as
-[0016](0016-skill-fanout-overrode-tiered-review-gate.md) — a rule in a file outshouted
-by something with higher salience. The generalization worth carrying forward:
+**Third time in this family** (owner observation at filing).
+Same failure shape as [0017](0017-casting-override-lived-only-in-prose.md) —
+an authoritative fact living in prose/memory while the operative source was elsewhere —
+and as [0016](0016-skill-fanout-overrode-tiered-review-gate.md) —
+a rule in a file outshouted by something with higher salience.
+The generalization worth carrying forward:
 
 > **Auto-memory is a working channel, not a home for gotchas.** It is per-machine,
 > invisible to subagents, and unversioned. A gotcha earns its place in repo docs —

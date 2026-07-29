@@ -1,26 +1,28 @@
 # Design notes — index
 
-One line per note: what it is, what it concluded, and whether it still steers work.
-Read this table; open a note only when its line is relevant to what you're doing.
+One line per note:
+what it is, what it concluded, and whether it still steers work.
+Read this table;
+open a note only when its line is relevant to what you're doing.
 Same contract as [`docs/incidents/README.md`](../incidents/README.md) §Log.
 
-**The line is a pointer, not a summary.** It carries enough to decide whether to open the
-file — never the note's evidence, verdict detail or reasoning chain. A row that grows into a
-paragraph turns the index into a second document to read (it did: rows reached ~2 900
-characters before the 2026-07-28 trim).
+**The line is a pointer, not a summary.** It carries enough to decide whether to open the file —
+never the note's evidence, verdict detail or reasoning chain.
+A row that grows into a paragraph turns the index into a second document to read (it did: rows
+reached ~2 900 characters before the 2026-07-28 trim).
 
-**Status column:** **LIVE** = still steers work (parking lots with unshipped items, pending
-grills, growing records). **HIST** = closed; kept for provenance, safe to skip unless you are
-reconstructing why something is the way it is.
+**Status column:** **LIVE** = still steers work (parking lots with unshipped items, pending grills,
+growing records). **HIST**
+= closed;
+kept for provenance, safe to skip unless you are reconstructing why something is the way it is.
 
 **Maintenance is part of creating the note** ([documentation.md](../workflows/documentation.md)):
-whoever adds a file here adds its row in the same commit, and whoever closes out a note's last
-open item flips it to HIST.
+whoever adds a file here adds its row in the same commit, and whoever closes out a note's last open
+item flips it to HIST.
 
-**A trigger is a promise, and promises live in the issue tracker.** Park the *reasoning* in a
-note; park the *obligation* in an issue, and have the note point at it — `gh issue list` is
-swept every session while HIST rows are explicitly safe to skip. **Before flipping a note to
-HIST, ask whether the flip would hide an obligation; if it would, file it first.**
+**A trigger is a promise, and promises live in the issue tracker.** Park the *reasoning* in a note;
+park the *obligation* in an issue, and have the note point at it —
+`gh issue list` is swept every session while HIST rows are explicitly safe to skip. **Before flipping a note to HIST, ask whether the flip would hide an obligation; if it would, file it first.**
 
 ## Process, evaluation & tooling
 
@@ -34,7 +36,7 @@ HIST, ask whether the flip would hide an obligation; if it would, file it first.
 | [world-model-implications](world-model-implications.md) | **LIVE** | The standing register of statements that must be true if this world is what we say it is, each with its falsifier. Survey finding: structure is guarded, dynamics are not — the assertion content E11 still lacks. |
 | [knowing-is-not-binding-2026-07-19](knowing-is-not-binding-2026-07-19.md) | **LIVE** | Standing principle from three s14 failures with one mechanism: **a system acts on what obliges it, not on what it knows.** What worked every time was a detector, never an insight. |
 | [semantic-code-search-tooling](semantic-code-search-tooling.md) | **LIVE** | Why there is no vector search here (parked, tracked as #212). Holds the design sketch and the unpark trigger. |
-| [markdown-normalizer-grill-2026-07-21](markdown-normalizer-grill-2026-07-21.md) | **LIVE** | Grill record for #341: clause-level line breaks, AST-based, enforced against an allowlist. Its segment-by-segment rollout is overridden by #384. |
+| [markdown-normalizer-grill-2026-07-21](markdown-normalizer-grill-2026-07-21.md) | **LIVE** | Grill record for #341: clause-level line breaks, AST-based. The break *rules* still bind; two of its decisions do not. Its segment-by-segment rollout was overridden by the owner for speed and discharged in one sweep (#384, 2026-07-29) — blame-burying accepted, not overlooked. Decision 3's allowlist is **retired**: the tool discovers root + `docs/**` and excludes `docs/souvenirs/`, so a new doc is gated the moment it exists. Still open from the note: whether `--check` is wired into a gate proper. |
 | [eval-gpt-5.6-solo-driver-e13](eval-gpt-5.6-solo-driver-e13.md) | **LIVE** | Pre-registered eval-1: can the implementation loop be delegated to a solo non-Anthropic driver? Verdicts recorded below its FROZEN line — both arms CONDITIONAL, and the money finding is that **the win is the pipeline, not any solo**. |
 | [delegation-eval-playbook](delegation-eval-playbook.md) | **LIVE** | The reusable *how* for a pre-registered paired delegation eval. Core rules: isolation has a cheap default (run arms before the reference merges), the ruler prompt is a byte-identical committed artifact, and the ruler measures while the Orchestrator adjudicates. |
 | [eval-2-refactor-loop-319-320-321](eval-2-refactor-loop-319-320-321.md) | **LIVE** | Pre-registered eval-2 (#379): is eval-1's casting verdict invariant across task-shape? Answer: yes. Frontier solo ≈ pipeline; cheap solo NO-GO on a **fake refactor** that passed all four gates. Cheap-tier failure mode is task-shape-specific. |
@@ -55,8 +57,9 @@ HIST, ask whether the flip would hide an obligation; if it would, file it first.
 
 ## Grill briefs — scenarios for grills not yet held
 
-A brief hands the *questions*, the locked rails and the known traps; the owner answers at the
-table. A brief goes HIST when its grill happens.
+A brief hands the *questions*, the locked rails and the known traps;
+the owner answers at the table.
+A brief goes HIST when its grill happens.
 
 | Note | Status | What it says |
 | --- | --- | --- |
@@ -97,9 +100,11 @@ table. A brief goes HIST when its grill happens.
 
 ## Playtests
 
-Owner playtests, analysed under the Analyst gate (every observation verified against code
-before classification). All HIST — each one's routing was actioned in its own session; kept as
-the evidence trail behind design decisions.
+Owner playtests, analysed under the Analyst gate (every observation verified against code before
+classification).
+All HIST —
+each one's routing was actioned in its own session;
+kept as the evidence trail behind design decisions.
 
 | Note | Status | What it says |
 | --- | --- | --- |

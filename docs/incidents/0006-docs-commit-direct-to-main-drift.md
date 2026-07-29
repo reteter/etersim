@@ -20,7 +20,12 @@
 
 ## Recurrence
 
-Medium — structural driver: multiple sessions (local Claude sessions, cloud/external agents) share one origin while the local checkout persists between sessions. Any unpushed local `main` commit makes drift the default, not the exception. A dispatch checklist that doesn't compare against the *remote* will keep missing it.
+Medium —
+structural driver:
+multiple sessions (local Claude sessions, cloud/external agents) share one origin while the local
+checkout persists between sessions.
+Any unpushed local `main` commit makes drift the default, not the exception.
+A dispatch checklist that doesn't compare against the *remote* will keep missing it.
 
 ## Recommendation
 
@@ -30,4 +35,6 @@ Medium — structural driver: multiple sessions (local Claude sessions, cloud/ex
 
 ## Follow-up
 
-Prevention landed in this PR (SELFCHECK §3 line). None other — closed.
+Prevention landed in this PR (SELFCHECK §3 line).
+None other —
+closed.

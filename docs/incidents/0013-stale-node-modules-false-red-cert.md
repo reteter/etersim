@@ -6,12 +6,18 @@
 
 ## What happened
 
-After the #220 ‖ #187 wave merged, the Orchestrator pulled `main` and ran certification **without `npm install`**. #187 added devDependencies (`@testing-library/react`, `@testing-library/jest-dom`, `jsdom`, …) and updated `package.json` + `package-lock.json`, but the local `node_modules` was still the pre-merge tree. Result:
+After the #220 ‖ #187 wave merged, the Orchestrator pulled `main` and ran certification **without `npm install`**.
+#187 added devDependencies (`@testing-library/react`, `@testing-library/jest-dom`, `jsdom`, …) and
+updated `package.json` + `package-lock.json`, but the local `node_modules` was still the pre-merge
+tree.
+Result:
 
 - `npm test` → "1 error", 0 tests run — the new `src/test-setup.ts` `import "@testing-library/jest-dom/vitest"` and `@testing-library/react` weren't installed, so collection threw.
 - `tsc -b` → `TS2339: Property 'toHaveAttribute' does not exist on type 'Assertion<any>'` in `Tabs.test.tsx` — the jest-dom type augmentation wasn't present.
 
-Both read as a **red main** for ~one command cycle. `npm install` (found 0 vulnerabilities, installed the new deps) → re-cert green: 477 unit, typecheck clean, lint clean, Playwright 86/86.
+Both read as a **red main** for ~one command cycle.
+`npm install` (found 0 vulnerabilities, installed the new deps) → re-cert green:
+477 unit, typecheck clean, lint clean, Playwright 86/86.
 
 ## Impact
 
@@ -21,7 +27,12 @@ Both read as a **red main** for ~one command cycle. `npm install` (found 0 vulne
 
 ## Recurrence
 
-Medium — structural. Any merged PR that adds/changes dependencies leaves the local `node_modules` stale until `npm install`; the next `npm test`/`tsc` on that tree fails in a way that mimics a code regression. Recurs every deps-touching wave close unless install is part of the post-merge ritual.
+Medium —
+structural.
+Any merged PR that adds/changes dependencies leaves the local `node_modules` stale until
+`npm install`;
+the next `npm test`/`tsc` on that tree fails in a way that mimics a code regression.
+Recurs every deps-touching wave close unless install is part of the post-merge ritual.
 
 ## Recommendation
 

@@ -1,9 +1,11 @@
 # Delegation-eval playbook — how to run a pre-registered paired eval
 
-**Status:** LIVE. Distilled 2026-07-21 (s19) from the two-arm GPT-5.6 solo-driver eval on
-#100 ([`eval-gpt-5.6-solo-driver-e13.md`](eval-gpt-5.6-solo-driver-e13.md) is the worked
-example; read it for the frozen rubric/decision-rule shape). This file is the reusable
-procedure — the *how*, generalized past #100.
+**Status:** LIVE.
+Distilled 2026-07-21 (s19) from the two-arm GPT-5.6 solo-driver eval on #100
+([`eval-gpt-5.6-solo-driver-e13.md`](eval-gpt-5.6-solo-driver-e13.md) is the worked example; read it
+for the frozen rubric/decision-rule shape).
+This file is the reusable procedure —
+the *how*, generalized past #100.
 
 > **The thesis this session actually proved, in one line:** *a ruler finding is an input to
 > **verify**, not a verdict — and skepticism must be **symmetric**, applied as hard to the
@@ -14,12 +16,15 @@ procedure — the *how*, generalized past #100.
 
 ## The one root cause (why most of this exists)
 
-Three "separate" failures in the Terra re-run — the reference-solution leak, the auto-memory
-verdict leak to the ruler, and the instrument-parity divergence — are **one bug**: *arm-2 ran
-in a world arm-1 didn't* — after the answer key was merged onto `main` and the verdict was
-written into the repo's memory/notes. Arm-1 (Sol) got a clean world for free because it ran
-*before* any of that existed. So the organizing principle is isolation, and it has a cheap
-default:
+Three "separate" failures in the Terra re-run —
+the reference-solution leak, the auto-memory verdict leak to the ruler, and the instrument-parity
+divergence —
+are **one bug**:
+*arm-2 ran in a world arm-1 didn't* —
+after the answer key was merged onto `main` and the verdict was written into the repo's
+memory/notes.
+Arm-1 (Sol) got a clean world for free because it ran *before* any of that existed.
+So the organizing principle is isolation, and it has a cheap default:
 
 - **Primary — temporal isolation (the common case):** run **all arms before** the reference is
   merged or the verdict is recorded anywhere. Baseline = a commit that predates the answer. If
@@ -107,14 +112,16 @@ When an arm must run after the reference is already in the repo:
 
 ## Concurrency footgun (independent of eval design)
 
-`MEMORY.md` / `session-state.md` is a **single shared pointer**; when two sessions run against
-the same repo (here: the eval session and an Orchestrator session), the second write **clobbers**
-the first. On close, **merge the two threads, don't overwrite** — the eval close nearly erased a
-pending-#101-wave-check forward pointer. (Spatial isolation via a clone also avoids this.)
+`MEMORY.md` / `session-state.md` is a **single shared pointer**;
+when two sessions run against the same repo (here: the eval session and an Orchestrator session),
+the second write **clobbers** the first.
+On close, **merge the two threads, don't overwrite** —
+the eval close nearly erased a pending-#101-wave-check forward pointer.
+(Spatial isolation via a clone also avoids this.)
 
 ## n=1 inference (carry from the worked example)
 
-One paired run **falsifies strongly, confirms weakly.** A hard-law breach or a verified
-correctness escape is dispositive (NO-GO from n=1 is trustworthy). A clean pass or a CONDITIONAL
-is **provisional-pending-more-n** — it licenses "continue under observation," not "unattended
-delegation."
+One paired run **falsifies strongly, confirms weakly.** A hard-law breach or a verified correctness
+escape is dispositive (NO-GO from n=1 is trustworthy).
+A clean pass or a CONDITIONAL is **provisional-pending-more-n** —
+it licenses "continue under observation," not "unattended delegation."

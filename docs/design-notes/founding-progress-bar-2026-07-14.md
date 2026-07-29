@@ -1,9 +1,10 @@
 # Founding progress bar — grill record (2026-07-14)
 
-Grill of #134 ("cost stockpile → company investment policy"). Parking-lot item,
-owner-flagged "do not implement without a grill." Outcome: the idea splits into
-**A** (ships now, as A1a) and **B** (parked hook). This note records the decision
-tree; implementation lands via **#157**.
+Grill of #134 ("cost stockpile → company investment policy").
+Parking-lot item, owner-flagged "do not implement without a grill." Outcome:
+the idea splits into **A** (ships now, as A1a) and **B** (parked hook).
+This note records the decision tree;
+implementation lands via **#157**.
 
 ## The split
 
@@ -15,9 +16,9 @@ The issue conflated two features with different cost and different roadmap slot:
   "bigger idea", but its payoff is at multiregion scale, which does not meaningfully
   exist yet.
 
-The #122 grill's **equivalence result** already killed the stockpile as a softlock fix
-(deposits respecting the Reserve admit nobody the hard gate blocks). So A is a
-*goals/progression* feature, not a mechanics fix.
+The #122 grill's **equivalence result** already killed the stockpile as a softlock fix (deposits
+respecting the Reserve admit nobody the hard gate blocks).
+So A is a *goals/progression* feature, not a mechanics fix.
 
 ## Decision tree (A)
 
@@ -33,19 +34,22 @@ The #122 grill's **equivalence result** already killed the stockpile as a softlo
 
 ## A1a implementation shape (see #157)
 
-Pure UI-side. Fill = pure helper
+Pure UI-side.
+Fill = pure helper
 `min(thalers, HEADQUARTERS_COST + CONSTRUCTION_RESERVE) / (HEADQUARTERS_COST + CONSTRUCTION_RESERVE)`
-(`buyCap.ts` / `priceTrend.ts` pattern), clamped at 100%, unit-tested. No new Ledger
-kinds, no serialized state, no ADR, no CONTEXT.md term — it introduces no mechanic, so
-it does not touch the "buildings introduce mechanics" law. Playwright E2E covers
-visible-pre-founding / gone-post-founding.
+(`buyCap.ts` / `priceTrend.ts` pattern), clamped at 100%, unit-tested.
+No new Ledger kinds, no serialized state, no ADR, no CONTEXT.md term —
+it introduces no mechanic, so it does not touch the "buildings introduce mechanics" law.
+Playwright E2E covers visible-pre-founding / gone-post-founding.
 
 ## B — the parked hook (#134)
 
-B stays parked as a locked direction. Un-park trigger: **real multiregion trading
-exists** and entering a new market is demonstrably "wait-for-each-building" friction.
-B then gets its own grill: define "income" (the Ledger has no income/revenue/profit
-stream today), pick the earmark home (a building? the Headquarters?), and design the
-auto-spend stream against the Reserve + agency guarantee — the second silent
-automation on the purse after #122 auto-draw, so #122's "silent automation carries the
-safety" lesson applies in full.
+B stays parked as a locked direction.
+Un-park trigger: **real multiregion trading exists**
+and entering a new market is demonstrably "wait-for-each-building" friction.
+B then gets its own grill:
+define "income" (the Ledger has no income/revenue/profit stream today), pick the earmark home (a
+building? the Headquarters?), and design the auto-spend stream against the Reserve + agency
+guarantee —
+the second silent automation on the purse after #122 auto-draw, so #122's "silent automation carries
+the safety" lesson applies in full.

@@ -1,10 +1,10 @@
 # A/B experiment: #276 implemented independently by Opus and Sonnet (2026-07-17)
 
-Second same-task paired trial (first: `ab-286-shipyard-construction.md`). One issue
-(#276: E14 4/4 Shipyard UI — tier 3, UI-only, sim consumed through seams), one task
-package, one frozen baseline (`main @ f2a28f1`), two coders dispatched cold in
-isolated worktrees. Cost metric: % of a session limit (subscription; Opus tokens
-weigh ~2×).
+Second same-task paired trial (first: `ab-286-shipyard-construction.md`).
+One issue (#276: E14 4/4 Shipyard UI — tier 3, UI-only, sim consumed through seams), one task
+package, one frozen baseline (`main @ f2a28f1`), two coders dispatched cold in isolated worktrees.
+Cost metric:
+% of a session limit (subscription; Opus tokens weigh ~2×).
 
 ## Protocol (upgraded per the #286 lessons — all four applied)
 
@@ -36,18 +36,23 @@ weigh ~2×).
 | Maintenance | teal clear of palette; defensive `?? 0` | violet near mining-purple (flagged); full-recipe reliance |
 | Cost | **~24%** limit (8→32%; 190k tokens) | **~14%** limit (36→50%; 217k tokens) |
 
-**Comparative pass (one Opus analyst over both diffs + both review verdicts):**
-axes split 3–2 for B (AC fidelity, tests, honesty vs architecture, maintenance).
-Tiebreak: **fix asymmetry** — B's regressions are mechanical ports for which A is a
-working reference; A's missing test architecture would need writing from scratch.
-**Owner ratified merge B** → PR #291, `main @ ad37ae0`; violet kept (owner call);
-arm-A strengths → issue #292; ~~reference branch `feat/276-shipyard-ui` @ ddd33de pushed
-to origin post-trial for #292, delete on its close.~~ **Discharged 2026-07-20 (s15):**
-#292 closed 2026-07-17, so the clause fell due three days before anyone acted. Arm A now
-lives as the annotated tag **`ab-276-arm-a`** (same commit `ddd33de`); the branch is pruned
-local and remote. Origin turned out to hold no copy, so the tag is the only surviving
-reference — pruning without it would have made the arm-A diff unrecoverable. The three-day
-gap is a confirmed instance on #326: an obligation that lived only in this sentence.
+**Comparative pass (one Opus analyst over both diffs + both review verdicts):** axes split 3–2 for B
+(AC fidelity, tests, honesty vs architecture, maintenance).
+Tiebreak: **fix asymmetry**
+—
+B's regressions are mechanical ports for which A is a working reference;
+A's missing test architecture would need writing from scratch. **Owner ratified merge B**
+→ PR #291, `main @ ad37ae0`;
+violet kept (owner call);
+arm-A strengths → issue #292;
+~~reference branch `feat/276-shipyard-ui` @ ddd33de pushed to origin post-trial for #292, delete on its close.~~ **Discharged 2026-07-20 (s15):**
+#292 closed 2026-07-17, so the clause fell due three days before anyone acted.
+Arm A now lives as the annotated tag **`ab-276-arm-a`** (same commit `ddd33de`);
+the branch is pruned local and remote.
+Origin turned out to hold no copy, so the tag is the only surviving reference —
+pruning without it would have made the arm-A diff unrecoverable.
+The three-day gap is a confirmed instance on #326:
+an obligation that lived only in this sentence.
 
 ## Threats to validity
 
@@ -65,9 +70,10 @@ gap is a confirmed instance on #326: an obligation that lived only in this sente
 
 ## Series read after two pairs
 
-Sonnet wins both, and both times on the same shape: **conformance to a written repo
-rule** (#286: ADR-0007 save bump; #276: the "never a silent no-op" precedent) plus
-broader test evidence, at roughly half the limit-% cost. Opus wins code architecture
-both times. If a third pair repeats the shape, the ladder question ("does the
-strong-tier coder pay for itself on UI/sim-consumer tiers?") gets a real answer;
+Sonnet wins both, and both times on the same shape: **conformance to a written repo rule**
+(#286: ADR-0007 save bump; #276: the "never a silent no-op" precedent) plus broader test evidence,
+at roughly half the limit-% cost.
+Opus wins code architecture both times.
+If a third pair repeats the shape, the ladder question ("does the strong-tier coder pay for itself
+on UI/sim-consumer tiers?") gets a real answer;
 `docs/design-notes/coder-scorecard.md` carries the rows.

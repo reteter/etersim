@@ -1,26 +1,35 @@
 # E10 — Orrery view
 
-Feature spec for epic E10 (milestone M2 — Living Region, [PRD](../PRD.md)). Terms per
-[CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-07.
-Status: **approved** (2026-07-07); **shipped** (#43, #25, #34, #44, #45 — epic complete).
+Feature spec for epic E10 (milestone M2 — Living Region, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on 2026-07-07.
+Status: **approved**
+(2026-07-07); **shipped**
+(#43, #25, #34, #44, #45 — epic complete).
 
-Grill inputs: issue #25 (lane topology decision A, locked 2026-07-07), issue #34 (icon
-handoff), [playtest-2026-07-07-market-legibility.md §5](../design-notes/playtest-2026-07-07-market-legibility.md).
+Grill inputs:
+issue #25 (lane topology decision A, locked 2026-07-07), issue #34 (icon handoff),
+[playtest-2026-07-07-market-legibility.md §5](../design-notes/playtest-2026-07-07-market-legibility.md).
 
-Scope in one line: the region presented as a planetary system — ports on static orbit
-rings around a central star — with geometry-aware lane topology (#25 decision A),
-lane accents, and a tintable monochrome icon set (#34). Presentation and worldgen
-geometry only: no new economy mechanics, no orbital motion (parked E5 candidate),
-no star mechanics (aether currents are E5).
+Scope in one line:
+the region presented as a planetary system —
+ports on static orbit rings around a central star —
+with geometry-aware lane topology (#25 decision A), lane accents, and a tintable monochrome icon set
+(#34).
+Presentation and worldgen geometry only:
+no new economy mechanics, no orbital motion (parked E5 candidate), no star mechanics (aether
+currents are E5).
 
 ## Design
 
 ### Principle: the map is space (decision A)
 
-A port's position is **information, not decoration**. Proximity means something; visual
-distance is proportional to voyage time; crossing lanes are a readability bug and are
-eliminated by construction. This resolves #25 and supersedes the half-geographic hybrid
-of the E2 worldgen (combinatorial topology + geometric durations).
+A port's position is **information, not decoration**.
+Proximity means something;
+visual distance is proportional to voyage time;
+crossing lanes are a readability bug and are eliminated by construction.
+This resolves #25 and supersedes the half-geographic hybrid of the E2 worldgen (combinatorial
+topology + geometric durations).
 
 ### Orrery geometry
 
@@ -195,7 +204,8 @@ of the E2 worldgen (combinatorial topology + geometric durations).
 
 ## Issue cut
 
-Milestone **E10 — Orrery view** (filed 2026-07-07); #25 and #34 moved here from E2.
+Milestone **E10 — Orrery view** (filed 2026-07-07);
+#25 and #34 moved here from E2.
 Two parallel tracks:
 
 | Issue | Track | Scope | Depends on |
@@ -206,6 +216,7 @@ Two parallel tracks:
 | #44 | ui | `feat(ui)`: orrery map rendering (star, rings, planet discs, archetype palette, glow package) | #43, #34 |
 | #45 | ui | `feat(ui)`: lane accents + voyage tick labels (port selection, Controlled Ship course, labels on accent only) | #44 |
 
-Sequencing note: E10 runs **before E8/E9** (owner, 2026-07-07) — it touches no economy
-code, and the new geometry changes how routes feel, so it should sit under the E8/E9
-playtests rather than reshuffle the map after them.
+Sequencing note:
+E10 runs **before E8/E9** (owner, 2026-07-07) —
+it touches no economy code, and the new geometry changes how routes feel, so it should sit under the
+E8/E9 playtests rather than reshuffle the map after them.
