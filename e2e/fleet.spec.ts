@@ -19,7 +19,7 @@ function escapeRegExp(text: string): string {
 
 async function startNewGame(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: /new game/i }).click();
+  await page.getByRole('button', { name: /nowa gra/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -90,7 +90,7 @@ async function loadTwoShipFleet(page: Page) {
     },
   ];
 
-  const fileInput = page.getByLabel('Import save file');
+  const fileInput = page.getByLabel('Importuj plik zapisu');
   await fileInput.setInputFiles({
     name: 'e2e-fleet-save.json',
     mimeType: 'application/json',
@@ -111,7 +111,7 @@ test.describe('fleet list (#83/#54)', () => {
 
     const items = page.locator('.fleet-list__item');
     await expect(items).toHaveCount(1);
-    await expect(items.first().locator('.fleet-list__status')).toContainText('Docked');
+    await expect(items.first().locator('.fleet-list__status')).toContainText('Zadokowany');
     // The starting ship's name is generator-suggested — `generateShipName(0)`
     // draws no RNG (src/sim/building.ts), so it's always the pool's first
     // entry regardless of seed: pin the exact value, not just "isn't s0".
@@ -129,7 +129,7 @@ test.describe('fleet list (#83/#54)', () => {
 
     const routedRow = items.filter({ hasText: secondShipName });
     await expect(routedRow).toHaveCount(1);
-    await expect(routedRow.locator('.fleet-list__status')).toContainText('On route');
+    await expect(routedRow.locator('.fleet-list__status')).toContainText('Na trasie');
     await expect(routedRow.locator('.fleet-list__route')).toHaveText(routeName);
   });
 
@@ -149,8 +149,8 @@ test.describe('fleet list (#83/#54)', () => {
     // Controlled marker moved to the clicked row (mechanic unchanged, #28/#32).
     await expect(page.locator('.fleet-list__item--controlled')).toContainText(secondShipName);
     // The click also opens the ShipPanel for that ship (openShip mechanic).
-    await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
-    await expect(page.getByLabel('Ship name')).toHaveValue(secondShipName);
+    await expect(page.getByRole('heading', { name: 'Statek' })).toBeVisible();
+    await expect(page.getByLabel('Nazwa statku')).toHaveValue(secondShipName);
   });
 
   test('a manual sailTo on a routed ship shows "suspended" in the fleet list', async ({ page }) => {
@@ -168,14 +168,14 @@ test.describe('fleet list (#83/#54)', () => {
       .locator('g.port')
       .filter({ has: page.locator('.port__label', { hasText: exactOtherPort }) });
     await otherPortNode.click({ force: true });
-    const sailBtn = page.getByRole('button', { name: /^Sail .+ here \(~\d+ ticks\)$/ });
+    const sailBtn = page.getByRole('button', { name: /^Płyń tu — .+ \(~\d+ ticków\)$/ });
     await expect(sailBtn).toBeVisible();
     await sailBtn.click();
 
     const routedRow = page.locator('.fleet-list__item').filter({ hasText: secondShipName });
     // Re-read the badge's own text (not just visibility) — pins the actual
     // status word the AC asks for, not merely "some element exists".
-    await expect(routedRow.locator('.fleet-list__status')).toHaveText(/^Suspended —/);
+    await expect(routedRow.locator('.fleet-list__status')).toHaveText(/^Wstrzymany —/);
     // Still assigned — a manual sailTo suspends the Route, never destroys it.
     await expect(routedRow.locator('.fleet-list__route')).toHaveText(routeName);
   });
@@ -197,13 +197,13 @@ test.describe('ship name — editable in ShipPanel (#54)', () => {
   test.beforeEach(async ({ page }) => {
     await startNewGame(page);
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.getByLabel('Ship name')).toHaveValue(STARTING_NAME);
+    await expect(page.getByLabel('Nazwa statku')).toHaveValue(STARTING_NAME);
   });
 
   test('editing the name and blurring commits — the new name shows in the fleet list too', async ({
     page,
   }) => {
-    const nameInput = page.getByLabel('Ship name');
+    const nameInput = page.getByLabel('Nazwa statku');
     await nameInput.fill('Windrunner');
     await nameInput.press('Tab'); // moves focus away — fires blur, which commits
 
@@ -214,7 +214,7 @@ test.describe('ship name — editable in ShipPanel (#54)', () => {
   });
 
   test('pressing Enter commits the same as blur', async ({ page }) => {
-    const nameInput = page.getByLabel('Ship name');
+    const nameInput = page.getByLabel('Nazwa statku');
     await nameInput.fill('Skybreaker');
     await nameInput.press('Enter');
 
@@ -225,7 +225,7 @@ test.describe('ship name — editable in ShipPanel (#54)', () => {
   });
 
   test('Escape reverts an in-progress edit without committing', async ({ page }) => {
-    const nameInput = page.getByLabel('Ship name');
+    const nameInput = page.getByLabel('Nazwa statku');
     await nameInput.fill('Discarded Name');
     await nameInput.press('Escape');
     await nameInput.press('Tab'); // blur after Escape must not commit
@@ -237,7 +237,7 @@ test.describe('ship name — editable in ShipPanel (#54)', () => {
   });
 
   test('a blank (or whitespace-only) name reverts instead of committing', async ({ page }) => {
-    const nameInput = page.getByLabel('Ship name');
+    const nameInput = page.getByLabel('Nazwa statku');
     await nameInput.fill('   ');
     await nameInput.press('Tab');
 

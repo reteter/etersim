@@ -6,7 +6,6 @@ import {
   computeRushQuote,
   CONSTRUCTION_RESERVE,
   ECONOMIC_ARCHETYPES,
-  GOODS,
   hasStorehousePermit,
   isLegalStorehousePlacement,
   LABOR_FEE,
@@ -20,6 +19,7 @@ import {
 import { useGameStore } from "../store/gameStore";
 import { deriveSiteStallReason, deriveStallReason } from "../store/headquartersStall";
 import { BuildProgress } from "./BuildProgress";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { GUILD_NAME_PL } from "./guildDisplay";
 import { OverlayShell } from "./OverlayShell";
 import { RoutesTab } from "./RoutesTab";
@@ -68,7 +68,7 @@ function ShipCommission({ world }: { world: World }) {
           <ul className="build-estimate__lines">
             {estimate.lines.map((line) => (
               <li key={line.good}>
-                {GOODS[line.good].name} × {line.qty} — ₸{line.thalers}
+                {GOOD_NAME_PL[line.good]} × {line.qty} — ₸{line.thalers}
               </li>
             ))}
             <li>Robocizna — ₸{estimate.laborFee}</li>
@@ -125,7 +125,7 @@ function ShipCommission({ world }: { world: World }) {
         <>
           <BuildProgress siteStore={buildOrder.siteStore} />
           <p className="side-panel__hint">
-            Auto-draw: up to {AUTO_DRAW_PER_DAY} units/good/day from the Headquarters market.
+            Auto-pobór: do {AUTO_DRAW_PER_DAY} jedn./towar dziennie z rynku Siedziby.
           </p>
           {stallReason && <p className="headquarters-stall">{STALL_LABEL[stallReason]}</p>}
           <button
@@ -369,8 +369,8 @@ export function HeadquartersPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <OverlayShell
-      ariaLabel="Headquarters"
-      title="Headquarters"
+      ariaLabel="Siedziba"
+      title="Siedziba"
       onClose={onClose}
       wide
       tabs={

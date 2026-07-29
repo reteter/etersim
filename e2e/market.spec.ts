@@ -38,7 +38,7 @@ async function continueWithWorld(page: Page, world: World) {
     { key: AUTOSAVE_KEY, json: saveJson(world) },
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /continue/i }).click();
+  await page.getByRole('button', { name: /kontynuuj/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -114,9 +114,9 @@ test.describe('market: Buy cap reason (#124)', () => {
     await continueWithWorld(page, world);
     await openMarket(page, name);
 
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
-    await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Hold full');
-    await expect(grainRow.getByRole('button', { name: 'Buy Grain', exact: true })).toBeDisabled();
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
+    await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Ładownia pełna');
+    await expect(grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true })).toBeDisabled();
   });
 
   test('low stock: names "Only 12 in stock" near Buy max, matching the Stock column', async ({
@@ -129,8 +129,8 @@ test.describe('market: Buy cap reason (#124)', () => {
     await continueWithWorld(page, world);
     await openMarket(page, name);
 
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
-    await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Only 12 in stock');
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
+    await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('W zapasie tylko 12');
     await expect(grainRow.locator('.market-row__stock')).toHaveText('12');
   });
 
@@ -143,9 +143,9 @@ test.describe('market: Buy cap reason (#124)', () => {
     await continueWithWorld(page, world);
     await openMarket(page, name);
 
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
     await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Nie stać cię na żaden zakup');
-    await expect(grainRow.getByRole('button', { name: 'Buy Grain', exact: true })).toBeDisabled();
+    await expect(grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true })).toBeDisabled();
   });
 
   test('thin purse: names the affordable cap when thalers bind but buyMax stays positive (#375)', async ({
@@ -167,11 +167,11 @@ test.describe('market: Buy cap reason (#124)', () => {
     await continueWithWorld(page, world);
     await openMarket(page, name);
 
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
     await expect(grainRow.locator('.market-row__cap-hint')).toHaveText(
       `Kasa ogranicza zakup do ${affordable}`,
     );
-    await expect(grainRow.getByRole('button', { name: 'Buy Grain', exact: true })).toBeEnabled();
+    await expect(grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true })).toBeEnabled();
   });
 });
 
@@ -183,8 +183,8 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
     await continueWithWorld(page, world);
     await openMarket(page, name);
 
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
-    const qtyInput = grainRow.getByRole('spinbutton', { name: /grain quantity/i });
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
+    const qtyInput = grainRow.getByRole('spinbutton', { name: /zboże ilość/i });
 
     // Flush purse (100k) and an empty hold: buyMax is the binding max, well
     // above the old hardcoded default of 1.
@@ -193,12 +193,12 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
 
     // Player dials it down — Kup then acts on the lowered qty, not the max.
     await qtyInput.fill('4');
-    const buyButton = grainRow.getByRole('button', { name: 'Buy Grain', exact: true });
+    const buyButton = grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true });
     await expect(buyButton).toContainText('Kup');
     await buyButton.click();
 
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.hold')).toContainText('Grain');
+    await expect(page.locator('.hold')).toContainText('Zboże');
     await expect(page.locator('.hold')).toContainText('4');
   });
 
@@ -209,12 +209,12 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
     await continueWithWorld(page, world);
     await openMarket(page, name);
 
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
     await expect(grainRow.getByRole('button', { name: /buy max/i })).toHaveCount(0);
     await expect(grainRow.getByRole('button', { name: /sell max/i })).toHaveCount(0);
-    // The Sell action's aria-label stays "Sell <good>" (existing selector
-    // contract); its visible text is the Polish "Sprzedaj" label.
-    await expect(grainRow.getByRole('button', { name: 'Sell Grain', exact: true })).toContainText(
+    // The Sell action's aria-label is the Polish "Sprzedaj <good>" (#184);
+    // its visible text is the same "Sprzedaj" label.
+    await expect(grainRow.getByRole('button', { name: 'Sprzedaj: Zboże', exact: true })).toContainText(
       'Sprzedaj',
     );
   });
@@ -226,13 +226,13 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
     await continueWithWorld(page, world);
     await openMarket(page, name);
 
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
     // Nothing aboard yet — no marker.
     await expect(grainRow.locator('.market-row__held')).toHaveCount(0);
 
-    const qtyInput = grainRow.getByRole('spinbutton', { name: /grain quantity/i });
+    const qtyInput = grainRow.getByRole('spinbutton', { name: /zboże ilość/i });
     await qtyInput.fill('7');
-    await grainRow.getByRole('button', { name: 'Buy Grain', exact: true }).click();
+    await grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true }).click();
 
     await expect(grainRow.locator('.market-row__held')).toContainText('7');
   });
@@ -285,8 +285,8 @@ test.describe('market-quality signal shading (#396, E16 package e)', () => {
     await continueWithWorld(page, world);
 
     // Board: the home port's grain ask cell is the best-ask highlight.
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     // Grain is GOOD_IDS[0] (src/sim/goods.ts), so its cell is the row's
     // first .price-board__cell — scoping to it excludes any *other* good
     // that happens to also be best-ask at these procedurally generated ports.
@@ -310,14 +310,14 @@ test.describe('market-quality signal shading (#396, E16 package e)', () => {
       .locator('.price-board__cell')
       .first();
     await expect(otherGrainCell.locator('.price-board__ask--best')).toHaveCount(0);
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
 
     // PortPanel (docked here — home port): the same (port, good) reads
     // "bright" on the Buy action — the same selector, so the two surfaces
     // agree by construction.
     await openMarket(page, homeName);
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
-    const buyButton = grainRow.getByRole('button', { name: 'Buy Grain', exact: true });
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
+    const buyButton = grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true });
     await expect(buyButton).toHaveClass(/market-row__trade-btn--bright/);
   });
 
@@ -331,8 +331,8 @@ test.describe('market-quality signal shading (#396, E16 package e)', () => {
     await openMarket(page, name);
 
     // Fresh ship, empty hold — nothing to sell.
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
-    const sellButton = grainRow.getByRole('button', { name: 'Sell Grain', exact: true });
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
+    const sellButton = grainRow.getByRole('button', { name: 'Sprzedaj: Zboże', exact: true });
     await expect(sellButton).toBeDisabled();
     // Unavailable, not "faded" — the shading class never applies to a
     // disabled action (E16 spec: unavailable ≠ merely faded).
@@ -362,8 +362,8 @@ test.describe('offer labels (#397, E16 package f)', () => {
     };
 
     await continueWithWorld(page, world);
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
 
     // Grain is GOOD_IDS[0], so its cell is the row's first .price-board__cell.
     const homeGrainCell = dialog

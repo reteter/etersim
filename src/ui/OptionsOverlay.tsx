@@ -8,11 +8,11 @@ type Tab = "general" | "keybinds";
  *  this list mirrors it for discoverability. Remappable bindings are deferred,
  *  so a static list is the whole feature here. */
 const KEYBINDS: ReadonlyArray<{ keys: string; action: string }> = [
-  { keys: "Space", action: "Pause / resume" },
-  { keys: "1 / 2 / 3", action: "Speed 1x / 10x / 100x" },
-  { keys: "B", action: "Price Board" },
-  { keys: "G", action: "Sail to selected port" },
-  { keys: ", / .", action: "Cycle overlay tabs" },
+  { keys: "Space", action: "Pauza / wznów" },
+  { keys: "1 / 2 / 3", action: "Prędkość 1x / 10x / 100x" },
+  { keys: "B", action: "Tablica cen" },
+  { keys: "G", action: "Płyń do wybranego portu" },
+  { keys: ", / .", action: "Przełącz zakładki" },
 ];
 
 /**
@@ -29,10 +29,10 @@ export function OptionsOverlay({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<Tab>("general");
 
   return (
-    <div className="overlay" role="dialog" aria-label="Options" aria-modal="true">
+    <div className="overlay" role="dialog" aria-label="Opcje" aria-modal="true">
       <div className="overlay__panel">
-        <h2 className="overlay__title">Options</h2>
-        <div className="options__tabs" role="tablist" aria-label="Options tabs">
+        <h2 className="overlay__title">Opcje</h2>
+        <div className="options__tabs" role="tablist" aria-label="Zakładki opcji">
           <button
             type="button"
             role="tab"
@@ -40,7 +40,7 @@ export function OptionsOverlay({ onClose }: { onClose: () => void }) {
             className={tab === "general" ? "options__tab options__tab--active" : "options__tab"}
             onClick={() => setTab("general")}
           >
-            General
+            Ogólne
           </button>
           <button
             type="button"
@@ -49,7 +49,7 @@ export function OptionsOverlay({ onClose }: { onClose: () => void }) {
             className={tab === "keybinds" ? "options__tab options__tab--active" : "options__tab"}
             onClick={() => setTab("keybinds")}
           >
-            Keybinds
+            Skróty klawiszowe
           </button>
         </div>
 
@@ -60,7 +60,7 @@ export function OptionsOverlay({ onClose }: { onClose: () => void }) {
               checked={autoPauseOnArrival}
               onChange={(e) => setAutoPauseOnArrival(e.target.checked)}
             />
-            Auto-pause on arrival
+            Auto-pauza po zacumowaniu
           </label>
         ) : (
           <dl className="keybinds">
@@ -74,7 +74,7 @@ export function OptionsOverlay({ onClose }: { onClose: () => void }) {
         )}
 
         <button type="button" className="menu-btn" onClick={onClose}>
-          Close
+          Zamknij
         </button>
       </div>
     </div>

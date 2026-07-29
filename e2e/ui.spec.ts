@@ -4,7 +4,7 @@ import { SAVE_VERSION } from '../src/store/persistence';
 
 async function startNewGame(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: /new game/i }).click();
+  await page.getByRole('button', { name: /nowa gra/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -16,7 +16,7 @@ async function startNewGame(page: Page) {
  */
 async function openControlledShip(page: Page) {
   await page.locator('.fleet-list__item--controlled').click();
-  await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Statek' })).toBeVisible();
 }
 
 function escapeRegExp(text: string): string {
@@ -34,7 +34,7 @@ async function openDockedPortMarket(page: Page) {
   // .side-panel__subtitle is CSS text-transform: capitalize, so innerText
   // renders "Docked At <Port>" — strip the prefix case-insensitively.
   const subtitle = await page.locator('.side-panel__subtitle').innerText();
-  const portName = subtitle.replace(/^Docked at /i, '');
+  const portName = subtitle.replace(/^Zadokowany w porcie /i, '');
   // Exact match on the port label (not a hasText substring match) — two
   // procedurally generated port names could otherwise collide as substrings
   // (e.g. "Haven" / "New Haven") and trip Playwright's strict mode.
@@ -49,11 +49,11 @@ test.describe('etersim start screen', () => {
 
     await expect(page).toHaveTitle(/etersim/i);
     await expect(page.getByRole('heading', { name: /etersim/i })).toBeVisible();
-    await expect(page.getByText(/aether-punk trading venture/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /new game/i })).toBeVisible();
-    await expect(page.getByLabel(/seed/i)).toBeVisible();
+    await expect(page.getByText(/handlowe przedsięwzięcie/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /nowa gra/i })).toBeVisible();
+    await expect(page.getByLabel(/ziarno/i)).toBeVisible();
 
-    await page.getByRole('button', { name: /new game/i }).click();
+    await page.getByRole('button', { name: /nowa gra/i }).click();
     await expect(page.locator('svg.region-map')).toBeVisible();
   });
 });
@@ -66,44 +66,44 @@ test.describe('main game UI after start', () => {
   test('shows top bar with thalers, date and speed controls', async ({ page }) => {
     await expect(page.locator('.top-bar__thalers')).toContainText('₸');
     await expect(page.locator('.top-bar__date')).toBeVisible();
-    await expect(page.getByRole('group', { name: /speed controls/i })).toBeVisible();
+    await expect(page.getByRole('group', { name: /sterowanie prędkością/i })).toBeVisible();
     // Default speed is 1x after newGame
     await expect(page.getByRole('button', { name: '1x' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('credits entry is reachable and lists CC BY attribution (#34)', async ({ page }) => {
-    await page.getByRole('button', { name: /credits/i }).click();
+    await page.getByRole('button', { name: /autorzy/i }).click();
 
-    const dialog = page.getByRole('dialog', { name: /credits/i });
+    const dialog = page.getByRole('dialog', { name: /autorzy/i });
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText(/lorc/i);
     await expect(dialog).toContainText(/delapouite/i);
     await expect(dialog).toContainText(/game-icons\.net/i);
     await expect(dialog).toContainText(/CC BY 3\.0/i);
 
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
     await expect(dialog).not.toBeVisible();
   });
 
   test('options entry toggles auto-pause-on-arrival (#37)', async ({ page }) => {
-    await page.getByRole('button', { name: /^Options$/ }).click();
+    await page.getByRole('button', { name: /^Opcje$/ }).click();
 
-    const dialog = page.getByRole('dialog', { name: /options/i });
+    const dialog = page.getByRole('dialog', { name: /opcje/i });
     await expect(dialog).toBeVisible();
-    const toggle = dialog.getByRole('checkbox', { name: /auto-pause on arrival/i });
+    const toggle = dialog.getByRole('checkbox', { name: /auto-pauza po zacumowaniu/i });
     // Default is On (src/store/settings.ts DEFAULT_SETTINGS).
     await expect(toggle).toBeChecked();
 
     await toggle.uncheck();
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
     await expect(dialog).not.toBeVisible();
 
     // Reopening reads the same store state (not re-initialized local state),
     // proving the toggle went through setAutoPauseOnArrival. The
     // localStorage round-trip itself is covered at the unit level
     // (src/store/settings.test.ts, gameStore.test.ts).
-    await page.getByRole('button', { name: /^Options$/ }).click();
-    await expect(page.getByRole('dialog', { name: /options/i }).getByRole('checkbox')).not.toBeChecked();
+    await page.getByRole('button', { name: /^Opcje$/ }).click();
+    await expect(page.getByRole('dialog', { name: /opcje/i }).getByRole('checkbox')).not.toBeChecked();
   });
 
   test('digit hotkeys switch speed; space pauses and resumes to the previous speed (#56)', async ({
@@ -133,7 +133,7 @@ test.describe('main game UI after start', () => {
   test('speed hotkeys are ignored while typing in a text field (#56)', async ({ page }) => {
     const rate = (label: string) => page.getByRole('button', { name: label });
     await page.locator('.fleet-list__item--controlled').click();
-    const nameInput = page.getByRole('textbox', { name: /ship name/i });
+    const nameInput = page.getByRole('textbox', { name: /nazwa statku/i });
     await nameInput.click(); // focus a text input
 
     await page.keyboard.press('3'); // would be 100x if the guard were absent
@@ -143,17 +143,17 @@ test.describe('main game UI after start', () => {
   });
 
   test('Options → Keybinds tab lists the fixed bindings read-only (#56)', async ({ page }) => {
-    await page.getByRole('button', { name: /^Options$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /options/i });
+    await page.getByRole('button', { name: /^Opcje$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /opcje/i });
 
     // Default tab is "General" — the auto-pause toggle is first-class.
-    await expect(dialog.getByRole('checkbox', { name: /auto-pause on arrival/i })).toBeVisible();
+    await expect(dialog.getByRole('checkbox', { name: /auto-pauza po zacumowaniu/i })).toBeVisible();
 
-    await dialog.getByRole('tab', { name: /keybinds/i }).click();
-    await expect(dialog.getByText('Pause / resume')).toBeVisible();
-    await expect(dialog.getByText('Speed 1x / 10x / 100x')).toBeVisible();
-    await expect(dialog.getByText('Price Board')).toBeVisible();
-    await expect(dialog.getByText('Sail to selected port')).toBeVisible(); // #217
+    await dialog.getByRole('tab', { name: /skróty klawiszowe/i }).click();
+    await expect(dialog.getByText('Pauza / wznów')).toBeVisible();
+    await expect(dialog.getByText('Prędkość 1x / 10x / 100x')).toBeVisible();
+    await expect(dialog.getByText('Tablica cen')).toBeVisible();
+    await expect(dialog.getByText('Płyń do wybranego portu')).toBeVisible(); // #217
   });
 
   test('orrery: star, orbit rings and planet discs render (#44)', async ({ page }) => {
@@ -264,7 +264,7 @@ test.describe('main game UI after start', () => {
   test('fleet list is always visible and shows the Controlled Ship\'s docked status', async ({ page }) => {
     // Visible before any selection.
     await expect(page.locator('.fleet-list__item--controlled')).toBeVisible();
-    await expect(page.locator('.fleet-list__item--controlled .fleet-list__status')).toContainText('Docked');
+    await expect(page.locator('.fleet-list__item--controlled .fleet-list__status')).toContainText('Zadokowany');
     await expect(page.locator('.fleet-list__item--controlled .fleet-list__hold')).toContainText('/');
   });
 
@@ -285,8 +285,8 @@ test.describe('main game UI after start', () => {
   test('ship panel shows hold and docked location', async ({ page }) => {
     await openControlledShip(page);
 
-    await expect(page.locator('.side-panel__subtitle')).toContainText('Docked at');
-    await expect(page.getByText(/Hold \d+\/\d+/)).toBeVisible();
+    await expect(page.locator('.side-panel__subtitle')).toContainText('Zadokowany w porcie');
+    await expect(page.getByText(/Ładownia \d+\/\d+/)).toBeVisible();
   });
 
   test('ship panel: the docked port name is a keyboard-operable link that opens that port\'s panel (#196)', async ({
@@ -446,9 +446,9 @@ test.describe('region price board (#62)', () => {
   test('opens via the TopBar button, shows a full port × good grid, and closes', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
+    await page.getByRole('button', { name: /tablica cen/i }).click();
 
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await expect(dialog).toBeVisible();
 
     // Port count varies by seed (portCountRange is [7, 9], src/sim/template.ts);
@@ -463,13 +463,13 @@ test.describe('region price board (#62)', () => {
     await expect(firstRow.locator('.price-board__bid').first()).toBeVisible();
     await expect(firstRow.locator('.price-board__ask').first()).toBeVisible();
 
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
     await expect(dialog).not.toBeVisible();
   });
 
   test('opens via the "b" hotkey, toggling closed on a second press', async ({ page }) => {
     await page.keyboard.press('b');
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await expect(dialog).toBeVisible();
 
     await page.keyboard.press('b');
@@ -477,8 +477,8 @@ test.describe('region price board (#62)', () => {
   });
 
   test('highlights the cheapest ask and the highest bid per good column', async ({ page }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
 
     await expect(dialog.locator('.price-board__ask--best').first()).toBeVisible();
     await expect(dialog.locator('.price-board__bid--best').first()).toBeVisible();
@@ -487,8 +487,8 @@ test.describe('region price board (#62)', () => {
   test('shows the trend legend explaining the last-day-boundary comparison (#127)', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
 
     // A fresh player misread the glyphs as "vs the starting price" — the
     // legend must state the real window and explicitly rule that out.
@@ -500,16 +500,16 @@ test.describe('region price board (#62)', () => {
   });
 
   test("marks the Controlled Ship's docked port row", async ({ page }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
 
     // The Controlled Ship is docked at game start, so exactly one row is marked.
     await expect(dialog.locator('.price-board__row--docked')).toHaveCount(1);
   });
 
   test('clicking a row opens that port\'s panel and closes the overlay', async ({ page }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
 
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
     const portName = await rows.first().locator('.price-board__port-name').innerText();
@@ -523,8 +523,8 @@ test.describe('region price board (#62)', () => {
   test('rows are keyboard-operable: focus + Enter opens that port\'s panel (a11y)', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
 
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
     const firstRow = rows.first();
@@ -542,8 +542,8 @@ test.describe('region price board (#62)', () => {
   test('clicking the backdrop closes the overlay; clicking inside the panel does not (#126)', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await expect(dialog).toBeVisible();
 
     // `dialog` is the `.overlay` backdrop itself (role="dialog" sits on the
@@ -557,8 +557,8 @@ test.describe('region price board (#62)', () => {
   });
 
   test('Esc closes the overlay (#126)', async ({ page }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await expect(dialog).toBeVisible();
 
     await page.keyboard.press('Escape');
@@ -566,8 +566,8 @@ test.describe('region price board (#62)', () => {
   });
 
   test('"," / "." cycle the tabs, wrapping around (#218)', async ({ page }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     const ceny = page.getByRole('tab', { name: 'Ceny' });
     const kontrakty = page.getByRole('tab', { name: 'Kontrakty' });
 
@@ -586,7 +586,7 @@ test.describe('region price board (#62)', () => {
     await page.keyboard.press(',');
     await expect(kontrakty).toHaveAttribute('aria-selected', 'true');
 
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
   });
 });
 
@@ -598,8 +598,8 @@ test.describe('price board — port-centric route authoring (#394, docs/specs/E1
   test('default (no draft) row-click still opens the port panel — the coexistence rule holds', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
     const portName = await rows.first().locator('.price-board__port-name').innerText();
     await rows.first().click();
@@ -611,8 +611,8 @@ test.describe('price board — port-centric route authoring (#394, docs/specs/E1
   test('port-row click appends a Stop; a second port-row click appends the second Stop and shows the ribbon loop', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
 
     await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
@@ -640,8 +640,8 @@ test.describe('price board — port-centric route authoring (#394, docs/specs/E1
   test('good-cell click attaches an order with the context-inferred kind, and the pairing highlight appears on the best-bid port', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
 
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
@@ -682,8 +682,8 @@ test.describe('price board — port-centric route authoring (#394, docs/specs/E1
   });
 
   test('the order chip flip button overrides the inferred kind', async ({ page }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
 
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
@@ -701,8 +701,8 @@ test.describe('price board — port-centric route authoring (#394, docs/specs/E1
   test('a fresh sell order chip reads "sprzedaj całość · {good}", not opaque "Sprzedaj" (#398)', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
 
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
@@ -729,8 +729,8 @@ test.describe('price board — port-centric route authoring (#394, docs/specs/E1
   });
 
   test('"Anuluj" discards the draft without dispatching a Route', async ({ page }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
 
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
@@ -751,8 +751,8 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
   test('contextual focus: attaching an order auto-focuses its column and dims the rest; closing the draft reverts it', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
     const portCount = await rows.count();
 
@@ -791,8 +791,8 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
   test('contextual focus: manual header click focuses a good outside authoring; the latest gesture wins over authoring focus', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     const headers = dialog.locator('.price-board__good-header');
 
     // Manual focus works with no draft active at all.
@@ -828,8 +828,8 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
   test('pinning: hiding a column narrows the grid and is recoverable via the hidden-columns affordance', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     const headers = dialog.locator('.price-board__good-header');
     await expect(headers).toHaveCount(GOOD_IDS.length);
     await expect(dialog.locator('.price-board__hidden-note')).toHaveCount(0);
@@ -860,8 +860,8 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
   test('pinning: hiding the currently-focused good clears the emphasis instead of dimming the whole board', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     const headers = dialog.locator('.price-board__good-header');
 
     await headers.nth(0).click(); // focus GOOD_IDS[0]
@@ -875,8 +875,8 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
   test('a stale positional key never collapses or misattributes the qty/margin expansion after a Stop is removed (#405 nit 1)', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
 
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
@@ -909,8 +909,8 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
   test('a 1-stop draft can remove its only Stop without discarding the whole draft (#405 nit 2)', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
 
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
@@ -930,8 +930,8 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
   test('hiding a column that carries a live draft order badges the hidden-columns affordance (#413)', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
 
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
@@ -973,8 +973,8 @@ test.describe('price board — grid a11y + focus emphasis (#414)', () => {
   test('interactive good headers expose role="columnheader" inside role="table" > role="row" (#414)', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
 
     const table = dialog.locator('[role="table"].price-board');
     await expect(table).toHaveCount(1);
@@ -999,8 +999,8 @@ test.describe('price board — grid a11y + focus emphasis (#414)', () => {
   });
 
   test('good-header focus emphasis rides opacity/weight, not color (#414, ADR-0006)', async ({ page }) => {
-    await page.getByRole('button', { name: /price board/i }).click();
-    const dialog = page.getByRole('dialog', { name: /price board/i });
+    await page.getByRole('button', { name: /tablica cen/i }).click();
+    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
     const header = dialog.locator('.price-board__good-header').first();
 
     const restColor = await header.evaluate((el) => getComputedStyle(el).color);
@@ -1024,17 +1024,17 @@ test.describe('trading interactions (when docked)', () => {
   });
 
   test('can buy goods and updates are reflected', async ({ page }) => {
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
     await expect(grainRow).toBeVisible();
 
     // Capture initial thalers
     const initialThalersText = await page.locator('.top-bar__thalers').innerText();
 
     // Buy 5 grain (cheap)
-    const qtyInput = grainRow.getByRole('spinbutton', { name: /grain quantity/i });
+    const qtyInput = grainRow.getByRole('spinbutton', { name: /zboże ilość/i });
     await qtyInput.fill('5');
 
-    const buyButton = grainRow.getByRole('button', { name: 'Buy Grain', exact: true });
+    const buyButton = grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true });
     await expect(buyButton).toBeEnabled();
     await buyButton.click();
 
@@ -1043,34 +1043,34 @@ test.describe('trading interactions (when docked)', () => {
 
     // Switch to ship panel and verify cargo
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.hold')).toContainText('Grain');
+    await expect(page.locator('.hold')).toContainText('Zboże');
     await expect(page.locator('.hold')).toContainText('5');
   });
 
   test('can sell goods after buying', async ({ page }) => {
-    const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
+    const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
 
     // Buy first
-    const qtyInput = grainRow.getByRole('spinbutton', { name: /grain quantity/i });
+    const qtyInput = grainRow.getByRole('spinbutton', { name: /zboże ilość/i });
     await qtyInput.fill('3');
-    await grainRow.getByRole('button', { name: 'Buy Grain', exact: true }).click();
+    await grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true }).click();
 
     // Now sell back
     await qtyInput.fill('2');
-    const sellButton = grainRow.getByRole('button', { name: 'Sell Grain', exact: true });
+    const sellButton = grainRow.getByRole('button', { name: 'Sprzedaj: Zboże', exact: true });
     await expect(sellButton).toBeEnabled();
     await sellButton.click();
 
     // Hold should reflect partial sell
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.hold')).toContainText('Grain');
+    await expect(page.locator('.hold')).toContainText('Zboże');
     // We don't assert exact number to avoid race, but presence of Grain after sell
   });
 
   test('sail button (#33): disabled at the docked port, enabled elsewhere', async ({ page }) => {
     // At the ship's own docked port, the button is always present but disabled.
     await openDockedPortMarket(page);
-    const sailBtn = page.getByRole('button', { name: /^Sail .+ here$/ });
+    const sailBtn = page.getByRole('button', { name: /^Płyń tu — .+$/ });
     await expect(sailBtn).toBeVisible();
     await expect(sailBtn).toBeDisabled();
 
@@ -1080,7 +1080,7 @@ test.describe('trading interactions (when docked)', () => {
     let sailedAway = false;
     for (let i = 0; i < count; i++) {
       await portGroups.nth(i).click({ force: true });
-      const remoteSailBtn = page.getByRole('button', { name: /^Sail .+ here \(~\d+ ticks\)$/ });
+      const remoteSailBtn = page.getByRole('button', { name: /^Płyń tu — .+ \(~\d+ ticków\)$/ });
       if (await remoteSailBtn.count()) {
         await remoteSailBtn.click();
         sailedAway = true;
@@ -1090,7 +1090,7 @@ test.describe('trading interactions (when docked)', () => {
     expect(sailedAway).toBe(true);
 
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
+    await expect(page.locator('.side-panel__subtitle')).toContainText('W drodze');
 
     // The destination port name is a link too (#196): opens that port's
     // panel, same as the docked case above.
@@ -1110,7 +1110,7 @@ test.describe('trading interactions (when docked)', () => {
     // always exists).
     const portGroups = page.locator('g.port');
     const count = await portGroups.count();
-    const sailBtn = page.getByRole('button', { name: /^Sail .+ here \(~\d+ ticks\)$/ });
+    const sailBtn = page.getByRole('button', { name: /^Płyń tu — .+ \(~\d+ ticków\)$/ });
     for (let i = 0; i < count; i++) {
       await portGroups.nth(i).click({ force: true });
       if (await sailBtn.count()) break;
@@ -1134,20 +1134,20 @@ test.describe('keybind <g> sails the Controlled Ship to the selected port (#217)
   test('no-op with no selection', async ({ page }) => {
     await page.keyboard.press('g');
     await openControlledShip(page);
-    await expect(page.locator('.side-panel__subtitle')).toContainText(/^Docked at/i);
+    await expect(page.locator('.side-panel__subtitle')).toContainText(/^Zadokowany w porcie/i);
   });
 
   test('no-op when a ship (not a port) is selected', async ({ page }) => {
     await openControlledShip(page);
     await page.keyboard.press('g');
-    await expect(page.locator('.side-panel__subtitle')).toContainText(/^Docked at/i);
+    await expect(page.locator('.side-panel__subtitle')).toContainText(/^Zadokowany w porcie/i);
   });
 
   test('no-op when the sailability gate is disabled (already docked here)', async ({ page }) => {
     await openDockedPortMarket(page);
     await page.keyboard.press('g');
     await openControlledShip(page);
-    await expect(page.locator('.side-panel__subtitle')).toContainText(/^Docked at/i);
+    await expect(page.locator('.side-panel__subtitle')).toContainText(/^Zadokowany w porcie/i);
   });
 
   test('sails the Controlled Ship to the selected port, mirroring the Sail button (#33)', async ({
@@ -1158,7 +1158,7 @@ test.describe('keybind <g> sails the Controlled Ship to the selected port (#217)
     // enabled Sail control.
     const portGroups = page.locator('g.port');
     const count = await portGroups.count();
-    const enabledSailBtn = page.getByRole('button', { name: /^Sail .+ here \(~\d+ ticks\)$/ });
+    const enabledSailBtn = page.getByRole('button', { name: /^Płyń tu — .+ \(~\d+ ticków\)$/ });
     let selected = false;
     for (let i = 0; i < count; i++) {
       await portGroups.nth(i).click({ force: true });
@@ -1175,12 +1175,12 @@ test.describe('keybind <g> sails the Controlled Ship to the selected port (#217)
     // The gate flips to "Underway" — the same disabled state the Sail button
     // shows after a manual click — proving the keydown actually dispatched
     // sailTo, not just a visual no-op.
-    const disabledSailBtn = page.getByRole('button', { name: /^Sail .+ here$/ });
+    const disabledSailBtn = page.getByRole('button', { name: /^Płyń tu — .+$/ });
     await expect(disabledSailBtn).toBeDisabled();
-    await expect(disabledSailBtn).toHaveAttribute('title', 'Underway — dock to sail elsewhere.');
+    await expect(disabledSailBtn).toHaveAttribute('title', 'W drodze — musi zadokować, by popłynąć gdzie indziej.');
 
     await openControlledShip(page);
-    await expect(page.locator('.side-panel__subtitle')).toContainText('Underway');
+    await expect(page.locator('.side-panel__subtitle')).toContainText('W drodze');
     // The course actually targets the port that was selected, not just any
     // port (portId: selection.id — belt-and-suspenders on top of the
     // disabled-Underway check above).
@@ -1197,8 +1197,8 @@ test.describe('ambient osmosis skiffs on the map (#161, replaces the pulses #63)
     // threshold within the first few ticks, while the rest of the lanes stay
     // under it for hundreds of ticks — a stable active + quiet mix (verified
     // by running the sim standalone for this PR; not asserted elsewhere).
-    await page.getByLabel(/seed/i).fill('66');
-    await page.getByRole('button', { name: /new game/i }).click();
+    await page.getByLabel(/ziarno/i).fill('66');
+    await page.getByRole('button', { name: /nowa gra/i }).click();
   }
 
   /** Locates the first skiff of whichever lane is currently active, pinned by
@@ -1335,7 +1335,7 @@ test.describe('pause-cause note (#130)', () => {
       { key: AUTOSAVE_KEY, json },
     );
     await page.goto('/');
-    await page.getByRole('button', { name: /continue/i }).click();
+    await page.getByRole('button', { name: /kontynuuj/i }).click();
     await expect(page.locator('svg.region-map')).toBeVisible();
   }
 

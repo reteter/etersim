@@ -1,4 +1,5 @@
-import { amountOf, GOOD_IDS, GOODS, SHIP_RECIPE, type GoodId, type GoodsStore } from "../sim";
+import { amountOf, GOOD_IDS, SHIP_RECIPE, type GoodId, type GoodsStore } from "../sim";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 
 /**
  * Per-good progress bar for an active construction site (docs/specs/E9 —
@@ -29,11 +30,11 @@ export function BuildProgress({
         const pct = need > 0 ? Math.min(100, (have / need) * 100) : 100;
         return (
           <div key={good} className="headquarters-progress__row">
-            <span className="headquarters-progress__label">{GOODS[good].name}</span>
+            <span className="headquarters-progress__label">{GOOD_NAME_PL[good]}</span>
             <div
               className="headquarters-progress__bar"
               role="progressbar"
-              aria-label={`${GOODS[good].name} build progress`}
+              aria-label={`${GOOD_NAME_PL[good]} — postęp budowy`}
               aria-valuenow={have}
               aria-valuemin={0}
               aria-valuemax={need}

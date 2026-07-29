@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  GOODS,
   rankOf,
   TICKS_PER_DAY,
   type ActiveContract,
@@ -8,6 +7,7 @@ import {
   type World,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { GuildBadge } from "./guildDisplay";
 
 /**
@@ -60,7 +60,7 @@ function OfferRow({ world, offer, rank }: { world: World; offer: ContractOffer; 
       <div className="kontrakty-offer__header">
         <GuildBadge guildId={offer.guildId} />
         <p className="kontrakty-offer__route">
-          {GOODS[offer.good].name} → {portName(world, offer.portId)}
+          {GOOD_NAME_PL[offer.good]} → {portName(world, offer.portId)}
         </p>
       </div>
       <div className="kontrakty-offer__body">
@@ -115,7 +115,7 @@ function ContractRow({ world, contract }: { world: World; contract: ActiveContra
       <div className="kontrakty-contract__header">
         <GuildBadge guildId={contract.guildId} />
         <p className="kontrakty-contract__route">
-          {GOODS[contract.good].name} → {portName(world, contract.portId)}
+          {GOOD_NAME_PL[contract.good]} → {portName(world, contract.portId)}
         </p>
       </div>
       <div className="kontrakty-contract__body">

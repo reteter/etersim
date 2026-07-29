@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   GOOD_IDS,
-  GOODS,
   resolveReferencePort,
   type CompanyBuilding,
   type GoodId,
@@ -15,6 +14,7 @@ import {
   type World,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { computeLoopMetrics } from "../store/routeMetrics";
 import {
   legalOrderKinds,
@@ -25,11 +25,11 @@ import {
 } from "./routeAuthoring";
 
 /** Column headers for the per-good order table (Polish, 2026-07-14 UI grill:
- *  new visible labels ship Polish). The chip buttons underneath keep their
- *  existing English aria-label/accessible-name — only the *visible* button
- *  text moves to a checkmark now that the column header already names the
- *  action, so e2e's aria-label-based selectors stay untouched (#184 is the
- *  broader English→Polish sweep, out of scope here). */
+ *  new visible labels ship Polish). The chip buttons underneath used to keep
+ *  their English aria-label/accessible-name (only the *visible* button text
+ *  moved to a checkmark) — #184's 2026-07-16 AC comment names this table's
+ *  aria-labels specifically, so they are Polish now too (e2e updated in the
+ *  same PR). */
 const ORDER_KINDS = ["buy", "sell", "deliver"] as const;
 const ORDER_KIND_LABEL: Record<(typeof ORDER_KINDS)[number], string> = {
   buy: "Kup",
@@ -40,8 +40,7 @@ const ORDER_KIND_LABEL: Record<(typeof ORDER_KINDS)[number], string> = {
 /** Storehouse order kinds (E13, #101): store/withdraw chips, appended only
  *  for a Stop whose port hosts a Company `CompanyBuilding` (spec §UX
  *  skeleton — "shown only for ports with a Company storehouse"). Net-new
- *  Polish player-facing strings (2026-07-14 UI grill) — no English precedent
- *  to match, unlike buy/sell/deliver's #184-tracked legacy labels. */
+ *  Polish player-facing strings (2026-07-14 UI grill). */
 const STORE_ORDER_KINDS = ["store", "withdraw"] as const;
 const STORE_ORDER_KIND_LABEL: Record<(typeof STORE_ORDER_KINDS)[number], string> = {
   store: "Złóż",
@@ -138,7 +137,7 @@ function StopRow({
       <span className="stop-row__index">#{index + 1}</span>
       <select
         className="stop-row__port"
-        aria-label={`Stop ${index + 1} port`}
+        aria-label={`Przystanek ${index + 1} — port`}
         value={stop.portId}
         onChange={(e) => onChange({ ...stop, portId: e.target.value as PortId })}
       >
@@ -163,7 +162,7 @@ function StopRow({
           {GOOD_IDS.map((good) => (
             <tr key={good}>
               <th scope="row" className="stop-row__good-name">
-                {GOODS[good].name}
+                {GOOD_NAME_PL[good]}
               </th>
               {kinds.map((kind) => {
                 // A store/withdraw column only offers a chip for goods in
@@ -187,7 +186,7 @@ function StopRow({
                     <button
                       type="button"
                       aria-pressed={active}
-                      aria-label={`${GOODS[good].name} ${kind} at Stop ${index + 1}`}
+                      aria-label={`${GOOD_NAME_PL[good]}: ${kindLabel(kind)} — przystanek ${index + 1}`}
                       className={active ? "chip chip--active" : "chip"}
                       onClick={() => setOrder(good, kind)}
                     >
@@ -201,7 +200,7 @@ function StopRow({
                         step={1}
                         placeholder="ile"
                         title="Ile jednostek (puste = maksymalnie)"
-                        aria-label={`${GOODS[good].name} qty at Stop ${index + 1}`}
+                        aria-label={`${GOOD_NAME_PL[good]} ilość — przystanek ${index + 1}`}
                         value={order?.qty ?? ""}
                         onChange={(e) => setQty(good, e.target.value)}
                       />
@@ -214,7 +213,7 @@ function StopRow({
                           step={1}
                           placeholder="próg"
                           title="Próg marży: czekaj, aż dowóz się opłaci (puste = bez progu)"
-                          aria-label={`${GOODS[good].name} min margin at Stop ${index + 1}`}
+                          aria-label={`${GOOD_NAME_PL[good]} próg marży — przystanek ${index + 1}`}
                           value={order?.minMargin ?? ""}
                           onChange={(e) => setMinMargin(good, e.target.value)}
                         />
@@ -234,7 +233,7 @@ function StopRow({
         </tbody>
       </table>
       <button type="button" className="stop-row__remove" onClick={onRemove}>
-        Remove stop
+        Usuń przystanek
       </button>
     </div>
   );
@@ -264,7 +263,7 @@ function RouteEditor({
     <div className="route-editor">
       <input
         className="route-editor__name"
-        aria-label="Route name"
+        aria-label="Nazwa trasy"
         value={draft.name}
         onChange={(e) => onChange({ ...draft, name: e.target.value })}
       />
@@ -289,17 +288,17 @@ function RouteEditor({
           onChange({ ...draft, stops: [...draft.stops, { portId: ports[0].id, orders: [] }] })
         }
       >
-        Add stop
+        Dodaj przystanek
       </button>
       {!isValid && (
-        <p className="side-panel__hint">A Route needs at least 2 Stops across 2 distinct ports.</p>
+        <p className="side-panel__hint">Trasa wymaga co najmniej 2 przystanków w 2 różnych portach.</p>
       )}
       <div className="route-editor__actions">
         <button type="button" className="menu-btn" disabled={!isValid} onClick={onSave}>
-          Save route
+          Zapisz trasę
         </button>
         <button type="button" className="menu-btn" onClick={onCancel}>
-          Cancel
+          Anuluj
         </button>
       </div>
     </div>
@@ -336,12 +335,12 @@ function RouteRow({
         {route.name}
       </button>
       <div className="route-row__metrics">
-        <span>Course: {metrics.totalCourseTicks}t/loop</span>
-        <span>Docking fees/loop: {metrics.lastLoopDockingFees ?? "—"}</span>
+        <span>Kurs: {metrics.totalCourseTicks}t/pętla</span>
+        <span>Opłaty dokowe/pętla: {metrics.lastLoopDockingFees ?? "—"}</span>
         <span className="route-row__result">
-          Last loop:{" "}
+          Ostatnia pętla:{" "}
           {metrics.lastLoopNet === null
-            ? "no loop yet"
+            ? "brak jeszcze pętli"
             : `${metrics.lastLoopNet >= 0 ? "+" : "−"}₸${Math.abs(metrics.lastLoopNet)}`}
         </span>
       </div>
@@ -351,13 +350,13 @@ function RouteRow({
             <span>{ship.name}</span>
             {ship.assignment!.suspended && (
               <>
-                <span className="route-row__suspended">suspended</span>
+                <span className="route-row__suspended">wstrzymana</span>
                 <button
                   type="button"
                   className="menu-btn"
                   onClick={() => dispatch({ kind: "resumeRoute", shipId: ship.id })}
                 >
-                  Resume
+                  Wznów
                 </button>
               </>
             )}
@@ -366,18 +365,18 @@ function RouteRow({
               className="menu-btn"
               onClick={() => dispatch({ kind: "unassignRoute", shipId: ship.id })}
             >
-              Unassign
+              Odepnij
             </button>
           </div>
         ))}
         {unassignedShips.length > 0 && (
           <div className="route-row__assign">
             <select
-              aria-label={`Assign a ship to ${route.name}`}
+              aria-label={`Przypisz statek do trasy ${route.name}`}
               value={assignShipId}
               onChange={(e) => setAssignShipId(e.target.value as ShipId | "")}
             >
-              <option value="">Assign ship…</option>
+              <option value="">Przypisz statek…</option>
               {unassignedShips.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -394,17 +393,17 @@ function RouteRow({
                 setAssignShipId("");
               }}
             >
-              Assign
+              Przypisz
             </button>
           </div>
         )}
       </div>
       <div className="route-row__actions">
         <button type="button" className="menu-btn" onClick={onEdit}>
-          Edit
+          Edytuj
         </button>
         <button type="button" className="menu-btn" onClick={onDelete}>
-          Delete
+          Usuń
         </button>
       </div>
     </div>
@@ -424,7 +423,7 @@ export function RoutesTab({ world }: { world: World }) {
   const editingExisting = draft ? routes.some((r) => r.id === draft.id) : false;
 
   const startNew = () => {
-    setDraft({ id: nextRouteId(world), name: `Route ${routes.length + 1}`, stops: [] });
+    setDraft({ id: nextRouteId(world), name: `Trasa ${routes.length + 1}`, stops: [] });
   };
   const startEdit = (route: Route) => {
     setDraft(route);
@@ -445,7 +444,7 @@ export function RoutesTab({ world }: { world: World }) {
   return (
     <div className="headquarters-routes">
       <div className="route-list">
-        {routes.length === 0 && <p className="side-panel__hint">No routes yet.</p>}
+        {routes.length === 0 && <p className="side-panel__hint">Brak jeszcze tras.</p>}
         {routes.map((route) => (
           <RouteRow
             key={route.id}
@@ -462,7 +461,7 @@ export function RoutesTab({ world }: { world: World }) {
         <RouteEditor world={world} draft={draft} onChange={setDraft} onSave={save} onCancel={cancel} />
       ) : (
         <button type="button" className="menu-btn" onClick={startNew}>
-          New route
+          Nowa trasa
         </button>
       )}
     </div>

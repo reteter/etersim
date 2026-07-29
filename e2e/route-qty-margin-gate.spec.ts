@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
-import { effectiveBase, GOODS, unitMargin, type Ship, type World } from '../src/sim';
+import { effectiveBase, unitMargin, type Ship, type World } from '../src/sim';
+import { GOOD_NAME_PL } from '../src/store/goodDisplay';
 import { SAVE_VERSION } from '../src/store/persistence';
 import { routeReadyWorld } from './worldFixtures';
 
@@ -27,15 +28,15 @@ async function continueWithWorld(page: Page, world: World) {
     { key: AUTOSAVE_KEY, json: saveJson(world) },
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /continue/i }).click();
+  await page.getByRole('button', { name: /kontynuuj/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
 async function openTrasyTab(page: Page) {
   await page.locator('g.port').first().click({ force: true });
   await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-  await page.getByRole('button', { name: /^Headquarters$/ }).click();
-  const dialog = page.getByRole('dialog', { name: /headquarters/i });
+  await page.getByRole('button', { name: /^Siedziba$/ }).click();
+  const dialog = page.getByRole('dialog', { name: /siedziba/i });
   await dialog.getByRole('tab', { name: 'Trasy' }).click();
   return dialog;
 }
@@ -48,9 +49,9 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     await continueWithWorld(page, world);
     const dialog = await openTrasyTab(page);
 
-    await dialog.getByRole('button', { name: /^New route$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
     const stopRows = dialog.locator('.stop-row');
     await stopRows.nth(0).locator('select').selectOption(a);
     await stopRows.nth(1).locator('select').selectOption(b);
@@ -58,10 +59,10 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // Stop 1: buy grain, qty = 5, minMargin = 3.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} buy at Stop 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
       .click();
-    const qtyBuy = stopRows.nth(0).getByLabel(`${GOODS.grain.name} qty at Stop 1`);
-    const marginInput = stopRows.nth(0).getByLabel(`${GOODS.grain.name} min margin at Stop 1`);
+    const qtyBuy = stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 1`);
+    const marginInput = stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 1`);
     await expect(qtyBuy).toBeVisible();
     await expect(marginInput).toBeVisible();
     await qtyBuy.fill('5');
@@ -71,47 +72,47 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // confirm neither input remains.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} deliver at Stop 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Dostarcz — przystanek 1$`) })
       .click();
-    await expect(stopRows.nth(0).getByLabel(`${GOODS.grain.name} qty at Stop 1`)).toHaveCount(0);
+    await expect(stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 1`)).toHaveCount(0);
     await expect(
-      stopRows.nth(0).getByLabel(`${GOODS.grain.name} min margin at Stop 1`),
+      stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 1`),
     ).toHaveCount(0);
 
     // Switch back to buy — a fresh order (qty/minMargin cleared, matching
     // setOrder's replace-not-merge semantics) — then re-set both.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} buy at Stop 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
       .click();
-    await stopRows.nth(0).getByLabel(`${GOODS.grain.name} qty at Stop 1`).fill('5');
-    await stopRows.nth(0).getByLabel(`${GOODS.grain.name} min margin at Stop 1`).fill('3');
+    await stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 1`).fill('5');
+    await stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 1`).fill('3');
 
     // Stop 2: sell grain, qty = 2 — minMargin must never show for sell.
     await stopRows
       .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} sell at Stop 2$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Sprzedaj — przystanek 2$`) })
       .click();
-    const qtySell = stopRows.nth(1).getByLabel(`${GOODS.grain.name} qty at Stop 2`);
+    const qtySell = stopRows.nth(1).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 2`);
     await expect(qtySell).toBeVisible();
     await expect(
-      stopRows.nth(1).getByLabel(`${GOODS.grain.name} min margin at Stop 2`),
+      stopRows.nth(1).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 2`),
     ).toHaveCount(0);
     await qtySell.fill('2');
 
-    await dialog.getByRole('button', { name: /^Save route$/ }).click();
+    await dialog.getByRole('button', { name: /^Zapisz trasę$/ }).click();
 
     // Re-open the saved Route: qty/minMargin round-tripped through the
     // createRoute Command, not just local editor state.
-    await dialog.locator('.route-row').first().getByRole('button', { name: /^Edit$/ }).click();
+    await dialog.locator('.route-row').first().getByRole('button', { name: /^Edytuj$/ }).click();
     const reopenedRows = dialog.locator('.stop-row');
-    await expect(reopenedRows.nth(0).getByLabel(`${GOODS.grain.name} qty at Stop 1`)).toHaveValue(
+    await expect(reopenedRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 1`)).toHaveValue(
       '5',
     );
     await expect(
-      reopenedRows.nth(0).getByLabel(`${GOODS.grain.name} min margin at Stop 1`),
+      reopenedRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 1`),
     ).toHaveValue('3');
-    await expect(reopenedRows.nth(1).getByLabel(`${GOODS.grain.name} qty at Stop 2`)).toHaveValue(
+    await expect(reopenedRows.nth(1).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 2`)).toHaveValue(
       '2',
     );
   });
@@ -123,30 +124,30 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     await continueWithWorld(page, world);
     const dialog = await openTrasyTab(page);
 
-    await dialog.getByRole('button', { name: /^New route$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
     const stopRows = dialog.locator('.stop-row');
     await stopRows.nth(0).locator('select').selectOption(a);
     await stopRows.nth(1).locator('select').selectOption(b);
 
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} buy at Stop 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
       .click();
     await stopRows
       .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} sell at Stop 2$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Sprzedaj — przystanek 2$`) })
       .click();
-    await dialog.getByRole('button', { name: /^Save route$/ }).click();
+    await dialog.getByRole('button', { name: /^Zapisz trasę$/ }).click();
 
-    await dialog.locator('.route-row').first().getByRole('button', { name: /^Edit$/ }).click();
+    await dialog.locator('.route-row').first().getByRole('button', { name: /^Edytuj$/ }).click();
     const reopenedRows = dialog.locator('.stop-row');
-    await expect(reopenedRows.nth(0).getByLabel(`${GOODS.grain.name} qty at Stop 1`)).toHaveValue(
+    await expect(reopenedRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 1`)).toHaveValue(
       '',
     );
     await expect(
-      reopenedRows.nth(0).getByLabel(`${GOODS.grain.name} min margin at Stop 1`),
+      reopenedRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 1`),
     ).toHaveValue('');
   });
 
@@ -157,9 +158,9 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     await continueWithWorld(page, world);
     const dialog = await openTrasyTab(page);
 
-    await dialog.getByRole('button', { name: /^New route$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
     const stopRows = dialog.locator('.stop-row');
     await stopRows.nth(0).locator('select').selectOption(a);
     await stopRows.nth(1).locator('select').selectOption(b);
@@ -168,12 +169,12 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // reference — no sell anywhere on the route) ⇒ gate inactive.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} buy at Stop 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
       .click();
-    await stopRows.nth(0).getByLabel(`${GOODS.grain.name} min margin at Stop 1`).fill('3');
+    await stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 1`).fill('3');
     await stopRows
       .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} deliver at Stop 2$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Dostarcz — przystanek 2$`) })
       .click();
 
     const warning = stopRows.nth(0).locator('.stop-row__gate-warning');
@@ -184,7 +185,7 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // must clear (resolveReferencePort now resolves).
     await stopRows
       .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} sell at Stop 2$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Sprzedaj — przystanek 2$`) })
       .click();
     await expect(warning).toHaveCount(0);
   });

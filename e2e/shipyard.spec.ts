@@ -26,7 +26,7 @@ async function continueWithWorld(page: Page, world: World) {
     { key: AUTOSAVE_KEY, json: saveJson(world) },
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /continue/i }).click();
+  await page.getByRole('button', { name: /kontynuuj/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -107,8 +107,8 @@ test.describe('Shipyard commission — PortPanel section (#276)', () => {
     });
     await continueWithWorld(page, w);
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     const placeBtn = dialog.getByRole('button', { name: /Zleć budowę/ });
     await expect(placeBtn).toBeDisabled();
     await expect(placeBtn).toHaveAttribute('title', /stoczni/);
@@ -179,7 +179,7 @@ test.describe('Refit — PortPanel picker, progress, map bubble, fleet status, s
     await expect(page.locator('.fleet-list__status--refit')).toHaveCount(1);
 
     // Sail is locked while under Refit — same PortPanel, s0's own port.
-    const sailBtn = page.getByRole('button', { name: new RegExp(`Sail ${S0_NAME} here`) });
+    const sailBtn = page.getByRole('button', { name: new RegExp(`Płyń tu — ${S0_NAME}`) });
     await expect(sailBtn).toBeDisabled();
     await expect(sailBtn).toHaveAttribute('title', /przebudowie/);
 

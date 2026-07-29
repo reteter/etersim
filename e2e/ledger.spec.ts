@@ -3,7 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function startNewGame(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: /new game/i }).click();
+  await page.getByRole('button', { name: /nowa gra/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -11,18 +11,18 @@ async function startNewGame(page: Page) {
  *  always tradable, and the fastest way to put a `trade` Ledger event on
  *  the books. Assumes the market panel for that port is already open. */
 async function buyGrain(page: Page, qty: number) {
-  const grainRow = page.locator('.market-row').filter({ hasText: 'Grain' });
-  await grainRow.getByRole('spinbutton', { name: /grain quantity/i }).fill(String(qty));
-  await grainRow.getByRole('button', { name: 'Buy Grain', exact: true }).click();
+  const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
+  await grainRow.getByRole('spinbutton', { name: /zboże ilość/i }).fill(String(qty));
+  await grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true }).click();
 }
 
 /** Opens the docked port's market for the Controlled Ship (mirrors the
  *  helper in e2e/ui.spec.ts). */
 async function openDockedPortMarket(page: Page) {
   await page.locator('.fleet-list__item--controlled').click();
-  await expect(page.getByRole('heading', { name: 'Ship' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Statek' })).toBeVisible();
   const subtitle = await page.locator('.side-panel__subtitle').innerText();
-  const portName = subtitle.replace(/^Docked at /i, '');
+  const portName = subtitle.replace(/^Zadokowany w porcie /i, '');
   const exact = new RegExp(`^${portName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
   await page
     .locator('g.port')
@@ -53,7 +53,7 @@ async function openDockedPortMarket(page: Page) {
 async function importLedgerScenario(page: Page) {
   await startNewGame(page);
   const json = readFileSync('./e2e/fixtures/ledger-scenario.json', 'utf-8');
-  await page.locator('input[aria-label="Import save file"]').setInputFiles({
+  await page.locator('input[aria-label="Importuj plik zapisu"]').setInputFiles({
     name: 'ledger-scenario.json',
     mimeType: 'application/json',
     buffer: Buffer.from(json),
@@ -64,13 +64,13 @@ test.describe('Ledger overlay (#86)', () => {
   test('opens from the TopBar', async ({ page }) => {
     await startNewGame(page);
 
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /ledger/i });
+    await page.getByRole('button', { name: /^Księga$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /księga/i });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('tab', { name: 'Transakcje' })).toBeVisible();
     await expect(dialog.getByRole('tab', { name: 'Wartość firmy' })).toBeVisible();
 
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
     await expect(dialog).not.toBeVisible();
   });
 
@@ -80,16 +80,16 @@ test.describe('Ledger overlay (#86)', () => {
     await buyGrain(page, 5);
     await buyGrain(page, 3);
 
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /ledger/i });
+    await page.getByRole('button', { name: /^Księga$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /księga/i });
     const rows = dialog.locator('.ledger-list__row');
 
     // Two distinct trades — the more recent (qty 3) must render above the
     // older one (qty 5), proving actual chronological ordering rather than
     // trivially passing with a single row.
     await expect(rows).toHaveCount(2);
-    await expect(rows.nth(0).locator('.ledger-list__desc')).toContainText('Bought 3 Grain');
-    await expect(rows.nth(1).locator('.ledger-list__desc')).toContainText('Bought 5 Grain');
+    await expect(rows.nth(0).locator('.ledger-list__desc')).toContainText('Kupiono: Zboże ×3');
+    await expect(rows.nth(1).locator('.ledger-list__desc')).toContainText('Kupiono: Zboże ×5');
   });
 
   test('ship filter keeps only the selected ship\'s events, across every shipId-carrying kind', async ({
@@ -97,22 +97,22 @@ test.describe('Ledger overlay (#86)', () => {
   }) => {
     await importLedgerScenario(page);
 
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /ledger/i });
+    await page.getByRole('button', { name: /^Księga$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /księga/i });
     const rows = dialog.locator('.ledger-list__row');
 
     // All ships: every event from the fixture (see importLedgerScenario),
     // newest first — the launch is last in insertion order, so it's the top
     // row.
     await expect(rows).toHaveCount(11);
-    await expect(rows.first().locator('.ledger-list__desc')).toContainText('Launched');
+    await expect(rows.first().locator('.ledger-list__desc')).toContainText('Zwodowano');
 
     const filter = dialog.locator('#ledger-ship-filter');
 
     // s1 (the launched ship) only appears in its own launch event.
     await filter.selectOption({ label: 'Lumen Trader' });
     await expect(rows).toHaveCount(1);
-    await expect(rows.first().locator('.ledger-list__desc')).toContainText('Launched');
+    await expect(rows.first().locator('.ledger-list__desc')).toContainText('Zwodowano');
 
     // s0 (the original ship) appears in its trade, its dockingFee (sailing
     // to found the Headquarters elsewhere) and its delivery — three
@@ -120,9 +120,9 @@ test.describe('Ledger overlay (#86)', () => {
     // company-wide and must not leak in under either ship filter.
     await filter.selectOption({ label: 's0' });
     await expect(rows).toHaveCount(3);
-    await expect(rows.nth(0).locator('.ledger-list__desc')).toContainText('Delivered');
-    await expect(rows.nth(1).locator('.ledger-list__desc')).toContainText('Docking fee');
-    await expect(rows.nth(2).locator('.ledger-list__desc')).toContainText('Bought 5 Grain');
+    await expect(rows.nth(0).locator('.ledger-list__desc')).toContainText('Dostarczono');
+    await expect(rows.nth(1).locator('.ledger-list__desc')).toContainText('Opłata dokowa');
+    await expect(rows.nth(2).locator('.ledger-list__desc')).toContainText('Kupiono: Zboże ×5');
 
     await filter.selectOption({ value: 'all' });
     await expect(rows).toHaveCount(11);
@@ -133,8 +133,8 @@ test.describe('Ledger overlay (#86)', () => {
   }) => {
     await importLedgerScenario(page);
 
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /ledger/i });
+    await page.getByRole('button', { name: /^Księga$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /księga/i });
     await dialog.getByRole('tab', { name: 'Wartość firmy' }).click();
 
     const chart = dialog.locator('svg.ledger-chart');
@@ -165,12 +165,12 @@ test.describe('Ledger overlay (#86)', () => {
   }) => {
     await startNewGame(page);
 
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /ledger/i });
+    await page.getByRole('button', { name: /^Księga$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /księga/i });
     await dialog.getByRole('tab', { name: 'Wartość firmy' }).click();
     // Day 1, before any day boundary — no netWorth snapshot exists yet.
     await expect(dialog.locator('.ledger-chart__point')).toHaveCount(0);
-    await dialog.getByRole('button', { name: /close/i }).click();
+    await dialog.getByRole('button', { name: /zamknij/i }).click();
 
     await page.getByRole('button', { name: '100x' }).click();
     await expect
@@ -178,7 +178,7 @@ test.describe('Ledger overlay (#86)', () => {
       .toMatch(/Day [4-9]|Day \d{2,}/);
     await page.getByRole('button', { name: '⏸' }).click();
 
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
+    await page.getByRole('button', { name: /^Księga$/ }).click();
     await dialog.getByRole('tab', { name: 'Wartość firmy' }).click();
     await expect(dialog.locator('.ledger-chart__point').first()).toBeVisible();
   });
@@ -188,8 +188,8 @@ test.describe('Ledger overlay (#86)', () => {
   }) => {
     await startNewGame(page);
 
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /ledger/i });
+    await page.getByRole('button', { name: /^Księga$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /księga/i });
     await expect(dialog).toBeVisible();
 
     // `dialog` is the `.overlay` backdrop itself (role="dialog" sits on the
@@ -205,8 +205,8 @@ test.describe('Ledger overlay (#86)', () => {
   test('Esc closes the overlay (#126)', async ({ page }) => {
     await startNewGame(page);
 
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /ledger/i });
+    await page.getByRole('button', { name: /^Księga$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /księga/i });
     await expect(dialog).toBeVisible();
 
     await page.keyboard.press('Escape');

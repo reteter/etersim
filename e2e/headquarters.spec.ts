@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { generateShipName, GOODS, type World } from '../src/sim';
+import { generateShipName, type World } from '../src/sim';
+import { GOOD_NAME_PL } from '../src/store/goodDisplay';
 import { SAVE_VERSION } from '../src/store/persistence';
 import { DEFAULT_SETTINGS, SETTINGS_KEY, SETTINGS_VERSION, type Settings } from '../src/store/settings';
 import { fundedWorld, routeReadyWorld } from './worldFixtures';
@@ -56,31 +57,31 @@ async function continueWithWorld(page: Page, world: World, settings?: Partial<Se
     { key: AUTOSAVE_KEY, json: saveJson(world), settingsKey: SETTINGS_KEY, settingsJson },
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /continue/i }).click();
+  await page.getByRole('button', { name: /kontynuuj/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
 /** Drives the Trasy tab's editor through the canonical two-Stop route —
  *  buy grain at `a` (Stop 1), sell grain at `b` (Stop 2) — and saves it. */
 async function createGrainRoute(dialog: Locator, a: string, b: string) {
-  await dialog.getByRole('button', { name: /^New route$/ }).click();
-  await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-  await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+  await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
+  await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
+  await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
 
   const stopRows = dialog.locator('.stop-row');
   await expect(stopRows).toHaveCount(2);
   await stopRows.nth(0).locator('select').selectOption(a);
   await stopRows
     .nth(0)
-    .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} buy at Stop 1$`) })
+    .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
     .click();
   await stopRows.nth(1).locator('select').selectOption(b);
   await stopRows
     .nth(1)
-    .getByRole('button', { name: new RegExp(`^${GOODS.grain.name} sell at Stop 2$`) })
+    .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Sprzedaj — przystanek 2$`) })
     .click();
 
-  const saveBtn = dialog.getByRole('button', { name: /^Save route$/ });
+  const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
   await expect(saveBtn).toBeEnabled();
   await saveBtn.click();
 }
@@ -108,7 +109,7 @@ test.describe('Founding progress bar (#157)', () => {
     await continueWithWorld(page, fundedWorld('founding-bar', 1_500));
     await page.locator('g.port').first().click({ force: true });
 
-    const bar = page.getByRole('progressbar', { name: 'Founding savings progress' });
+    const bar = page.getByRole('progressbar', { name: 'Postęp oszczędności na założenie' });
     await expect(bar).toBeVisible();
     await expect(bar).toHaveAttribute('aria-valuenow', '1500');
     await expect(bar).toHaveAttribute('aria-valuemax', '3000'); // the real gate, never ₸2,500
@@ -124,7 +125,7 @@ test.describe('Founding progress bar (#157)', () => {
     await continueWithWorld(page, fundedWorld('founding-bar-full'));
     await page.locator('g.port').first().click({ force: true });
 
-    const bar = page.getByRole('progressbar', { name: 'Founding savings progress' });
+    const bar = page.getByRole('progressbar', { name: 'Postęp oszczędności na założenie' });
     await expect(bar).toHaveAttribute('aria-valuenow', '3000'); // clamped at the gate
     await expect(page.locator('.founding-goal__count')).toContainText('₸3000 / ₸3000');
 
@@ -147,13 +148,13 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await expect(foundBtn).toHaveCount(0); // founding button gone once founded
 
     // TopBar shortcut appears once founded.
-    const headquartersBtn = page.getByRole('button', { name: /^Headquarters$/ });
+    const headquartersBtn = page.getByRole('button', { name: /^Siedziba$/ });
     await expect(headquartersBtn).toBeVisible();
 
     // PortPanel's Headquarters section shows a build progress bar once a
     // build exists — place one from the panel first.
     await headquartersBtn.click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
     const placeBtn = dialog.getByRole('button', { name: /Zleć budowę/ });
     await expect(placeBtn).toBeEnabled();
@@ -178,11 +179,11 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     // "readable from the port level") — checked *before* rushing, since a
     // deep-purse rush can complete the whole recipe in one shot and launch
     // the ship, clearing buildOrder (and this section along with it).
-    await dialog.getByRole('button', { name: /^Close$/ }).click();
+    await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.locator('g.port').first().click({ force: true });
     await expect(page.locator('.headquarters-section .headquarters-progress__row')).toHaveCount(5);
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
 
     // Rush shows a live quote (nonzero — deep purse, nothing bought yet)
     // and executes: the purse drops by exactly the quoted amount.
@@ -206,8 +207,8 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await continueWithWorld(page, fundedWorld('hq-thin', 4_000));
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
 
     await dialog.getByRole('button', { name: /Zleć budowę/ }).click();
     await expect(dialog.locator('.headquarters-stall')).toContainText(/stanie na rezerwie ₸500/);
@@ -236,8 +237,8 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // Create a two-Stop route: buy grain at A, sell grain at B.
@@ -246,11 +247,11 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     // Route now shows in the list with a placeholder last-loop result.
     const routeRow = dialog.locator('.route-row').first();
     await expect(routeRow).toBeVisible();
-    await expect(routeRow.locator('.route-row__result')).toContainText('no loop yet');
+    await expect(routeRow.locator('.route-row__result')).toContainText('brak jeszcze pętli');
 
     // Assign s0.
     await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Assign$/ }).click();
+    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
     await expect(routeRow.locator('.route-row__ship')).toContainText(S0_NAME);
 
     // Map: saving a new route selects it (Trasy tab), highlighting its Stop
@@ -260,21 +261,21 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
 
     // Run the sim fast enough to close at least one full loop (two Stop-0
     // visits) — close the modal first, since the overlay covers the TopBar.
-    await dialog.getByRole('button', { name: /^Close$/ }).click();
+    await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
     await dialog2.getByRole('tab', { name: 'Trasy' }).click();
-    await expect(dialog2.locator('.route-row__result')).not.toContainText('no loop yet', {
+    await expect(dialog2.locator('.route-row__result')).not.toContainText('brak jeszcze pętli', {
       timeout: 30_000,
     });
 
     // Loop metrics are populated: total Course ticks and last-loop result
     // both render a number (docking fees may legitimately be 0 or a
     // positive figure — asserting presence, not a specific value).
-    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Course: \d+t\/loop/);
-    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Docking fees\/loop: \d+/);
+    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Kurs: \d+t\/pętla/);
+    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Opłaty dokowe\/pętla: \d+/);
   });
 
   test('a routed greedy sell shows a runtime note at the Stop it emptied the hold at (#398)', async ({
@@ -287,27 +288,27 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
 
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // buy grain (Stop 1, A) → sell grain (Stop 2, B), both greedy (no qty).
     await createGrainRoute(dialog, a, b);
     const routeRow = dialog.locator('.route-row').first();
     await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Assign$/ }).click();
+    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
 
-    await dialog.getByRole('button', { name: /^Close$/ }).click();
+    await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
 
     // Once the ship's greedy sell at Stop 2 (B) fires, the TopBar's routed-
     // sale note (#398, pause-cause kin — #130) records it: legible in the
     // moment, not a silent cargo wipe.
     await expect(page.locator('.top-bar__routed-sale-note')).toContainText(
-      `${bName}: sprzedano całość ${GOODS.grain.name}`,
+      `${bName}: sprzedano całość — ${GOOD_NAME_PL.grain} ×`,
       { timeout: 30_000 },
     );
-    await expect(page.locator('.top-bar__routed-sale-note')).toContainText('szt.) — Stop 2');
+    await expect(page.locator('.top-bar__routed-sale-note')).toContainText('— przystanek 2');
   });
 
   test('edit propagates from the next Stop: an in-flight ship redirects to the edited Stop port', async ({
@@ -321,8 +322,8 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
 
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // Route: buy grain at A, sell grain at B.
@@ -330,32 +331,32 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
 
     const routeRow = dialog.locator('.route-row').first();
     await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Assign$/ }).click();
+    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
 
     // Un-pause: the ship executes Stop 0 at A (still paused when we assigned,
     // so nothing ran yet — src/store/gameStore.ts dispatch() applies commands
     // immediately but ticks only advance while un-paused), then departs
     // toward B on its already-computed Course.
-    await dialog.getByRole('button', { name: /^Close$/ }).click();
+    await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.side-panel__subtitle')).toContainText('Underway', { timeout: 30_000 });
+    await expect(page.locator('.side-panel__subtitle')).toContainText('W drodze', { timeout: 30_000 });
 
     // Pause and edit the Route while the ship is genuinely in flight toward
     // B: move Stop 2 from B to a third port C.
     await page.getByRole('button', { name: '⏸' }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
     await dialog2.getByRole('tab', { name: 'Trasy' }).click();
     await dialog2
       .locator('.route-row')
       .first()
-      .getByRole('button', { name: /^Edit$/ })
+      .getByRole('button', { name: /^Edytuj$/ })
       .click();
     const editRows = dialog2.locator('.stop-row');
     await editRows.nth(1).locator('select').selectOption(c);
-    await dialog2.getByRole('button', { name: /^Save route$/ }).click();
-    await dialog2.getByRole('button', { name: /^Close$/ }).click();
+    await dialog2.getByRole('button', { name: /^Zapisz trasę$/ }).click();
+    await dialog2.getByRole('button', { name: /^Zamknij$/ }).click();
 
     // Resume: the ship reaches B (the stale destination, no trade — Stop 2
     // there is no longer part of the template) then redirects onward toward
@@ -365,7 +366,7 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     // redirect (not a lasting dock) is the robust, non-flaky signal.
     await page.getByRole('button', { name: '100x' }).click();
     await page.locator('.fleet-list__item--controlled').click();
-    await expect(page.locator('.side-panel__subtitle')).toContainText(`Underway to ${cName}`, {
+    await expect(page.locator('.side-panel__subtitle')).toContainText(`W drodze do ${cName}`, {
       timeout: 30_000,
     });
   });
@@ -380,15 +381,15 @@ test.describe('Headquarters overlay scroll (#176, via OverlayShell #181)', () =>
 
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
-    await dialog.getByRole('button', { name: /^New route$/ }).click();
+    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
     // 12 Stops — far more than fits in the viewport at once. Two of them get
     // distinct ports so Save clears isValid (>=2 Stops, >=2 distinct ports).
     for (let i = 0; i < 12; i++) {
-      await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+      await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
     }
     const stopRows = dialog.locator('.stop-row');
     await expect(stopRows).toHaveCount(12);
@@ -408,7 +409,7 @@ test.describe('Headquarters overlay scroll (#176, via OverlayShell #181)', () =>
 
     // Save is reachable by scrolling the body (`.overlay__body`, the shell's
     // single scroll region) — not just present somewhere off-screen.
-    const saveBtn = dialog.getByRole('button', { name: /^Save route$/ });
+    const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
     await saveBtn.scrollIntoViewIfNeeded();
     await expect(saveBtn).toBeInViewport();
     await expect(saveBtn).toBeEnabled();
@@ -426,8 +427,8 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
 
     // `dialog` is the `.overlay` backdrop itself (role="dialog" sits on the
@@ -448,8 +449,8 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
 
     await page.keyboard.press('Escape');
@@ -463,8 +464,8 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     const budowa = dialog.getByRole('tab', { name: 'Budowa' });
     const trasy = dialog.getByRole('tab', { name: 'Trasy' });
 
@@ -480,10 +481,10 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await page.keyboard.press(',');
     await expect(trasy).toHaveAttribute('aria-selected', 'true');
 
-    // Typing "," inside the Route name field (a real text input, RouteEditor)
+    // Typing "," inside the Nazwa trasy field (a real text input, RouteEditor)
     // must reach the field, not cycle the tab back to Budowa.
-    await dialog.getByRole('button', { name: /^New route$/ }).click();
-    const nameInput = dialog.getByLabel('Route name');
+    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
+    const nameInput = dialog.getByLabel('Nazwa trasy');
     await nameInput.fill('a');
     await nameInput.pressSequentially(',.');
     await expect(nameInput).toHaveValue('a,.');

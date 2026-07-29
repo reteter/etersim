@@ -10,7 +10,6 @@ import {
   effectiveBase,
   ENROLLMENT_FEE,
   GOOD_IDS,
-  GOODS,
   HEADQUARTERS_COST,
   isUnderRefit,
   nextHoldStep,
@@ -43,6 +42,7 @@ import { computeMarketSignal, type SignalTier } from "../store/marketSignal";
 import { BuildProgress } from "./BuildProgress";
 import { buyCapHint, buyCapReason } from "./buyCap";
 import { FOUNDING_GOAL, foundingProgress, foundingSavings } from "./foundingProgress";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { GUILD_NAME_PL, GuildBadge } from "./guildDisplay";
 import {
   AetherSaltIcon,
@@ -85,23 +85,34 @@ const GOOD_ICONS: Record<GoodId, ComponentType<SVGProps<SVGSVGElement>>> = {
   timber: TimberIcon,
 };
 
-/** Archetype label text (CONTEXT.md: Port archetype). The other five render
- *  as their raw identifier — `.side-panel__subtitle`'s `text-transform:
- *  capitalize` (src/index.css) capitalizes every word, same trick already
- *  relied on for ShipPanel's "Docked at" (e2e/ui.spec.ts). "freeport" is one
- *  word in code but CONTEXT.md's Free port entry explicitly avoids "freeport"
- *  as one word in prose — "Free port" (two words) here renders "Free Port"
- *  after the same CSS transform. */
+/**
+ * Archetype label text (CONTEXT.md: Port archetype). The other five render
+ * as their raw English identifier — `.port-panel__archetype-label`'s
+ * `text-transform: capitalize` (src/index.css, scoped here #184 — it used to
+ * sit on the whole `.side-panel__subtitle`, which ShipPanel's now-Polish
+ * multi-word subtitle would have title-cased word-by-word) capitalizes the
+ * leading letter. "freeport" is one word in code but CONTEXT.md's Free port
+ * entry explicitly avoids "freeport" as one word in prose — "Free port" (two
+ * words) here renders "Free Port" after the same CSS transform.
+ *
+ * #184 flag: these six archetype names (agrarian/industrial/urban/mining/
+ * verdant/"Free port") are still English player-facing text — found during
+ * the sweep, deliberately NOT translated here. Six more coined Polish names
+ * (not named anywhere in #184's AC) is a grill-sized decision, not a coder
+ * one — "verdant" in particular has no obvious single-word Polish translation
+ * (bujny? żyzny? zielony?) without a design call. Left as a follow-up flagged
+ * in the completion report; needs its own CONTEXT.md entries first (§Laws 4).
+ */
 function archetypeLabel(archetype: Port["archetype"]): string {
   return archetype === "freeport" ? "Free port" : archetype;
 }
 
-/** Compact cargo summary for a Harbor hover tooltip, e.g. "Grain 5, Iron 2". */
+/** Compact cargo summary for a Harbor hover tooltip, e.g. "Zboże 5, Drewno 2". */
 function cargoSummary(ship: Ship): string {
   const held = GOOD_IDS.filter((good) => amountOf(ship.cargo, good) > 0).map(
-    (good) => `${GOODS[good].name} ${amountOf(ship.cargo, good)}`,
+    (good) => `${GOOD_NAME_PL[good]} ${amountOf(ship.cargo, good)}`,
   );
-  return held.length === 0 ? "empty" : held.join(", ");
+  return held.length === 0 ? "pusta" : held.join(", ");
 }
 
 /**
@@ -127,9 +138,9 @@ function Harbor({
 
   return (
     <div className="harbor">
-      <h3 className="side-panel__heading">Harbor</h3>
+      <h3 className="side-panel__heading">Przystań</h3>
       {docked.length === 0 ? (
-        <p className="side-panel__hint">No ships docked here.</p>
+        <p className="side-panel__hint">Brak zadokowanych tu statków.</p>
       ) : (
         <ul className="harbor__list">
           {docked.map((ship) => {
@@ -139,7 +150,7 @@ function Harbor({
                 <button
                   type="button"
                   className={controlled ? "harbor__ship harbor__ship--controlled" : "harbor__ship"}
-                  title={`Hold ${cargoUsed(ship)}/${ship.hold} • ${cargoSummary(ship)}`}
+                  title={`Ładownia ${cargoUsed(ship)}/${ship.hold} • ${cargoSummary(ship)}`}
                   onClick={() => openShip(ship.id)}
                 >
                   <ShipIcon
@@ -285,7 +296,7 @@ function MarketRow({
       <div className="market-row__head">
         <span className="market-row__name">
           <GoodIcon className="market-row__icon" />
-          {GOODS[good].name}
+          {GOOD_NAME_PL[good]}
           {held > 0 && (
             // In-hold marker (#73, owner request 2026-07-16): the good's own
             // icon vocabulary again, muted — no new color (ADR-0006) — so a
@@ -316,14 +327,14 @@ function MarketRow({
               step={1}
               value={clampedQty}
               disabled={maxQty <= 0}
-              aria-label={`${GOODS[good].name} quantity`}
+              aria-label={`${GOOD_NAME_PL[good]} ilość`}
               onChange={(e) => setQty(clampQty(Math.floor(Number(e.target.value) || 0)))}
             />
             <button
               type="button"
               className={canBuy ? shadingClass(buyTier) : undefined}
               disabled={!canBuy}
-              aria-label={`Buy ${GOODS[good].name}`}
+              aria-label={`Kup: ${GOOD_NAME_PL[good]}`}
               onClick={() => dispatch({ kind: "buy", shipId: ship.id, good, qty: clampedQty })}
             >
               Kup {quoteLabel(buyTotal)}
@@ -333,7 +344,7 @@ function MarketRow({
               type="button"
               className={canSell ? shadingClass(sellTier) : undefined}
               disabled={!canSell}
-              aria-label={`Sell ${GOODS[good].name}`}
+              aria-label={`Sprzedaj: ${GOOD_NAME_PL[good]}`}
               onClick={() => dispatch({ kind: "sell", shipId: ship.id, good, qty: clampedQty })}
             >
               Sprzedaj {quoteLabel(sellTotal)}
@@ -374,7 +385,7 @@ function SailControl({
 }) {
   const dispatch = useGameStore((s) => s.dispatch);
   const { disabledHint, eta } = sailability(ship, portId, region, locked);
-  const label = `Sail ${ship.name} here`;
+  const label = `Płyń tu — ${ship.name}`;
 
   if (disabledHint !== null) {
     return (
@@ -390,7 +401,7 @@ function SailControl({
       className="sail-btn"
       onClick={() => dispatch({ kind: "sailTo", shipId: ship.id, portId })}
     >
-      {label} (~{eta} ticks)
+      {label} (~{eta} ticków)
     </button>
   );
 }
@@ -429,7 +440,7 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
         <div
           className="founding-goal__bar"
           role="progressbar"
-          aria-label="Founding savings progress"
+          aria-label="Postęp oszczędności na założenie"
           aria-valuenow={savings}
           aria-valuemin={0}
           aria-valuemax={FOUNDING_GOAL}
@@ -450,12 +461,12 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
 
   return (
     <div className="headquarters-section">
-      <h3 className="side-panel__heading">Headquarters</h3>
+      <h3 className="side-panel__heading">Siedziba</h3>
       {headquarters.buildOrder ? (
         <BuildProgress siteStore={headquarters.buildOrder.siteStore} />
       ) : (
         <p className="side-panel__hint">
-          No active build order — open Headquarters from the TopBar to start one.
+          Brak aktywnego zlecenia budowy — otwórz Siedzibę z górnego paska, aby je rozpocząć.
         </p>
       )}
     </div>
@@ -888,12 +899,12 @@ function StorehouseSection({
         return (
           <div key={good} className="storehouse-row">
             <span className="storehouse-row__label">
-              {GOODS[good].name}: {stored}/{STOREHOUSE_CAPACITY}
+              {GOOD_NAME_PL[good]}: {stored}/{STOREHOUSE_CAPACITY}
             </span>
             <div
               className="storehouse-row__bar"
               role="progressbar"
-              aria-label={`${GOODS[good].name} storehouse fill`}
+              aria-label={`${GOOD_NAME_PL[good]} — zapełnienie składu`}
               aria-valuenow={stored}
               aria-valuemin={0}
               aria-valuemax={STOREHOUSE_CAPACITY}
@@ -910,7 +921,7 @@ function StorehouseSection({
                   className="menu-btn"
                   disabled={!canStore}
                   title={canStore ? undefined : held <= 0 ? "Brak towaru w ładowni" : "Skład pełny"}
-                  aria-label={`Store ${GOODS[good].name}`}
+                  aria-label={`Złóż: ${GOOD_NAME_PL[good]}`}
                   onClick={() => dispatch({ kind: "storeGood", shipId: ship.id, good })}
                 >
                   Złóż
@@ -920,7 +931,7 @@ function StorehouseSection({
                   className="menu-btn"
                   disabled={!canWithdraw}
                   title={canWithdraw ? undefined : holdFull ? "Ładownia pełna" : "Skład pusty"}
-                  aria-label={`Withdraw ${GOODS[good].name}`}
+                  aria-label={`Pobierz: ${GOOD_NAME_PL[good]}`}
                   onClick={() => dispatch({ kind: "withdrawGood", shipId: ship.id, good })}
                 >
                   Pobierz
@@ -965,7 +976,7 @@ export function PortPanel({ portId }: { portId: PortId }) {
       <h2 className="side-panel__title">{port.name}</h2>
       <p className="side-panel__subtitle">
         <ArchetypeIcon className="side-panel__subtitle-icon" />
-        {archetypeLabel(port.archetype)}
+        <span className="port-panel__archetype-label">{archetypeLabel(port.archetype)}</span>
       </p>
 
       <Harbor port={port} ships={world.company.ships} controlledShipId={controlledShipId} />
@@ -985,13 +996,13 @@ export function PortPanel({ portId }: { portId: PortId }) {
 
       <GuildhouseSection world={world} portId={port.id} />
 
-      <div className="market" role="table" aria-label={`${port.name} market`}>
+      <div className="market" role="table" aria-label={`Rynek — ${port.name}`}>
         <div className="market__header" role="row">
-          <span>Good</span>
+          <span>Towar</span>
           <span title={TREND_LEGEND}>Trend</span>
-          <span>Bid</span>
-          <span>Ask</span>
-          <span>Stock</span>
+          <span>Sprzedaż</span>
+          <span>Kupno</span>
+          <span>Zapas</span>
         </div>
         {GOOD_IDS.map((good) => (
           <MarketRow

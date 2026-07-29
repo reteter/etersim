@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { GOODS, isUnderRefit, SPEEDS, type Speed } from "../sim";
+import { isUnderRefit, SPEEDS, type Speed } from "../sim";
 import { useGameStore } from "../store/gameStore";
 import { GameMenu } from "./GameMenu";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { HeadquartersPanel } from "./HeadquartersPanel";
 import { LedgerOverlay } from "./LedgerOverlay";
 import { PriceBoardOverlay } from "./PriceBoardOverlay";
@@ -138,7 +139,7 @@ export function TopBar() {
       <span className="top-bar__thalers">₸ {thalers}</span>
       <span className="top-bar__date">{formatWorldDate(tick)}</span>
       <div className="top-bar__speed-group">
-        <div className="top-bar__speed" role="group" aria-label="Speed controls">
+        <div className="top-bar__speed" role="group" aria-label="Sterowanie prędkością">
           {SPEEDS.map((s) => (
             <button
               key={String(s)}
@@ -167,9 +168,12 @@ export function TopBar() {
             the same way a pause explains itself (cluster B symptom c —
             a Stop's "sell all" used to read as a cargo wipe). */}
         {routedSaleNote && (
+          // #184 grammar fix (2026-07-28 owner decision): `<Nazwa> ×<qty>`,
+          // never a bare number before the good name — folds the old
+          // "(N szt.)" aside into the same `×N` slot.
           <p className="top-bar__routed-sale-note" role="status">
-            {routedSaleNote.portName}: sprzedano całość {GOODS[routedSaleNote.good].name} (
-            {routedSaleNote.qty} szt.) — Stop {routedSaleNote.stopIndex}
+            {routedSaleNote.portName}: sprzedano całość — {GOOD_NAME_PL[routedSaleNote.good]} ×
+            {routedSaleNote.qty} — przystanek {routedSaleNote.stopIndex}
           </p>
         )}
       </div>
@@ -188,16 +192,16 @@ export function TopBar() {
           openOverlay("priceBoard");
         }}
       >
-        Price Board
+        Tablica cen
       </button>
       <button type="button" className="menu-btn" onClick={() => openOverlay("ledger")}>
-        Ledger
+        Księga
       </button>
       {/* Persistent shortcut once the Headquarters is founded (docs/specs/E9
           — UX skeleton: "a persistent TopBar shortcut once founded"). */}
       {hasHeadquarters && (
         <button type="button" className="menu-btn" onClick={() => openOverlay("hq")}>
-          Headquarters
+          Siedziba
         </button>
       )}
       <GameMenu />

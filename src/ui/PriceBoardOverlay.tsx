@@ -2,7 +2,6 @@ import { useState, type CSSProperties } from "react";
 import {
   effectiveBase,
   GOOD_IDS,
-  GOODS,
   price,
   type GoodId,
   type Port,
@@ -11,6 +10,7 @@ import {
   type StopOrder,
 } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { computeMarketSignal, quotePortGood } from "../store/marketSignal";
 import { computeOfferLabels, OFFER_LABEL_TEXT } from "../store/offerLabels";
 import { KontraktyTab } from "./KontraktyTab";
@@ -326,13 +326,13 @@ export function PriceBoardOverlay({
 
   return (
     <OverlayShell
-      ariaLabel="Price board"
-      title="Price Board"
+      ariaLabel="Tablica cen"
+      title="Tablica cen"
       onClose={onClose}
       wide
       tabs={
         <Tabs
-          ariaLabel="Price board tabs"
+          ariaLabel="Zakładki tablicy cen"
           active={tab}
           onChange={onTabChange}
           tabs={[
@@ -396,7 +396,7 @@ export function PriceBoardOverlay({
           <div
             className="price-board"
             role="table"
-            aria-label="Region price board"
+            aria-label="Regionalna tablica cen"
             style={{ "--good-count": visibleGoodIds.length } as CSSProperties}
           >
           <div className="price-board__row price-board__row--header" role="row">
@@ -413,15 +413,15 @@ export function PriceBoardOverlay({
                     }
                     title={TREND_LEGEND}
                     aria-pressed={focused}
-                    aria-label={`Skup uwagę na: ${GOODS[good].name}`}
+                    aria-label={`Skup uwagę na: ${GOOD_NAME_PL[good]}`}
                     onClick={() => toggleManualFocus(good)}
                   >
-                    {GOODS[good].name}
+                    {GOOD_NAME_PL[good]}
                   </button>
                   <button
                     type="button"
                     className="menu-btn price-board__good-hide-btn"
-                    aria-label={`Ukryj kolumnę: ${GOODS[good].name}`}
+                    aria-label={`Ukryj kolumnę: ${GOOD_NAME_PL[good]}`}
                     onClick={() => hideGood(good)}
                   >
                     ✕
@@ -542,8 +542,8 @@ export function PriceBoardOverlay({
                   // an action it won't perform.
                   const isMarketFree = order !== undefined && MARKET_FREE_KINDS.has(order.kind);
                   const cellAriaLabel = isMarketFree
-                    ? `${GOODS[good].name} w ${port.name}: zlecenie ${ORDER_KIND_LABEL[order!.kind]} — zmień przez „więcej”`
-                    : `${GOODS[good].name} w ${port.name}: dodaj zlecenie`;
+                    ? `${GOOD_NAME_PL[good]} w ${port.name}: zlecenie ${ORDER_KIND_LABEL[order!.kind]} — zmień przez „więcej”`
+                    : `${GOOD_NAME_PL[good]} w ${port.name}: dodaj zlecenie`;
                   // Drawer's complete kind set (#419 AC1/AC7) — computed for
                   // every cell that has an active order, shared with
                   // RoutesTab via `legalOrderKinds` (routeAuthoring.ts).
@@ -582,7 +582,7 @@ export function PriceBoardOverlay({
                                 // as "sell everything", not an opaque "Sprzedaj" —
                                 // the good's own name replaces the redundant
                                 // kind label rather than prefixing it.
-                                `sprzedaj całość · ${GOODS[good].name}`
+                                `sprzedaj całość · ${GOOD_NAME_PL[good]}`
                               : `${ORDER_KIND_LABEL[order.kind]}${
                                   order.qty === undefined ? "" : ` · ${order.qty} szt.`
                                 }`}
@@ -594,7 +594,7 @@ export function PriceBoardOverlay({
                             <button
                               type="button"
                               className="menu-btn"
-                              aria-label={`${GOODS[good].name}: zmień na ${order.kind === "buy" ? "sprzedaż" : "kupno"}`}
+                              aria-label={`${GOOD_NAME_PL[good]}: zmień na ${order.kind === "buy" ? "sprzedaż" : "kupno"}`}
                               onClick={() => flipOrderKind(stopIndex!, good, order.kind as "buy" | "sell")}
                             >
                               ⇄
@@ -603,7 +603,7 @@ export function PriceBoardOverlay({
                           <button
                             type="button"
                             className="menu-btn"
-                            aria-label={`${GOODS[good].name}: więcej opcji`}
+                            aria-label={`${GOOD_NAME_PL[good]}: więcej opcji`}
                             onClick={() => toggleExpanded(cellKey, good)}
                           >
                             więcej
@@ -611,7 +611,7 @@ export function PriceBoardOverlay({
                           <button
                             type="button"
                             className="menu-btn"
-                            aria-label={`${GOODS[good].name}: usuń zlecenie`}
+                            aria-label={`${GOOD_NAME_PL[good]}: usuń zlecenie`}
                             onClick={() => removeOrder(stopIndex!, good)}
                           >
                             ×
@@ -627,7 +627,7 @@ export function PriceBoardOverlay({
                                     key={kind}
                                     type="button"
                                     aria-pressed={order.kind === kind}
-                                    aria-label={`${GOODS[good].name}: ustaw zlecenie na ${ORDER_KIND_LABEL[kind]}`}
+                                    aria-label={`${GOOD_NAME_PL[good]}: ustaw zlecenie na ${ORDER_KIND_LABEL[kind]}`}
                                     className={
                                       order.kind === kind ? "menu-btn menu-btn--active" : "menu-btn"
                                     }
@@ -648,7 +648,7 @@ export function PriceBoardOverlay({
                                   step={1}
                                   placeholder="ile"
                                   title="Ile jednostek (puste = maksymalnie)"
-                                  aria-label={`${GOODS[good].name} ile sztuk`}
+                                  aria-label={`${GOOD_NAME_PL[good]} ile sztuk`}
                                   value={order.qty ?? ""}
                                   onChange={(e) => {
                                     const result = parseQtyInput(e.target.value);
@@ -667,7 +667,7 @@ export function PriceBoardOverlay({
                                   step={1}
                                   placeholder="próg marży"
                                   title="Próg marży: czekaj, aż dowóz się opłaci (puste = bez progu)"
-                                  aria-label={`${GOODS[good].name} próg marży`}
+                                  aria-label={`${GOOD_NAME_PL[good]} próg marży`}
                                   value={order.minMargin ?? ""}
                                   onChange={(e) => {
                                     const result = parseMinMarginInput(e.target.value);

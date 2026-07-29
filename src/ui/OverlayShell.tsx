@@ -45,7 +45,7 @@ export function OverlayShell({
         {tabs}
         <div className="overlay__body">{children}</div>
         <button type="button" className="menu-btn" onClick={onClose}>
-          Close
+          Zamknij
         </button>
       </div>
     </div>

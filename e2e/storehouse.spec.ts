@@ -38,7 +38,7 @@ async function continueWithWorld(page: Page, world: World) {
     { key: AUTOSAVE_KEY, json: saveJson(world) },
   );
   await page.goto('/');
-  await page.getByRole('button', { name: /continue/i }).click();
+  await page.getByRole('button', { name: /kontynuuj/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
 }
 
@@ -110,8 +110,8 @@ test.describe('Budowa tab — commission choice (#101)', () => {
     const { world, agrarianPortId, freeportId, otherPortId } = foundedWithPermit('storehouse-commission');
     await continueWithWorld(page, world);
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
 
     await dialog.getByRole('button', { name: 'Budynek', exact: true }).click();
@@ -153,8 +153,8 @@ test.describe('Budowa tab — commission choice (#101)', () => {
     const world = applyCommand(funded, { kind: 'foundHeadquarters', portId: funded.region.ports[0].id });
     await continueWithWorld(page, world);
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('button', { name: 'Budynek', exact: true }).click();
     await expect(dialog).toContainText(/Brak uprawnień do budowy/);
   });
@@ -174,8 +174,8 @@ test.describe('PortPanel Storehouse section (#101)', () => {
     await expect(page.locator('.storehouse-section')).toBeVisible();
     await expect(page.locator('.storehouse-row__label')).toContainText('20/200');
 
-    const storeBtn = page.getByRole('button', { name: /^Store Grain$/ });
-    const withdrawBtn = page.getByRole('button', { name: /^Withdraw Grain$/ });
+    const storeBtn = page.getByRole('button', { name: /^Złóż: Zboże$/ });
+    const withdrawBtn = page.getByRole('button', { name: /^Pobierz: Zboże$/ });
     await expect(storeBtn).toBeEnabled();
     await expect(withdrawBtn).toBeEnabled();
 
@@ -200,7 +200,7 @@ test.describe('PortPanel Storehouse section (#101)', () => {
     const agrarianIdx = world.region.ports.findIndex((p) => p.id === agrarianPortId);
     await page.locator('g.port').nth(agrarianIdx).click({ force: true });
 
-    const withdrawBtn = page.getByRole('button', { name: /^Withdraw Grain$/ });
+    const withdrawBtn = page.getByRole('button', { name: /^Pobierz: Zboże$/ });
     await expect(withdrawBtn).toBeDisabled();
     await expect(withdrawBtn).toHaveAttribute('title', /Ładownia pełna/);
   });
@@ -214,59 +214,59 @@ test.describe('Route editor — store/withdraw chips (#101)', () => {
     const { world, agrarianPortId, otherPortId } = withActiveGranary('storehouse-route-store');
     await continueWithWorld(page, world);
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
-    await dialog.getByRole('button', { name: /^New route$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
     const stopRows = dialog.locator('.stop-row');
 
     // Stop 1 at the non-storehouse port: no store/withdraw column at all.
     await stopRows.nth(0).locator('select').selectOption(otherPortId);
-    await expect(stopRows.nth(0).getByRole('button', { name: /Grain store at Stop 1/ })).toHaveCount(0);
+    await expect(stopRows.nth(0).getByRole('button', { name: /Zboże: Złóż — przystanek 1/ })).toHaveCount(0);
 
     // Stop 2 at the storehouse port: store/withdraw chips render.
     await stopRows.nth(1).locator('select').selectOption(agrarianPortId);
-    const storeChip = stopRows.nth(1).getByRole('button', { name: /^Grain store at Stop 2$/ });
+    const storeChip = stopRows.nth(1).getByRole('button', { name: /^Zboże: Złóż — przystanek 2$/ });
     await expect(storeChip).toBeVisible();
 
     // Buy grain at Stop 1, store it at Stop 2 — a two-Stop loop.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: /^Grain buy at Stop 1$/ })
+      .getByRole('button', { name: /^Zboże: Kup — przystanek 1$/ })
       .click();
     await storeChip.click();
 
-    const saveBtn = dialog.getByRole('button', { name: /^Save route$/ });
+    const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
     await expect(saveBtn).toBeEnabled();
     await saveBtn.click();
 
     const routeRow = dialog.locator('.route-row').first();
     await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Assign$/ }).click();
+    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
 
-    await dialog.getByRole('button', { name: /^Close$/ }).click();
+    await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
     await dialog2.getByRole('tab', { name: 'Trasy' }).click();
-    await expect(dialog2.locator('.route-row__result')).not.toContainText('no loop yet', {
+    await expect(dialog2.locator('.route-row__result')).not.toContainText('brak jeszcze pętli', {
       timeout: 30_000,
     });
-    await dialog2.getByRole('button', { name: /^Close$/ }).click();
+    await dialog2.getByRole('button', { name: /^Zamknij$/ }).click();
 
     // The Ledger carries a `store` event — proving the "store" Stop order
     // actually executed as part of the route loop, not just that the ship
     // completed one. (A map-click assertion here is flaky: the ship's own
     // marker can sit on top of the port marker mid-transit and steal the
     // click — the Ledger overlay is unambiguous.)
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const ledgerDialog = page.getByRole('dialog', { name: /ledger/i });
+    await page.getByRole('button', { name: /^Księga$/ }).click();
+    const ledgerDialog = page.getByRole('dialog', { name: /księga/i });
     await expect(
-      ledgerDialog.locator('.ledger-list__desc').filter({ hasText: 'Stored' }).first(),
+      ledgerDialog.locator('.ledger-list__desc').filter({ hasText: 'Złożono' }).first(),
     ).toBeVisible();
   });
 
@@ -279,35 +279,35 @@ test.describe('Route editor — store/withdraw chips (#101)', () => {
     });
     await continueWithWorld(page, world);
 
-    await page.getByRole('button', { name: /^Headquarters$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /headquarters/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
-    await dialog.getByRole('button', { name: /^New route$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
-    await dialog.getByRole('button', { name: /^Add stop$/ }).click();
+    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
+    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
     const stopRows = dialog.locator('.stop-row');
 
     await stopRows.nth(0).locator('select').selectOption(agrarianPortId);
     await stopRows
       .nth(0)
-      .getByRole('button', { name: /^Grain withdraw at Stop 1$/ })
+      .getByRole('button', { name: /^Zboże: Pobierz — przystanek 1$/ })
       .click();
     await stopRows.nth(1).locator('select').selectOption(otherPortId);
     await stopRows
       .nth(1)
-      .getByRole('button', { name: /^Grain sell at Stop 2$/ })
+      .getByRole('button', { name: /^Zboże: Sprzedaj — przystanek 2$/ })
       .click();
 
-    const saveBtn = dialog.getByRole('button', { name: /^Save route$/ });
+    const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
     await expect(saveBtn).toBeEnabled();
     await saveBtn.click();
 
     const routeRow = dialog.locator('.route-row').first();
     await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Assign$/ }).click();
+    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
 
-    await dialog.getByRole('button', { name: /^Close$/ }).click();
+    await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     const beforeThalers = Number((await page.locator('.top-bar__thalers').innerText()).replace(/[^\d]/g, ''));
     await page.getByRole('button', { name: '100x' }).click();
 
@@ -324,10 +324,10 @@ test.describe('Route editor — store/withdraw chips (#101)', () => {
       .toBeGreaterThan(beforeThalers);
 
     // The Ledger carries the withdraw event that fed the sale.
-    await page.getByRole('button', { name: /^Ledger$/ }).click();
-    const ledgerDialog = page.getByRole('dialog', { name: /ledger/i });
+    await page.getByRole('button', { name: /^Księga$/ }).click();
+    const ledgerDialog = page.getByRole('dialog', { name: /księga/i });
     await expect(
-      ledgerDialog.locator('.ledger-list__desc').filter({ hasText: 'Withdrew' }).first(),
+      ledgerDialog.locator('.ledger-list__desc').filter({ hasText: 'Pobrano' }).first(),
     ).toBeVisible();
   });
 });

@@ -31,7 +31,7 @@ export function StartScreen() {
     <main className="start-screen">
       <div className="start-screen__panel">
         <h1 className="start-screen__title">etersim</h1>
-        <p className="start-screen__tagline">An aether-punk trading venture.</p>
+        <p className="start-screen__tagline">Handlowe przedsięwzięcie w świecie eteropunku.</p>
 
         {canContinue && (
           <button
@@ -39,24 +39,24 @@ export function StartScreen() {
             className="start-btn start-btn--primary"
             onClick={onContinue}
           >
-            Continue
+            Kontynuuj
           </button>
         )}
 
         <form className="start-screen__new" onSubmit={onNewGame}>
           <label className="start-screen__label" htmlFor="seed-input">
-            Seed <span className="start-screen__note">(blank = random)</span>
+            Ziarno <span className="start-screen__note">(puste = losowe)</span>
           </label>
           <input
             id="seed-input"
             className="start-screen__seed"
             type="text"
             value={seed}
-            placeholder="random"
+            placeholder="losowe"
             onChange={(e) => setSeed(e.target.value)}
           />
           <button type="submit" className="start-btn">
-            New game
+            Nowa gra
           </button>
         </form>
       </div>
