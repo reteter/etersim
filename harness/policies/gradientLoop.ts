@@ -54,6 +54,18 @@ function midPrice(world: World, portId: PortId, good: GoodId): number {
 }
 
 /**
+ * Throws unless `portId` names a port that actually exists in `world.region`.
+ * Shared by `init`'s `sourcePortId`/`targetPortId` validation so both checks
+ * report the same descriptive shape instead of two hand-duplicated blocks.
+ */
+function requirePortExists(world: World, portId: PortId, paramName: "sourcePortId" | "targetPortId"): void {
+  const exists = world.region.ports.some((p) => p.id === portId);
+  if (!exists) {
+    throw new Error(`gradientLoop: ${paramName} "${portId}" does not exist in this region`);
+  }
+}
+
+/**
  * The steepest gradient in the region right now: the (good, cheapest port,
  * dearest port) triple with the largest dearest/cheapest price ratio.
  * Deterministic on ties — iteration follows `GOOD_IDS` and `region.ports`
@@ -87,9 +99,14 @@ function steepestGradient(world: World): GradientLoopMemory {
   }
   // Every generated region has cross-port dispersion in every good
   // (economy.test.ts's invariant suite pins exactly that), so `best` is
-  // always found; the fallback keeps the policy total rather than throwing
-  // inside a Batch.
-  return best ?? { good: GOOD_IDS[0], source: world.region.ports[0].id, target: world.region.ports[1].id };
+  // always found. If no gradient exists (edge case: one-port or all-zero-price
+  // region), throw rather than returning an invalid loop.
+  if (!best) {
+    throw new Error(
+      `steepestGradient: no tradeable gradient found in the region (need at least 2 ports with price dispersion)`,
+    );
+  }
+  return best;
 }
 
 /**
@@ -102,12 +119,25 @@ function steepestGradient(world: World): GradientLoopMemory {
 export function gradientLoop(params: GradientLoopParams = {}): Policy<GradientLoopMemory> {
   return {
     name: "gradientLoop",
+    // Not diagnostic: the policy reads only player-visible prices (market quotes
+    // and effective base prices), not sim internals like flow drift or RNG state.
+    diagnostic: false,
     init(world) {
+      // Validate explicit port IDs *before* any computation that assumes
+      // they exist (steepestGradient below), so a bad port ID on a
+      // degenerate region reports the actual "no such port" mistake instead
+      // of a gradient-computation error.
+      if (params.sourcePortId) requirePortExists(world, params.sourcePortId, "sourcePortId");
+      if (params.targetPortId) requirePortExists(world, params.targetPortId, "targetPortId");
+
       const found = steepestGradient(world);
+      const source = params.sourcePortId ?? found.source;
+      const target = params.targetPortId ?? found.target;
+
       return {
         good: params.good ?? found.good,
-        source: params.sourcePortId ?? found.source,
-        target: params.targetPortId ?? found.target,
+        source,
+        target,
       };
     },
     act(world, memory) {
