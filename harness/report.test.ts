@@ -1,0 +1,116 @@
+import { describe, expect, it } from "vitest";
+import { runPolicyBatch } from "./batch.ts";
+import { buildReport, renderMarkdown, round } from "./report.ts";
+
+describe("round", () => {
+  it("rounds to the given decimal place", () => {
+    expect(round(1.23456, 2)).toBe(1.23);
+    expect(round(1.005, 2)).toBeCloseTo(1, 5); // banker's-rounding edge case, not pinned tighter than this
+  });
+
+  it("passes NaN and Infinity through unrounded, never coercing to 0", () => {
+    expect(round(NaN, 2)).toBeNaN();
+    expect(round(Infinity, 2)).toBe(Infinity);
+  });
+});
+
+describe("buildReport + renderMarkdown — determinism (spec §Testing: identical report on re-run)", () => {
+  const DAYS = 20;
+  const seeds = [1, 7];
+
+  it("re-running the same Batch twice produces a deep-equal report and byte-identical Markdown", () => {
+    const first = [runPolicyBatch("doNothing", {}, seeds, DAYS), runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+    const second = [runPolicyBatch("doNothing", {}, seeds, DAYS), runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+
+    const reportA = buildReport(first, DAYS);
+    const reportB = buildReport(second, DAYS);
+
+    // Vacuity guard: the report is not a report of zeroes (incident 0005).
+    const gradient = reportA.policies.find((p) => p.policy === "gradientLoop")!;
+    expect(gradient.aggregate.profitPerDay.median).not.toBe(0);
+    expect(gradient.runs.some((r) => r.metrics.voyages.total > 0)).toBe(true);
+
+    expect(reportB).toEqual(reportA);
+    expect(renderMarkdown(second, reportB)).toBe(renderMarkdown(first, reportA));
+  });
+
+  it("carries no raw Ledger in the JSON report (kept in its own JSONL file)", () => {
+    const batch = runPolicyBatch("doNothing", {}, [1], DAYS);
+    const report = buildReport([batch], DAYS);
+    for (const run of report.policies[0].runs) {
+      expect(run).not.toHaveProperty("ledger");
+    }
+  });
+
+  it("includes a head-to-head comparison only when at least two policies are present", () => {
+    const solo = buildReport([runPolicyBatch("doNothing", {}, [1], DAYS)], DAYS);
+    expect(solo.comparisons).toEqual([]);
+
+    const pair = buildReport(
+      [runPolicyBatch("doNothing", {}, [1], DAYS), runPolicyBatch("gradientLoop", {}, [1], DAYS)],
+      DAYS,
+    );
+    expect(pair.comparisons).toHaveLength(1);
+    expect(pair.comparisons[0]).toMatchObject({ a: "doNothing", b: "gradientLoop" });
+  });
+
+  it("the Markdown names units, defines a Run/Batch/thaler, states the cadence note and rounding, and lists per-Run detail", () => {
+    const batches = [runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+    const report = buildReport(batches, DAYS);
+    const md = renderMarkdown(batches, report);
+    expect(md).toContain("thaler");
+    expect(md).toContain("Cadence note");
+    expect(md).toContain("ADR-0005");
+    expect(md).toContain("Voyages caveat");
+    expect(md).toContain("Incident 0020");
+    expect(md).toMatch(/rounded to \d+ decimal/);
+    expect(md).toContain("gradientLoop");
+    expect(md).toContain("Profit/day");
+    expect(md).toContain("Voyages");
+    expect(md).toContain("Anomalies");
+    for (const seed of seeds) expect(md).toContain(`| ${seed} |`);
+  });
+
+  it("an empty anomaly list still explains why, rather than a bare empty section", () => {
+    const batches = [runPolicyBatch("doNothing", {}, [1], DAYS)];
+    const report = buildReport(batches, DAYS);
+    const md = renderMarkdown(batches, report);
+    expect(report.anomalies).toEqual([]);
+    expect(md).toContain("None flagged");
+  });
+
+  it("recomputes head-to-head medians, per-good P&L, hold utilization and guild points from the raw Batches, never from the rounded report.json values (wave-check finding)", () => {
+    // Odd-count seeds so the median is a real value that could plausibly
+    // differ if a rounded input were re-aggregated (deliberately adversarial:
+    // an even-count median averages two rounded values, which is exactly
+    // where a round-then-aggregate bug bites).
+    const batches = [runPolicyBatch("gradientLoop", {}, [1, 2, 3, 4], DAYS)];
+    const report = buildReport(batches, DAYS);
+    const rawMedian = batches[0].aggregate.profitPerDay.median;
+    const md = renderMarkdown(batches, report);
+    // The Markdown's own "Batch aggregate" median line, rounded once from
+    // the raw value — must match round(rawMedian), not a value re-derived
+    // from report.json's already-rounded per-Run entries.
+    expect(md).toContain(`| Profit/day (₸) | ${round(rawMedian)} |`);
+  });
+
+  it("head-to-head table reads n/a and prints the delta when B's median is not strictly positive", () => {
+    const batches = [runPolicyBatch("doNothing", {}, [1], DAYS), runPolicyBatch("gradientLoop", {}, [1], DAYS)];
+    const report = buildReport(batches, DAYS);
+    const md = renderMarkdown(batches, report);
+    expect(md).toContain("n/a");
+    expect(md).toContain("Delta A");
+  });
+
+  it("cost lines are always non-positive and revenue lines always non-negative in the per-Run table's own column split", () => {
+    const batches = [runPolicyBatch("gradientLoop", {}, [1, 2, 3], DAYS)];
+    for (const run of batches[0].runs) {
+      for (const line of run.metrics.costLines) expect(line.thalers).toBeLessThanOrEqual(0);
+      for (const line of run.metrics.revenueLines) expect(line.thalers).toBeGreaterThanOrEqual(0);
+    }
+    const report = buildReport(batches, DAYS);
+    const md = renderMarkdown(batches, report);
+    expect(md).toContain("Revenue lines (₸, always ≥ 0)");
+    expect(md).toContain("Cost lines (₸, always ≤ 0)");
+  });
+});

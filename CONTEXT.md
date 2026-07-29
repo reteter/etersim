@@ -852,7 +852,9 @@ against E9/E12/E3 and **v1 slice approved 2026-07-15**: Batch core + `harness ru
 and Replay-of-sessions deferred to v2).
 Harness, Policy and Run ship as of #232 (slice 1: the `harness/` skeleton, the Policy contract and
 the `advanceDays` seam).
-Batch reporting (#233), Experiments (#234) and the v2 Direct play/Replay modes do not exist yet.
+Batch ships as of #233 (slice 2: the Batch runner, per-Run metrics, head-to-head policy
+comparison and the `harness run` CLI — JSON + Markdown reports).
+Experiments (#234) and the v2 Direct play/Replay modes do not exist yet.
 
 **Harness** (PL: poligon):
 The headless consumer of the simulation for running games without the UI.
