@@ -1,4 +1,4 @@
-# 2026-07-29 — W5 saturation census (#115 replacement, half of #234)
+# 2026-07-29 — W5 saturation census (part of #234; not #115 — see correction below)
 
 ## Question
 
@@ -99,17 +99,35 @@ Result: 21 of 581 non-inert instances saturated (R2), 18 of those 21 (86%) `grai
 genuine terminal pins on a 5-seed sample (seed 1005, `verdant` port `p5`: `s` = 0.248
 at day 0, 0.0001 by day 60, flat through day 240).
 
-## Recommendation
+## Recommendation and outcome (owner grill, 2026-07-29)
 
-Route to a grill (session 2026-07-29, in progress): is a ~11% early, non-recovering
-grain lock-in within Pillar 1's intent, or does it call for (a) raising grain's
-`OSMOSIS_CAP`/rate specifically — plausible given grain is uniquely the highest-volume
-good in the network and every other good clears fine at the current rate — or (c) a
-distribution-bounded runtime guardrail using this census's numbers as its stated
-margin. **Option (b) (accept as-is) is no longer well-supported for grain** given v2's
-lock-in shape, though it still fits the single `urban`/`textiles` instance. **#115 does
-not close from this file alone** — it closes once the grill picks a direction and, if
-(c), a follow-up lands the actual assertion.
+The grill picked **(c) now, (a-per-good) later**: land a distribution-bounded
+guardrail using this census's numbers as its stated margin, accepting the measured
+~11% grain lock-in rate as a known, characterized feature of the current constants —
+not tuning `OSMOSIS_CAP`/rate to chase it away without playtest evidence it actually
+hurts. A **per-good osmosis rate** (raising grain's clearing capacity specifically,
+since `OSMOSIS_RATE`/`CAP`/`DEADBAND` are global constants today — `osmosis.ts` — with
+no per-good lever) is parked as its own future topic, gated on playtest evidence the
+lock-in is actually a problem in play, not just in a null-policy census.
+
+**Guardrail landed**: `src/sim/w5-grain-saturation.test.ts` — a multi-seed (1–20,
+disjoint from this census's 1000–1019 sample) distribution assertion over the same
+120-day window: grain's terminal-saturation rate must stay ≤25% (≈2x the measured
+~11% baseline, headroom for seed variance while catching a real regression), every
+other good's ≤10% (today: ~0%). Deliberately loose per the issue's own instruction —
+this guards against saturation getting *worse*, it does not pin today's rate as a
+target.
+
+**Correction (2026-07-29): #115 is not touched by this work.** Earlier drafts of this
+file (and two issue comments) treated this census as related to closing #115 — the
+2026-07-19/2026-07-28 comments on #234 call this "the natural home for #115's
+replacement." Checked directly: **#115 was closed independently on 2026-07-21**, as
+OBE — its actual subject (a seed-1 payback discrepancy in a two-ship economics
+guardrail) was settled as by-design (Market impact / diminishing returns), unrelated
+to price/stock saturation. Those #234 comments predate that closure's context and are
+stale on this point. The still-open, genuinely-related descendant of #115's
+methodology lesson is **#374** ("multi-seed the storehouse no-dominance guardrail"),
+a different test, not addressed here.
 
 ## Reproduction
 
