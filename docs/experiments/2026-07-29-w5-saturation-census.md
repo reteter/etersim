@@ -16,112 +16,100 @@ per the comment's ordering, a bounded guardrail (if any) is a follow-up that rea
 bounds off this census, and if the census itself shows saturation, the finding is the
 deliverable.**
 
-## Method
+## v2 — reformulated per the 2026-07-29 owner grill on #234/#115
 
-`scripts/experiments/w5-saturation-census.ts` (this PR). 20 seeds (1000–1019) × 240
-world-days, `doNothing` policy (zero commands, every tick) — the null-policy Run the
-question calls for. At every day boundary, for every `(port, good)` pair, samples
-`s = stock / (STOCK_CAP_MULTIPLIER × equilibrium)` (`market.ts`'s own cap formula).
+The v1 census below (terminal-state classification, arbitrary 240-day window) found
+saturation but couldn't say whether it was a transient glut or a dead port — a
+terminal-day snapshot can't distinguish "saturated for 3 of 240 days, just happened to
+end there" from "saturated from day 60 onward." The owner grill resolved this:
 
-Regimes, derived at runtime from `ARCHETYPE_PROFILES` — never hardcoded per the
-comment's instruction, since those weights are tuning and would silently invalidate a
-hardcoded regime list after any tuning pass:
+1. **Metric**: time-in-saturation (% of the window's days spent near the boundary) and
+   whether the pair **recovers** (leaves saturation again) or is still saturated at
+   the window's end — not a single terminal-day classification.
+2. **Window**: tied to a player-relevant reference, not an arbitrary day count. First
+   choice — median world-days-to-`launch` from the harness's own milestone metric
+   (#446) — turned out **unmeasurable**: `gradientLoop`, the only non-trivial
+   reference policy, never issues `foundHeadquarters` or any build/launch command.
+   Verified with a real Batch: `npx tsx harness/cli.ts run --policy gradientLoop
+   --seeds 1000-1019 --days 60` — every milestone (`founding` through `completed`)
+   is 0/20 reached. A "builder/contractor" reference policy that could reach `launch`
+   doesn't exist yet (`harness/batch.ts`'s own doc comment names this gap, sibling to
+   #449, out of scope here). **Resolution: `WINDOW_DAYS = 120` is a stated
+   approximation** ("roughly twice any reasonable single trading cycle"), not a
+   measured player-relevant figure — closing that gap for real is a follow-up.
 
-- **R1 inert** (`production = consumption = 0` for that pair): no Run needed to prove
-  this one — `market.ts`'s `marketTick` computes `produced`/`consumed` from
-  `profile.productionPerDay`/`consumptionPerDay`, both zero here, so the function is
-  a no-op on `stock` by construction. Confirmed empirically anyway (every R1 pair's
-  variance was driven only by `osmosisTick`, never by `marketTick`) — included in the
-  table as a sanity check on the classifier, not as new information.
-- **R2 saturated**: terminal `s` within `ε = 0.03` of 0 or 1, **and** its variance over
-  the last 20 days ≤ `0.0005` (a std-dev of ≈2%) — "resting", not "passing through".
-- **R3 living**: everything else.
+### v2 method
 
-Covariates carried per pair: port degree (lane count touching the port) and mean
-`voyageTicks` of those lanes — both bear on osmosis's per-lane clearing rate
-(`osmosis.ts`).
+`scripts/experiments/w5-saturation-census.ts` (rewritten in place, same file). 20
+seeds × 120 days, `doNothing`. Per `(port, good)` pair: `isSaturated(s) = s ≤ 0.03 ||
+s ≥ 0.97`, sampled every day. Reports, per pair: `daysSaturated`, `fractionSaturated`,
+`everSaturated`, `terminalSaturated` (saturated at day 120), `recovered`
+(`everSaturated && !terminalSaturated`), `firstSaturationDay`.
 
-**Classifier sanity-checked, not just trusted**: a hand-inspection of five seeds'
-`verdant`/`grain` trajectories (the highest-rate group) found one genuine pin — seed
-1005, port `p5`: `s` at day 0 = 0.248, by day 60 already 0.0001, and flat at 0.0001
-through day 240. The other four seeds in that sample sat at 0.10–0.31 the whole run —
-correctly *not* flagged. The R2 count is not a threshold artifact.
+### v2 results
 
-## Results
-
-20 seeds × 240 days, `doNothing`. Table: regime counts per `(archetype, good)` pair
-across every port of that archetype, every seed (`n` = ports × seeds, varies by
-archetype's port count in a given world).
-
-| archetype | good | prod/day | cons/day | R1 | R2-sat | R3-living | median terminal s | degree range | voyageTicks range |
+| archetype | good | prod/day | cons/day | n | ever-saturated | recovered | still-sat.@120 | median % window sat. (of ever-sat.) | median first-sat. day |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| agrarian | aetherSalt | 0 | 4 | 0 | 0 | 29 | 0.154 | 2–6 | 32–66 |
-| agrarian | electronics | 0 | 2 | 0 | 0 | 29 | 0.140 | 2–6 | 32–66 |
-| agrarian | grain | 96 | 0 | 0 | 3 | 26 | 0.615 | 2–6 | 32–66 |
-| agrarian | textiles | 0 | 6 | 0 | 0 | 29 | 0.134 | 2–6 | 32–66 |
-| agrarian | timber | 0 | 0 | 29 | 0 | 0 | 0.268 | 2–6 | 32–66 |
-| freeport | aetherSalt | 0 | 0 | 20 | 0 | 0 | 0.201 | 3–6 | 31–64 |
-| freeport | electronics | 0 | 0 | 20 | 0 | 0 | 0.236 | 3–6 | 31–64 |
-| freeport | grain | 0 | 6 | 0 | 2 | 18 | 0.134 | 3–6 | 31–64 |
-| freeport | textiles | 0 | 2 | 0 | 0 | 20 | 0.166 | 3–6 | 31–64 |
-| freeport | timber | 0 | 0 | 20 | 0 | 0 | 0.285 | 3–6 | 31–64 |
-| industrial | aetherSalt | 0 | 8 | 0 | 0 | 26 | 0.129 | 2–6 | 32–62 |
-| industrial | electronics | 12 | 0 | 0 | 1 | 25 | 0.564 | 2–6 | 32–62 |
-| industrial | grain | 0 | 24 | 0 | 3 | 23 | 0.126 | 2–6 | 32–62 |
-| industrial | textiles | 0 | 0 | 26 | 0 | 0 | 0.226 | 2–6 | 32–62 |
-| industrial | timber | 0 | 2 | 0 | 0 | 26 | 0.195 | 2–6 | 32–62 |
-| mining | aetherSalt | 20 | 0 | 0 | 1 | 26 | 0.611 | 2–5 | 31–70 |
-| mining | electronics | 0 | 3 | 0 | 0 | 27 | 0.172 | 2–5 | 31–70 |
-| mining | grain | 0 | 18 | 0 | 2 | 25 | 0.146 | 2–5 | 31–70 |
-| mining | textiles | 0 | 4 | 0 | 0 | 27 | 0.184 | 2–5 | 31–70 |
-| mining | timber | 0 | 0 | 27 | 0 | 0 | 0.292 | 2–5 | 31–70 |
-| urban | aetherSalt | 0 | 4 | 0 | 0 | 26 | 0.133 | 2–7 | 30–64 |
-| urban | electronics | 0 | 4 | 0 | 0 | 26 | 0.150 | 2–7 | 30–64 |
-| urban | grain | 0 | 30 | 0 | 3 | 23 | 0.127 | 2–7 | 30–64 |
-| urban | textiles | 24 | 0 | 0 | 1 | 25 | 0.615 | 2–7 | 30–64 |
-| urban | timber | 0 | 3 | 0 | 0 | 26 | 0.158 | 2–7 | 30–64 |
-| verdant | aetherSalt | 0 | 0 | 29 | 0 | 0 | 0.176 | 3–5 | 30–64 |
-| verdant | electronics | 0 | 0 | 29 | 0 | 0 | 0.197 | 3–5 | 30–64 |
-| verdant | grain | 0 | 12 | 0 | 5 | 24 | 0.158 | 3–5 | 30–64 |
-| verdant | textiles | 0 | 5 | 0 | 0 | 29 | 0.148 | 3–5 | 30–64 |
-| verdant | timber | 6 | 0 | 0 | 0 | 29 | 0.495 | 3–5 | 30–64 |
+| agrarian | grain | 96 | 0 | 29 | 1 | 0 | 1 | 39.7% | 73 |
+| freeport | grain | 0 | 6 | 20 | 2 | 0 | 2 | 79.3% | 34 |
+| industrial | grain | 0 | 24 | 26 | 3 | 0 | 3 | 78.5% | 26 |
+| mining | grain | 0 | 18 | 27 | 3 | 1 | 2 | 71.1% | 35 |
+| urban | grain | 0 | 30 | 26 | 3 | 0 | 3 | 84.3% | 19 |
+| urban | textiles | 24 | 0 | 26 | 1 | 0 | 1 | 26.4% | 89 |
+| verdant | grain | 0 | 12 | 29 | 5 | 0 | 5 | 80.2% | 24 |
 
-## Conclusion — saturation happens, concentrated almost entirely on grain
+Every other `(archetype, good)` combination: 0 ever-saturated in 120 days (unchanged
+from v1's inert/near-zero groups). Full per-pair numbers reproducible via the script.
 
-R1 held exactly as the code guarantees: every inert pair's terminal `s` moved only via
-osmosis, never approached the boundary, zero R2 among 154 inert-pair samples.
+### v2 conclusion — not a glut, a lock-in
 
-Among the 27 non-inert `(archetype, good)` combinations (581 pair-instances total),
-**21 saturated (R2) — and 18 of those 21 (86%) are `grain`.** Grain-specific rate:
-18 of 156 grain instances saturate, **≈ 11.5%**. Every other traded good combined:
-3 of 425 instances, **≈ 0.7%**. Grain is both the highest-volume produced good (96/day
-at `agrarian`, more than 4× the next-heaviest producer) and the most widely consumed
-(every other archetype consumes it, up to 30/day at `urban`) — it is the good doing
-the most work in the network, and the one closest to outrunning osmosis's per-lane
-clearing rate. The saturating cases are genuine terminal pins (hand-verified above),
-not threshold noise, and they recur across multiple archetypes (both producer-side
-gluts at `agrarian`/`industrial`/`mining`/`urban` and consumer-side depletion at
-every consuming archetype, most often `verdant`).
+**This is a materially different finding than v1's terminal snapshot suggested.**
+17 of 17 grain instances that ever saturate within the window do so **early** (median
+first-saturation day 19–35 across archetypes, one outlier at 73) and then **stay
+saturated for the rest of the window** — median 71–84% of the entire 120-day window
+spent pinned, for four of the five archetype groups. Only **1 of 17** grain instances
+(one `mining` port) recovers before day 120. The one non-grain hit, `urban`/`textiles`,
+is the opposite shape: late (day 89), mild (26.4% of the window), a plausible late-game
+transient — but it's a single instance, not a pattern.
 
-This is **not** "some good trends to the boundary at most ports of some archetype" (the
-issue's original, too-strong false-if condition) — it is a real but minority tail
-(~11.5% of grain instances, under 1% of everything else) concentrated on the network's
-single heaviest-volume good. Per the 2026-07-28 comment's explicit instruction:
-**no bounded assertion lands from this wave, and `ARCHETYPE_PROFILES`/`OSMOSIS_*`/
-`STOCK_CAP_MULTIPLIER` are not tuned to manufacture a green** (§Laws 7–8). The finding
-is the deliverable.
+This rules out **option (b)** ("accept it as a rare, discoverable glutted-port
+opportunity") for grain specifically, as originally floated in v1: a port that locks
+into saturation by day ~25 and never leaves is not a discoverable event a player
+stumbles into and trades around — for the ~11% of grain (port, good) pairs it hits, it
+is a standing dead zone on the map for most of a playthrough's opening act. The
+`urban`/`textiles` case is consistent with (b) as originally imagined; grain is not.
+
+**No bounded assertion still lands from this file** — per §Laws 7–8, no constant is
+tuned to manufacture a green, and the recommendation below is a grill output, not a
+code change.
+
+## v1 (superseded) — terminal-state census, 240-day arbitrary window
+
+Kept for provenance; **do not read the v1 numbers as the current finding** — v2 above
+supersedes it. v1 asked only "where does the pair end up," not "how did it get there
+or does it come back," which is why the grill reformulated it.
+
+Method: 20 seeds (1000–1019) × 240 world-days, `doNothing`. R1 inert
+(`production=consumption=0`, confirmed a `marketTick` no-op by code inspection, zero
+false positives among 154 inert-pair samples) / R2 saturated (terminal `s` within
+`ε=0.03` of 0 or 1, end-window variance ≤ `0.0005`) / R3 living.
+
+Result: 21 of 581 non-inert instances saturated (R2), 18 of those 21 (86%) `grain` —
+≈11.5% of grain instances vs ≈0.7% of everything else combined. Hand-verified as
+genuine terminal pins on a 5-seed sample (seed 1005, `verdant` port `p5`: `s` = 0.248
+at day 0, 0.0001 by day 60, flat through day 240).
 
 ## Recommendation
 
-Route to a grill: is an ~11.5% grain-saturation rate over a 240-day null-policy Run
-within Pillar 1's intent ("a producer at 97% of cap has spent nearly its whole
-arbitrage signal", per the reformulation), or does it call for either (a) raising
-grain's `OSMOSIS_CAP`/rate specifically, (b) accepting it as a rare, discoverable
-"glutted port" opportunity for the player (a feature, not a bug — matches the pillar's
-"gradient the whole game is built on"), or (c) a distribution-bounded guardrail with
-this census's numbers as its stated margin, decided consciously rather than backed
-into. **#115 does not close from this PR alone** — it closes once the grill above
-picks one of (a)/(b)/(c) and, if (c), a follow-up lands the actual assertion.
+Route to a grill (session 2026-07-29, in progress): is a ~11% early, non-recovering
+grain lock-in within Pillar 1's intent, or does it call for (a) raising grain's
+`OSMOSIS_CAP`/rate specifically — plausible given grain is uniquely the highest-volume
+good in the network and every other good clears fine at the current rate — or (c) a
+distribution-bounded runtime guardrail using this census's numbers as its stated
+margin. **Option (b) (accept as-is) is no longer well-supported for grain** given v2's
+lock-in shape, though it still fits the single `urban`/`textiles` instance. **#115 does
+not close from this file alone** — it closes once the grill picks a direction and, if
+(c), a follow-up lands the actual assertion.
 
 ## Reproduction
 
