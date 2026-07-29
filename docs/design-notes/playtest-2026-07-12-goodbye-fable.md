@@ -1,13 +1,16 @@
 # Playtest 2026-07-12 — seed `playtest-goodbye-fable` (Ledger + Fleet list verification)
 
 Owner playtest of the shipped Ledger (#114 sim, #117 overlay) and Fleet list (#118) on the
-post-E9-sim build (81b43c7). Screenshots: `tmp/ss/playtest-goobye-fable_1..3.png` (Day 13
-and Day 22 states). Terms per [CONTEXT.md](../../CONTEXT.md); process per
-[WORKFLOW.md](../WORKFLOW.md).
+post-E9-sim build (81b43c7).
+Screenshots:
+`tmp/ss/playtest-goobye-fable_1..3.png` (Day 13 and Day 22 states).
+Terms per [CONTEXT.md](../../CONTEXT.md);
+process per [WORKFLOW.md](../WORKFLOW.md).
 
-Scope caveat: E9's Headquarters/routes sim (#81, closed) has **no UI yet** (#84/#85 open),
-so founding, construction and Route assignment were not exercisable this session. The
-playtest exercised the manual E8 trade loop plus the new observability layer.
+Scope caveat:
+E9's Headquarters/routes sim (#81, closed) has **no UI yet** (#84/#85 open), so founding,
+construction and Route assignment were not exercisable this session.
+The playtest exercised the manual E8 trade loop plus the new observability layer.
 
 ---
 
@@ -42,11 +45,10 @@ playtest exercised the manual E8 trade loop plus the new observability layer.
 |---|------|------|
 | 1 | Port market panel: `Buy max`/`Sell max` 3-line-per-good layout — **re-reported independently**, second playtest in a row | [#73](https://github.com/reteter/etersim/issues/73) (comment added) |
 
-No new defects: no route/idle-state observations were possible (no route UI yet — see
-scope caveat), and the economy observations above are all within already-verified E8/E9
-behavior.
+No new defects:
+no route/idle-state observations were possible (no route UI yet — see scope caveat), and the economy
+observations above are all within already-verified E8/E9 behavior.
 
 ---
 
-*(Session 2026-07-12. Fresh-clone machine; deps installed and `.claude/launch.json`
-added locally as session setup.)*
+*(Session 2026-07-12. Fresh-clone machine; deps installed and `.claude/launch.json` added locally as session setup.)*

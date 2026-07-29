@@ -1,15 +1,16 @@
 # Playtest 2026-07-15 — seed "contractor" (contracts & guilds shakedown)
 
-Owner playtest, ~125 in-game days on seed `contractor`; first real field run of
-the E3 systems. Analyst triage: every observation verified against code (and
-one against the owner's exported save via a Playwright probe) before
-classification. Screenshots in `tmp/ss/playtest-contractor_20260715_*.png`;
+Owner playtest, ~125 in-game days on seed `contractor`;
+first real field run of the E3 systems.
+Analyst triage:
+every observation verified against code (and one against the owner's exported save via a Playwright
+probe) before classification.
+Screenshots in `tmp/ss/playtest-contractor_20260715_*.png`;
 save `tmp/ss/etersim-contractor-day120.json` (local only, `tmp/` untracked).
 
 ## Headline: rank/tier progression deadlock — GRILL, top priority
 
-Observations 4+5 turned out to be one structural finding, confirmed in code
-and on the save:
+Observations 4+5 turned out to be one structural finding, confirmed in code and on the save:
 
 - Offer tier is banded from **geography**: round-trip ticks to the nearest
   source (`bandTier`, contract.ts:82 — ≤90 → 1, ≤130 → 2, ≤175 → 3, else 4).
@@ -17,17 +18,18 @@ and on the save:
 - Points (+1) come only from met settlements; rank 2 needs 4 points
   (guild.ts RANK_THRESHOLDS).
 
-Nothing guarantees a tier-1 offer exists for a guild — if all its shortage
-ports have distant sources, a rank-1 member can **never earn the first
-point**. On this seed both joined guilds are deadlocked (weavers: offers
-tier ≥2; verdant: tier ≥3; screenshot _2 shows rank 1, 0/4 pts, offers
-demanding ranks 3–4). The mainline E3 loop is unplayable on this seed.
+Nothing guarantees a tier-1 offer exists for a guild —
+if all its shortage ports have distant sources, a rank-1 member can **never earn the first point**.
+On this seed both joined guilds are deadlocked (weavers: offers tier ≥2; verdant: tier ≥3;
+screenshot _2 shows rank 1, 0/4 pts, offers demanding ranks 3–4).
+The mainline E3 loop is unplayable on this seed.
 
-Grill options (to weigh, not pre-decided): guarantee a tier-1 offer per
-guild; rank gates rewards/fee multipliers instead of access; tier derived
-from commitment (quota/minPeriods) rather than distance; introductory
-"apprentice" contracts. Routes into the cluster-B grill (or a dedicated
-mini-grill before it — owner's call on timing).
+Grill options (to weigh, not pre-decided):
+guarantee a tier-1 offer per guild;
+rank gates rewards/fee multipliers instead of access;
+tier derived from commitment (quota/minPeriods) rather than distance;
+introductory "apprentice" contracts.
+Routes into the cluster-B grill (or a dedicated mini-grill before it — owner's call on timing).
 
 ## Routed to issues
 

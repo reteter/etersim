@@ -1,38 +1,46 @@
 # E3 — Contracts & guilds
 
-Feature spec for epic E3 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)). Terms
-per [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-09.
+Feature spec for epic E3 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on 2026-07-09.
 Status: **approved (2026-07-09); refreshed at the 2026-07-14 spec-currency grill**
-([grill record](../design-notes/e3-spec-refresh-grill-2026-07-14.md)) — Professor
-findings B/C folded in, upkeep insolvency gap resolved, guardrail seeds pinned.
+([grill record](../design-notes/e3-spec-refresh-grill-2026-07-14.md)) —
+Professor findings B/C folded in, upkeep insolvency gap resolved, guardrail seeds pinned.
 
-Grill inputs: M3 grill (owner's core reframe: contracts are *continuous* — "keep doing X
-for at least Y", not "do X by Y" — and loss-leaders played for reputation are the
-fantasy), PRD v3 statement, parked hook "Company running costs" (upkeep precondition —
-legible costs — shipped with the E9 Ledger), 60-tick lane distances on the playtest seed
-(owner input: contract cadence must be sized from real geometry).
+Grill inputs:
+M3 grill (owner's core reframe: contracts are *continuous* — "keep doing X for at least Y", not "do
+X by Y" — and loss-leaders played for reputation are the fantasy), PRD v3 statement, parked hook
+"Company running costs" (upkeep precondition — legible costs — shipped with the E9 Ledger), 60-tick
+lane distances on the playtest seed (owner input: contract cadence must be sized from real
+geometry).
 
-Scope in one line: five per-archetype guilds with guildhouses offer continuous freight
-contracts — quota per settlement period, flat fee per met period, reputation as the only
-consequence — read from real shortages and settled from the Ledger; plus daily ship
-upkeep.
+Scope in one line:
+five per-archetype guilds with guildhouses offer continuous freight contracts —
+quota per settlement period, flat fee per met period, reputation as the only consequence —
+read from real shortages and settled from the Ledger;
+plus daily ship upkeep.
 
-Explicit non-goals: guild ships or simulated guild trades (institutions, not agents —
-the E8 no-agent decision extends); contract types beyond continuous freight (one-shot
-errands, escort, passengers); price negotiation or dialog systems; guild-vs-guild
-rivalry; recurring guild dues (rejected at the grill: they double-tax the loss-leader
-relationship); thaler penalties of any kind (reputation is the only currency of
-consequence — no-debt precedent); information fog (offers are fully visible, M2 stance);
-route wait/price conditionals ([design-notes/route-conditionals.md](../design-notes/route-conditionals.md)
-— parked, its own grill); guild buildings and permits' *consumption* (E13 — ranks only
-gate them here); crew wages (parked); save migration (pre-1.0).
+Explicit non-goals:
+guild ships or simulated guild trades (institutions, not agents — the E8 no-agent decision extends);
+contract types beyond continuous freight (one-shot errands, escort, passengers);
+price negotiation or dialog systems;
+guild-vs-guild rivalry;
+recurring guild dues (rejected at the grill: they double-tax the loss-leader relationship);
+thaler penalties of any kind (reputation is the only currency of consequence — no-debt precedent);
+information fog (offers are fully visible, M2 stance);
+route wait/price conditionals
+([design-notes/route-conditionals.md](../design-notes/route-conditionals.md) — parked, its own
+grill);
+guild buildings and permits' *consumption* (E13 — ranks only gate them here);
+crew wages (parked);
+save migration (pre-1.0).
 
 ## Design
 
 ### Guilds: institutions, not agents
 
-Five guilds, one per non-freeport archetype, each with a **domain** — the good its
-archetype produces (per `ARCHETYPE_PROFILES`):
+Five guilds, one per non-freeport archetype, each with a **domain** —
+the good its archetype produces (per `ARCHETYPE_PROFILES`):
 
 | Guild (working name, tunable flavor — Polish per the 2026-07-14 UI-language lock) | Archetype | Domain good |
 | --- | --- | --- |
@@ -42,23 +50,24 @@ archetype produces (per `ARCHETYPE_PROFILES`):
 | Liga Odlewników (Foundry League) | industrial | electronics |
 | Konsorcjum Żywodrzewu (Livingwood Consortium) | verdant | timber |
 
-A guild has a **guildhouse** at every port of its archetype (world-side, NPC-owned —
-the region's first institutions with addresses). Guilds own no ships, make no trades,
-and read the same living economy the player reads: everything they do is a pure,
-deterministic function of world state.
+A guild has a **guildhouse** at every port of its archetype (world-side, NPC-owned — the region's
+first institutions with addresses).
+Guilds own no ships, make no trades, and read the same living economy the player reads:
+everything they do is a pure, deterministic function of world state.
 
 ### Enrollment: five separate decisions
 
-Joining a guild requires a founded Headquarters (companies deal with guilds; lone
-shippers don't) and a one-time **enrollment fee**, paid via a command — paperwork, no
-ship presence (the founding precedent). Enrollment grants rank 1 and makes the guild's
-offers visible on the contract board. With limited early thalers, *which guild to join
-first* is the opening M3 decision: it picks whose geography you start building.
+Joining a guild requires a founded Headquarters (companies deal with guilds; lone shippers don't)
+and a one-time **enrollment fee**, paid via a command —
+paperwork, no ship presence (the founding precedent).
+Enrollment grants rank 1 and makes the guild's offers visible on the contract board.
+With limited early thalers, *which guild to join first* is the opening M3 decision:
+it picks whose geography you start building.
 
 ### Ranks: four steps, discrete on purpose
 
-Rank is the facade over hidden progress points (the same design move as settlement
-periods and E9's ranks-not-curves precedent: discrete thresholds are *visible*):
+Rank is the facade over hidden progress points (the same design move as settlement periods and E9's
+ranks-not-curves precedent: discrete thresholds are *visible*):
 
 - Points per guild: settled period **+1**, missed period **−1**, breach or resignation
   **−3**; floor at 0.
@@ -82,9 +91,9 @@ periods and E9's ranks-not-curves precedent: discrete thresholds are *visible*):
 
 ### Contracts: continuous obligations read from real shortages
 
-A contract offer is generated, never authored: at each day boundary a guild looks at
-ports of its archetype whose stock of some good sits far below Equilibrium (beyond a
-threshold), and posts an offer to *keep supplying it*:
+A contract offer is generated, never authored:
+at each day boundary a guild looks at ports of its archetype whose stock of some good sits far below
+Equilibrium (beyond a threshold), and posts an offer to *keep supplying it*:
 
 > deliver ≥ **quota** units of **good** to **port** per **settlement period** of
 > **L world days**, for at least **K periods**; flat **fee** per met period.
@@ -122,23 +131,29 @@ threshold), and posts an offer to *keep supplying it*:
 
 ### Upkeep: the cost of existing
 
-A flat daily fee per ship (`upkeep` Ledger kind), charged at the day boundary. **Upkeep
-never takes the purse below the Reserve (₸500, the same `CONSTRUCTION_RESERVE`)**: the
-charge is `min(fee, max(0, purse − RESERVE))`, and whatever cannot be paid simply
-evaporates — no debt, no penalty, no arrears. A ship costs thalers even when idle: fleets should sail or
-shrink, and "does the third hull pay for itself" becomes a break-even question, not just
-a margin question. Calibration principle (tuning ≠ spec drift): **a lone starter ship
-stays comfortably viable** — upkeep lands only now because the E9 Ledger finally makes
-it a legible line, not an unexplained penalty.
+A flat daily fee per ship (`upkeep` Ledger kind), charged at the day boundary. **Upkeep never takes the purse below the Reserve (₸500, the same `CONSTRUCTION_RESERVE`)**:
+the charge is `min(fee, max(0, purse − RESERVE))`, and whatever cannot be paid simply evaporates —
+no debt, no penalty, no arrears.
+A ship costs thalers even when idle:
+fleets should sail or shrink, and "does the third hull pay for itself" becomes a break-even
+question, not just a margin question.
+Calibration principle (tuning ≠ spec drift): **a lone starter ship stays comfortably viable**
+—
+upkeep lands only now because the E9 Ledger finally makes it a legible line, not an unexplained
+penalty.
 
-**Resolved (2026-07-14 grill; was the named gap from the #122 grill):** upkeep is a
-*standing* drain — reachable by inaction — so it must not be able to kill (agency
-guarantee: the game may slow down, never die). The Reserve extends its meaning: "no
-construction spend crosses ₸500" becomes "no construction spend *and no standing cost*
-crosses ₸500". Below the Reserve, upkeep goes unpaid with no consequence; trading is
-always affordable again. Docking fees stay as shipped (`min(fee, purse)`, outside the
-Reserve) — docking is an active player choice, not a standing cost. CONTEXT.md Reserve
-and Upkeep entries carry the clause.
+**Resolved (2026-07-14 grill; was the named gap from the #122 grill):** upkeep is a *standing* drain
+—
+reachable by inaction —
+so it must not be able to kill (agency guarantee: the game may slow down, never die).
+The Reserve extends its meaning:
+"no construction spend crosses ₸500" becomes "no construction spend *and no standing cost* crosses
+₸500".
+Below the Reserve, upkeep goes unpaid with no consequence;
+trading is always affordable again.
+Docking fees stay as shipped (`min(fee, purse)`, outside the Reserve) —
+docking is an active player choice, not a standing cost.
+CONTEXT.md Reserve and Upkeep entries carry the clause.
 
 ### UX skeleton
 
@@ -206,17 +221,18 @@ and Upkeep entries carry the clause.
 
 ### Tick day-boundary order (extends E8/E9)
 
-**Enabling refactor (2026-07-14 grill — Professor finding C):** the day-boundary
-sequence, today inline in `tick()`, is extracted first into a pure named phase
-`dayBoundary(world)` — a behavior-preserving `refactor(sim)` issue merged before the
-E3 sim wave (proof: byte-equal Ledger on a seed sample). The ordering law then has a
-single home to be asserted in, and E3 phases slot into a named seam instead of a
-growing inline block. The `deriveSubstream` helper lands in the same refactor issue
-(pure addition, unit-tested, consumed from #93 on).
+**Enabling refactor (2026-07-14 grill — Professor finding C):** the day-boundary sequence, today
+inline in `tick()`, is extracted first into a pure named phase `dayBoundary(world)` —
+a behavior-preserving `refactor(sim)` issue merged before the E3 sim wave (proof: byte-equal Ledger
+on a seed sample).
+The ordering law then has a single home to be asserted in, and E3 phases slot into a named seam
+instead of a growing inline block.
+The `deriveSubstream` helper lands in the same refactor issue (pure addition, unit-tested, consumed
+from #93 on).
 
-Within `dayBoundary`, deterministic order: drift step → price snapshots → **upkeep**
-→ **contract settlements** → **offer refresh** → netWorth snapshot (the E9 snapshot
-stays last, so the day's fees and fines are inside the day's curve point).
+Within `dayBoundary`, deterministic order:
+drift step → price snapshots → **upkeep** → **contract settlements** → **offer refresh** → netWorth
+snapshot (the E9 snapshot stays last, so the day's fees and fines are inside the day's curve point).
 
 ### Ledger (`src/sim/ledger.ts`)
 

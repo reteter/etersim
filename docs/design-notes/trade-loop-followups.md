@@ -1,20 +1,23 @@
 # Trade-loop follow-ups — design-session inputs
 
 Parking lot for owner feedback gathered while playtesting E2 (PR #29, issue #16).
-High-level decisions locked (2026-07-07). Spec notes added to
-[E2-trade-loop.md](../specs/E2-trade-loop.md); GitHub issues filed (#25, #28, #32–#37).
-**All shipped as of 2026-07-08** (#25/#34 via E10) — see the Orchestrator notes at the bottom
-and the spec **Implementation status** table.
+High-level decisions locked (2026-07-07).
+Spec notes added to [E2-trade-loop.md](../specs/E2-trade-loop.md);
+GitHub issues filed (#25, #28, #32–#37). **All shipped as of 2026-07-08**
+(#25/#34 via E10) —
+see the Orchestrator notes at the bottom and the spec **Implementation status** table.
 
-Terms per [CONTEXT.md](../../CONTEXT.md); process per [WORKFLOW.md](../WORKFLOW.md).
+Terms per [CONTEXT.md](../../CONTEXT.md);
+process per [WORKFLOW.md](../WORKFLOW.md).
 
 ---
 
 ## 1. Port click priority on the map
-**Tracked in [#28](https://github.com/reteter/etersim/issues/28)** (retitled "Map click
-interaction: port-click priority"). 
+**Tracked in [#28](https://github.com/reteter/etersim/issues/28)** (retitled "Map click interaction:
+port-click priority").
 
-**Grilled (2026-07-06)**: Port always receives the click first. 
+**Grilled (2026-07-06)**:
+Port always receives the click first.
 
 Introduced:
 - **Harbor** (see CONTEXT.md): when a Port is selected, a Harbor section (list of docked Ships) is always shown above the market. Player's ships are separated from others; hover shows summary (Hold + Cargo).
@@ -29,20 +32,24 @@ Introduced:
 - [#37](https://github.com/reteter/etersim/issues/37) — Options/settings view: **locked** (high-level). Reconciled with #17.
 - Additional E2: [#34](https://github.com/reteter/etersim/issues/34) (UI icons), #25 + #2 + #3: **locked** (A + mapping + connectPorts). 
 
-**#25 + #2 + #3** — decyzja A potwierdzona, high-level kierunki zablokowane. Reszta jako follow-upy.
+**#25 + #2 + #3** —
+decyzja A potwierdzona, high-level kierunki zablokowane.
+Reszta jako follow-upy.
 
-See #28 for full context and the grill log. All E2 follow-up items locked high-level (incl. #25 A + #2/#3). Spec notes added for 3–5 + #25.
+See #28 for full context and the grill log.
+All E2 follow-up items locked high-level (incl. #25 A + #2/#3).
+Spec notes added for 3–5 + #25.
 
 ## 25. Worldgen: geometry-aware lane topology
-**Update (2026-07-07 v2 grill):** #25 now lands in **E10 Orrery view (PRD M2)** — the
-decision-A geometry is implemented on top of the static orbit-ring placement. Blocked
-until that placement exists (see [PRD](../PRD.md) M2 and
+**Update (2026-07-07 v2 grill):** #25 now lands in **E10 Orrery view (PRD M2)** —
+the decision-A geometry is implemented on top of the static orbit-ring placement.
+Blocked until that placement exists (see [PRD](../PRD.md) M2 and
 [playtest note](playtest-2026-07-07-market-legibility.md) §5).
 
 **Update (2026-07-07, E10 grill):** [E10 spec](../specs/E10-orrery-view.md) approved —
-MST + non-crossing fill (always-planar lanes), purely proportional `voyageTicksPerUnit`
-mapping. The "better triangle inequality" claim below is corrected in the spec: the old
-floor never broke it, it only compressed distance differences.
+MST + non-crossing fill (always-planar lanes), purely proportional `voyageTicksPerUnit` mapping.
+The "better triangle inequality" claim below is corrected in the spec:
+the old floor never broke it, it only compressed distance differences.
 
 **Locked (2026-07-07, #25):**
 - **A** (map as space): topology geometry-aware. `connectPorts` favors short connections (distance-biased, reduced crossings). Positions matter for readability.
@@ -57,11 +64,15 @@ Follow-ups (implementation, tracked in #25):
 - Spec decision text synced ✓ (E2 worldgen section).
 
 ## 2. Marginal pricing — make it legible (not a change, a clarification)
-How trading already works today (`src/sim/market.ts`): buying/selling is **marginal, per
-unit**. Selling 50 walks the price *down* one unit at a time (total = Σ price at stock+1,
-stock+2, … stock+50), not 50 × the starting price; buying walks it *up* symmetrically.
+How trading already works today (`src/sim/market.ts`):
+buying/selling is **marginal, per unit**.
+Selling 50 walks the price *down* one unit at a time (total = Σ price at stock+1, stock+2, …
+stock+50), not 50 × the starting price;
+buying walks it *up* symmetrically.
 This is intended (spec — "dumping a full hold into a small market is self-limiting").
-No mechanic change wanted — but the UI should make it obvious. Feeds directly into item 3.
+No mechanic change wanted —
+but the UI should make it obvious.
+Feeds directly into item 3.
 
 ## 3. Better buy/sell UI
 Owner asks for:
@@ -80,14 +91,17 @@ Owner asks for:
 - Max values and unit price recompute live with market changes.
 - Compact layout inside existing market-row (no bloat to 320px panel).
 
-Spec note added to E2-trade-loop.md. GitHub issue: [#35](https://github.com/reteter/etersim/issues/35).
+Spec note added to E2-trade-loop.md.
+GitHub issue:
+[#35](https://github.com/reteter/etersim/issues/35).
 
 ## 4. Auto-pause on arrival
 > **Resolved → shipped** (#36 PR #42, toggle wired in #37 PR #53). Original text kept for history.
 
-Owner: when the ship **docks at its destination**, auto-pause the game so time doesn't keep
-running (e.g. at 100×) while the player is away and prices run off. Default **On**,
-overridable in options (item 5).
+Owner:
+when the ship **docks at its destination**, auto-pause the game so time doesn't keep running (e.g.
+at 100×) while the player is away and prices run off.
+Default **On**, overridable in options (item 5).
 
 **Locked high-level (2026-07-07):**
 - Trigger only on final destination arrival (not intermediate ports).
@@ -95,27 +109,35 @@ overridable in options (item 5).
 - Toggle in options/settings (item 5); persists via localStorage tied to save/load.
 - Lives in store/game loop layer only (no sim changes).
 
-Spec note added. GitHub issue: [#36](https://github.com/reteter/etersim/issues/36). Default-On behaviour can ship before full options UI.
+Spec note added.
+GitHub issue:
+[#36](https://github.com/reteter/etersim/issues/36).
+Default-On behaviour can ship before full options UI.
 
 ## 5. Options / settings view
 > **Resolved → shipped** (#37 PR #53): Options overlay in `GameMenu`, auto-pause toggle, shared
 > `.overlay` CSS. Original text kept for history.
 
-A place for user settings — first tenant is the item 4 auto-pause toggle. **Overlaps
-[#17](https://github.com/reteter/etersim/issues/17)** (start screen + menu with export/import).
+A place for user settings —
+first tenant is the item 4 auto-pause toggle. **Overlaps [#17](https://github.com/reteter/etersim/issues/17)**
+(start screen + menu with export/import).
 
 **Locked high-level (2026-07-07):**
 - Reconciled with #17: options extend the existing menu structure (no separate/duplicate menu).
 - Settings and save/load (export/import) live together in one place.
 - Persistence: separate localStorage key for settings (simple and independent of game saves; can fold later).
 
-Spec note added. GitHub issue: [#37](https://github.com/reteter/etersim/issues/37). Reconciled
-with #17 at design level (options extend existing menu; save/load + settings together).
+Spec note added.
+GitHub issue:
+[#37](https://github.com/reteter/etersim/issues/37).
+Reconciled with #17 at design level (options extend existing menu; save/load + settings together).
 
 ---
 
 ### Orchestrator notes (post-lock)
-**E2 complete (2026-07-08)** — all playtest follow-ups shipped; #25/#34 re-scoped into E10.
+**E2 complete (2026-07-08)** —
+all playtest follow-ups shipped;
+#25/#34 re-scoped into E10.
 - **#28 + #32** — **shipped** (`controlledShipId` store model + `openShip`, always-visible header,
   Harbor list, port-click priority via click-through docked ship). Unblocked #33, #36.
 - **#25** sim-only — geometry-aware `connectPorts`; re-scoped into E10 at the v2 grill (2026-07-07)
@@ -131,5 +153,5 @@ with #17 at design level (options extend existing menu; save/load + settings tog
 - **#34** (tintable ship glyph) re-scoped into E10 and **shipped there** (Controlled gold semantics).
 - E2E (`e2e/ui.spec.ts`) now covers the full E2 UI surface; still runs locally only (not in CI).
 
-**Follow-up opened:** [#54](https://github.com/reteter/etersim/issues/54) — give `Ship` a display
-name (domain-model change, needs a grill before implementation).
+**Follow-up opened:** [#54](https://github.com/reteter/etersim/issues/54) —
+give `Ship` a display name (domain-model change, needs a grill before implementation).

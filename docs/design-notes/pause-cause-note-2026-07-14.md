@@ -1,10 +1,11 @@
 # Pause-cause note — grill record (2026-07-14)
 
-Grill of #130 ("in-game hints for existing mechanics"). Parking-lot item, flagged
-"needs grill" for its tension with the E9 law (*buildings introduce mechanics — each
-new gameplay layer arrives with a building, not a tutorial*). Outcome: **no hint
-system exists**; #130 reframes to a single pause-cause legibility fix, rewritten in
-place as the scoped feature. Sibling grill from the same session:
+Grill of #130 ("in-game hints for existing mechanics").
+Parking-lot item, flagged "needs grill" for its tension with the E9 law
+(*buildings introduce mechanics — each new gameplay layer arrives with a building, not a tutorial*).
+Outcome: **no hint system exists**;
+#130 reframes to a single pause-cause legibility fix, rewritten in place as the scoped feature.
+Sibling grill from the same session:
 [route-events-2026-07-14.md](route-events-2026-07-14.md) (#131).
 
 ## Decision tree
@@ -18,16 +19,19 @@ place as the scoped feature. Sibling grill from the same session:
 
 ## The reframe
 
-The note is not a tutorial. It answers "why is the game stopped?" whenever the answer
-isn't "you pressed pause" — interface-state legibility, pillar 4, the same family as
-the buy-cap reason (#124). The E9 law is untouched: no gameplay layer is being taught.
+The note is not a tutorial.
+It answers "why is the game stopped?" whenever the answer isn't "you pressed pause" —
+interface-state legibility, pillar 4, the same family as the buy-cap reason (#124).
+The E9 law is untouched:
+no gameplay layer is being taught.
 
 ## Implementation shape (see the rewritten #130)
 
-Ephemeral pause-cause flag in the store (e.g. `pauseCause: "manual" | "autoArrival"`),
-set where arrival auto-pause fires (`gameStore.ts` tick path), cleared on resume;
-never serialized (not in the save, not in settings). While the cause is auto-arrival,
-the TopBar renders a small note under the speed controls: *"auto-pauza: statek
-zacumował (wyłączalna w Opcjach)"*. No sim change, no settings change, no new
-CONTEXT.md term (no domain concept — a UI state readout). E2E: note appears on
-auto-pause, absent on manual pause, gone on resume.
+Ephemeral pause-cause flag in the store (e.g. `pauseCause: "manual" | "autoArrival"`), set where
+arrival auto-pause fires (`gameStore.ts` tick path), cleared on resume;
+never serialized (not in the save, not in settings).
+While the cause is auto-arrival, the TopBar renders a small note under the speed controls:
+*"auto-pauza: statek zacumował (wyłączalna w Opcjach)"*.
+No sim change, no settings change, no new CONTEXT.md term (no domain concept — a UI state readout).
+E2E:
+note appears on auto-pause, absent on manual pause, gone on resume.

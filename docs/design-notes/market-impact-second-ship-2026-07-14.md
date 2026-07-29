@@ -9,18 +9,18 @@
 
 ## The question
 
-Was seed 1's outlier (a) a test-fixture artifact, (b) a phase-synchronization
-sensitivity (the second hull launching in a bad phase of the first ship's cycle), or
-(c) something else? The issue proposed either amending the pacing target or investigating
-the sync effect.
+Was seed 1's outlier (a) a test-fixture artifact, (b) a phase-synchronization sensitivity (the
+second hull launching in a bad phase of the first ship's cycle), or (c) something else?
+The issue proposed either amending the pacing target or investigating the sync effect.
 
 ## What the simulation showed
 
-A throwaway probe (`src/sim/_probe152.test.ts`, deleted after use) ran the scripted
-grain agrarian→urban loop across seeds [1, 7, 42, 99].
+A throwaway probe (`src/sim/_probe152.test.ts`, deleted after use) ran the scripted grain
+agrarian→urban loop across seeds [1, 7, 42, 99].
 
-**Staggering the second hull's launch does not help** — durable payback (days from build
-completion, measured over a 300-day horizon) barely moves with stagger:
+**Staggering the second hull's launch does not help** —
+durable payback (days from build completion, measured over a 300-day horizon) barely moves with
+stagger:
 
 | seed | stag 0 | stag 1 | stag 3 | stag 8 | stag 13 |
 | --- | --- | --- | --- | --- | --- |
@@ -41,18 +41,21 @@ margin compression from the Company's own trades:
 | 42 | 153% | 76% | 22,446 → 25,322 |
 | 99 | 148% | 79% | 17,902 → 20,951 |
 
-The pattern is uniform across seeds: a second ship raises the average buy price (drains
-the producer) and lowers the average sell price (floods the consumer), halving the
-per-unit margin. This is **Market impact** — the price curve responds to stock, so 2×
-volume walks the price 2× harder against itself. Seed 1 is the outlier only because its
-single-ship margin (84%) is the thinnest of the four (weakest grain gradient); halving a
-thin margin lands near break-even (21% → ~175-day payback), while halving a fat one stays
-healthy (76% → ~50-day payback). All four lanes are 1-hop, so lane length is not the
-differentiator.
+The pattern is uniform across seeds:
+a second ship raises the average buy price (drains the producer) and lowers the average sell price
+(floods the consumer), halving the per-unit margin.
+This is **Market impact** —
+the price curve responds to stock, so 2× volume walks the price 2× harder against itself.
+Seed 1 is the outlier only because its single-ship margin (84%) is the thinnest of the four (weakest
+grain gradient);
+halving a thin margin lands near break-even (21% → ~175-day payback), while halving a fat one stays
+healthy (76% → ~50-day payback).
+All four lanes are 1-hop, so lane length is not the differentiator.
 
-**Answer to the framing question:** two ships on one route *is* a viable, rewarded
-strategy — on a healthy lane it adds ~15–20% profit; on a thin lane the second hull earns
-less than one ship. Working as designed.
+**Answer to the framing question:** two ships on one route *is* a viable, rewarded strategy —
+on a healthy lane it adds ~15–20% profit;
+on a thin lane the second hull earns less than one ship.
+Working as designed.
 
 ## Owner decisions (grill, 2026-07-14)
 
@@ -76,9 +79,10 @@ less than one ship. Working as designed.
 
 ## Open playtest question
 
-Is the route's last-loop result a strong enough signal for a player to *learn* "this lane
-can't carry a second hull" before they waste a build on it? If playtest says no, that is
-#130's territory (in-game hints for existing mechanics), not a re-open of this decision.
+Is the route's last-loop result a strong enough signal for a player to *learn* "this lane can't
+carry a second hull" before they waste a build on it?
+If playtest says no, that is #130's territory (in-game hints for existing mechanics), not a re-open
+of this decision.
 
 ## Related
 

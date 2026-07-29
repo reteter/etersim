@@ -1,8 +1,10 @@
 # Playtest 2026-07-09 — seed `playtest-living` (E8 verification)
 
 Owner playtest of the shipped E8 economy (all seven issues merged, epic closed).
-Screenshots: `tmp/ss/playtest-living_20260709_1..3.png` (Day 36 and Day 248 states).
-Terms per [CONTEXT.md](../../CONTEXT.md); process per [WORKFLOW.md](../WORKFLOW.md);
+Screenshots:
+`tmp/ss/playtest-living_20260709_1..3.png` (Day 36 and Day 248 states).
+Terms per [CONTEXT.md](../../CONTEXT.md);
+process per [WORKFLOW.md](../WORKFLOW.md);
 protocol phases per the session briefing (A observe / B starvation verdict / C play the loop).
 
 ---
@@ -19,7 +21,8 @@ The epic's three target degeneracies are all confirmed dead by feel, not just by
    producer's surplus → haul to the best bid → repeat or switch good on spread. That is
    exactly the structural-gradient loop the spec aimed for, and it prefigures E9 routes.
 
-Progression pull reported (bigger hold, routes/lanes, upgrades) — direct appetite for E9.
+Progression pull reported (bigger hold, routes/lanes, upgrades) —
+direct appetite for E9.
 Thalers 500 → 86,210 by Day 248.
 
 ## Defects & polish (filed)
@@ -93,5 +96,4 @@ Thalers 500 → 86,210 by Day 248.
 
 ---
 
-*(Session 2026-07-09. E8 closed; next per session queue: grill "Analyst-playable mode",
-then grill E9 — this note's progression-pull and pacing items are E9 grill inputs.)*
+*(Session 2026-07-09. E8 closed; next per session queue: grill "Analyst-playable mode", then grill E9 — this note's progression-pull and pacing items are E9 grill inputs.)*

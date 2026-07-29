@@ -1,27 +1,32 @@
 # World model — implications and their checks
 
-A standing register: statements that **must be true if this world is what we say it is**,
-each with the observation that would prove it false and the thing that checks it.
+A standing register:
+statements that **must be true if this world is what we say it is**, each with the observation that
+would prove it false and the thing that checks it.
 
 Opened 2026-07-19 (s14) at the owner's proposal, prompted by an event described below.
 
 ## Why this exists
 
-Every gate this repo runs is a **comparison**. Review compares a diff to acceptance
-criteria. Tests compare a result to an expectation. The docs sync sweep compares a spec to
-its dependents. The design-surface sweep compares documents to each other. A comparison can
-only catch a *disagreement between two things that exist*.
+Every gate this repo runs is a **comparison**.
+Review compares a diff to acceptance criteria.
+Tests compare a result to an expectation.
+The docs sync sweep compares a spec to its dependents.
+The design-surface sweep compares documents to each other.
+A comparison can only catch a *disagreement between two things that exist*.
 
-In s14 a corpus measurement silently lost three quarters of its input and reported ten
-glossary terms as orphaned. Nothing in that stack objected: not the tests, not the exit
-code, not a guard (incident 0020). What objected was a different kind of statement
-altogether —
+In s14 a corpus measurement silently lost three quarters of its input and reported ten glossary
+terms as orphaned.
+Nothing in that stack objected:
+not the tests, not the exit code, not a guard (incident 0020).
+What objected was a different kind of statement altogether —
 
 > *This is a world with a currency. A currency cannot have zero mentions.*
 
-That is not a comparison. It is a **prediction derived from the world model and checked
-against reality**, and the repo owns no machinery for it. It worked because it happened to
-be in someone's head at the right moment, which is not a mechanism.
+That is not a comparison.
+It is a **prediction derived from the world model and checked against reality**, and the repo owns
+no machinery for it.
+It worked because it happened to be in someone's head at the right moment, which is not a mechanism.
 
 This register is the attempt to stop relying on that luck.
 
@@ -32,21 +37,21 @@ This register is the attempt to stop relying on that luck.
 > An implication earns its place only by naming **what observation would falsify it** and
 > **what checks it**. Prose that no implication needs is lore.
 
-Lore is good for the game and useless as a check. The two are easy to confuse because they
-are written in the same voice.
+Lore is good for the game and useless as a check.
+The two are easy to confuse because they are written in the same voice.
 
 **The order is deliberately inverted.** Not *description → implications → verification*, but
-implications first, with the description being whatever is needed to justify them. The
-reason is a finding this project already paid for: **forward-looking text rots, records do
-not** (design-surface-sweep, s13). A world description is a promise about the future, so it
-rots. A register of executable checks is self-correcting — when it stops being true,
-something goes red.
+implications first, with the description being whatever is needed to justify them.
+The reason is a finding this project already paid for: **forward-looking text rots, records do not**
+(design-surface-sweep, s13).
+A world description is a promise about the future, so it rots.
+A register of executable checks is self-correcting —
+when it stops being true, something goes red.
 
 ## What the survey found
 
-The first draft of this note was going to say the project states invariants nobody checks.
-**That was false, and checking it is what this note is about.** The structural layer is
-already well guarded:
+The first draft of this note was going to say the project states invariants nobody checks. **That was false, and checking it is what this note is about.**
+The structural layer is already well guarded:
 
 | Claim | Guarded by |
 | --- | --- |
@@ -58,24 +63,27 @@ already well guarded:
 | five economic archetypes + exactly one Free port | `src/sim/worldgen.test.ts:102` |
 | same seed + template ⇒ deep-equal region | `src/sim/worldgen.test.ts:28` |
 
-So the gap is **not** "nobody writes invariants here". It is narrower and sharper:
+So the gap is **not** "nobody writes invariants here".
+It is narrower and sharper:
 
 > **Structure is guarded. Dynamics are not.**
 
-Every invariant above is a property of a *static artifact* — a table, a worldgen output —
-and therefore checkable by a pure function in a unit test. Not one of them describes what
-the world must **do over time**. Those need a Run, and the machinery for Runs is specced
-but unbuilt: E11, issues #232 → #234.
+Every invariant above is a property of a *static artifact* —
+a table, a worldgen output —
+and therefore checkable by a pure function in a unit test.
+Not one of them describes what the world must **do over time**.
+Those need a Run, and the machinery for Runs is specced but unbuilt:
+E11, issues #232 → #234.
 
-That is also the register's practical payoff. **E11 builds the machinery and has no list of
-what to assert with it.** This is that list.
+That is also the register's practical payoff. **E11 builds the machinery and has no list of what to assert with it.**
+This is that list.
 
 ## The register
 
-Status vocabulary: **covered** (a check exists today), **verified** (checked by hand or
-script, not yet automated), **open** (needs machinery that is not built), **pre-registered**
-(the mechanic has not shipped — the check is written before the feature, as an acceptance
-criterion rather than an afterthought).
+Status vocabulary: **covered**
+(a check exists today), **verified** (checked by hand or script, not yet automated), **open** (needs
+machinery that is not built), **pre-registered** (the mechanic has not shipped — the check is
+written before the feature, as an acceptance criterion rather than an afterthought).
 
 ### W1 — The economy moves whether the player acts or not
 
@@ -170,12 +178,14 @@ criterion rather than an afterthought).
 | open — needs E11 | 3 | W1, W2, W5 |
 | pre-registered — M4 | 3 | W6, W7, W8 |
 
-**Read this as a map, not as a report on the build.** Four of ten are covered; three
-cannot be checked until E11 exists; three describe mechanics that have not shipped.
+**Read this as a map, not as a report on the build.** Four of ten are covered;
+three cannot be checked until E11 exists;
+three describe mechanics that have not shipped.
 
 ## How to add one
 
-Four questions. If any is unanswerable, what you have is not an implication:
+Four questions.
+If any is unanswerable, what you have is not an implication:
 
 1. **Which stated premise does it follow from?** Name the document and line. An implication
    that cannot be traced back is an opinion with a test attached.
@@ -200,14 +210,17 @@ Four questions. If any is unanswerable, what you have is not an implication:
 
 ## Next
 
-~~Attach W6/W7/W8 to `grill-brief-m4-events-and-ice.md`; automate W9; hand W1/W2/W5 to
-#234.~~ **Superseded the same day it was written** — see below.
+~~Attach W6/W7/W8 to `grill-brief-m4-events-and-ice.md`; automate W9; hand W1/W2/W5 to #234.~~ **Superseded the same day it was written**
+—
+see below.
 
 This section was three promises in prose, which is precisely the defect
-[design-surface-sweep](design-surface-sweep.md) finding **F5** resolved hours earlier, and
-which §Honest limits below had already predicted about this very note. Under the resulting
-law — *a trigger is a promise, and promises live in the issue tracker*
-([WORKFLOW](../WORKFLOW.md) §Documentation law) — each item now has an outflow:
+[design-surface-sweep](design-surface-sweep.md) finding **F5** resolved hours earlier, and which
+§Honest limits below had already predicted about this very note.
+Under the resulting law —
+*a trigger is a promise, and promises live in the issue tracker* ([WORKFLOW](../WORKFLOW.md)
+§Documentation law) —
+each item now has an outflow:
 
 | Item | Where it lives now |
 | --- | --- |
@@ -215,7 +228,8 @@ law — *a trigger is a promise, and promises live in the issue tracker*
 | **W9** → anchored script (incident 0020) | **#324 — done**, 2026-07-21 |
 | **W1/W2/W5** → E11 assertion content | **comment on #234**, not a new issue — the obligation already had a home, so it went there |
 
-Recorded rather than quietly fixed, because the note breaking its own stated rule within a
-day is the most useful thing it has demonstrated so far: **stating a defect is not the same
-as being immune to it.** The register predicted this failure in §Honest limits and then
-committed it anyway. What stopped it was not the prediction — it was a law with a detector.
+Recorded rather than quietly fixed, because the note breaking its own stated rule within a day is
+the most useful thing it has demonstrated so far: **stating a defect is not the same as being immune to it.**
+The register predicted this failure in §Honest limits and then committed it anyway.
+What stopped it was not the prediction —
+it was a law with a detector.

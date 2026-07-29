@@ -1,11 +1,15 @@
 # Farewell-roadmap grill — 2026-07-15
 
-Owner (Jakub) + frontier Analyst/Designer, evening session. Context: frontier access
-may lapse after 2026-07-19 with no renewal promised; the session's goal was to turn
-the owner's long-term fantasy into a durable roadmap any future orchestrator — of any
-vendor — can execute against. Inputs: PRD (vision/pillars/roadmap as of 2026-07-09),
-E13 issues (#99–#102), E11 draft spec, parking lot (#131/#132/#134/#202/#212/#227),
-playtest 2026-07-15 outcomes.
+Owner (Jakub) + frontier Analyst/Designer, evening session.
+Context:
+frontier access may lapse after 2026-07-19 with no renewal promised;
+the session's goal was to turn the owner's long-term fantasy into a durable roadmap any future
+orchestrator —
+of any vendor —
+can execute against.
+Inputs:
+PRD (vision/pillars/roadmap as of 2026-07-09), E13 issues (#99–#102), E11 draft spec, parking lot
+(#131/#132/#134/#202/#212/#227), playtest 2026-07-15 outcomes.
 
 ## Locks
 

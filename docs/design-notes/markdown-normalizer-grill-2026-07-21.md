@@ -1,12 +1,15 @@
 # Grill record — markdown normalizer (#341), 2026-07-21
 
-Owner-led, seven questions, resolved one at a time. Opened from the design-surface
-sweep queue (`HANDOFF.md` §Queue item 1): #341 was filed at s15 with a rough scope and
-a draft acceptance list, both explicitly "to be grilled into a spec". This note is that
-spec's decision record; `WORKFLOW.md` §Documentation law carries the resulting rule.
+Owner-led, seven questions, resolved one at a time.
+Opened from the design-surface sweep queue (`HANDOFF.md` §Queue item 1):
+#341 was filed at s15 with a rough scope and a draft acceptance list, both explicitly "to be grilled
+into a spec".
+This note is that spec's decision record;
+`WORKFLOW.md` §Documentation law carries the resulting rule.
 
-Outputs: `docs/WORKFLOW.md` §Documentation law (new convention line), this note,
-follow-up segment-migration issues to be filed once the tool ships (see §Scope below).
+Outputs:
+`docs/WORKFLOW.md` §Documentation law (new convention line), this note, follow-up segment-migration
+issues to be filed once the tool ships (see §Scope below).
 
 ## The decisions, in order
 

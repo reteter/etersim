@@ -6,13 +6,14 @@
 
 ## What happened
 
-After PR #308 merged, `postmerge.ps1 -Pr 308` ran on `main`. Its branch-cleanup step
-issued `git push origin --delete docs/design-surface-sweep`, which failed with
-`Permission to reteter/etersim.git denied to Darecik` — git's credential cache still held
-the other account while `gh` was correctly switched to `reteter` (incident 0018's split,
-on the same machine that produced it). The script did not check `$LASTEXITCODE`, printed
-`OK deleted leftover remote branch`, and finished with `POSTMERGE: CLEAN`. The remote
-branch was still there, verified by `git ls-remote`.
+After PR #308 merged, `postmerge.ps1 -Pr 308` ran on `main`.
+Its branch-cleanup step issued `git push origin --delete docs/design-surface-sweep`, which failed
+with `Permission to reteter/etersim.git denied to Darecik` —
+git's credential cache still held the other account while `gh` was correctly switched to `reteter`
+(incident 0018's split, on the same machine that produced it).
+The script did not check `$LASTEXITCODE`, printed `OK deleted leftover remote branch`, and finished
+with `POSTMERGE: CLEAN`.
+The remote branch was still there, verified by `git ls-remote`.
 
 ## Impact
 
@@ -22,9 +23,12 @@ branch was still there, verified by `git ls-remote`.
 
 ## Recurrence
 
-Medium — structural driver: the script's own §3 is titled *silent-fail guard*, yet its two
-`git` mutations were the only commands in the file whose exit codes went unchecked. Every
-other section verifies. A guard is only as good as its least-checked line.
+Medium —
+structural driver:
+the script's own §3 is titled *silent-fail guard*, yet its two `git` mutations were the only
+commands in the file whose exit codes went unchecked.
+Every other section verifies.
+A guard is only as good as its least-checked line.
 
 ## Recommendation
 
@@ -34,6 +38,7 @@ other section verifies. A guard is only as good as its least-checked line.
 
 ## Follow-up
 
-Landed in this PR. Note for the sweep ledger: this is the second time in two sessions that
-a document's confident claim about a tool ("refuses to report CLEAN…") outran what the tool
-actually did.
+Landed in this PR.
+Note for the sweep ledger:
+this is the second time in two sessions that a document's confident claim about a tool ("refuses to
+report CLEAN…") outran what the tool actually did.

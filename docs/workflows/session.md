@@ -18,10 +18,11 @@ Lightweight by design (ceremony slim, owner decision 2026-07-16).
 
 ## Cross-session state lives in the tracker
 
-Owner decision 2026-07-28. There is no handoff document.
+Owner decision 2026-07-28.
+There is no handoff document.
 
-**The rule:** a thing worth telling the next session is worth an issue. If it does not deserve
-one, it does not deserve to be written down.
+**The rule:** a thing worth telling the next session is worth an issue.
+If it does not deserve one, it does not deserve to be written down.
 
 **Where each kind goes:**
 
@@ -34,14 +35,15 @@ one, it does not deserve to be written down.
 | A bet with a falsifier | an issue that closes when it is measured |
 | Reasoning behind a parked idea | a design note — with an issue carrying the obligation ([documentation.md](documentation.md)) |
 
-**Why the document went away.** `docs/HANDOFF.md` was tried in three shapes: a per-session
-note (swelled), an owner-request export (went stale between asks, and its own §Watch outlived
-promises that had already been discharged), and a ~15-line budgeted note — which broke its own
-budget within a single session, reaching 52 lines and logging what that session had *done*.
-Each shape failed the same way: **nothing obliged the document to stay true.** `gh issue list`
-is swept at every session start, an issue has an open/closed state nobody has to maintain by
-hand, and a milestone description is read by whoever picks up the milestone. The tracker has
-the obligation the document never had.
+**Why the document went away.** `docs/HANDOFF.md` was tried in three shapes:
+a per-session note (swelled), an owner-request export (went stale between asks, and its own §Watch
+outlived promises that had already been discharged), and a ~15-line budgeted note —
+which broke its own budget within a single session, reaching 52 lines and logging what that session
+had *done*.
+Each shape failed the same way: **nothing obliged the document to stay true.**
+`gh issue list` is swept at every session start, an issue has an open/closed state nobody has to
+maintain by hand, and a milestone description is read by whoever picks up the milestone.
+The tracker has the obligation the document never had.
 
-**Project notes do not live in per-machine auto-memory either** (same decision) — that channel
-carries only what is true of this machine and this owner.
+**Project notes do not live in per-machine auto-memory either** (same decision) —
+that channel carries only what is true of this machine and this owner.

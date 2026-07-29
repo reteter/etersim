@@ -6,25 +6,22 @@
 
 ## What happened
 
-#307 (E13.0 2/2, GoodsStore refactor) added `persistence.test.ts`'s C2 test — a
-byte-identical save round-trip comparing `exportWorldJson(runGoldenScenario())` via
-strict `toBe` against a checked-in fixture generated on the coder's Windows machine.
-CI (Linux) failed on the same mechanism as incident 0023, one PR later: several
-float fields (region stock/price snapshots, osmosis pulses — all reached via
-`market.ts`'s `Math.pow`-based price curve) differed in the 15th-16th significant
-digit. Fixed by rounding both sides to 9 decimal places before comparison, verified
-with a drill (a genuine value-swap mutation still fails loudly and clearly at the
-rounded precision).
+#307 (E13.0 2/2, GoodsStore refactor) added `persistence.test.ts`'s C2 test —
+a byte-identical save round-trip comparing `exportWorldJson(runGoldenScenario())` via strict `toBe`
+against a checked-in fixture generated on the coder's Windows machine.
+CI (Linux) failed on the same mechanism as incident 0023, one PR later:
+several float fields (region stock/price snapshots, osmosis pulses — all reached via `market.ts`'s
+`Math.pow`-based price curve) differed in the 15th-16th significant digit.
+Fixed by rounding both sides to 9 decimal places before comparison, verified with a drill (a genuine
+value-swap mutation still fails loudly and clearly at the rounded precision).
 
 **The recurrence was named in advance.** Incident 0023's own §Recurrence line reads:
-*"any future golden/pinned test that formats a float via bare `toString()`/template
-interpolation is exposed the same way, silently, until it happens to touch a
-`Math.pow`-derived value."* #307's original task package (dispatched before 0023 was
-even discovered, since #306 and #307 ran in parallel) could not have cited it — but
-by the time #307's coder wrote the NEW C2 test, 0023 was already fixed and merged on
-`main`, and neither the coder's own dispatch context nor the tier-3 review package
-I built afterward named it as a precaution for a test matching its own predicted
-shape.
+*"any future golden/pinned test that formats a float via bare `toString()`/template interpolation is exposed the same way, silently, until it happens to touch a `Math.pow`-derived value."*
+#307's original task package (dispatched before 0023 was even discovered, since #306 and #307 ran in
+parallel) could not have cited it —
+but by the time #307's coder wrote the NEW C2 test, 0023 was already fixed and merged on `main`, and
+neither the coder's own dispatch context nor the tier-3 review package I built afterward named it as
+a precaution for a test matching its own predicted shape.
 
 ## Impact
 
@@ -44,10 +41,11 @@ shape.
 
 ## Recurrence
 
-Low, now that this is written down twice. Structural driver unchanged from 0023
-(Windows dev / Linux CI), but the actionable fix is process, not mechanism: any
-future task package for a coder writing a new golden/pinned/byte-identical test
-should name 0023 by number, not rely on the coder rediscovering the class.
+Low, now that this is written down twice.
+Structural driver unchanged from 0023 (Windows dev / Linux CI), but the actionable fix is process,
+not mechanism:
+any future task package for a coder writing a new golden/pinned/byte-identical test should name 0023
+by number, not rely on the coder rediscovering the class.
 
 ## Recommendation
 
@@ -60,5 +58,6 @@ should name 0023 by number, not rely on the coder rediscovering the class.
 
 ## Follow-up
 
-Landed same session: `roundFloats` helper in `persistence.test.ts`'s C2 test
-(feat/307-goods-store, folded into PR #366 before merge).
+Landed same session:
+`roundFloats` helper in `persistence.test.ts`'s C2 test (feat/307-goods-store, folded into PR #366
+before merge).

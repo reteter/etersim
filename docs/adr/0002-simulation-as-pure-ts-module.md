@@ -1,6 +1,9 @@
 # Simulation as a pure TypeScript module, separate from UI
 
-The simulation core lives in `src/sim` as pure TypeScript with zero dependencies on React, the DOM, or UI state. The UI reads sim state through a thin store bridge (Zustand) and issues player commands; sim code never imports from UI code.
+The simulation core lives in `src/sim` as pure TypeScript with zero dependencies on React, the DOM,
+or UI state.
+The UI reads sim state through a thin store bridge (Zustand) and issues player commands;
+sim code never imports from UI code.
 
 ## Consequences
 

@@ -1,48 +1,60 @@
 # E15 — Processing
 
-Feature spec for epic E15 (M4's first epic — the depth engine of the 8–12 h pacing
-anchor, PRD §Where 1.0 ends). Terms per [CONTEXT.md](../../CONTEXT.md). Grilled and
-decided with the owner on 2026-07-16 (frontier pre-grill — the one (c)-track topic of
+Feature spec for epic E15 (M4's first epic — the depth engine of the 8–12 h pacing anchor, PRD
+§Where 1.0 ends).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on 2026-07-16 (frontier pre-grill — the one (c)-track topic of
 the fantasy-roadmap session; all other M4 topics ship as grill briefs).
-Status: **approved (2026-07-16** — owner merge of PR #280; issues #281–#284 filed
-into milestone "E15 — Processing"**)**.
+Status: **approved (2026-07-16**
+— owner merge of PR #280; issues #281–#284 filed into milestone "E15 — Processing"**)**.
 
-Grill inputs: [fantasy-roadmap-grill-2026-07-16.md](../design-notes/fantasy-roadmap-grill-2026-07-16.md)
-(locks 4–5: Arcana-split amendment, building dichotomy, guild cartel); PRD §M4
-(Processing entry); E13 spec (CompanyBuilding union, store/withdraw orders — hard
-dependency); #99/E14 ConstructionSite seam (shipped, PR #278); `region.ts`
-archetype profiles.
+Grill inputs:
+[fantasy-roadmap-grill-2026-07-16.md](../design-notes/fantasy-roadmap-grill-2026-07-16.md) (locks
+4–5: Arcana-split amendment, building dichotomy, guild cartel);
+PRD §M4 (Processing entry);
+E13 spec (CompanyBuilding union, store/withdraw orders — hard dependency);
+#99/E14 ConstructionSite seam (shipped, PR #278);
+`region.ts` archetype profiles.
 
-Scope in one line: **Company-owned processing plants** — continuous works that
-convert delivered input Goods into **processed goods** the world consumes but never
-produces; value-add is created in the plant, profit is created on the route.
+Scope in one line: **Company-owned processing plants**
+—
+continuous works that convert delivered input Goods into **processed goods** the world consumes but
+never produces;
+value-add is created in the plant, profit is created on the route.
 
-Explicit non-goals: **chain 3 (aether superconductor)** — depends on Aether ice and
-lands with the events+ice epic (its machinery slot is designed here, its data ships
-there); **recipe switching** (a plant's chain is fixed at construction — want another
-chain, build another plant); **plant demolition/sale/relocation** (E9/E13 non-goals
-stand); **deeper chains** (processed goods as inputs — reserved for M5/M6 growth);
-**auto-sell of outputs** (the plant cannot trade); **rush during operations** (rush
-exists only while the plant is under construction); **plant upgrades/capacity tiers**.
+Explicit non-goals: **chain 3 (aether superconductor)**
+—
+depends on Aether ice and lands with the events+ice epic (its machinery slot is designed here, its
+data ships there); **recipe switching**
+(a plant's chain is fixed at construction — want another chain, build another plant); **plant demolition/sale/relocation**
+(E9/E13 non-goals stand); **deeper chains**
+(processed goods as inputs — reserved for M5/M6 growth); **auto-sell of outputs**
+(the plant cannot trade); **rush during operations**
+(rush exists only while the plant is under construction); **plant upgrades/capacity tiers**.
 
 ## Design
 
 ### Core: the industry loop
 
-The guilds are a cartel — at each other's throats individually, jointly letting no
-outsider near the table (*honour amongst thieves*). They tolerate your construction
-(local labor takes a day's wage), but they will not supply a competing industry: the
-plant has **no auto-draw in operation** — every input unit arrives aboard a Company
-ship (`deliver`), and every output unit leaves aboard one (`withdraw`). **The plant
-never spends thalers.** Value-add is created in the plant; profit is created on the
-route. A ship docked at the plant's port may buy locally and deliver in place — legal
-by design: it costs the ship's time and upkeep (the cartel makes you use *your*
-people; it cannot stop you buying).
+The guilds are a cartel —
+at each other's throats individually, jointly letting no outsider near the table
+(*honour amongst thieves*).
+They tolerate your construction (local labor takes a day's wage), but they will not supply a
+competing industry:
+the plant has **no auto-draw in operation** —
+every input unit arrives aboard a Company ship (`deliver`), and every output unit leaves aboard one
+(`withdraw`). **The plant never spends thalers.**
+Value-add is created in the plant;
+profit is created on the route.
+A ship docked at the plant's port may buy locally and deliver in place —
+legal by design:
+it costs the ship's time and upkeep (the cartel makes you use *your* people; it cannot stop you
+buying).
 
-This is the deliberate asymmetry with the Build Order: **construction auto-draws,
-operation does not.** The construction site is local wage labor; the operating plant
-is your industry, and the quay between the market and your gate is crossed only by
-your own crews.
+This is the deliberate asymmetry with the Build Order: **construction auto-draws, operation does not.**
+The construction site is local wage labor;
+the operating plant is your industry, and the quay between the market and your gate is crossed only
+by your own crews.
 
 ### The plant — a continuous works
 
@@ -68,8 +80,10 @@ your own crews.
 
 ### Chains v1 (owner locks, 2026-07-16)
 
-Flat 2→1 recipes; processed goods are never inputs in v1. Ratios and rates are
-tuning; the shape is spec.
+Flat 2→1 recipes;
+processed goods are never inputs in v1.
+Ratios and rates are tuning;
+the shape is spec.
 
 | # | Chain | Recipe (first shot) | Output | PL name | Ships in |
 | --- | --- | --- | --- | --- | --- |
@@ -246,9 +260,13 @@ plantStall(plant): "starved" | "backlogged" | null           // derived, not sto
 
 ## Sequencing & issue cut
 
-Filed 2026-07-16; milestone **E15 — Processing**. Hard order: **E13 → E15** (union +
-store/withdraw), **E11 before E15 tuning finalizes** (two-way guardrails need batch
-evidence). Chain 3 + Aether ice: the events+ice epic (grill brief ready).
+Filed 2026-07-16;
+milestone **E15 — Processing**.
+Hard order: **E13 → E15**
+(union + store/withdraw), **E11 before E15 tuning finalizes** (two-way guardrails need batch
+evidence).
+Chain 3 + Aether ice:
+the events+ice epic (grill brief ready).
 
 | Issue | Track | Scope | Depends on |
 | --- | --- | --- | --- |

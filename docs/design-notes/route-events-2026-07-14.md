@@ -1,12 +1,13 @@
 # Route events — grill record (2026-07-14)
 
-Grill of #131 ("random route events: pirates, wandering merchant, another
-civilization — parked"). Fresh-eyes signal behind it: the playtester independently
-asked for more *life* on the map
-(`playtest-2026-07-12-fresh-eyes-kacper.md`; see also his supplier-ships idea, PRD
-Horizon). Outcome: the idea splits into **three layers with different fates** —
-ambient ships now, opt-in offers parked to post-E3, intrusive events parked to
-multiregion. Sibling grill from the same session:
+Grill of #131 ("random route events: pirates, wandering merchant, another civilization — parked").
+Fresh-eyes signal behind it:
+the playtester independently asked for more *life* on the map
+(`playtest-2026-07-12-fresh-eyes-kacper.md`; see also his supplier-ships idea, PRD Horizon).
+Outcome:
+the idea splits into **three layers with different fates** —
+ambient ships now, opt-in offers parked to post-E3, intrusive events parked to multiregion.
+Sibling grill from the same session:
 [pause-cause-note-2026-07-14.md](pause-cause-note-2026-07-14.md) (#130).
 
 ## Decision tree

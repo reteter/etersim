@@ -7,11 +7,12 @@
 ## What happened
 
 At session start, during routine "prune merged branches," I ran
-`git branch -D feat/100-storehouse eval/100-gpt-terra`, classifying them as stale after the
-#100/E13 close. Both were in fact under an explicit hold recorded in the prior session-state
-body — the eval-1 quarantine arms ("owner decision — don't delete silently", *braci się nie
-traci*). I had read only the `MEMORY.md` index line (which does not carry holds), not the
-session-state body, before acting.
+`git branch -D feat/100-storehouse eval/100-gpt-terra`, classifying them as stale after the #100/E13
+close.
+Both were in fact under an explicit hold recorded in the prior session-state body —
+the eval-1 quarantine arms ("owner decision — don't delete silently", *braci się nie traci*).
+I had read only the `MEMORY.md` index line (which does not carry holds), not the session-state body,
+before acting.
 
 ## Impact
 
@@ -26,9 +27,11 @@ session-state body, before acting.
 
 ## Recurrence
 
-Medium — structural driver: the start-of-session prune runs before the session-state *body*
-is necessarily read, and the `MEMORY.md` index line cannot carry per-branch holds. Prose
-holds do not fire at the moment of risk (same shape as 0026).
+Medium —
+structural driver:
+the start-of-session prune runs before the session-state *body* is necessarily read, and the
+`MEMORY.md` index line cannot carry per-branch holds.
+Prose holds do not fire at the moment of risk (same shape as 0026).
 
 ## Recommendation
 
@@ -42,5 +45,6 @@ holds do not fire at the moment of risk (same shape as 0026).
 
 ## Follow-up
 
-Landed same session: guard hook + `.claude/settings.json` wiring + this report. Needs one
-`/hooks` reload to activate in a session already running when the hook file was created.
+Landed same session:
+guard hook + `.claude/settings.json` wiring + this report.
+Needs one `/hooks` reload to activate in a session already running when the hook file was created.

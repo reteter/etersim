@@ -1,23 +1,27 @@
 # Specs — index
 
-One row per spec: the epic, its milestone state, and a digest of what it describes **as built
-today**. Same contract as [`docs/design-notes/README.md`](../design-notes/README.md) and
-[`docs/incidents/README.md`](../incidents/README.md) §Log — the row is a pointer, not a
-retelling.
+One row per spec:
+the epic, its milestone state, and a digest of what it describes **as built today**.
+Same contract as [`docs/design-notes/README.md`](../design-notes/README.md) and
+[`docs/incidents/README.md`](../incidents/README.md) §Log —
+the row is a pointer, not a retelling.
 
-**The state column carries state, not history.** Which PRs shipped in which wave is `git log`
-and `gh`; a decision the spec records belongs in the spec. A row that reproduces either goes
-stale on its own and turns the index into a second document (it did — rows averaged 637
-characters, the longest 3116, before the 2026-07-28 trim).
+**The state column carries state, not history.** Which PRs shipped in which wave is `git log` and
+`gh`;
+a decision the spec records belongs in the spec.
+A row that reproduces either goes stale on its own and turns the index into a second document (it
+did — rows averaged 637 characters, the longest 3116, before the 2026-07-28 trim).
 
-**No LIVE/HIST column.** Owner ruling (s13, sweep binding rule 5): every spec binds. A design
-note is a dated record that may age without harm; a spec is an as-built description the
-spec-drift law obliges us to keep true, so a disagreement between a shipped epic's spec and
-today's `CONTEXT.md` or code is a **live finding**, not provenance.
+**No LIVE/HIST column.** Owner ruling (s13, sweep binding rule 5):
+every spec binds.
+A design note is a dated record that may age without harm;
+a spec is an as-built description the spec-drift law obliges us to keep true, so a disagreement
+between a shipped epic's spec and today's `CONTEXT.md` or code is a **live finding**, not
+provenance.
 
 **Maintenance is part of adding a spec** ([documentation.md](../workflows/documentation.md)):
-whoever adds a file to `docs/specs/` adds its row here in the same commit, and whoever resolves
-a deferral a row names updates the row in the commit that resolves it.
+whoever adds a file to `docs/specs/` adds its row here in the same commit, and whoever resolves a
+deferral a row names updates the row in the commit that resolves it.
 
 ## Index
 
@@ -40,6 +44,8 @@ a deferral a row names updates the row in the commit that resolves it.
 
 ## Method note
 
-Built by reading each spec's header/status line plus a grep for deferral markers (`defer`,
-`parked`, `Open`, `TBD`) against its own text — not a line-by-line audit. A contradiction found
-while indexing gets recorded and routed, never folded silently into an index update.
+Built by reading each spec's header/status line plus a grep for deferral markers (`defer`, `parked`,
+`Open`, `TBD`) against its own text —
+not a line-by-line audit.
+A contradiction found while indexing gets recorded and routed, never folded silently into an index
+update.

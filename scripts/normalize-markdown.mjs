@@ -32,17 +32,84 @@
 // is out of scope for this proof migration (CONTEXT.md has neither). Extend
 // this when a future segment migration needs it.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 
-// Allowlist of already-migrated files (decision 3 of the grill note). This
-// array is the enforcement gate for `--check`; it's intentionally a literal
-// here, not a config file — short-lived, retired once migration completes.
-export const ALLOWLIST = ["CONTEXT.md"];
+// The literal ALLOWLIST is retired (#384). It existed for the segment-by-segment
+// rollout of #341 and named exactly one proof-migration file; once every doc is
+// migrated, a hand-maintained list only rots — a doc added next month would be
+// silently ungated, which is the "surfacer scanning nothing" shape this repo has
+// been bitten by before (#442, incident 0030). Discovery has no such gap: a new
+// doc is gated the moment it exists.
+//
+// Scope: repo-root Markdown plus everything under docs/, at any depth.
+
+// Directories the sweep must never descend into.
+//
+// `docs/souvenirs` is the owner's private material (CLAUDE.md §Rules): gitignored,
+// never read, never cited. It sits under docs/, so discovery would otherwise walk
+// straight into it — this entry is the enforcement, and its test is the one in this
+// file that must never be deleted.
+const EXCLUDED_DIRS = new Set(["souvenirs", "node_modules", ".git"]);
+
+/**
+ * Every Markdown file the sweep is allowed to rewrite, as repo-relative,
+ * forward-slashed paths. Deterministic order (directory walk, sorted) so a
+ * `--check` run reports the same sequence every time.
+ */
+export function collectTargets(cwd) {
+  const targets = [];
+
+  for (const entry of readdirSync(cwd, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    if (entry.isFile() && entry.name.endsWith(".md")) targets.push(entry.name);
+  }
+
+  function walk(relDir) {
+    const entries = readdirSync(resolve(cwd, relDir), { withFileTypes: true }).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (EXCLUDED_DIRS.has(entry.name)) continue;
+        walk(`${relDir}/${entry.name}`);
+      } else if (entry.isFile() && entry.name.endsWith(".md")) {
+        targets.push(`${relDir}/${entry.name}`);
+      }
+    }
+  }
+
+  try {
+    walk("docs");
+  } catch {
+    // No docs/ directory (a temp fixture, another checkout) — root files only.
+  }
+
+  return targets;
+}
+
+/**
+ * The sweep's corruption guard: reflow moves whitespace and nothing else.
+ *
+ * #384 reformats the entire corpus in one pass, which makes "review the diff"
+ * an unreliable gate — nobody reads 130 files of line-position churn closely
+ * enough to spot one dropped word. So the property is asserted mechanically on
+ * every file, every run, and a violation refuses the write rather than
+ * reporting it. Asked of this guard, "can it fail?" has a yes: see the dropped/
+ * added/reordered-word cases in normalize-markdown.test.mjs.
+ */
+export function assertContentPreserved(original, reflowed, relPath) {
+  const norm = (s) => s.replace(/\s+/g, " ").trim();
+  if (norm(original) !== norm(reflowed)) {
+    throw new Error(
+      `normalize-markdown: refusing to write ${relPath} — reflow changed content, not just line positions. ` +
+        `This is a bug in the reflow rules for that file; nothing was written.`,
+    );
+  }
+}
 
 const SOFT_LIMIT = 100;
 
@@ -115,15 +182,35 @@ function tokenizeParagraph(paragraphNode, source) {
 
     if (child.type === "break") {
       // Hard line break in the source: force a break at this point, but
-      // contribute no visible text. Represented as a zero-content atom so
-      // it merges into the flat-text placeholder scan without adding a
-      // separator (its own raw slice, e.g. "  \n" or "\\\n", is whitespace
-      // anyway, so it would otherwise just split tokens apart harmlessly —
-      // but we still want to guarantee the break even if a future edge
-      // case removes that surrounding whitespace).
+      // contribute no visible text.
+      //
+      // The placeholder is emitted *surrounded by spaces* (#384). A break's raw
+      // slice ("  \n" or "\\\n") is the only whitespace between its neighbours,
+      // and substituting a placeholder for it used to fuse them into a single
+      // token — "session)" + "**Origin**" became "session)**Origin**", silent
+      // content loss in a tool whose entire contract is "whitespace only".
+      // The resulting empty token is not dropped: it hands its forced break to
+      // the token before it (see the zero-length branch below).
+      //
+      // The marker itself ("  " or "\\") is carried, not discarded: it *is* the
+      // hard break. Dropping it silently downgraded a `<br>` to a soft break —
+      // a rendering change, which "whitespace only" does not license. The
+      // whitespace-normalized guard cannot see the two-space form disappear,
+      // so this is a case where the property test would have passed a real
+      // regression; the backslash form is what exposed it.
+      const rawBreak = child.position
+        ? source.slice(child.position.start.offset, child.position.end.offset)
+        : "  \n";
       const idx = atomsByIndex.length;
-      atomsByIndex.push({ type: "break", isStrong: false, isFirstChild: false, text: "", forceBreak: true });
-      flatText += `${PLACEHOLDER_MARK}${idx}${PLACEHOLDER_MARK}`;
+      atomsByIndex.push({
+        type: "break",
+        isStrong: false,
+        isFirstChild: false,
+        text: "",
+        forceBreak: true,
+        hardBreakMarker: rawBreak.replace(/\r?\n[\s\S]*$/, "") || "  ",
+      });
+      flatText += ` ${PLACEHOLDER_MARK}${idx}${PLACEHOLDER_MARK} `;
       continue;
     }
 
@@ -159,16 +246,27 @@ function tokenizeParagraph(paragraphNode, source) {
     let isStrong = false;
     let isFirstChild = false;
     let forceBreak = false;
+    let hardBreakMarker = null;
 
     const display = rawWord.replace(placeholderRe, (_m, idxStr) => {
       const atom = atomsByIndex[Number(idxStr)];
       if (atom.isStrong) isStrong = true;
       if (atom.isFirstChild) isFirstChild = true;
       if (atom.forceBreak) forceBreak = true;
+      if (atom.hardBreakMarker) hardBreakMarker = atom.hardBreakMarker;
       return atom.text;
     });
 
-    if (display.length === 0) continue; // e.g. a lone break placeholder
+    // A lone break placeholder carries no text — it carries only the obligation
+    // to break, and the marker that makes the break hard. Both are handed to
+    // the token it followed.
+    if (display.length === 0) {
+      if (forceBreak && tokens.length > 0) {
+        tokens[tokens.length - 1].breakAfter = true;
+        tokens[tokens.length - 1].hardBreakMarker = hardBreakMarker;
+      }
+      continue;
+    }
 
     // isFirstChild only grants the header exemption when this token is
     // wholly that atom (no attached punctuation splitting the header off
@@ -194,7 +292,7 @@ function tokenizeParagraph(paragraphNode, source) {
       }
     }
 
-    tokens.push({ text: display, isStrong, isFirstChild, breakAfter });
+    tokens.push({ text: display, isStrong, isFirstChild, breakAfter, hardBreakMarker: null });
   }
 
   return tokens;
@@ -208,13 +306,17 @@ function layoutLines(tokens) {
   let current = [];
   let currentLen = 0;
   let mustBreakBeforeNext = false;
+  // Set when the line being built ended at a hard break; appended verbatim so
+  // the `<br>` survives the reflow.
+  let pendingSuffix = "";
 
   function flush() {
     if (current.length > 0) {
-      lines.push(current.join(" "));
+      lines.push(current.join(" ") + pendingSuffix);
       current = [];
       currentLen = 0;
     }
+    pendingSuffix = "";
   }
 
   for (const token of tokens) {
@@ -236,6 +338,7 @@ function layoutLines(tokens) {
     currentLen += token.text.length + (current.length > 1 ? 1 : 0);
 
     mustBreakBeforeNext = token.breakAfter || deferBreakToAfter;
+    if (token.hardBreakMarker) pendingSuffix = token.hardBreakMarker;
   }
 
   flush();
@@ -285,7 +388,14 @@ function runCli(argv) {
   let anyChanged = false;
   let anyError = false;
 
-  for (const relPath of ALLOWLIST) {
+  const targets = collectTargets(cwd);
+  // A sweep that swept nothing must not report success (the hollow-gate test).
+  if (targets.length === 0) {
+    console.error("normalize-markdown: no Markdown files found — nothing was checked");
+    process.exit(2);
+  }
+
+  for (const relPath of targets) {
     const absPath = resolve(cwd, relPath);
     let original;
     try {
@@ -299,8 +409,9 @@ function runCli(argv) {
     let reflowed;
     try {
       reflowed = reflowMarkdown(original);
+      assertContentPreserved(original, reflowed, relPath);
     } catch (err) {
-      console.error(`normalize-markdown: failed to parse ${relPath}: ${err.message}`);
+      console.error(`normalize-markdown: ${relPath}: ${err.message}`);
       anyError = true;
       continue;
     }

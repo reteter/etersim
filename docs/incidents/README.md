@@ -1,19 +1,23 @@
 # Incidents
 
 A blameless log of times work deviated from the project's rules, docs, or intent —
-including **near-misses** where nothing broke but easily could have. The point is
-learning, not blame: we work in **report → fix → don't repeat**, never in punishment.
-A near-miss reported is a free lesson; a near-miss hidden is a future outage.
+including **near-misses** where nothing broke but easily could have.
+The point is learning, not blame:
+we work in **report → fix → don't repeat**, never in punishment.
+A near-miss reported is a free lesson;
+a near-miss hidden is a future outage.
 
 ## Log
 
-**One line per incident**, ordered by number so a citation like "incident 0010" is
-findable: what happened, and what to watch for. Enough to decide whether an entry
-touches what you are doing — the report holds the evidence, the analysis and the fix.
+**One line per incident**, ordered by number so a citation like "incident 0010" is findable:
+what happened, and what to watch for.
+Enough to decide whether an entry touches what you are doing —
+the report holds the evidence, the analysis and the fix.
 
-The line is a *pointer*, not a summary. It stays one sentence even when the report is
-long; a log whose rows grow into paragraphs stops being an index and becomes a second
-document to read (it did — rows averaged 699 characters before the 2026-07-28 trim).
+The line is a *pointer*, not a summary.
+It stays one sentence even when the report is long;
+a log whose rows grow into paragraphs stops being an index and becomes a second document to read (it
+did — rows averaged 699 characters before the 2026-07-28 trim).
 
 | # | Date | Lesson / watch for |
 | --- | --- | --- |
@@ -57,10 +61,12 @@ File a short report whenever:
 - A command touched the wrong repo/branch/file, or did something hard to undo.
 - Something surprised you in a way the next person should be warned about.
 
-Cheap is the point. A report should take a few minutes and stay **within ~25 lines**
-(cap, owner decision 2026-07-16) — What happened / Impact / Recommendation are the
-load-bearing sections; the §Log one-liner is what future sessions actually read.
-Existing longer reports stay as written; the cap applies forward.
+Cheap is the point.
+A report should take a few minutes and stay **within ~25 lines** (cap, owner decision 2026-07-16) —
+What happened / Impact / Recommendation are the load-bearing sections;
+the §Log one-liner is what future sessions actually read.
+Existing longer reports stay as written;
+the cap applies forward.
 
 ## How
 
@@ -71,7 +77,8 @@ Existing longer reports stay as written; the cap applies forward.
 
 ## Severity
 
-Rate two things separately — they often differ:
+Rate two things separately —
+they often differ:
 
 - **Outcome** — what actually happened this time (Low = reverted / no data loss …
   Critical = data or history lost, hard to recover).
@@ -80,8 +87,9 @@ Rate two things separately — they often differ:
 
 ## Recurrence
 
-Low / Medium / High, with the **structural driver** if there is one — a hazard baked
-into the setup recurs; a one-off slip usually doesn't.
+Low / Medium / High, with the **structural driver** if there is one —
+a hazard baked into the setup recurs;
+a one-off slip usually doesn't.
 
 ## Template
 

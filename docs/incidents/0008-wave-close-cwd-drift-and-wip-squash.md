@@ -10,8 +10,8 @@
 
 ## What happened
 
-Two intertwined slips during the #130+#161 wave close, one root: the Orchestrator's
-persistent shell had `cd`'d into the coder's worktree for the #165 conflict
+Two intertwined slips during the #130+#161 wave close, one root:
+the Orchestrator's persistent shell had `cd`'d into the coder's worktree for the #165 conflict
 resolution and stayed there.
 
 1. **Certification ran in the worktree, reported as "on main".** The wave's full-E2E
@@ -42,9 +42,10 @@ resolution and stayed there.
 
 ## Recurrence
 
-Medium — both drivers are structural: persistent shell `cwd` survives between
-commands and is invisible in each next command's text; GitHub's single-commit squash
-default will fire for every one-commit PR.
+Medium —
+both drivers are structural:
+persistent shell `cwd` survives between commands and is invisible in each next command's text;
+GitHub's single-commit squash default will fire for every one-commit PR.
 
 ## Recommendation
 
@@ -60,5 +61,5 @@ default will fire for every one-commit PR.
 
 ## Follow-up
 
-WORKFLOW §Verification gates amended (same PR as this report). Residual accepted for
-the d1c1b4c message.
+WORKFLOW §Verification gates amended (same PR as this report).
+Residual accepted for the d1c1b4c message.

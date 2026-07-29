@@ -1,41 +1,53 @@
 # E13 — Guild buildings
 
-Feature spec for epic E13 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)). Terms
-per [CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-09.
+Feature spec for epic E13 (milestone M3 — Guilds & obligations, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on 2026-07-09.
 Status: **approved (2026-07-09)**.
 
-Grill inputs: M3 grill (owner: docking-fee discounts too small to feel — rank perks
-should unlock *buildings* instead; develop, ship one, hook the rest), E9 design law
-"buildings introduce mechanics", E9 construction machinery (Recipe / Build Order /
-auto-draw / deliver / rush).
+Grill inputs:
+M3 grill (owner: docking-fee discounts too small to feel — rank perks should unlock *buildings*
+instead; develop, ship one, hook the rest), E9 design law "buildings introduce mechanics", E9
+construction machinery (Recipe / Build Order / auto-draw / deliver / rush).
 
-Scope in one line: guild ranks grant **building permits**; the E9 construction machinery
-generalizes to building types; the flagship **Granary** (agrarian Storehouse variant)
-ships with store/withdraw Route orders — reputation buys mechanics, not percentages.
+Scope in one line:
+guild ranks grant **building permits**;
+the E9 construction machinery generalizes to building types;
+the flagship **Granary** (agrarian Storehouse variant) ships with store/withdraw Route orders —
+reputation buys mechanics, not percentages.
 
-Explicit non-goals: the other four Storehouse variants (hooks — variant = goods filter +
-skin, the implementation ships here); any second building *mechanic* beyond storage;
-build queue, assembly time, demolition, relocation (E9 non-goals stand); storehouse
-upgrades/capacity tiers; renting storage at NPC buildings; branch offices (PRD Horizon);
+Explicit non-goals:
+the other four Storehouse variants (hooks — variant = goods filter + skin, the implementation ships
+here);
+any second building *mechanic* beyond storage;
+build queue, assembly time, demolition, relocation (E9 non-goals stand);
+storehouse upgrades/capacity tiers;
+renting storage at NPC buildings;
+branch offices (PRD Horizon);
 save migration (pre-1.0).
 
 ## Design
 
 ### Permits: reputation buys mechanics
 
-Rank perk shape locked at the grill: a guild rank grants a **building permit** — the
-right to construct that guild's building variant. Percent discounts were rejected as
-imperceptible at E9's fee scale; a building is a *new verb*, and it extends the E9 law:
-every new gameplay layer arrives with a Building. The Granary requires **Granary Guild
-rank 2** (constant, tuning) — one settled contract arc away from enrollment, so the
-loss-leader investment pays off in a mechanic, visibly.
+Rank perk shape locked at the grill:
+a guild rank grants a **building permit** —
+the right to construct that guild's building variant.
+Percent discounts were rejected as imperceptible at E9's fee scale;
+a building is a *new verb*, and it extends the E9 law:
+every new gameplay layer arrives with a Building.
+The Granary requires **Granary Guild rank 2** (constant, tuning) —
+one settled contract arc away from enrollment, so the loss-leader investment pays off in a mechanic,
+visibly.
 
 ### Placement: geography with teeth
 
-A guild building may stand at **ports of that guild's archetype** or at the **Free
-port** — nowhere else. Consequences fall out of E12's map: the Granary sits with grain
-producers (stockpile when the ask dips) or at the neutral crossroads (the Free port as
-the region's warehouse hub); you never build on another guild's turf.
+A guild building may stand at **ports of that guild's archetype** or at the **Free port** —
+nowhere else.
+Consequences fall out of E12's map:
+the Granary sits with grain producers (stockpile when the ask dips) or at the neutral crossroads
+(the Free port as the region's warehouse hub);
+you never build on another guild's turf.
 
 ### The Granary: storage as a new optimization axis
 
@@ -57,12 +69,13 @@ the region's warehouse hub); you never build on another guild's turf.
 
 ### Construction: the E9 machinery, generalized
 
-Commissioning a building creates a Build Order exactly like a hull: Recipe + labor fee,
-site store filled by auto-draw from the *building's* port, deliveries (`deliver` and
-deliver Stops target any port with an active site — a natural generalization of E9's
-"local build site" wording), and rush. **One active Build Order per Company, ship or
-building** — scarcity preserved, still no queue. The building activates the moment its
-Recipe completes.
+Commissioning a building creates a Build Order exactly like a hull:
+Recipe + labor fee, site store filled by auto-draw from the *building's* port, deliveries (`deliver`
+and deliver Stops target any port with an active site — a natural generalization of E9's "local
+build site" wording), and rush. **One active Build Order per Company, ship or building**
+—
+scarcity preserved, still no queue.
+The building activates the moment its Recipe completes.
 
 ### UX skeleton — as built (#101)
 
@@ -126,19 +139,21 @@ Recipe completes.
 
 ### The site registry — superseded
 
-The typed site registry decided here on 2026-07-19 was **reopened and rejected the same
-day** at the owner's request, once reading the spec against the code showed it guarded
-the wrong shape: the Storehouse arrives as a *collection*, which a loop already covers,
-so the registry protected nothing E13 ships, while its re-evaluation trigger (E15's Plant
-as a fourth site kind) rested on a premise `docs/specs/E15-processing.md:52` contradicts —
+The typed site registry decided here on 2026-07-19 was **reopened and rejected the same day** at the
+owner's request, once reading the spec against the code showed it guarded the wrong shape:
+the Storehouse arrives as a *collection*, which a loop already covers, so the registry protected
+nothing E13 ships, while its re-evaluation trigger (E15's Plant as a fourth site kind) rested on a
+premise `docs/specs/E15-processing.md:52` contradicts —
 plants are a collection too.
 
-Replaced by **[ADR-0008](../adr/0008-one-goods-store.md)**: every place goods can sit is
-one encapsulated Goods store, guarded by a value-neutrality invariant rather than an
-enumeration. The refactor ships as sub-epic **[E13.0](E13.0-goods-store.md)**, before
-#100. Reasoning chain: [design-notes/goods-store-grill-2026-07-19](../design-notes/goods-store-grill-2026-07-19.md).
-The deferred ordered-iterator refactor (#304) keeps its debt but moves its trigger to the
-**M5 grill**, where the Great Work may be a genuine fourth singleton.
+Replaced by **[ADR-0008](../adr/0008-one-goods-store.md)**:
+every place goods can sit is one encapsulated Goods store, guarded by a value-neutrality invariant
+rather than an enumeration.
+The refactor ships as sub-epic **[E13.0](E13.0-goods-store.md)**, before #100.
+Reasoning chain:
+[design-notes/goods-store-grill-2026-07-19](../design-notes/goods-store-grill-2026-07-19.md).
+The deferred ordered-iterator refactor (#304) keeps its debt but moves its trigger to the **M5 grill**,
+where the Great Work may be a genuine fourth singleton.
 
 ### Ledger & netWorth
 

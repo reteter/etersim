@@ -6,11 +6,10 @@
 
 ## What happened
 
-After the #217 + #221 drobiazgi wave merged, the Orchestrator launched a background
-certification on `main` (`npm test && npm run typecheck && npm run lint && … test:e2e`)
-and only in the **next** step removed the two coder worktrees
-(`.claude/worktrees/agent-*`). Because the cert ran while the worktrees still existed,
-two things went wrong at once:
+After the #217 + #221 drobiazgi wave merged, the Orchestrator launched a background certification on
+`main` (`npm test && npm run typecheck && npm run lint && … test:e2e`) and only in the **next** step
+removed the two coder worktrees (`.claude/worktrees/agent-*`).
+Because the cert ran while the worktrees still existed, two things went wrong at once:
 
 - `eslint .` from the repo root recursed into the worktrees' own `src/` copies — this
   repo keeps worktrees **inside** the tree (`CLAUDE.md` §Git & worktrees) — and reported
@@ -19,9 +18,12 @@ two things went wrong at once:
   (save-load, blur-commit) under resource contention with the still-present worktrees.
 
 The combined output looked like a RED certification on freshly-merged `main`.
-Investigation showed otherwise: standalone `npm run lint` → clean; `fleet.spec.ts` re-run
-→ 8/8; full e2e re-run in a clean tree → **84/84**. `main` was green the whole time; the
-failures were purely environmental.
+Investigation showed otherwise:
+standalone `npm run lint` → clean;
+`fleet.spec.ts` re-run → 8/8;
+full e2e re-run in a clean tree → **84/84**.
+`main` was green the whole time;
+the failures were purely environmental.
 
 ## Impact
 
@@ -36,10 +38,11 @@ failures were purely environmental.
 
 ## Recurrence
 
-Medium — **structural driver:** this repo's worktrees live *inside* the repo tree
-(`.claude/worktrees/*`, `CLAUDE.md` §Git & worktrees), so any root-glob tool (`eslint .`,
-and potentially others) scans them whenever they coexist with a cert run. Recurs until the
-ordering is habitual or the tooling ignores the path.
+Medium — **structural driver:**
+this repo's worktrees live *inside* the repo tree (`.claude/worktrees/*`, `CLAUDE.md` §Git &
+worktrees), so any root-glob tool (`eslint .`, and potentially others) scans them whenever they
+coexist with a cert run.
+Recurs until the ordering is habitual or the tooling ignores the path.
 
 ## Recommendation
 
@@ -55,7 +58,9 @@ ordering is habitual or the tooling ignores the path.
 
 ## Follow-up
 
-Prevention landed 2026-07-15 in the session-state note; moved 2026-07-16 to
-`CLAUDE.md` §Git & worktrees + WORKFLOW §E2E certification points (durable homes).
-Optional hardening not taken: the `eslint.config.js` ignore for `.claude/worktrees/**`
-— file a chore issue if we want the belt in addition to the ordering discipline.
+Prevention landed 2026-07-15 in the session-state note;
+moved 2026-07-16 to `CLAUDE.md` §Git & worktrees + WORKFLOW §E2E certification points (durable
+homes).
+Optional hardening not taken:
+the `eslint.config.js` ignore for `.claude/worktrees/**` —
+file a chore issue if we want the belt in addition to the ordering discipline.

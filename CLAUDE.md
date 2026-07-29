@@ -1,6 +1,13 @@
 # etersim
 
-Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + React + Zustand. The simulation is a pure TS module in `src/sim` — no React/DOM imports there, ever (ADR-0002). Time is tick-based and deterministic with a seeded RNG (ADR-0003). No backend; saves in localStorage + JSON export (ADR-0004).
+Single-player aether-punk trading simulation.
+Browser-only:
+Vite + TypeScript + React + Zustand.
+The simulation is a pure TS module in `src/sim` —
+no React/DOM imports there, ever (ADR-0002).
+Time is tick-based and deterministic with a seeded RNG (ADR-0003).
+No backend;
+saves in localStorage + JSON export (ADR-0004).
 
 ## Source of truth
 
@@ -17,7 +24,9 @@ Single-player aether-punk trading simulation. Browser-only: Vite + TypeScript + 
 
 ## Laws (break none of these)
 
-The bright lines. Numbering is stable and cited across the repo — **`§Laws 4`** and the like;
+The bright lines.
+Numbering is stable and cited across the repo — **`§Laws 4`**
+and the like;
 it is inherited from the retired `docs/SELFCHECK.md` §4, so old `§4.n` citations map 1:1.
 These bind every model, driver and subagent alike.
 
@@ -34,8 +43,8 @@ These bind every model, driver and subagent alike.
 
 ## Hats — what to wear, and what to read first
 
-**A hat is a read-obligation, not a mood, and it is per *task*, not per session** — the
-pipeline itself is a hat sequence, so changing hats when the work changes kind is normal.
+**A hat is a read-obligation, not a mood, and it is per *task*, not per session** —
+the pipeline itself is a hat sequence, so changing hats when the work changes kind is normal.
 Announce the switch, and read the row **before** your first action under the new hat.
 Declaring a hat whose row you have not opened is the s25 failure (#410).
 
@@ -48,9 +57,9 @@ Declaring a hat whose row you have not opened is the s25 failure (#410).
 | **Professor** | architecture pass on one named subsystem at an epic/milestone boundary | `docs/personas/PROFESSOR.md`, the subsystem's spec, `docs/adr/` |
 | **No hat yet** | session start, before the work is named | `gh issue list`, `gh issue list --label needs:owner-decision`, the milestone descriptions — then name the work, which names the hat |
 
-Adding a hat means adding its row here, in the same commit as the persona def. Every cell
-names a file and restates none of it: if a rule changes, it changes in its home document and
-this table keeps pointing at it.
+Adding a hat means adding its row here, in the same commit as the persona def.
+Every cell names a file and restates none of it:
+if a rule changes, it changes in its home document and this table keeps pointing at it.
 
 ## Before you start, and before you declare done
 

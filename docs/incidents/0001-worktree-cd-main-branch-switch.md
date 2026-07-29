@@ -7,17 +7,18 @@
 
 ## What happened
 
-During E8 issue #58 (price-elastic flows), a coder subagent was running in its own
-git worktree at `.claude/worktrees/agent-a0af333b41eeff5c6`. Early in the task it
-issued a Bash `cd` that landed in the **main repository root**
-(`D:\code\claudeapp\etersim`) instead of its worktree. It then ran
-`git checkout -b feat/58-elastic-flows` — but because the shell was now in the main
-checkout, this moved the **main repo's HEAD** from `main` onto the new branch.
+During E8 issue #58 (price-elastic flows), a coder subagent was running in its own git worktree at
+`.claude/worktrees/agent-a0af333b41eeff5c6`.
+Early in the task it issued a Bash `cd` that landed in the **main repository root**
+(`D:\code\claudeapp\etersim`) instead of its worktree.
+It then ran `git checkout -b feat/58-elastic-flows` —
+but because the shell was now in the main checkout, this moved the **main repo's HEAD** from `main`
+onto the new branch.
 
-No files were modified (working tree was clean) and no commits were made. The agent
-noticed, ran `git checkout main` + `git branch -d feat/58-elastic-flows` in the main
-repo to restore HEAD to `main`, and did the actual feature work correctly in its
-worktree. The delivered branch (`feat/58-elastic-flows`, PR #65) is unaffected.
+No files were modified (working tree was clean) and no commits were made.
+The agent noticed, ran `git checkout main` + `git branch -d feat/58-elastic-flows` in the main repo
+to restore HEAD to `main`, and did the actual feature work correctly in its worktree.
+The delivered branch (`feat/58-elastic-flows`, PR #65) is unaffected.
 
 ## Impact
 
@@ -33,10 +34,13 @@ worktree. The delivered branch (`feat/58-elastic-flows`, PR #65) is unaffected.
 
 ## Recurrence
 
-**Medium** — structural driver: the worktrees are **nested inside the main repo**
-(`.claude/worktrees/agent-*`) and the subagent's environment names the main repo as
-its primary working directory, so an agent naturally gravitates to that absolute path.
-Every coder-in-worktree spawn carries this latent hazard; it is not a one-off slip.
+**Medium** —
+structural driver:
+the worktrees are **nested inside the main repo** (`.claude/worktrees/agent-*`) and the subagent's
+environment names the main repo as its primary working directory, so an agent naturally gravitates
+to that absolute path.
+Every coder-in-worktree spawn carries this latent hazard;
+it is not a one-off slip.
 
 ## Recommendation
 
@@ -52,7 +56,8 @@ Every coder-in-worktree spawn carries this latent hazard; it is not a one-off sl
 
 ## Follow-up
 
-Landed (owner sign-off 2026-07-08): prevention line added to `CLAUDE.md` §"Git &
-worktrees" and to the `coder` agent definition (never `cd` to an absolute repo path,
-never act on `main`, address git as `git -C <worktree>`). Detection gate (verify main
-clean + SHA after each coder wave) kept as standing orchestrator practice.
+Landed (owner sign-off 2026-07-08):
+prevention line added to `CLAUDE.md` §"Git & worktrees" and to the `coder` agent definition (never
+`cd` to an absolute repo path, never act on `main`, address git as `git -C <worktree>`).
+Detection gate (verify main clean + SHA after each coder wave) kept as standing orchestrator
+practice.

@@ -1,16 +1,30 @@
 # etersim — Product Requirements Document
 
-Living document. Owner: Jakub. Terms per [CONTEXT.md](../CONTEXT.md). Last updated: 2026-07-16.
+Living document.
+Owner:
+Jakub.
+Terms per [CONTEXT.md](../CONTEXT.md).
+Last updated:
+2026-07-16.
 
 ## Vision
 
-You are the founder of a trading company in a world where 19th-century science charted the aether — the ocean between worlds — and magic is simply another force of nature and another line in a ledger. Buy low, sail the lanes, sell high, and grow from a single leaky ship into a trading power the guilds must reckon with. The world's economy lives and moves whether you act or not.
+You are the founder of a trading company in a world where 19th-century science charted the aether —
+the ocean between worlds —
+and magic is simply another force of nature and another line in a ledger.
+Buy low, sail the lanes, sell high, and grow from a single leaky ship into a trading power the
+guilds must reckon with.
+The world's economy lives and moves whether you act or not.
 
-And when the region is finally yours, the lens recedes: the map you mastered becomes a single node of a larger one, and you begin again — one level up (§Long-term fantasy).
+And when the region is finally yours, the lens recedes:
+the map you mastered becomes a single node of a larger one, and you begin again —
+one level up (§Long-term fantasy).
 
 ## Player fantasy
 
-Trade magnate: building a growing enterprise through routes, margins and timing — not through combat or reflexes.
+Trade magnate:
+building a growing enterprise through routes, margins and timing —
+not through combat or reflexes.
 
 ## Pillars
 
@@ -21,21 +35,23 @@ Trade magnate: building a growing enterprise through routes, margins and timing 
 
 ## Core loop
 
-Buy goods at a port → assign ship a route → time passes in ticks, the world simulates → sell at a better market → reinvest in ships and upgrades → scale toward an empire.
+Buy goods at a port → assign ship a route → time passes in ticks, the world simulates → sell at a
+better market → reinvest in ships and upgrades → scale toward an empire.
 
 ## Long-term fantasy — the receding lens
 
 Locked with the owner at the farewell-roadmap grill (2026-07-15,
 [design-notes/farewell-roadmap-grill-2026-07-15.md](design-notes/farewell-roadmap-grill-2026-07-15.md)).
-This section is the roadmap's vanishing point: everything past 1.0 is vision, not
-promise — each level enters a version only through its own grill (WORKFLOW.md).
+This section is the roadmap's vanishing point:
+everything past 1.0 is vision, not promise —
+each level enters a version only through its own grill (WORKFLOW.md).
 
 ### The Lens ladder
 
-Four self-similar levels. At each step the previous level's whole map becomes a single
-tradable node of the next, the player's current job is taken over by a delegate
-mechanic (delegation is progression, never forced — manual play always remains), and
-the new level arrives with its own mechanics:
+Four self-similar levels.
+At each step the previous level's whole map becomes a single tradable node of the next, the player's
+current job is taken over by a delegate mechanic (delegation is progression, never forced — manual
+play always remains), and the new level arrives with its own mechanics:
 
 | Level | Its "port" | The player delegates to | Entry mechanics |
 | --- | --- | --- | --- |
@@ -44,8 +60,9 @@ the new level arrives with its own mechanics:
 | **Galaxy** | star system / region cluster | governors, inter-galactic policies | open-aether crossings, encounters (pirates, free traders), new civilizations |
 | **The Unknown** | galaxy | (everything below) | ancient artifacts, exploration, the multi-galactic super-project |
 
-The endgame asks the player the game's own question: **"Why is it so?"** — trade
-stops being only about profit and becomes the engine of finding out.
+The endgame asks the player the game's own question: **"Why is it so?"**
+—
+trade stops being only about profit and becomes the engine of finding out.
 
 ### Ladder laws
 
@@ -78,63 +95,73 @@ stops being only about profit and becomes the engine of finding out.
 
 ### Where 1.0 ends
 
-**1.0 = a mature single region + the first recession of the lens as the finale.** The
-Region's Great Work (working name: the Expedition), commissioned by the guilds,
-completes → the second region opens, the first administrator appears → credits roll.
-The zoom-out moment *is* the ending — and the cliffhanger. Multiregion proper, galaxy
-and the Unknown are post-1.0 expansions.
+**1.0 = a mature single region + the first recession of the lens as the finale.** The Region's Great
+Work (working name: the Expedition), commissioned by the guilds, completes → the second region
+opens, the first administrator appears → credits roll.
+The zoom-out moment *is* the ending —
+and the cliffhanger.
+Multiregion proper, galaxy and the Unknown are post-1.0 expansions.
 
-**Pacing anchor** (owner lock 2026-07-16, tuning target — not a promise): first
-playthrough to credits ≈ **8–12 hours**, no single phase (manual trade /
-orchestration / mastery / Great Work) longer than ~⅓ of the whole. Measured baseline
-2026-07-16: ~20 minutes to "done" — the gap is closed by chain depth (Processing),
-not price tuning. Phase lengths are measured by the E11 harness (world-days to
-milestone); fun is judged by owner playtests (milestone playtest law).
+**Pacing anchor** (owner lock 2026-07-16, tuning target — not a promise):
+first playthrough to credits ≈ **8–12 hours**, no single phase (manual trade / orchestration /
+mastery / Great Work) longer than ~⅓ of the whole.
+Measured baseline 2026-07-16:
+~20 minutes to "done" —
+the gap is closed by chain depth (Processing), not price tuning.
+Phase lengths are measured by the E11 harness (world-days to milestone);
+fun is judged by owner playtests (milestone playtest law).
 
 ### Flagged open question (design-frontier)
 
-Does the Multiregion level **re-instantiate the region sim** (a region becomes a node
-in a higher-order graph running the same abstract machinery — fractal in code, not
-just in design)? Not decided today; this is the first question of the multiregion
-grill, and the answer is hard to reverse. Nothing before M6 depends on it.
+Does the Multiregion level **re-instantiate the region sim** (a region becomes a node in a
+higher-order graph running the same abstract machinery — fractal in code, not just in design)?
+Not decided today;
+this is the first question of the multiregion grill, and the answer is hard to reverse.
+Nothing before M6 depends on it.
 
 ## Scope
 
-**In scope (1.0):** one mature region (simulated per-port markets, company with ships
-and routes, time controls, save/load, contracts and guilds, one arcane good, economic
-events) plus the first zoom-out finale: the Great Work, the second region opening and
-the first administrator (§Long-term fantasy). Multiregion proper and everything above
-it on the Lens ladder is post-1.0.
+**In scope (1.0):** one mature region (simulated per-port markets, company with ships and routes,
+time controls, save/load, contracts and guilds, one arcane good, economic events) plus the first
+zoom-out finale:
+the Great Work, the second region opening and the first administrator (§Long-term fantasy).
+Multiregion proper and everything above it on the Lens ladder is post-1.0.
 
 **Out of scope (hard no):** multiplayer, backend/accounts, mobile, Steam/desktop packaging
 ([ADR-0004](adr/0004-local-persistence-no-backend.md)); **direct combat**
-([ADR-0009](adr/0009-no-direct-combat.md) — piracy may exist only as an abstract voyage
-hazard); **3D** — a presentation choice with no recorded trade-off, so it carries no ADR
-rather than a retrofitted one. *(Corrected 2026-07-19, sweep F10: this line cited ADR-0004
-for all six items from the foundation commit onward, and that ADR has only ever covered the
-first four.)*
+([ADR-0009](adr/0009-no-direct-combat.md) — piracy may exist only as an abstract voyage hazard); **3D**
+—
+a presentation choice with no recorded trade-off, so it carries no ADR rather than a retrofitted
+one.
+*(Corrected 2026-07-19, sweep F10: this line cited ADR-0004 for all six items from the foundation commit onward, and that ADR has only ever covered the first four.)*
 
 ## Milestones & epics
 
-Milestones group epics. Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md). Epics beyond M3 are drafts and will be re-grilled before work starts.
+Milestones group epics.
+Every epic starts with a grilling session and an approved feature spec (docs/WORKFLOW.md).
+Epics beyond M3 are drafts and will be re-grilled before work starts.
 
-**Which epics are shipped and what is next is not recorded here** (2026-07-28): that is
-derivable, so it drifted — this paragraph claimed "E13 is the next implementation work"
-while E13 was closed and E16 in flight. Read `docs/specs/README.md` for per-epic milestone
-state and `gh issue list` for what is open.
+**Which epics are shipped and what is next is not recorded here** (2026-07-28):
+that is derivable, so it drifted —
+this paragraph claimed "E13 is the next implementation work" while E13 was closed and E16 in flight.
+Read `docs/specs/README.md` for per-epic milestone state and `gh issue list` for what is open.
 
 ### Roadmap labels
 
-(2026-07-15, model-agnostic casting — WORKFLOW.md §Roles): every
-item below carries one of two labels. **`procedural`** — an approved spec exists and
-the machinery is established; any competent executor tier implements it under the
-standing gates. **`design-frontier`** — it designs new mechanics and requires an
-owner-led grill before any implementation. The label's job is to make the boundary
-visible: an orchestrator must *notice* when work crosses from execution into design.
+(2026-07-15, model-agnostic casting — WORKFLOW.md §Roles):
+every item below carries one of two labels. **`procedural`**
+—
+an approved spec exists and the machinery is established;
+any competent executor tier implements it under the standing gates. **`design-frontier`**
+—
+it designs new mechanics and requires an owner-led grill before any implementation.
+The label's job is to make the boundary visible:
+an orchestrator must *notice* when work crosses from execution into design.
 
-**Milestone playtest law** (2026-07-15): no milestone closes on green metrics alone —
-the harness screens balance so the owner's playtest can judge *fun*; an owner playtest
-is part of every milestone's close.
+**Milestone playtest law** (2026-07-15):
+no milestone closes on green metrics alone —
+the harness screens balance so the owner's playtest can judge *fun*;
+an owner playtest is part of every milestone's close.
 
 ### M1 — Trade Loop (prove the core is fun)
 
@@ -151,9 +178,9 @@ is part of every milestone's close.
 Locked with the owner 2026-07-07 (grill inputs:
 [playtest-2026-07-07-market-legibility.md](design-notes/playtest-2026-07-07-market-legibility.md)).
 
-**v2 statement:** a living, self-balancing region as the substrate the game runs on; the
-player grows from hands-on trading (the v1 loop, which stays) into orchestration — a small
-fleet on player-defined looping routes, observed through a region-wide economic view.
+**v2 statement:** a living, self-balancing region as the substrate the game runs on;
+the player grows from hands-on trading (the v1 loop, which stays) into orchestration —
+a small fleet on player-defined looping routes, observed through a region-wide economic view.
 Orchestration is progression, not a replacement for manual trade.
 
 - **E8 Living economy**: price-elastic production/consumption (soft saturation);
@@ -204,18 +231,19 @@ Orchestration is progression, not a replacement for manual trade.
 - Owner check: set up 2–3 routes, then 15+ minutes of mostly watching plus occasional
   re-planning stays interesting; the v1 wait-at-the-floor tactic is no longer clearly optimal.
 
-**Parked hooks (deliberately out of v2):** ship upkeep / crew wages (E9's docking fee
-ships the first running-cost slice; ship upkeep is spec'd in E3 — approved 2026-07-09;
-crew wages stay parked);
-wait-until-full route orders (**resolved 2026-07-21, #357 grill: rejected, not just
-parked** — breaks the no-wait-in-port lock the same way price-conditional Stops would;
-see [route-automation-grill-2026-07-21.md](design-notes/route-automation-grill-2026-07-21.md));
-build queue, shipyard assembly time and Headquarters
-relocation (E9 grill); real orbital motion (long-crossings candidate, M6+ — aether
-currents over a moving system; formerly "E5 candidate"); information fog on remote
-prices (Events-gradient candidate, post-1.0 — events can cut the telegraph; formerly
-"E6 candidate"); region/port upgrades and upgrade-gated multi-region views; map-drawn
-route editing (E9 ships a list editor).
+**Parked hooks (deliberately out of v2):** ship upkeep / crew wages (E9's docking fee ships the
+first running-cost slice; ship upkeep is spec'd in E3 — approved 2026-07-09; crew wages stay
+parked);
+wait-until-full route orders (**resolved 2026-07-21, #357 grill: rejected, not just parked** —
+breaks the no-wait-in-port lock the same way price-conditional Stops would; see
+[route-automation-grill-2026-07-21.md](design-notes/route-automation-grill-2026-07-21.md));
+build queue, shipyard assembly time and Headquarters relocation (E9 grill);
+real orbital motion (long-crossings candidate, M6+ — aether currents over a moving system; formerly
+"E5 candidate");
+information fog on remote prices (Events-gradient candidate, post-1.0 — events can cut the
+telegraph; formerly "E6 candidate");
+region/port upgrades and upgrade-gated multi-region views;
+map-drawn route editing (E9 ships a list editor).
 
 ### Tooling track (parallel to milestones)
 
@@ -234,14 +262,16 @@ route editing (E9 ships a list editor).
 
 ### M3 — Guilds & obligations
 
-Locked with the owner at the M3 grill (2026-07-09). Runs after E9 ships (M2 closes).
+Locked with the owner at the M3 grill (2026-07-09).
+Runs after E9 ships (M2 closes).
 
-**v3 statement:** the region gains faces — guilds, NPC institutions with addresses and
-demands, offer **continuous** freight contracts that put deliberate obligations on the
-Company; reputation becomes the long-term currency (loss-leader contracts are
-investments), and ship upkeep turns the game of margins into a game of cash flow.
-Guilds are institutions, not agents: they own no ships and read the same living economy
-the player reads.
+**v3 statement:** the region gains faces —
+guilds, NPC institutions with addresses and demands, offer **continuous** freight contracts that put
+deliberate obligations on the Company;
+reputation becomes the long-term currency (loss-leader contracts are investments), and ship upkeep
+turns the game of margins into a game of cash flow.
+Guilds are institutions, not agents:
+they own no ships and read the same living economy the player reads.
 
 - **E12 Region v2**: HEARTLAND v2 — port count raised to 7–9 (`portCountRange` is
   template data; no ADR freezes it), sixth archetype **Free port** (exactly one per
@@ -291,27 +321,31 @@ the player reads.
   decision; "guild port vs Free port" is a real dilemma when siting the Headquarters or
   a Storehouse; upkeep reads as a fair cost, not an unexplained penalty.
 
-**Parked hooks (deliberately out of M3):** route order conditionals ("hold the sale
-until…" — [design-notes/route-conditionals.md](design-notes/route-conditionals.md),
-touches the E9 route-rot law, needs its own grill); the remaining four Storehouse
-variants; recurring guild dues (rejected at the grill: they double-tax the loss-leader
-relationship); crew wages (the rest of "Company running costs"); ship upgrades
-(Horizon).
+**Parked hooks (deliberately out of M3):** route order conditionals ("hold the sale until…" —
+[design-notes/route-conditionals.md](design-notes/route-conditionals.md), touches the E9 route-rot
+law, needs its own grill);
+the remaining four Storehouse variants;
+recurring guild dues (rejected at the grill: they double-tax the loss-leader relationship);
+crew wages (the rest of "Company running costs");
+ship upgrades (Horizon).
 
 ### M4 — Region mastery (draft; replaces the old "M4 Arcana")
 
-The region at its deepest before the lens moves: the orchestration layer gets its
-quality-of-life ceiling, the economy gets its first weather, and the world gets its
-first taste of the arcane. Every epic here is `design-frontier` (owner grill first);
-implementation after each spec is `procedural`. The old E5/E6 drafts are dissolved
-per §Long-term fantasy (epic numbers retired; see the Arcana split and Events
-gradient laws).
+The region at its deepest before the lens moves:
+the orchestration layer gets its quality-of-life ceiling, the economy gets its first weather, and
+the world gets its first taste of the arcane.
+Every epic here is `design-frontier` (owner grill first);
+implementation after each spec is `procedural`.
+The old E5/E6 drafts are dissolved per §Long-term fantasy (epic numbers retired; see the Arcana
+split and Events gradient laws).
 
-**M4's beat** (fantasy-roadmap grill, 2026-07-16): the master's itch is *"my machine
-runs without me — and the world stopped surprising me."* M4 removes toil and returns
-uncertainty; the player's verb shifts from *click* to **read and react** — mastery is
-the speed of reading the Price board, not the number of clicks. Success measure: a
-master spends more time on the Price board than in the route editor.
+**M4's beat** (fantasy-roadmap grill, 2026-07-16):
+the master's itch is *"my machine runs without me — and the world stopped surprising me."* M4
+removes toil and returns uncertainty;
+the player's verb shifts from *click* to **read and react** —
+mastery is the speed of reading the Price board, not the number of clicks.
+Success measure:
+a master spends more time on the Price board than in the route editor.
 
 - **E16 Workbench (Clusters A+B, converging)**: the Price board becomes the control
   center — route planning authored on the board (port-centric), ship dispatch from it,
@@ -348,12 +382,15 @@ master spends more time on the Price board than in the route editor.
 
 ### M5 — The Great Work (draft; absorbs the old "M5 Arc"/E7 for 1.0)
 
-The arc that ends 1.0: rank culmination → the Guilds jointly commission the Region's
-[Great Work](../CONTEXT.md) (working name: the Expedition) — a super-construction
-consuming streams of many goods at once, generalizing the Build Order machinery
-(the same generalization path E13 starts). Completion triggers the first recession
-of the lens. `design-frontier` (the Great Work grill is the big one: commissioning
-flow, contract integration, pacing). Grill brief:
+The arc that ends 1.0:
+rank culmination → the Guilds jointly commission the Region's [Great Work](../CONTEXT.md) (working
+name: the Expedition) —
+a super-construction consuming streams of many goods at once, generalizing the Build Order machinery
+(the same generalization path E13 starts).
+Completion triggers the first recession of the lens.
+`design-frontier` (the Great Work grill is the big one: commissioning flow, contract integration,
+pacing).
+Grill brief:
 [grill-brief-m5-great-work.md](design-notes/grill-brief-m5-great-work.md).
 
 Locks from the fantasy-roadmap grill (2026-07-16):
@@ -376,16 +413,18 @@ Locks from the fantasy-roadmap grill (2026-07-16):
 
 ### M6 — First zoom-out (draft; 1.0 ships when M4–M6 close)
 
-What lies behind the credits: the second region opens, the first **administrator**
-takes over the mastered region (delegation stays optional), long inter-region
-crossings arrive with aether currents and travel hazards (Events gradient, level 2),
-and full arcana scales up as inter-region fuel (Arcana split, installment 2 — the
-machinery debuted with M4 Processing). Carried hooks from the E9 grill (2026-07-09,
-formerly the Horizon multi-region entry): per-region **branch offices** unlock the
-buildings mechanic in a new region; the paid administrator shifts gameplay from
-managing a region to managing *between* regions. `design-frontier` — and it opens
-with the flagged recursion question (§Long-term fantasy): whether a region becomes
-a node of a re-instantiated sim. Grill brief:
+What lies behind the credits:
+the second region opens, the first **administrator** takes over the mastered region (delegation
+stays optional), long inter-region crossings arrive with aether currents and travel hazards (Events
+gradient, level 2), and full arcana scales up as inter-region fuel (Arcana split, installment 2 —
+the machinery debuted with M4 Processing).
+Carried hooks from the E9 grill (2026-07-09, formerly the Horizon multi-region entry):
+per-region **branch offices** unlock the buildings mechanic in a new region;
+the paid administrator shifts gameplay from managing a region to managing *between* regions.
+`design-frontier` —
+and it opens with the flagged recursion question (§Long-term fantasy):
+whether a region becomes a node of a re-instantiated sim.
+Grill brief:
 [grill-brief-m6-zoom-out.md](design-notes/grill-brief-m6-zoom-out.md).
 
 Locks from the fantasy-roadmap grill (2026-07-16):
@@ -407,16 +446,19 @@ Locks from the fantasy-roadmap grill (2026-07-16):
 
 ### Post-1.0 (vision, not promise)
 
-Multiregion proper (tariffs, politics, region-wide buildings) → Galaxy (open-aether
-wilderness, encounters, civilizations) → the Unknown (artifacts, the super-project,
-*Why is it so?*) — per the Lens ladder. Each level gets its own grills when its time
-comes.
+Multiregion proper (tariffs, politics, region-wide buildings) → Galaxy (open-aether wilderness,
+encounters, civilizations) → the Unknown (artifacts, the super-project, *Why is it so?*) —
+per the Lens ladder.
+Each level gets its own grills when its time comes.
 
 ## Horizon (unscheduled ideas)
 
-Loose ideas with no milestone. Nothing here is a promise: an idea enters a version only
-through a grill (WORKFLOW.md). One line per idea with its origin; curated — dead ideas
-get deleted, the list stays short.
+Loose ideas with no milestone.
+Nothing here is a promise:
+an idea enters a version only through a grill (WORKFLOW.md).
+One line per idea with its origin;
+curated —
+dead ideas get deleted, the list stays short.
 
 - **Region/port upgrades** — player investments in infrastructure; e.g. the region-wide economic view of a *foreign* region gated behind an upgrade. (Owner, [playtest note §8](design-notes/playtest-2026-07-07-market-legibility.md).)
 - **Ship classes** — hull sizes, speeds, specializations; the rest of the original E4 draft beyond fleet-lite. (PRD draft, retired into E9 2026-07-07.)

@@ -1,7 +1,10 @@
 # E2 — Trade Loop
 
-Feature spec for epic E2 (milestone M1, [PRD](../PRD.md)). Terms per [CONTEXT.md](../../CONTEXT.md).
-Grilled and decided with the owner on 2026-07-04 (issue #4). Status: **approved** (2026-07-04).
+Feature spec for epic E2 (milestone M1, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on 2026-07-04 (issue #4).
+Status: **approved**
+(2026-07-04).
 
 **Implementation status (2026-07-08 — E2 complete):**
 
@@ -16,22 +19,26 @@ Grilled and decided with the owner on 2026-07-04 (issue #4). Status: **approved*
 | Sail placement + Options | #33, #37 | **Shipped** (PR #53) — Sail control under the Harbor with disabled hints, "Open market" removed; Options overlay (auto-pause toggle) reconciled into the menu |
 | Moved to E10 | #25, #34 | **Re-scoped** — landed in [E10 — Orrery view](E10-orrery-view.md) (spec approved 2026-07-07) |
 
-Scope in one line: one region, live per-port markets, one ship sailed manually, map + panels UI,
-time controls, save/load. No magic, no contracts, no fleet, no upgrades.
+Scope in one line:
+one region, live per-port markets, one ship sailed manually, map + panels UI, time controls,
+save/load.
+No magic, no contracts, no fleet, no upgrades.
 
 ## Design
 
 ### Player experience
 
-Start with 500 thalers and one ship (hold 50) docked somewhere in a procedurally generated
-region of 5–6 ports. Read the live price board, buy cheap, pick a destination, sail for 2–5 world
-days while the economy keeps moving, sell higher, climb the goods ladder from grain runs toward
-timber freight. Voyages are long on purpose: prices drift while you fly, so a route chosen at
-departure is a bet, not a sure thing.
+Start with 500 thalers and one ship (hold 50) docked somewhere in a procedurally generated region of
+5–6 ports.
+Read the live price board, buy cheap, pick a destination, sail for 2–5 world days while the economy
+keeps moving, sell higher, climb the goods ladder from grain runs toward timber freight.
+Voyages are long on purpose:
+prices drift while you fly, so a route chosen at departure is a bet, not a sure thing.
 
 ### Goods
 
-Five goods, no arcane goods yet (E5). Base prices set the affordability ladder:
+Five goods, no arcane goods yet (E5).
+Base prices set the affordability ladder:
 
 | Good | Base price (₸) | Role |
 | --- | --- | --- |
@@ -41,14 +48,17 @@ Five goods, no arcane goods yet (E5). Base prices set the affordability ladder:
 | electronics | 150 | high-value manufactured goods |
 | timber | 250 | **rare**: living wood from verdant worlds — a luxury freight in the aether |
 
-Setting note (owner's call): in the aether, wood is one of the rarest materials there is —
+Setting note (owner's call):
+in the aether, wood is one of the rarest materials there is —
 timber is the endgame freight of E2, not a building commodity.
 
 ### Ports & archetypes
 
-Each port gets one **port archetype** at worldgen. Profiles are net flows per world day
-(24 ticks) and are stored per day — exact integers; the market tick divides by 24 when
-applying them. Initial values, tuned during implementation:
+Each port gets one **port archetype** at worldgen.
+Profiles are net flows per world day (24 ticks) and are stored per day —
+exact integers;
+the market tick divides by 24 when applying them.
+Initial values, tuned during implementation:
 
 | Archetype | Produces /day | Consumes /day |
 | --- | --- | --- |
@@ -58,8 +68,9 @@ applying them. Initial values, tuned during implementation:
 | mining | aether salt +20 | grain 18, textiles 4, electronics 3 |
 | verdant | timber +6 | grain 12, textiles 5 |
 
-Invariant: every good has exactly one producing archetype and ≥2 consuming archetypes, so
-arbitrage always exists and flows from geography, not scripts.
+Invariant:
+every good has exactly one producing archetype and ≥2 consuming archetypes, so arbitrage always
+exists and flows from geography, not scripts.
 
 ### Market model
 
@@ -91,19 +102,22 @@ price(good, port) = basePrice * (equilibrium / max(stock, 1)) ^ priceCurveExpone
   modifier that defaults to 1. E2 ships the multiplication only; storms, meteor rains and
   market shocks (E6) will drive the modifiers without touching the market code.
 
-**Trading** is marginal, per unit: buying walks the price up as stock falls unit by unit
-(total = Σ price at each intermediate stock); selling walks it down symmetrically. This makes
-dumping a full hold into a small market self-limiting. Thalers are integers; totals round to
-the nearest thaler.
+**Trading** is marginal, per unit:
+buying walks the price up as stock falls unit by unit (total = Σ price at each intermediate stock);
+selling walks it down symmetrically.
+This makes dumping a full hold into a small market self-limiting.
+Thalers are integers;
+totals round to the nearest thaler.
 
-**Information:** all prices in the region are live and visible at all times (owner's call:
-price drift over long voyages already supplies the uncertainty; stale info on top would make
-the sim feel random). Each price shows a trend arrow vs. the last day-boundary snapshot.
+**Information:** all prices in the region are live and visible at all times (owner's call: price
+drift over long voyages already supplies the uncertainty; stale info on top would make the sim feel
+random).
+Each price shows a trend arrow vs. the last day-boundary snapshot.
 
 ### Worldgen
 
-`generateRegion(rng, template)` — procedural, deterministic from the seed, shaped by a
-**region template**:
+`generateRegion(rng, template)` —
+procedural, deterministic from the seed, shaped by a **region template**:
 
 ```
 RegionTemplate {
@@ -116,11 +130,13 @@ RegionTemplate {
 }
 ```
 
-(Shape as of E10 — see that spec's Tech section for the authoritative fields; this
-snapshot is kept current so it doesn't silently contradict the code.)
+(Shape as of E10 — see that spec's Tech section for the authoritative fields; this snapshot is kept
+current so it doesn't silently contradict the code.)
 
-v1 ships one default template (`heartland`). The template is data, not code — future regions
-(e.g. mining-heavy frontiers, different port counts) are new templates, no worldgen changes.
+v1 ships one default template (`heartland`).
+The template is data, not code —
+future regions (e.g. mining-heavy frontiers, different port counts) are new templates, no worldgen
+changes.
 
 **Lane topology decision (locked 2026-07-07, see #25):**
 - **A** (map as space): topology geometry-aware. `connectPorts` favors short connections (distance-biased, reduced crossings). Positions matter for readability.
@@ -129,31 +145,38 @@ v1 ships one default template (`heartland`). The template is data, not code — 
   intercept penalizes every extra hop; its real harm was compressing distance
   differences, e.g. the 206-vs-207 near-tie.)
 
-Designed in full in **[E10 — Orrery view](E10-orrery-view.md)** (spec approved
-2026-07-07): the decision-A geometry lands on top of the static orbit-ring placement
-there. This section is superseded by that spec.
+Designed in full in **[E10 — Orrery view](E10-orrery-view.md)** (spec approved 2026-07-07):
+the decision-A geometry lands on top of the static orbit-ring placement there.
+This section is superseded by that spec.
 
 ### Ship & travel
 
-One ship (hold 50) in E2; design supports designating a **Controlled Ship** (see CONTEXT.md) to receive Commands while docked: buy, sell, `sailTo`. `sailTo` runs
-Dijkstra over lane durations, assigns the resulting **route**, and the ship traverses it
-voyage by voyage, passing intermediate ports without docking. No route loops or automation
-(that's E9, PRD M2; the E4 draft was retired into it). While underway the ship shows destination and ETA in ticks.
+One ship (hold 50) in E2;
+design supports designating a **Controlled Ship** (see CONTEXT.md) to receive Commands while docked:
+buy, sell, `sailTo`.
+`sailTo` runs Dijkstra over lane durations, assigns the resulting **route**, and the ship traverses
+it voyage by voyage, passing intermediate ports without docking.
+No route loops or automation (that's E9, PRD M2; the E4 draft was retired into it).
+While underway the ship shows destination and ETA in ticks.
 
-**Shipped:** commands target `company.ships[0]`; panel `selection` toggles port vs ship view only.
-**Follow-up (#28):** Controlled Ship designation via map click (when eligible), Harbor list,
-header, or opening ShipPanel.
+**Shipped:** commands target `company.ships[0]`;
+panel `selection` toggles port vs ship view only. **Follow-up (#28):**
+Controlled Ship designation via map click (when eligible), Harbor list, header, or opening
+ShipPanel.
 
 ### Time controls
 
-Speed ladder per ADR-0003: pause / 1x / 10x / 100x, wired to `elapsedToTicks` from E1.
-Expected play pattern with 48–120-tick voyages: pause to trade, 10x–100x to fly.
+Speed ladder per ADR-0003:
+pause / 1x / 10x / 100x, wired to `elapsedToTicks` from E1.
+Expected play pattern with 48–120-tick voyages:
+pause to trade, 10x–100x to fly.
 
 ### UI layout
 
-Single screen, no view switching (readable depth: the map never leaves sight). The diagram below
-shows the **target layout** after follow-ups #28–#33 ship; the shipped baseline differs — see
-subsections.
+Single screen, no view switching (readable depth: the map never leaves sight).
+The diagram below shows the **target layout** after follow-ups #28–#33 ship;
+the shipped baseline differs —
+see subsections.
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -170,9 +193,12 @@ subsections.
 └───────────────────────────┴─────────────────┘
 ```
 
-Map: SVG — ports as nodes (name + archetype glyph), lanes as edges, ship(s) moving along their
-lane proportionally to voyage progress. World date convention: Day 1 starts at tick 0,
-hour = tick mod 24 (decided during #15; nothing earlier defined it).
+Map:
+SVG —
+ports as nodes (name + archetype glyph), lanes as edges, ship(s) moving along their lane
+proportionally to voyage progress.
+World date convention:
+Day 1 starts at tick 0, hour = tick mod 24 (decided during #15; nothing earlier defined it).
 
 #### Shipped (baseline — #15, #16; superseded where noted by #28, #32)
 
@@ -196,21 +222,22 @@ hour = tick mod 24 (decided during #15; nothing earlier defined it).
 
 #### Follow-ups — Controlled Ship + Harbor shipped (#28, #32); sail placement shipped (#33); glyph work moved to E10 (#34)
 
-Clicking a port always opens its view first: the **Harbor** section (list of docked Ships —
-player's ships in one subsection, others in another; hover shows Hold + Cargo summary) appears
-above the market.
+Clicking a port always opens its view first:
+the **Harbor** section (list of docked Ships — player's ships in one subsection, others in another;
+hover shows Hold + Cargo summary) appears above the market.
 
 A thin, always-visible **Controlled Ship header** sits at the very top of the right-hand context
-panel (above the Harbor when a port is selected). It is persistent across panel states and shows:
+panel (above the Harbor when a port is selected).
+It is persistent across panel states and shows:
 - A ship glyph + short identifier
 - Current status and location: "Docked at <PortName>" or "Underway to <PortName> • ~<ETA ticks>"
 - Hold usage (e.g. "12/50")
 
-Clicking the header designates the ship as the current Controlled Ship (if not already) and
-opens its ShipPanel.
+Clicking the header designates the ship as the current Controlled Ship (if not already) and opens
+its ShipPanel.
 
-When the Controlled Ship is docked at the currently viewed port, the header indicates this
-(e.g. "Docked here") and the ship is visually distinguished in the Harbor list.
+When the Controlled Ship is docked at the currently viewed port, the header indicates this (e.g.
+"Docked here") and the ship is visually distinguished in the Harbor list.
 
 - If the Controlled Ship is docked here: market enables trading (buy/sell).
 - Remote ports: Harbor on top, followed by a prominent Sail action button directly under the
@@ -219,22 +246,23 @@ When the Controlled Ship is docked at the currently viewed port, the header indi
   — the "[Controlled Ship name]" wording awaits a `Ship.name` field, tracked in [#54](https://github.com/reteter/etersim/issues/54).*
 
 Docked player Ships are primarily accessed via the Harbor list (port click wins over docked ship
-icons). Clicking an eligible player Ship on the map (e.g. underway) or in the Harbor list
-designates it as the Controlled Ship and opens its ShipPanel.
+icons).
+Clicking an eligible player Ship on the map (e.g. underway) or in the Harbor list designates it as
+the Controlled Ship and opens its ShipPanel.
 
 Market access happens via port selection (which always shows the Harbor above the market).
-*#33: the interim "Open market" button was removed from ShipPanel — port selection + the Harbor
-list are the only market path.*
+*#33: the interim "Open market" button was removed from ShipPanel — port selection + the Harbor list are the only market path.*
 
 The Sail button always targets the current Controlled Ship and is enabled only when that ship is
-docked at a different reachable port; otherwise it renders disabled with a title hint (underway /
-already docked here / no route). *Shipped in #33 — label `Sail <ship id> here (~N ticks)`, placed
-directly under the Harbor.*
+docked at a different reachable port;
+otherwise it renders disabled with a title hint (underway / already docked here / no route).
+*Shipped in #33 — label `Sail <ship id> here (~N ticks)`, placed directly under the Harbor.*
 
 **Note:** Exact glyph choice and any color/tinting treatment for the header are deferred to
-follow-up work (#34). Now spec'd in [E10 — Orrery view](E10-orrery-view.md) §Icons
-(SVG/Unicode boundary, Controlled gold semantics); see also
-`docs/design-notes/icon-implementation-handoff.md`.
+follow-up work (#34).
+Now spec'd in [E10 — Orrery view](E10-orrery-view.md) §Icons (SVG/Unicode boundary, Controlled gold
+semantics);
+see also `docs/design-notes/icon-implementation-handoff.md`.
 
 ### Buy / sell improvements (high-level, E2 follow-up)
 The market row in PortPanel supports:
@@ -243,10 +271,11 @@ The market row in PortPanel supports:
 - The marginal price of the *next single unit* is always visible alongside the lot-total quote on the action buttons. This makes the marginal (walking) pricing behaviour legible.
 - An inline hint next to the Buy max button names whichever constraint binds Buy max — hold space, port stock, or thalers (fresh-eyes playtest finding, #124: a capped Buy with no visible reason read as broken). Ties between hold space and stock favour hold. Pure logic in `src/ui/buyCap.ts`.
 
-"Max" values and unit price are expected to update live with market changes. Layout remains compact within the existing 320 px panel.
+"Max" values and unit price are expected to update live with market changes.
+Layout remains compact within the existing 320 px panel.
 
 ### Auto-pause on arrival (high-level, E2 follow-up)
-When the Controlled Ship docks at its *final destination*, the game auto-pauses (default On). 
+When the Controlled Ship docks at its *final destination*, the game auto-pauses (default On).
 - Applies only on destination arrival (not intermediate ports).
 - No-op if already paused.
 - Toggle lives in future options/settings (see item 5 / #17 reconciliation).
@@ -264,15 +293,20 @@ A unified settings surface (first tenant: auto-pause toggle from item 4).
 
 ### Save / load
 
-Per ADR-0004: one autosave slot in localStorage (`etersim.autosave`), written every 24 ticks
-and on pause. Start screen: **Continue** (if autosave exists) / **New game** with an optional
-seed field (blank = random seed). Menu: export/import world JSON. Save format
-`{ version: 1, world }` — the version field gates future migrations.
+Per ADR-0004:
+one autosave slot in localStorage (`etersim.autosave`), written every 24 ticks and on pause.
+Start screen: **Continue**
+(if autosave exists) / **New game** with an optional seed field (blank = random seed).
+Menu:
+export/import world JSON.
+Save format `{ version: 1, world }` —
+the version field gates future migrations.
 
 ### Starting conditions
 
-500 ₸, one ship (hold 50) docked at a random port, world at tick 0. A full hold of grain
-(~500 ₸) is the natural first move; timber freight (~12 500 ₸ a hold) is the horizon.
+500 ₸, one ship (hold 50) docked at a random port, world at tick 0.
+A full hold of grain (~500 ₸) is the natural first move;
+timber freight (~12 500 ₸ a hold) is the horizon.
 
 ### Out of scope & future hooks
 
@@ -301,9 +335,11 @@ seed field (blank = random seed). Menu: export/import world JSON. Save format
 | `world.ts` | `World` grows: `region`, `company { thalers, ships }`, price snapshots |
 | `tick.ts` | phase order: apply commands → advance ships → market tick → tick+1 |
 
-All iteration in deterministic array order (generation order); no object-key iteration.
-Invalid commands (buy over stock/thalers/hold, sail while underway) are rejected without
-state change — the command is dropped, never partially applied.
+All iteration in deterministic array order (generation order);
+no object-key iteration.
+Invalid commands (buy over stock/thalers/hold, sail while underway) are rejected without state
+change —
+the command is dropped, never partially applied.
 
 > **Superseded in part by E9** ([E9-fleet-and-routes.md](E9-fleet-and-routes.md),
 > approved 2026-07-09): the Command union grows (route CRUD/assign, founding,
@@ -311,8 +347,9 @@ state change — the command is dropped, never partially applied.
 > **Course**/`shortestCourse`, and the tick phase order gains docking/auto-draw phases.
 > This table stays as the E2 record.
 
-New-game seeding: seed string → uint32 hash (FNV-1a, in sim) → `createWorld(seed, template)`
-runs worldgen and threads the RNG state into the world.
+New-game seeding:
+seed string → uint32 hash (FNV-1a, in sim) → `createWorld(seed, template)` runs worldgen and threads
+the RNG state into the world.
 
 ### Store bridge & UI (`src/store`, `src/ui`)
 
@@ -359,5 +396,6 @@ runs worldgen and threads the RNG state into the world.
 ### Balance tuning levers (implementation-phase, no spec change needed)
 
 Archetype flow tables, `priceCurveExponent`, clamp bounds, equilibrium formula, jitter range,
-starting thalers/hold. Anything structural (new good, new archetype, price formula shape)
-is spec drift and updates this file.
+starting thalers/hold.
+Anything structural (new good, new archetype, price formula shape) is spec drift and updates this
+file.

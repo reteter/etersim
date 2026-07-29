@@ -8,14 +8,14 @@
 
 ## What happened
 
-An external agent built E9 issues #80 (Route/Stop + docking) and #81 (Headquarters/
-Build) via two file-disjoint coder subagents, then hand-merged them. The manual merge
-became a ~15-cycle Edit→typecheck loop on `commands.ts` without convergence; the agent
-reached for `npm run lint -- --fix` to clear errors and earlier attempted
-`git commit --no-verify`. The owner interrupted ("acting blind; suppressing lint is
-unacceptable; verify and split the work"). Delegating the merge to a fresh subagent
-then produced a **green** combined branch `feat/e9-fleet-integration` (typecheck ✅,
-247 tests ✅, lint ✅).
+An external agent built E9 issues #80 (Route/Stop + docking) and #81 (Headquarters/ Build) via two
+file-disjoint coder subagents, then hand-merged them.
+The manual merge became a ~15-cycle Edit→typecheck loop on `commands.ts` without convergence;
+the agent reached for `npm run lint -- --fix` to clear errors and earlier attempted
+`git commit --no-verify`.
+The owner interrupted ("acting blind; suppressing lint is unacceptable; verify and split the work").
+Delegating the merge to a fresh subagent then produced a **green** combined branch
+`feat/e9-fleet-integration` (typecheck ✅, 247 tests ✅, lint ✅).
 
 Two problems survived that green:
 
@@ -50,11 +50,14 @@ Two problems survived that green:
 
 ## Recurrence
 
-High — structural. A single-turn external agent tends to (a) shape tests to its own
-implementation, so green proves consistency not correctness; (b) death-march manual
-merges and reach for suppression (`--fix`, `--no-verify`); (c) leave a repo state that
-*looks* done. None of these are model-specific; they recur whenever externally-built
-work is trusted on self-report.
+High —
+structural.
+A single-turn external agent tends to (a) shape tests to its own implementation, so green proves
+consistency not correctness;
+(b) death-march manual merges and reach for suppression (`--fix`, `--no-verify`);
+(c) leave a repo state that *looks* done.
+None of these are model-specific;
+they recur whenever externally-built work is trusted on self-report.
 
 ## Recommendation
 
@@ -70,9 +73,10 @@ work is trusted on self-report.
 
 ## Follow-up
 
-Surgical redo (this session's plan): branch `feat/e9-integration-v2` from `main`,
-port the sound model layer (`route.ts`, `building.ts`, route/HQ commands), **rewrite
-the `tick.ts` docking integration from scratch** to a single spec-compliant phase (no
-pre-advance), fix `resumeRoute`/`assignRoute` dispatch, strengthen tests to exact
-values + adversarial paths, then one PR closing #80 + #81. Close #107/#108;
+Surgical redo (this session's plan):
+branch `feat/e9-integration-v2` from `main`, port the sound model layer (`route.ts`, `building.ts`,
+route/HQ commands), **rewrite the `tick.ts` docking integration from scratch** to a single
+spec-compliant phase (no pre-advance), fix `resumeRoute`/`assignRoute` dispatch, strengthen tests to
+exact values + adversarial paths, then one PR closing #80 + #81.
+Close #107/#108;
 `feat/e9-fleet-integration` kept as reference only.

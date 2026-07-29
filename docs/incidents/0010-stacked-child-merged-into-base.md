@@ -6,14 +6,17 @@
 
 ## What happened
 
-E3 wave 3 shipped a stacked pair: PR #189 (`feat/94-contract-settlement` → main) and
-PR #190 (`feat/98-e3-guardrails` → `feat/94-contract-settlement`). Both PR bodies
-carried the WORKFLOW §6 stacked-merge instructions (merge base first, retarget the
-child to main, then delete the base branch). The owner squash-merged all open PRs in
-one sitting; #190 was merged while its base still pointed at the feature branch, so
-GitHub landed its squash commit (`f609fef`) on `feat/94-contract-settlement` — a
-branch that was already merged and about to be deleted. Main showed #190 as "merged"
-while containing none of its content (`src/sim/e3-guardrails.test.ts` missing).
+E3 wave 3 shipped a stacked pair:
+PR #189 (`feat/94-contract-settlement` → main) and PR #190 (`feat/98-e3-guardrails` →
+`feat/94-contract-settlement`).
+Both PR bodies carried the WORKFLOW §6 stacked-merge instructions (merge base first, retarget the
+child to main, then delete the base branch).
+The owner squash-merged all open PRs in one sitting;
+#190 was merged while its base still pointed at the feature branch, so GitHub landed its squash
+commit (`f609fef`) on `feat/94-contract-settlement` —
+a branch that was already merged and about to be deleted.
+Main showed #190 as "merged" while containing none of its content (`src/sim/e3-guardrails.test.ts`
+missing).
 
 ## Impact
 
@@ -30,9 +33,11 @@ while containing none of its content (`src/sim/e3-guardrails.test.ts` missing).
 
 ## Recurrence
 
-Medium — structural driver: GitHub's merge button happily merges a child into a
-stale base, and batch-merging a queue of green PRs invites exactly that. The
-procedure existing in docs does not surface at the moment of click.
+Medium —
+structural driver:
+GitHub's merge button happily merges a child into a stale base, and batch-merging a queue of green
+PRs invites exactly that.
+The procedure existing in docs does not surface at the moment of click.
 
 ## Recommendation
 

@@ -1,28 +1,31 @@
 # Design-surface sweep — method and ledger
 
 A standing, multi-session pass that reads the project's documents **against each other**.
-Opened 2026-07-19 (s13) at the owner's call, with the corpus set to the **whole design
-surface** rather than the load-bearing path.
+Opened 2026-07-19 (s13) at the owner's call, with the corpus set to the **whole design surface**
+rather than the load-bearing path.
 
 ## Why this exists
 
-Neither of s12's two decisive findings was catchable by any gate we run. Both were
-documents that were individually coherent and jointly false:
+Neither of s12's two decisive findings was catchable by any gate we run.
+Both were documents that were individually coherent and jointly false:
 
 - **#304's re-evaluation trigger** named a premise that the E15 spec contradicts — the
   trigger was void from the day it was written.
 - A **chain recipe collided with a building's goods filter** across two specs.
 
-Every gate we own reads a *diff*: review, tests, E2E, the docs sync sweep. A contradiction
-between two documents that nobody is currently editing has no diff to appear in, so it is
-invisible to all of them. It surfaces only when someone reads both — which, before s12,
-happened by luck.
+Every gate we own reads a *diff*:
+review, tests, E2E, the docs sync sweep.
+A contradiction between two documents that nobody is currently editing has no diff to appear in, so
+it is invisible to all of them.
+It surfaces only when someone reads both —
+which, before s12, happened by luck.
 
-**Note the difference from `WORKFLOW.md` §Docs sync sweep, which has a confusingly similar
-name.** That one is narrow and one-directional: it starts from a freshly approved spec and
-asks "did anything else drift?", against a target list the spec itself supplies. Both s12
-findings passed through it unharmed, because neither was drift from a spec. This sweep has
-no privileged starting document.
+**Note the difference from `WORKFLOW.md` §Docs sync sweep, which has a confusingly similar name.**
+That one is narrow and one-directional:
+it starts from a freshly approved spec and asks "did anything else drift?", against a target list
+the spec itself supplies.
+Both s12 findings passed through it unharmed, because neither was drift from a spec.
+This sweep has no privileged starting document.
 
 ## Corpus
 
@@ -41,41 +44,48 @@ no privileged starting document.
 | `.github/pull_request_template.md` (the gate list) | 1 | 12 |
 | **GitHub issues** — 29 open + 112 closed; **196 unique numbers cited** by the docs | — | — |
 
-**Out of corpus:** `.claude/skills/**` (~1.9k lines) — harness tooling, not project design.
+**Out of corpus:** `.claude/skills/**` (~1.9k lines) —
+harness tooling, not project design.
 
-Issues are corpus, not an appendix: #304's void trigger lived in an acceptance-criteria
-comment, not in the repo.
+Issues are corpus, not an appendix:
+#304's void trigger lived in an acceptance-criteria comment, not in the repo.
 
 ## Method: subject-keyed, not pairwise
 
-Pairwise is not an option — 98 documents is 4 753 pairs. Instead:
+Pairwise is not an option —
+98 documents is 4 753 pairs.
+Instead:
 
-**Extract nothing; key on subjects and let contradictions collide.** For each subject, grep
-the corpus, read the hits together, adjudicate. This is O(N) reading instead of O(N²)
-comparisons, and it works *here specifically* because `CONTEXT.md` is enforced law: the same
-concept carries the same name everywhere, so a grep on the term genuinely gathers everything
-that speaks about it. In a repo without an enforced ubiquitous language this method would
-leak badly — the same idea would hide under five names and never collide.
+**Extract nothing; key on subjects and let contradictions collide.** For each subject, grep the
+corpus, read the hits together, adjudicate.
+This is O(N) reading instead of O(N²) comparisons, and it works *here specifically* because
+`CONTEXT.md` is enforced law:
+the same concept carries the same name everywhere, so a grep on the term genuinely gathers
+everything that speaks about it.
+In a repo without an enforced ubiquitous language this method would leak badly —
+the same idea would hide under five names and never collide.
 
-~~The subject list is therefore closed and known: **81 glossary terms**, plus the process
-subjects below that have no glossary entry.~~ **False — struck s14, see F13.** The 81
-enumerable entries are a *subset* of the vocabulary, not the whole of it: `CONTEXT.md`
-also glosses terms **inline inside other entries** (`mandate`, `starved`, `labor fee` —
-each with a `(PL: …)` name, none reachable by enumerating line-start entries), and uses
-load-bearing domain words with **no gloss at all** (`elasticity`, `storability`). So the
-subject list is *open*, and anything outside the 81 is invisible to Pass B by construction.
-Pass B therefore carries a second obligation beyond the term list: when a term's entry
-names a neighbouring concept, check whether that concept has an entry of its own.
+~~The subject list is therefore closed and known: **81 glossary terms**, plus the process subjects below that have no glossary entry.~~ **False — struck s14, see F13.**
+The 81 enumerable entries are a *subset* of the vocabulary, not the whole of it:
+`CONTEXT.md` also glosses terms **inline inside other entries** (`mandate`, `starved`, `labor fee` —
+each with a `(PL: …)` name, none reachable by enumerating line-start entries), and uses load-bearing
+domain words with **no gloss at all** (`elasticity`, `storability`).
+So the subject list is *open*, and anything outside the 81 is invisible to Pass B by construction.
+Pass B therefore carries a second obligation beyond the term list:
+when a term's entry names a neighbouring concept, check whether that concept has an entry of its
+own.
 
-**Counts are anchored before they are trusted** (incident 0020). Any corpus-wide
-measurement is validated against one term whose answer is known in advance — a
-measurement with no anchor cannot report its own failure, and one silently lossy grep
-turns this whole sweep into a false CLEAN.
+**Counts are anchored before they are trusted** (incident 0020).
+Any corpus-wide measurement is validated against one term whose answer is known in advance —
+a measurement with no anchor cannot report its own failure, and one silently lossy grep turns this
+whole sweep into a false CLEAN.
 
 ### Pass A — referential integrity (mechanical, enumerable) — **COMPLETE (s13)**
 
 Every claim of the form *"X lives in / is decided by / is triggered by Y"*, checked against Y.
-This is the class that produced #304. All six rows worked; findings F4–F11.
+This is the class that produced #304.
+All six rows worked;
+findings F4–F11.
 
 | Class | Count | Check | Status |
 | --- | --- | --- | --- |
@@ -88,19 +98,24 @@ This is the class that produced #304. All six rows worked; findings F4–F11.
 
 ### Pass B — subject adjudication
 
-Per `CONTEXT.md` section; each term greped across the corpus and its claims read together.
+Per `CONTEXT.md` section;
+each term greped across the corpus and its claims read together.
 
-**Row order is by adjudicability, not by `CONTEXT.md` order** (owner decision, s14). The
-sections differ in one way that dominates cost: whether a *third arbiter* exists. Where a
-term is implemented, `src/sim` and its 611 tests settle a CONTEXT-vs-spec disagreement
-mechanically. Where it is lore, nothing settles it but judgement — and nobody implements
-against lore, so the yield is lower too. So the code-backed sections go first and
-`World & setting` (the topmost row under the old rule, and the most expensive one without
-an arbiter) goes last.
+**Row order is by adjudicability, not by `CONTEXT.md` order** (owner decision, s14).
+The sections differ in one way that dominates cost:
+whether a *third arbiter* exists.
+Where a term is implemented, `src/sim` and its 611 tests settle a CONTEXT-vs-spec disagreement
+mechanically.
+Where it is lore, nothing settles it but judgement —
+and nobody implements against lore, so the yield is lower too.
+So the code-backed sections go first and `World & setting` (the topmost row under the old rule, and
+the most expensive one without an arbiter) goes last.
 
-The mention counts below are the corrected s14 measurement (6 023 total). Read them as an
-**upper bound on reading, not as cost**: a mention is usually a *use* ("the Ship sails to
-the Port"), and only a *claim* — a definition, a rule, a number — can contradict anything.
+The mention counts below are the corrected s14 measurement (6 023 total).
+Read them as an **upper bound on reading, not as cost**:
+a mention is usually a *use* ("the Ship sails to the Port"), and only a *claim* —
+a definition, a rule, a number —
+can contradict anything.
 
 | Order | Section | Terms | Mentions | Arbiter | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -113,199 +128,262 @@ the Port"), and only a *claim* — a definition, a rule, a number — can contra
 | 7 | Harness & evaluation | 8 | 596 | E11 spec (7 unbuilt) / `src/sim` (Ledger, built) | **worked s16 — CLEAN** (below); no finding |
 | — | **Process subjects** (no glossary entry): verification gates, merge/wave ritual, session ritual, model ladder, review depth, documentation law | — | — | — | **worked s16 close** — F1 came from here originally; F15–F17 raised and resolved same session |
 
-**Trade & economy, verified clean (s14).** Every `_Implementation_` line in the section
-makes a checkable claim about the code, and all of them hold: `SPREAD = 0.025`
-(`market.ts:19`), `quoteBuy`/`quoteSell` (`market.ts`), `effectiveBase` + `ARCHETYPE_BIAS`
-× per-port jitter (`market.ts:40`, `region.ts:104`, worldgen), `Port.priceBias`,
+**Trade & economy, verified clean (s14).** Every `_Implementation_` line in the section makes a
+checkable claim about the code, and all of them hold:
+`SPREAD = 0.025` (`market.ts:19`), `quoteBuy`/`quoteSell` (`market.ts`), `effectiveBase` +
+`ARCHETYPE_BIAS` × per-port jitter (`market.ts:40`, `region.ts:104`, worldgen), `Port.priceBias`,
 `World.flowDrift` stepped at the day boundary with bounds `[0.7, 1.3]` (`tick.ts:32-33`,
 `driftPhase`), `World.osmosisPulse` + `osmosisTick` (`world.ts:65`, `osmosis.ts:38`).
-The section's defect is not in these claims but in a word they all lean on — F13.
+The section's defect is not in these claims but in a word they all lean on —
+F13.
 
-**Simulation, verified clean (s15).** Six terms, and the row's real lesson is about *which
-arbiter answers*. Four are built and `src/sim` settles them: **Speed** (`speed.ts:7`
-`SPEEDS = ["paused", 1, 10, 100]`, "Pure time arithmetic only" ↔ "purely presentational"),
-**World** (`world.ts:46` carries the entry's exact phrase, "deterministic given seed and
-player commands"), **Command** (`commands.ts:45` — the entry's examples buy/sell/assignRoute
-all exist as `kind`s), and **Tick** (already settled in Pass A against ADR-0003,
-`TICKS_PER_DAY = 24` — not re-litigated). The other two, **Goods store** and **Transfer**, are
-**not in `src/sim` and must not be checked against it** — they are the approved-but-unbuilt
-E13.0 concepts, and the repo's own *glossary-first* law (`CLAUDE.md`: new concept ⇒ entry
-first) makes a present-tense entry ahead of code the intended sequence, not drift. Their
-arbiter is **ADR-0008 + `E13.0-goods-store.md`**, and against it every claim holds: one opaque
-type reachable only through `amountOf`/`withAdded`/`withRemoved`, the receiving store owns the
-policy, capacity is never a store field (it is `Ship.hold`), Transfer is value-neutral because
-only a booked Ledger event moves company value, and "distinct from a trade" is exact precisely
-because unifying `market↔hold` with the primitive is **deferred** (ADR-0008 §Not decided here).
-The neighbour-concept check (the F13 obligation) is clean: Storehouse, Hold, Cargo, Building,
-Refit, Ledger, Company and Good each carry their own entry. **Recorded for the next session so
-it does not repeat the trap this one nearly did:** "unbuilt in `src/sim`" is a false finding
-when the glossary is mandated to lead.
+**Simulation, verified clean (s15).** Six terms, and the row's real lesson is about
+*which arbiter answers*.
+Four are built and `src/sim` settles them: **Speed**
+(`speed.ts:7` `SPEEDS = ["paused", 1, 10, 100]`, "Pure time arithmetic only" ↔ "purely
+presentational"), **World** (`world.ts:46` carries the entry's exact phrase, "deterministic given
+seed and player commands"), **Command** (`commands.ts:45` — the entry's examples
+buy/sell/assignRoute all exist as `kind`s), and **Tick** (already settled in Pass A against
+ADR-0003, `TICKS_PER_DAY = 24` — not re-litigated).
+The other two, **Goods store** and **Transfer**, are **not in `src/sim` and must not be checked against it**
+—
+they are the approved-but-unbuilt E13.0 concepts, and the repo's own *glossary-first* law
+(`CLAUDE.md`: new concept ⇒ entry first) makes a present-tense entry ahead of code the intended
+sequence, not drift.
+Their arbiter is **ADR-0008 + `E13.0-goods-store.md`**, and against it every claim holds:
+one opaque type reachable only through `amountOf`/`withAdded`/`withRemoved`, the receiving store
+owns the policy, capacity is never a store field (it is `Ship.hold`), Transfer is value-neutral
+because only a booked Ledger event moves company value, and "distinct from a trade" is exact
+precisely because unifying `market↔hold` with the primitive is **deferred** (ADR-0008 §Not decided
+here).
+The neighbour-concept check (the F13 obligation) is clean:
+Storehouse, Hold, Cargo, Building, Refit, Ledger, Company and Good each carry their own entry. **Recorded for the next session so it does not repeat the trap this one nearly did:**
+"unbuilt in `src/sim`" is a false finding when the glossary is mandated to lead.
 
-**Buildings & construction, verified clean (s15).** Ten terms (the table's "11" was a
-miscount — below), same arbiter split as row 2. **Eight are built and settle against
-`src/sim`:** Reserve (`building.ts:33` `CONSTRUCTION_RESERVE = 500`, enforced at the four
-points the entry names — found/place gates, auto-draw skip `:342`, rush purse cap `:166`),
-Docking fee (`region.ts:87` `DOCKING_FEE` per archetype, `ledger.ts:40` `dockingFee` kind),
-Refit (`shipyard.ts:31` `HOLD_LADDER = [2, 1.5, 1.25]`, "rounded once from base, baseHold 50:
-[100,150,188]" matches the code comment, three rungs = the "hard cap after three"), Build
-Order / Recipe (`SHIP_RECIPE`, labor fee up front), Headquarters, Shipyard, Building
-(roadmap claims match the milestone map: E14 closed, E13/E15 open). **Two are unbuilt —
-Processing and Processing plant (E15) — and their arbiter is the E15 spec, not `src/sim`**,
-the same glossary-first case as row 2: every claim (chain fixed at construction, finite
-in/out stores, one conversion per world day, fed only by deliveries / drained only by
-withdraw, one plant per port, upkeep under the Reserve clamp, the two stalls starved /
-backlogged) holds against `E15-processing.md`. Neighbour-concept check clean: Great Work,
-Guild, Guildhouse, Building permit, Upkeep, Expedition each carry their own entry.
+**Buildings & construction, verified clean (s15).** Ten terms (the table's "11" was a miscount —
+below), same arbiter split as row 2. **Eight are built and settle against `src/sim`:**
+Reserve (`building.ts:33` `CONSTRUCTION_RESERVE = 500`, enforced at the four points the entry names
+— found/place gates, auto-draw skip `:342`, rush purse cap `:166`), Docking fee (`region.ts:87`
+`DOCKING_FEE` per archetype, `ledger.ts:40` `dockingFee` kind), Refit (`shipyard.ts:31`
+`HOLD_LADDER = [2, 1.5, 1.25]`, "rounded once from base, baseHold 50: [100,150,188]" matches the
+code comment, three rungs = the "hard cap after three"), Build Order / Recipe (`SHIP_RECIPE`, labor
+fee up front), Headquarters, Shipyard, Building (roadmap claims match the milestone map: E14 closed,
+E13/E15 open). **Two are unbuilt — Processing and Processing plant (E15) — and their arbiter is the E15 spec, not `src/sim`**,
+the same glossary-first case as row 2:
+every claim (chain fixed at construction, finite in/out stores, one conversion per world day, fed
+only by deliveries / drained only by withdraw, one plant per port, upkeep under the Reserve clamp,
+the two stalls starved / backlogged) holds against `E15-processing.md`.
+Neighbour-concept check clean:
+Great Work, Guild, Guildhouse, Building permit, Upkeep, Expedition each carry their own entry.
 
-*Count correction, not a finding.* The table said 11; the section holds **10** entries. The
-overcount came from **this pass's own first grep**, not the document: `**processed goods**`
-(L427) is an inline gloss inside the Processing entry that wrapping pushed to line-start, and
-a loose `^\*\*…\*\* \(PL:` pattern counted it as a header. Anchored to the actual convention
-— which ends `):`, and the gloss ends in a comma — it falls out cleanly, and F3's "81 by the
-documented convention" holds at both `e8b6ff4` and HEAD. This is not a new legibility defect;
-it is the exact bold-at-line-start-by-wrap artifact the s15 markdown-normalizer discussion is
-aimed at, and a concrete motivating instance for that issue (now filed as #341) — **not** an F3
-reopening and not a hand-reflow (wrap position is a script's job, owner direction s15).
+*Count correction, not a finding.* The table said 11;
+the section holds **10** entries.
+The overcount came from **this pass's own first grep**, not the document:
+`**processed goods**` (L427) is an inline gloss inside the Processing entry that wrapping pushed to
+line-start, and a loose `^\*\*…\*\* \(PL:` pattern counted it as a header. Anchored to the actual
+convention — which ends `):`, and the gloss ends in a comma —
+it falls out cleanly, and F3's "81 by the documented convention" holds at both `e8b6ff4` and HEAD.
+This is not a new legibility defect;
+it is the exact bold-at-line-start-by-wrap artifact the s15 markdown-normalizer discussion is aimed
+at, and a concrete motivating instance for that issue (now filed as #341) — **not**
+an F3 reopening and not a hand-reflow (wrap position is a script's job, owner direction s15).
 
-**Player & ships, verified clean (s16).** Eleven terms, the heaviest row by mention (1 557)
-but among the lightest by *claim* — most of that volume is uses ("the Ship sails to the
-Port"), not definitions. Every sim-checkable `_Implementation_` line holds. **Ship**:
+**Player & ships, verified clean (s16).** Eleven terms, the heaviest row by mention (1 557) but
+among the lightest by *claim* —
+most of that volume is uses ("the Ship sails to the Port"), not definitions.
+Every sim-checkable `_Implementation_` line holds. **Ship**:
 `generateShipName` (`building.ts:109`) is keyed by ship count with no RNG draw, and
-`building.test.ts:449` pins the cosmetic pool as cyclic (`generateShipName(10) ===
-generateShipName(0)`) — exactly the ADR-0003 "no sim RNG draw" the entry claims — while
-`renameShip` is a real Command (`commands.ts:86,726`). **Route**: the ship-side tuple the
-entry names, `(routeId, next Stop index, suspended?, waiting?)`, is `ship.ts:32-35` verbatim;
-assignability — *"≥2 Stops over ≥2 distinct ports"* — is enforced at `commands.ts:106-123`,
-its own comment (`:98`) quoting the entry back; the docking-phase route pass is `runRouteForShip`,
-**defined** at `tick.ts:237` (not merely referenced). The two behavioural claims read, not just
-name-matched: *"an index left out of range wraps to Stop 0"* is `commands.ts:250`
-(`… < route.stops.length ? asn.nextStopIndex : 0`), and *"a manual order suspends the Route, which
-stays assigned"* is `commands.ts:529,626` (`{ ...assignment, suspended: true }`, "the plan stays
-assigned"), advancement itself wrapping via `(stopIndex + 1) % stops.length` (`tick.ts:209`).
-**Course**: `shortestCourse` (`pathfinding.ts:11`),
-`courseTicks` (`ship.ts:79`) and `Ship.location.course` (`ship.ts:19`) are all present — the E9
-rename landed. **Margin Gate** — the row's richest falsifiable claim, so read line by line:
+`building.test.ts:449` pins the cosmetic pool as cyclic
+(`generateShipName(10) === generateShipName(0)`) —
+exactly the ADR-0003 "no sim RNG draw" the entry claims —
+while `renameShip` is a real Command (`commands.ts:86,726`). **Route**:
+the ship-side tuple the entry names, `(routeId, next Stop index, suspended?, waiting?)`, is
+`ship.ts:32-35` verbatim;
+assignability —
+*"≥2 Stops over ≥2 distinct ports"* —
+is enforced at `commands.ts:106-123`, its own comment (`:98`) quoting the entry back;
+the docking-phase route pass is `runRouteForShip`, **defined** at `tick.ts:237` (not merely
+referenced).
+The two behavioural claims read, not just name-matched:
+*"an index left out of range wraps to Stop 0"* is `commands.ts:250`
+(`… < route.stops.length ? asn.nextStopIndex : 0`), and
+*"a manual order suspends the Route, which stays assigned"* is `commands.ts:529,626`
+(`{ ...assignment, suspended: true }`, "the plan stays assigned"), advancement itself wrapping via
+`(stopIndex + 1) % stops.length` (`tick.ts:209`). **Course**:
+`shortestCourse` (`pathfinding.ts:11`), `courseTicks` (`ship.ts:79`) and `Ship.location.course`
+(`ship.ts:19`) are all present —
+the E9 rename landed. **Margin Gate**
+—
+the row's richest falsifiable claim, so read line by line:
 `resolveReferencePort` (`route.ts:41-55`) scans `(currentStopIndex + offset) % n` forward, so the
-reference is *"the next sell-stop for that good in route order, wrapping the loop"* exactly; it
-matches on `kind === "sell"` only, so *"deliver is never a reference"* holds by construction; and it
-returns `null` when none is found, which is the entry's *"no sell-stop ⇒ the gate is inactive"*.
+reference is *"the next sell-stop for that good in route order, wrapping the loop"* exactly;
+it matches on `kind === "sell"` only, so *"deliver is never a reference"* holds by construction;
+and it returns `null` when none is found, which is the entry's
+*"no sell-stop ⇒ the gate is inactive"*.
 `unitMargin` (`market.ts:137`) and the buy-only `minMargin` guard (`commands.ts:120`) round it out,
-ADR-0007 the cited authority. **Two classes are correctly not `src/sim`'s to answer, and checking them against it
-would be the row-2 trap:** **Fleet** and **Controlled Ship** are UI/store concepts
-(`FleetList.tsx`, the store's `controlledShipId`), and **Stop**'s `store`/`withdraw` order kinds
-are **E13-unbuilt** — glossary-first, arbiter the E13 spec. Two dated records verified as such
-rather than as drift (binding rule 6): `coursePreview.ts` is a UI file and is one
-(`src/ui/coursePreview.ts`), and the *"SAVE_VERSION 11"* on Margin Gate describes what E9.1
-shipped — current is 13 (`persistence.ts:76`), consistent rather than contradictory. **Count
-anchored** (the row-3 lesson): the section holds exactly 11 convention entries and **no
-bold-at-line-start wrap artifact** — the naive header grep and the true count agree here.
-Neighbour-concept check (the F13 obligation) clean: Lane, Port, Harbor, Storehouse, Command,
-Thaler, Good, Upkeep, Headquarters and Goods store each carry their own entry.
+ADR-0007 the cited authority. **Two classes are correctly not `src/sim`'s to answer, and checking them against it would be the row-2 trap:** **Fleet**
+and **Controlled Ship** are UI/store concepts (`FleetList.tsx`, the store's `controlledShipId`), and **Stop**'s
+`store`/`withdraw` order kinds are **E13-unbuilt** —
+glossary-first, arbiter the E13 spec.
+Two dated records verified as such rather than as drift (binding rule 6):
+`coursePreview.ts` is a UI file and is one (`src/ui/coursePreview.ts`), and the *"SAVE_VERSION 11"*
+on Margin Gate describes what E9.1 shipped —
+current is 13 (`persistence.ts:76`), consistent rather than contradictory. **Count anchored**
+(the row-3 lesson):
+the section holds exactly 11 convention entries and **no bold-at-line-start wrap artifact** —
+the naive header grep and the true count agree here.
+Neighbour-concept check (the F13 obligation) clean:
+Lane, Port, Harbor, Storehouse, Command, Thaler, Good, Upkeep, Headquarters and Goods store each
+carry their own entry.
 
 **Guilds & contracts, verified clean (s16).** Twelve terms, and the row-4 lesson applied from the
-start — the section's dense behavioural claims read line-by-line, not name-matched. **Desperation
-clause**, the row's richest claim: `stampRequiredRanks` (`contract.ts:142-163`) picks each guild's
-winner by lowest `tier`, ties broken by deepest `shortfall`, stamps it `requiredRank = 1` and every
-sibling `requiredRank = tier`, over the full open-offer set each refresh (called at `:318`) — *"the
-clause migrates with the board"* exactly, idempotent by construction. **Upkeep**'s formula is
-`Math.min(UPKEEP_PER_DAY, Math.max(0, thalers − CONSTRUCTION_RESERVE))` verbatim (`tick.ts:327`) —
-the entry's *"never crosses the Reserve"* is the `max(0, …)` clamp itself, not prose. **Settlement
-period**'s *"between Upkeep and offer refresh, fees inside the day's netWorth point"* is the phase
-array `DAY_BOUNDARY_PHASES` (`tick.ts:419`) in literal order: `upkeep → settleContracts →
-refreshOffers → netWorth`. **Enrollment** gates on a founded Headquarters and `ENROLLMENT_FEE` ₸400
-(`commands.ts:648-650`), granting `points: 0` = Rank 1; **acceptContract** gates on `requiredRank`,
-not `tier` (`commands.ts:676`, the #226 desperation seam), enrollment checked and `consecutiveMisses`
-tracked for the two-miss breach. Constants hold: `RANK_THRESHOLDS = [0,4,10,18]` (four steps),
-`POINTS_SETTLED/MISSED/BREACH_OR_RESIGN = 1/−1/−3` — and *"resign = breach parity"* is not a claim to
-re-check but a single shared constant. Ledger kinds `enrollmentFee` / `upkeep` /
-`settlement(met|missed|breached|resigned)` all present (`ledger.ts:92,98,111-120`). **Correctly not
-`src/sim`'s to answer** (the row-2 trap): Guildhouse and Contract board are UI (`GuildhouseSection`,
-`KontraktyTab`), and Building permit + Storehouse are **E13-unbuilt** — glossary-first, arbiter the
-E13 spec (E13 ships one Storehouse variant, the Granary). One consistency-with-roadmap note, not a
-finding: `pickSource` (`contract.ts:179`), the contract feasibility engine, is the same round-trip
-recompute #322 is parked to memoize — expected, not drift. **Count anchored**: exactly 12 convention
-entries, no wrap artifact. Neighbour-concept check (F13) clean: Port archetype, Economic archetype,
-Free port, Equilibrium, Build Order, Reserve and Ledger each carry an entry; `netWorth` is glossed
-inline in the Ledger entry.
+start —
+the section's dense behavioural claims read line-by-line, not name-matched. **Desperation clause**,
+the row's richest claim:
+`stampRequiredRanks` (`contract.ts:142-163`) picks each guild's winner by lowest `tier`, ties broken
+by deepest `shortfall`, stamps it `requiredRank = 1` and every sibling `requiredRank = tier`, over
+the full open-offer set each refresh (called at `:318`) —
+*"the clause migrates with the board"* exactly, idempotent by construction. **Upkeep**'s
+formula is `Math.min(UPKEEP_PER_DAY, Math.max(0, thalers − CONSTRUCTION_RESERVE))` verbatim
+(`tick.ts:327`) —
+the entry's *"never crosses the Reserve"* is the `max(0, …)` clamp itself, not prose. **Settlement period**'s
+*"between Upkeep and offer refresh, fees inside the day's netWorth point"* is the phase array
+`DAY_BOUNDARY_PHASES` (`tick.ts:419`) in literal order:
+`upkeep → settleContracts → refreshOffers → netWorth`. **Enrollment**
+gates on a founded Headquarters and `ENROLLMENT_FEE` ₸400 (`commands.ts:648-650`), granting
+`points: 0` = Rank 1; **acceptContract**
+gates on `requiredRank`, not `tier` (`commands.ts:676`, the #226 desperation seam), enrollment
+checked and `consecutiveMisses` tracked for the two-miss breach.
+Constants hold:
+`RANK_THRESHOLDS = [0,4,10,18]` (four steps), `POINTS_SETTLED/MISSED/BREACH_OR_RESIGN = 1/−1/−3` —
+and *"resign = breach parity"* is not a claim to re-check but a single shared constant.
+Ledger kinds `enrollmentFee` / `upkeep` / `settlement(met|missed|breached|resigned)` all present
+(`ledger.ts:92,98,111-120`). **Correctly not `src/sim`'s to answer**
+(the row-2 trap):
+Guildhouse and Contract board are UI (`GuildhouseSection`, `KontraktyTab`), and Building permit +
+Storehouse are **E13-unbuilt** —
+glossary-first, arbiter the E13 spec (E13 ships one Storehouse variant, the Granary).
+One consistency-with-roadmap note, not a finding:
+`pickSource` (`contract.ts:179`), the contract feasibility engine, is the same round-trip recompute
+#322 is parked to memoize —
+expected, not drift. **Count anchored**:
+exactly 12 convention entries, no wrap artifact.
+Neighbour-concept check (F13) clean:
+Port archetype, Economic archetype, Free port, Equilibrium, Build Order, Reserve and Ledger each
+carry an entry;
+`netWorth` is glossed inline in the Ledger entry.
 
-**World & setting, verified clean (s16).** Seventeen terms, and the **first row with no `src/sim`
-arbiter for its core** — the load-bearing terms are lore (Aether, Lens ladder, Great Work, Dispatch,
-Administrator), so the adjudication is CONTEXT-vs-PRD/specs/briefs, and the only finding this row
-could yield is a lore *contradiction* across those documents. There is none. The highest-entropy
-claim — the Lens ladder's *"four self-similar levels, Region → Multiregion → Galaxy → the Unknown"* —
+**World & setting, verified clean (s16).** Seventeen terms, and the **first row with no `src/sim` arbiter for its core**
+—
+the load-bearing terms are lore (Aether, Lens ladder, Great Work, Dispatch, Administrator), so the
+adjudication is CONTEXT-vs-PRD/specs/briefs, and the only finding this row could yield is a lore
+*contradiction* across those documents.
+There is none.
+The highest-entropy claim —
+the Lens ladder's *"four self-similar levels, Region → Multiregion → Galaxy → the Unknown"* —
 is the PRD's own table verbatim (`PRD.md:42-45`), down to the per-level delegate mechanic (Galaxy →
-governors, the very word the Administrator entry reserves). The **Law of the Great Work** reads almost
-word-for-word against `PRD.md:55-57` (*"commissioned by that level's institutions — Region: the Guilds
-via Contracts"*), the Expedition its Region-level working name and 1.0's ending. **Administrator** (M6,
-guild-convent nomination, verbal mandate, *"E11's Policy is the embryo"*) is consistent with the PRD
-zoom-out finale and with the Policy entry that does exist (`CONTEXT.md:669`); **Dispatch**'s gazette
-*Głos Eteru* is the same name the PRD uses (`:352`). All three inline citations resolve
-(`grill-brief-m4-events-and-ice.md`, `grill-brief-m6-zoom-out.md`, `E10-orrery-view.md`). The **built**
-minority spot-checks clean against code: Free port's *"price bias exactly 1.0, exactly one per region"*
-is `region.ts:112` (the all-1.0 row) + `worldgen.ts:61,81` (one freeport slot); Economic archetype's
-`PortArchetype = EconomicArchetype | "freeport"` is `region.ts:40`; Orrery view and Orbit ring are
-E10, epic complete. **Count anchored**: exactly 17 convention entries, no wrap artifact.
-Neighbour-concept check (F13) clean: Policy carries an entry, `mandate` is an inline `(PL:)` gloss (one
-of the §Method examples), and the ladder levels Multiregion / Galaxy / the Unknown are defined within
-the Lens ladder entry itself, not orphaned.
+governors, the very word the Administrator entry reserves).
+The **Law of the Great Work** reads almost word-for-word against `PRD.md:55-57`
+(*"commissioned by that level's institutions — Region: the Guilds via Contracts"*), the Expedition
+its Region-level working name and 1.0's ending. **Administrator**
+(M6, guild-convent nomination, verbal mandate, *"E11's Policy is the embryo"*) is consistent with
+the PRD zoom-out finale and with the Policy entry that does exist (`CONTEXT.md:669`); **Dispatch**'s
+gazette *Głos Eteru* is the same name the PRD uses (`:352`).
+All three inline citations resolve (`grill-brief-m4-events-and-ice.md`,
+`grill-brief-m6-zoom-out.md`, `E10-orrery-view.md`).
+The **built** minority spot-checks clean against code:
+Free port's *"price bias exactly 1.0, exactly one per region"* is `region.ts:112` (the all-1.0 row)
++ `worldgen.ts:61,81` (one freeport slot);
+Economic archetype's `PortArchetype = EconomicArchetype | "freeport"` is `region.ts:40`;
+Orrery view and Orbit ring are E10, epic complete. **Count anchored**:
+exactly 17 convention entries, no wrap artifact.
+Neighbour-concept check (F13) clean:
+Policy carries an entry, `mandate` is an inline `(PL:)` gloss (one of the §Method examples), and the
+ladder levels Multiregion / Galaxy / the Unknown are defined within the Lens ladder entry itself,
+not orphaned.
 
-**Harness & evaluation, verified clean (s16) — Pass B's last glossary row.** Eight terms, a **hybrid
-arbiter**: seven are E11-unbuilt (Harness, Policy, Run, Batch, Direct play, Replay, Experiment) and
-adjudicate against the E11 spec; one — **Ledger** — is heavily built and carries the row's real claim
-surface. The seven unbuilt terms' scope claims hold: the header's *"v1 = Batch core + `harness run`
-CLI; Direct play and Replay deferred to v2"* is `E11-proving-grounds.md:8-9` verbatim, owner-locked
-2026-07-15. **Ledger** got the row-4 treatment, read line-by-line: `contractFee` is a real kind
-(`ledger.ts:104`), `routeId` is carried on `trade` events **only** (`ledger.ts:37`, the comment at
-`:21` stating exactly that), and net worth is `thalers + cargoValue + siteStoreValue` at mid price
-(`ledger.ts:222`). The **Grammar law** (#203) — *"every thaler-moving kind carries `thalers`, every
-rank-moving kind carries `pointsDelta`, a new unclassified kind fails to typecheck"* — is enforced by
-the exhaustive `Record<LedgerEvent['kind'], Category>` classification at `ledger.test.ts:610`, exactly
-as claimed. The one careful call is the **Value law**: its guard, *"a value-neutrality property test
-rather than an enumeration of stores (ADR-0008)"*, is **not** in `src/sim` yet — but the entry
-attributes it to ADR-0008, not to a named test file, and both ADR-0008 (`:50`) and E13.0's acceptance
-criterion C3 (`E13.0-goods-store.md:266` — `valueNeutrality.test.ts`, ≥20 seeds) specify it. So it is
-approved-but-unbuilt E13.0, the row-2 case (the entry leads the code by design), **not** a claim of a
-test that exists. **Count anchored**: exactly 8 convention entries, no wrap artifact. Neighbour-concept
-check (F13) clean: every neighbour carries an entry, and `transaction` is the entry's own inline gloss
+**Harness & evaluation, verified clean (s16) — Pass B's last glossary row.** Eight terms, a **hybrid arbiter**:
+seven are E11-unbuilt (Harness, Policy, Run, Batch, Direct play, Replay, Experiment) and adjudicate
+against the E11 spec;
+one — **Ledger**
+—
+is heavily built and carries the row's real claim surface.
+The seven unbuilt terms' scope claims hold:
+the header's *"v1 = Batch core + `harness run` CLI; Direct play and Replay deferred to v2"* is
+`E11-proving-grounds.md:8-9` verbatim, owner-locked 2026-07-15. **Ledger**
+got the row-4 treatment, read line-by-line:
+`contractFee` is a real kind (`ledger.ts:104`), `routeId` is carried on `trade` events **only**
+(`ledger.ts:37`, the comment at `:21` stating exactly that), and net worth is
+`thalers + cargoValue + siteStoreValue` at mid price (`ledger.ts:222`).
+The **Grammar law** (#203) —
+*"every thaler-moving kind carries `thalers`, every rank-moving kind carries `pointsDelta`, a new unclassified kind fails to typecheck"*
+—
+is enforced by the exhaustive `Record<LedgerEvent['kind'], Category>` classification at
+`ledger.test.ts:610`, exactly as claimed.
+The one careful call is the **Value law**:
+its guard, *"a value-neutrality property test rather than an enumeration of stores (ADR-0008)"*, is **not**
+in `src/sim` yet —
+but the entry attributes it to ADR-0008, not to a named test file, and both ADR-0008 (`:50`) and
+E13.0's acceptance criterion C3 (`E13.0-goods-store.md:266` — `valueNeutrality.test.ts`, ≥20 seeds)
+specify it.
+So it is approved-but-unbuilt E13.0, the row-2 case (the entry leads the code by design), **not** a
+claim of a test that exists. **Count anchored**:
+exactly 8 convention entries, no wrap artifact.
+Neighbour-concept check (F13) clean:
+every neighbour carries an entry, and `transaction` is the entry's own inline gloss
 (*"UI-only term, not a distinct sim type"*).
 
 **Pass B's seven glossary rows are now all worked, every one CLEAN.** With Pass A complete (s13),
-the only remaining sweep surface was the un-numbered **Process subjects** row below (verification gates,
-merge/wave ritual, session ritual, model ladder, review depth, documentation law) — the class F1 came
-from, which has no `CONTEXT.md` entries and so was never part of the term-keyed passes.
+the only remaining sweep surface was the un-numbered **Process subjects** row below (verification
+gates, merge/wave ritual, session ritual, model ladder, review depth, documentation law) —
+the class F1 came from, which has no `CONTEXT.md` entries and so was never part of the term-keyed
+passes.
 
 **Process subjects, worked and resolved (s16 close).** No `src/sim` arbiter and no glossary term
-list — this row is read as cross-references between `WORKFLOW.md`, `CLAUDE.md`, `SELFCHECK.md`,
+list —
+this row is read as cross-references between `WORKFLOW.md`, `CLAUDE.md`, `SELFCHECK.md`,
 `PROCESS.md`, the persona files and `agent-memory.md`, checked against `gh` state and today's date
-rather than against code. Three findings, all mechanical fixes with no design judgement required,
-so all three are discharged in this same pass (F3/F6/F8/F11 precedent): **F15** — `WORKFLOW.md`
-§Casting's "Current casting" line called Fable's access "intermittent" (a present-tense,
-still-sometimes-available framing) while `agent-memory.md:109`'s own dated prediction
-(2026-07-15) said access runs through 2026-07-19 with no renewal promised; today is 2026-07-21,
-two days past, with no renewal recorded anywhere in the repo. The line was never struck per its
-own corollary ("a falsified line is struck immediately"). Fixed: the line now states the lapse and
-that no replacement frontier caster is assigned, without inventing one — that choice stays an open
-owner call, not decided here. **F16** — `PROCESS.md` (the outside-reader tour) claimed the
-incident log holds "13 process failures and near-misses" with no date qualifier, while 22 reports
-are filed (`0001`–`0022`); its neighbouring sentence about the coder scorecard correctly says "as
-of 2026-07-16", so the asymmetry was itself a tell that this count was simply never revisited as
-incidents accumulated. Verified before fixing, not assumed: checked every incident from 0014 on
-for its outcome rating, since the same paragraph also claims "all N outcomes rated Low" — it still
-holds (0014 and 0021 predate the two-axis Outcome/failure-mode-class split and use an equivalent
-"caught before any effect" framing, but no incident logs a non-Low outcome). Fixed: count updated
-to 22, dated, and the "all N outcomes" line now names the pre-two-axis equivalent. **F17** —
+rather than against code.
+Three findings, all mechanical fixes with no design judgement required, so all three are discharged
+in this same pass (F3/F6/F8/F11 precedent): **F15**
+—
+`WORKFLOW.md` §Casting's "Current casting" line called Fable's access "intermittent" (a
+present-tense, still-sometimes-available framing) while `agent-memory.md:109`'s own dated prediction
+(2026-07-15) said access runs through 2026-07-19 with no renewal promised;
+today is 2026-07-21, two days past, with no renewal recorded anywhere in the repo.
+The line was never struck per its own corollary ("a falsified line is struck immediately").
+Fixed:
+the line now states the lapse and that no replacement frontier caster is assigned, without inventing
+one —
+that choice stays an open owner call, not decided here. **F16**
+—
+`PROCESS.md` (the outside-reader tour) claimed the incident log holds "13 process failures and
+near-misses" with no date qualifier, while 22 reports are filed (`0001`–`0022`);
+its neighbouring sentence about the coder scorecard correctly says "as of 2026-07-16", so the
+asymmetry was itself a tell that this count was simply never revisited as incidents accumulated.
+Verified before fixing, not assumed:
+checked every incident from 0014 on for its outcome rating, since the same paragraph also claims
+"all N outcomes rated Low" —
+it still holds (0014 and 0021 predate the two-axis Outcome/failure-mode-class split and use an
+equivalent "caught before any effect" framing, but no incident logs a non-Low outcome).
+Fixed:
+count updated to 22, dated, and the "all N outcomes" line now names the pre-two-axis equivalent. **F17**
+—
 `WORKFLOW.md`'s "Cert order is law" sentence cites incidents 0008, 0011 and 0013 but not **0010**
-(reachability-from-`origin/main`, the incident that specifically motivated checking ancestry
-rather than "content looks present"), even though `CLAUDE.md`'s fuller wave-close-order bullet
-puts exactly that check first, by name. A reader following only `WORKFLOW.md`'s cert-order
-sentence could reproduce incident 0010 (stacked-child-merged-into-base). Fixed: the reachability
-check is now named first in `WORKFLOW.md`'s sentence, citing 0010.
+(reachability-from-`origin/main`, the incident that specifically motivated checking ancestry rather
+than "content looks present"), even though `CLAUDE.md`'s fuller wave-close-order bullet puts exactly
+that check first, by name.
+A reader following only `WORKFLOW.md`'s cert-order sentence could reproduce incident 0010
+(stacked-child-merged-into-base).
+Fixed:
+the reachability check is now named first in `WORKFLOW.md`'s sentence, citing 0010.
 
-**The sweep is complete: Pass A (s13) and all eight Pass B rows (seven glossary, s14–s16; Process
-subjects, s16) are worked.** Three findings surfaced in the very last row that thirteen prior rows
-(Pass A's six plus Pass B's first seven) did not — a small data point for the interpretation
-section below: cross-reference contradictions concentrate exactly where there is no code and no
-enumerable term list to arbitrate, which is also the corpus segment nobody else's gate reads.
+**The sweep is complete: Pass A (s13) and all eight Pass B rows (seven glossary, s14–s16; Process subjects, s16) are worked.**
+Three findings surfaced in the very last row that thirteen prior rows (Pass A's six plus Pass B's
+first seven) did not —
+a small data point for the interpretation section below:
+cross-reference contradictions concentrate exactly where there is no code and no enumerable term
+list to arbitrate, which is also the corpus segment nobody else's gate reads.
 
 ## Binding rules
 
@@ -334,22 +412,25 @@ Without these the archive drowns the signal:
 
 ## Finding policy (owner decision, s13)
 
-**Read-only plus routing.** A finding is recorded here and routed; it is *not* fixed in the
-same pass. Rationale: s12 showed one finding can escalate into a sub-epic, an ADR and rewritten
-acceptance criteria. Fixing in flight means the sweep gets swallowed by its first serious
-finding and never completes.
+**Read-only plus routing.** A finding is recorded here and routed;
+it is *not* fixed in the same pass.
+Rationale:
+s12 showed one finding can escalate into a sub-epic, an ADR and rewritten acceptance criteria.
+Fixing in flight means the sweep gets swallowed by its first serious finding and never completes.
 
-**One exception:** a finding that blocks the next queued work (#306 → #307) is fixed
-immediately.
+**One exception:** a finding that blocks the next queued work (#306 → #307) is fixed immediately.
 
-Findings needing work get issues; the rest stay as rows below until routed.
+Findings needing work get issues;
+the rest stay as rows below until routed.
 
-**Amended at s13 close.** The policy did its job — it kept the sweep from being swallowed by
-its first serious finding — but a ledger of recorded-and-unfixed findings is itself
-forward-looking text, the one kind that rots (see the trimmed hypothesis below). So: **a
-finding whose fix needs no design judgement is discharged as soon as its pass closes**, not
-left standing. F3, F6, F8 and F11 were discharged this way at s13 close. Findings that need
-an owner call (F5, F10) stay open by design, not by inertia.
+**Amended at s13 close.** The policy did its job —
+it kept the sweep from being swallowed by its first serious finding —
+but a ledger of recorded-and-unfixed findings is itself forward-looking text, the one kind that rots
+(see the trimmed hypothesis below).
+So: **a finding whose fix needs no design judgement is discharged as soon as its pass closes**,
+not left standing.
+F3, F6, F8 and F11 were discharged this way at s13 close.
+Findings that need an owner call (F5, F10) stay open by design, not by inertia.
 
 ## Findings
 
@@ -375,9 +456,9 @@ an owner call (F5, F10) stay open by design, not by inertia.
 
 ## What the findings have in common (interpretation, not a finding)
 
-Read as a system rather than as ten defects, nine of the first ten sit in the same two
-places — and they are the places Donella Meadows ranks as high-leverage precisely because
-they look like housekeeping:
+Read as a system rather than as ten defects, nine of the first ten sit in the same two places —
+and they are the places Donella Meadows ranks as high-leverage precisely because they look like
+housekeeping:
 
 - **Information flows** — *who learns what, and when.* F4, F5, F9 and F7 are all one shape:
   the fact was updated somewhere, and the place a future reader will actually look never
@@ -394,77 +475,94 @@ they look like housekeeping:
   the world has zero gain no matter how loudly it prints `OK`. F2 is the same defect slowed
   down: HANDOFF refreshes on request, so its drift rate exceeds its correction rate.
 
-F10 is the exception and belongs elsewhere — not a broken flow but an **ungrounded rule**:
+F10 is the exception and belongs elsewhere —
+not a broken flow but an **ungrounded rule**:
 a real constraint citing a source that does not contain it.
 
-The uncomfortable reading: this documentation system is **excellent at recording a decision
-at the moment it is made, and has almost no machinery for keeping a recorded decision true
-afterwards.** Those are different goals, and nearly every artifact here — ADRs, incidents,
-grill records, indexes — is built for the first. The sweep itself is a manual compensating
-loop for the second, which makes it slow, expensive, and dependent on somebody choosing to
-run it. That is a weak place to intervene.
+The uncomfortable reading:
+this documentation system is **excellent at recording a decision at the moment it is made, and has almost no machinery for keeping a recorded decision true afterwards.**
+Those are different goals, and nearly every artifact here —
+ADRs, incidents, grill records, indexes —
+is built for the first.
+The sweep itself is a manual compensating loop for the second, which makes it slow, expensive, and
+dependent on somebody choosing to run it.
+That is a weak place to intervene.
 
 The stronger and cheaper move is one the repo has **already invented and only half-applied**:
-*"adding a note means adding its row in the same commit"* is exactly a propagation rule. It
-governs files. It does not yet govern decisions — which is all F9's candidate rule asks for.
+*"adding a note means adding its row in the same commit"* is exactly a propagation rule.
+It governs files.
+It does not yet govern decisions —
+which is all F9's candidate rule asks for.
 Generalising a rule that already works here beats inventing a mechanism.
 
-**Hold this loosely.** It is a model built from one session and a method that keyed on
-subjects and cross-references — so of course it surfaced cross-reference defects. That nine
-findings share a cause is a hypothesis the remaining passes can falsify, not a result.
+**Hold this loosely.** It is a model built from one session and a method that keyed on subjects and
+cross-references —
+so of course it surfaced cross-reference defects.
+That nine findings share a cause is a hypothesis the remaining passes can falsify, not a result.
 
 ### The hypothesis, trimmed by the issue-reference row (same session)
 
-It got falsified in the useful direction almost immediately, and the correction is sharper
-than the original. Closing Pass A over **196 issue citations produced exactly one defect**
-(F11), and the scripted check's 39 candidates were **38 dated records**. So the citation
-layer is not sick, and "information flows" was too broad a diagnosis.
+It got falsified in the useful direction almost immediately, and the correction is sharper than the
+original.
+Closing Pass A over **196 issue citations produced exactly one defect** (F11), and the scripted
+check's 39 candidates were **38 dated records**.
+So the citation layer is not sick, and "information flows" was too broad a diagnosis.
 
-The defects are not spread across documents-citing-each-other. They sit **exclusively in
-text that faces forward**. And that follows from something structural rather than from
-anyone's carelessness: **a record cannot go stale — it is a photograph.** A scorecard row
-written on 07-14 states what was true on 07-14 and will state it correctly forever. Only
-text that makes a promise about the future can rot, because the future then arrives and
-checks it.
+The defects are not spread across documents-citing-each-other.
+They sit **exclusively in text that faces forward**.
+And that follows from something structural rather than from anyone's carelessness: **a record cannot go stale — it is a photograph.**
+A scorecard row written on 07-14 states what was true on 07-14 and will state it correctly forever.
+Only text that makes a promise about the future can rot, because the future then arrives and checks
+it.
 
-Sort the findings and it holds: F2 a prediction, F4 a trigger, F5 a parking lot under a
-wrong label, F6 a deferral, F7 a spec's status, F11 a brief's input list — six for six,
-all forward-facing. F1 (contradiction), F3 (form) and F10 (ungrounded citation) are other
-classes entirely.
+Sort the findings and it holds:
+F2 a prediction, F4 a trigger, F5 a parking lot under a wrong label, F6 a deferral, F7 a spec's
+status, F11 a brief's input list —
+six for six, all forward-facing.
+F1 (contradiction), F3 (form) and F10 (ungrounded citation) are other classes entirely.
 
-Operational payoff, and the reason this is written down rather than admired: binding rule 6
-is this insight made into a filter.
+Operational payoff, and the reason this is written down rather than admired:
+binding rule 6 is this insight made into a filter.
 
-**But scope the payoff honestly — the first draft of this paragraph overreached.** Rule 6
-retires *status* questions, which is what Pass A asked. Pass B asks a **semantic** question:
-do all the documents mean the same thing by a term? A record can be perfectly accurate about
-its date and still contradict today's `CONTEXT.md` about what *Hold* is — that is not
-staleness, it is contradiction, and binding rule 5 says every spec binds regardless of age.
+**But scope the payoff honestly — the first draft of this paragraph overreached.** Rule 6 retires
+*status* questions, which is what Pass A asked.
+Pass B asks a **semantic** question:
+do all the documents mean the same thing by a term?
+A record can be perfectly accurate about its date and still contradict today's `CONTEXT.md` about
+what *Hold* is —
+that is not staleness, it is contradiction, and binding rule 5 says every spec binds regardless of
+age.
 
-So the saving is real but partial: it lands on `docs/design-notes` (38 files, 2 540 lines,
-mostly dated records that can be read lightly for semantics) and **not** on `docs/specs`
-(2 796 lines, all binding). Expect Pass B to cost roughly what the spec segment costs. A
-claim the next session can check.
+So the saving is real but partial:
+it lands on `docs/design-notes` (38 files, 2 540 lines, mostly dated records that can be read
+lightly for semantics) and **not** on `docs/specs` (2 796 lines, all binding).
+Expect Pass B to cost roughly what the spec segment costs.
+A claim the next session can check.
 
 ## Stop rule
 
 The sweep is done when every Pass A row and every Pass B row reads CLEAN or carries findings.
-It is explicitly **resumable**: this table is the state. A session picks the topmost pending
-row, works it, updates the row, and stops wherever it stops.
+It is explicitly **resumable**:
+this table is the state.
+A session picks the topmost pending row, works it, updates the row, and stops wherever it stops.
 
-**Amended s14.** "Topmost" now means topmost in the Pass B table's own **Order** column,
-which is sequenced by adjudicability (see above) rather than by `CONTEXT.md`'s section
-order. The rule is unchanged in spirit — take the next pending row, do not shop around —
-but the sequence it points at was re-derived once the corpus was actually measured. If a
-future session finds a better ordering, it moves the rows and says so here; what it must
-not do is pick a row because it looks appealing today.
+**Amended s14.** "Topmost" now means topmost in the Pass B table's own **Order** column, which is
+sequenced by adjudicability (see above) rather than by `CONTEXT.md`'s section order.
+The rule is unchanged in spirit —
+take the next pending row, do not shop around —
+but the sequence it points at was re-derived once the corpus was actually measured.
+If a future session finds a better ordering, it moves the rows and says so here;
+what it must not do is pick a row because it looks appealing today.
 
-**Closed s16.** Every Pass A row and every Pass B row — the seven glossary rows plus the
-un-numbered Process subjects row — is worked: CLEAN or carries findings, and every finding
-raised across both passes is resolved or explicitly routed (F5, F9's remedy generalized into
-law, F7 routed to #309). The standing, resumable sweep this note describes is done. It does
-not follow that the design surface will stay contradiction-free — new documents and new
-decisions will drift again — only that this particular systematic pass over the corpus that
-existed at open (s13) has run its course. A future contradiction is a new sweep, not a
-reopening of this one; if one starts, it gets its own note rather than a ninth Pass B row
-appended here.
+**Closed s16.** Every Pass A row and every Pass B row —
+the seven glossary rows plus the un-numbered Process subjects row —
+is worked:
+CLEAN or carries findings, and every finding raised across both passes is resolved or explicitly
+routed (F5, F9's remedy generalized into law, F7 routed to #309).
+The standing, resumable sweep this note describes is done.
+It does not follow that the design surface will stay contradiction-free —
+new documents and new decisions will drift again —
+only that this particular systematic pass over the corpus that existed at open (s13) has run its
+course.
+A future contradiction is a new sweep, not a reopening of this one;
+if one starts, it gets its own note rather than a ninth Pass B row appended here.

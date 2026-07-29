@@ -6,11 +6,11 @@
 
 ## What happened
 
-The s4 owner decision "coder = Opus for 5 sessions" was recorded in the HANDOFF
-watch list and per-machine memory but never in `.claude/agents/coder.md` — its
-frontmatter has said `model: sonnet` since 2026-07-13. On 2026-07-17 (s9) the
-#290/#292 wave was dispatched with no conscious casting check; the def won
-silently and both coders ran on Sonnet, contradicting the standing decision.
+The s4 owner decision "coder = Opus for 5 sessions" was recorded in the HANDOFF watch list and
+per-machine memory but never in `.claude/agents/coder.md` —
+its frontmatter has said `model: sonnet` since 2026-07-13.
+On 2026-07-17 (s9) the #290/#292 wave was dispatched with no conscious casting check;
+the def won silently and both coders ran on Sonnet, contradicting the standing decision.
 
 ## Impact
 
@@ -24,8 +24,10 @@ silently and both coders ran on Sonnet, contradicting the standing decision.
 
 ## Recurrence
 
-Medium — structural: casting decisions land in HANDOFF/memory prose while
-dispatch reads the def; two sources of truth.
+Medium —
+structural:
+casting decisions land in HANDOFF/memory prose while dispatch reads the def;
+two sources of truth.
 
 ## Recommendation
 
@@ -36,6 +38,7 @@ dispatch reads the def; two sources of truth.
 
 ## Follow-up
 
-Owner decision 2026-07-17: coder default = Sonnet (def already correct),
-advisor = Opus; s4 override closed. WORKFLOW §Casting prevention line landed in
-the same PR (#296).
+Owner decision 2026-07-17:
+coder default = Sonnet (def already correct), advisor = Opus;
+s4 override closed.
+WORKFLOW §Casting prevention line landed in the same PR (#296).

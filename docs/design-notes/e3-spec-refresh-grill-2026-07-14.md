@@ -1,10 +1,10 @@
 # E3 spec-currency grill — 2026-07-14
 
-Pre-implementation refresh of the approved E3 spec (2026-07-09) against today's
-`src/sim`, folding in Professor findings B and C
-([review](professor-review-src-sim-2026-07-13.md); finding A closed via PR #149,
-finding D routed to the E13 grill). Verified current before the grill: bid/ask
-language, `GuildId = EconomicArchetype`, guild domain goods vs `ARCHETYPE_PROFILES`,
+Pre-implementation refresh of the approved E3 spec (2026-07-09) against today's `src/sim`, folding
+in Professor findings B and C ([review](professor-review-src-sim-2026-07-13.md); finding A closed
+via PR #149, finding D routed to the E13 grill).
+Verified current before the grill:
+bid/ask language, `GuildId = EconomicArchetype`, guild domain goods vs `ARCHETYPE_PROFILES`,
 equilibrium, the single `applyTrade` seam.
 
 ## Locked
@@ -51,9 +51,9 @@ equilibrium, the single `applyTrade` seam.
 
 ## Docs touched
 
-`docs/specs/E3-contracts-and-guilds.md` (status line, upkeep §, substream §,
-day-boundary §, testing §, issue cut), `CONTEXT.md` (Reserve, Upkeep, Ledger),
-`docs/specs/E9-fleet-and-routes.md` (routeId prose sweep, closes #116), this note.
+`docs/specs/E3-contracts-and-guilds.md` (status line, upkeep §, substream §, day-boundary §, testing
+§, issue cut), `CONTEXT.md` (Reserve, Upkeep, Ledger), `docs/specs/E9-fleet-and-routes.md` (routeId
+prose sweep, closes #116), this note.
 
 ## Follow-ups
 

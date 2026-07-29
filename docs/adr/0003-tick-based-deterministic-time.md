@@ -1,6 +1,9 @@
 # Tick-based deterministic time
 
-World time advances in discrete ticks (1 tick = 1 world hour); the UI replays ticks at a selectable speed (pause / 1x / 10x / 100x). All sim randomness derives from a seeded RNG, so identical seed + identical player commands ⇒ identical world.
+World time advances in discrete ticks (1 tick = 1 world hour);
+the UI replays ticks at a selectable speed (pause / 1x / 10x / 100x).
+All sim randomness derives from a seeded RNG, so identical seed + identical player commands ⇒
+identical world.
 
 ## Considered Options
 

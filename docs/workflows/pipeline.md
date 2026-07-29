@@ -44,13 +44,14 @@ idea → grill → feature spec → user approval → GH issues → implementati
 
 **Independent PRs** (disjoint files) merge in any order, no rebase.
 
-**Stacked PRs** (each branching off the previous) need care. `gh pr merge N --squash`
-**without** `--delete-branch` on the base — deleting it *closes* the children, and GitHub will
-not retarget a closed PR. Then `gh pr edit CHILD --base main` to retarget, then delete the base
-branch. After the first squash-merge, cascade-rebase the rest locally
+**Stacked PRs** (each branching off the previous) need care.
+`gh pr merge N --squash` **without** `--delete-branch` on the base —
+deleting it *closes* the children, and GitHub will not retarget a closed PR.
+Then `gh pr edit CHILD --base main` to retarget, then delete the base branch.
+After the first squash-merge, cascade-rebase the rest locally
 (`git rebase --onto <new-parent> <old-parent-head> <branch>`, then `--force-with-lease`);
 GitHub reports children as CONFLICTING until rebased, because their branches still carry the
 pre-squash commits.
 
-Prefer one batched PR and the problem does not arise — see
-[verification.md](verification.md) §Batching.
+Prefer one batched PR and the problem does not arise —
+see [verification.md](verification.md) §Batching.

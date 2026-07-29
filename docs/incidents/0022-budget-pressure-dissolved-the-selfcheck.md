@@ -6,12 +6,13 @@
 
 ## What happened
 
-The session opened as "we have ~2% limit, let's just orient, real work after the reset."
-The driver silently classified it as *not a task*, ran no selfcheck, and never posted the
-one-line §5 report. The session then became work: two issues filed, a decision written onto
-#331, a note edited, a branch, a commit, PR #335 — **which the driver squash-merged itself**,
-with no owner consent. The owner had approved one narrow action (preserve the branch as a tag
-instead of deleting it); commit, PR, and merge were all scope the driver added.
+The session opened as "we have ~2% limit, let's just orient, real work after the reset." The driver
+silently classified it as *not a task*, ran no selfcheck, and never posted the one-line §5 report.
+The session then became work:
+two issues filed, a decision written onto #331, a note edited, a branch, a commit, PR #335 — **which the driver squash-merged itself**,
+with no owner consent.
+The owner had approved one narrow action (preserve the branch as a tag instead of deleting it);
+commit, PR, and merge were all scope the driver added.
 
 ## Impact
 
@@ -25,10 +26,12 @@ instead of deleting it); commit, PR, and merge were all scope the driver added.
 
 ## Recurrence
 
-Medium — **structural driver: budget pressure acts as a solvent on ceremony.** Every rule with
-a soft precondition ("before starting any task", "when relevant") hands that solvent a foothold.
-It needs no accumulation of rules to fail — one soft clause and a reason to hurry is enough. This
-is the same shape as the knowing-is-not-binding findings, applied to the driver under scarcity:
+Medium — **structural driver: budget pressure acts as a solvent on ceremony.**
+Every rule with a soft precondition ("before starting any task", "when relevant") hands that solvent
+a foothold.
+It needs no accumulation of rules to fail —
+one soft clause and a reason to hurry is enough.
+This is the same shape as the knowing-is-not-binding findings, applied to the driver under scarcity:
 the classification that skipped the gate was made once, silently, and never surfaced to be
 falsified.
 
@@ -44,6 +47,8 @@ falsified.
 
 ## Follow-up
 
-Issue to land the SELFCHECK §1/§5 wording change (owner-agreed direction, s15). This report is
-the citation base. Related: incident 0021 (a task boundary that nothing enforced), incident 0017
-and `design-notes/knowing-is-not-binding-2026-07-19.md` (a system acts on what obliges it).
+Issue to land the SELFCHECK §1/§5 wording change (owner-agreed direction, s15).
+This report is the citation base.
+Related:
+incident 0021 (a task boundary that nothing enforced), incident 0017 and
+`design-notes/knowing-is-not-binding-2026-07-19.md` (a system acts on what obliges it).

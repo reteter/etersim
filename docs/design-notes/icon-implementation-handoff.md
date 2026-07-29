@@ -1,7 +1,8 @@
 # Icon / Glyph Implementation Handoff
 
-**Created**: 2026-07-07 (during E2 follow-up design session)  
-**Origin**: Controlled Ship header design (follow-up to #28 / issue #32)
+**Created**:
+2026-07-07 (during E2 follow-up design session) **Origin**:  
+Controlled Ship header design (follow-up to #28 / issue #32)
 
 > **Resolved (2026-07-07):** strategy locked in the approved
 > [E10 spec §Icons](../specs/E10-orrery-view.md) — game-world entities get vendored
@@ -79,7 +80,8 @@ During Designer grilling of the **Always-visible Controlled Ship header** (Branc
 
 This doc is intended as a clean starting point for a focused session on icon implementation.
 
-Recommended starting persona: **Engineer** (with Designer input on the color semantics).
+Recommended starting persona: **Engineer**
+(with Designer input on the color semantics).
 
 Suggested first steps for the handoff session:
 1. Review current glyphs and the header spec needs.
@@ -93,4 +95,6 @@ When done, feed decisions back into the main trade-loop follow-up work.
 
 ---
 
-**Status**: Resolved into the E10 spec (2026-07-07); implementation tracked in #34.
+**Status**:
+Resolved into the E10 spec (2026-07-07);
+implementation tracked in #34.

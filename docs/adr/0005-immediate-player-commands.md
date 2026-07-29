@@ -1,11 +1,11 @@
 # Player commands apply immediately in the store bridge
 
-Trading requires pausing the sim to think (docs/specs/E2-trade-loop.md), but the store
-previously queued dispatched commands into the next tick's command list; while paused,
-`advance` early-returns and never flushes the queue, so paused trades silently never
-applied. The store bridge now calls the sim's `applyCommand(world, command)` immediately
-on `dispatch`, and the `requestAnimationFrame` loop folds elapsed time with empty command
-lists (`tick(world, [])`).
+Trading requires pausing the sim to think (docs/specs/E2-trade-loop.md), but the store previously
+queued dispatched commands into the next tick's command list;
+while paused, `advance` early-returns and never flushes the queue, so paused trades silently never
+applied.
+The store bridge now calls the sim's `applyCommand(world, command)` immediately on `dispatch`, and
+the `requestAnimationFrame` loop folds elapsed time with empty command lists (`tick(world, [])`).
 
 ## Considered Options
 

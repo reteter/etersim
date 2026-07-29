@@ -1,6 +1,9 @@
 # TypeScript + Vite + React web stack
 
-etersim is a map-and-panels trading simulation, so UI iteration speed matters more than rendering power. We build it as a browser app: Vite + TypeScript, React with Zustand for the view layer, SVG/Canvas for the region map.
+etersim is a map-and-panels trading simulation, so UI iteration speed matters more than rendering
+power.
+We build it as a browser app:
+Vite + TypeScript, React with Zustand for the view layer, SVG/Canvas for the region map.
 
 ## Considered Options
 
@@ -8,4 +11,5 @@ etersim is a map-and-panels trading simulation, so UI iteration speed matters mo
 - **C# + desktop (Avalonia/MonoGame)** — rejected: slower UI iteration, heavier toolchain.
 - **Rust + WASM sim** — rejected for v1: upfront complexity not justified; the pure-TS sim boundary (ADR-0002) keeps this door open.
 
-Desktop packaging (Tauri) remains an open option later; it does not affect the stack choice.
+Desktop packaging (Tauri) remains an open option later;
+it does not affect the stack choice.

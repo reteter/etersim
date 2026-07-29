@@ -1,31 +1,37 @@
 # E11 — Proving grounds
 
-Feature spec for epic E11 (tooling track, [PRD](../PRD.md)). Terms per
-[CONTEXT.md](../../CONTEXT.md) §Harness & evaluation. Grilled and decided with the owner
-on 2026-07-09.
-Status: **v1 approved (2026-07-15, farewell-roadmap grill)** — the re-review condition
-("E9 ships first") was satisfied with room to spare: E9, E12 *and* E3 shipped before
-this spec was picked back up. §Re-review below records the deltas. **v1 scope = the
-Batch core + the `run` CLI**; `play` and `replay` are deferred to v2 (owner lock —
-direct play is the most complex piece and the least needed for balance work; Runs stay
-replayable by construction, Policy + seed). This session also served as the grill that
-unparks #202 (its trigger named the cluster-B grill; the harness slice was grilled
-here, the UI slices of cluster B stay parked for M4).
+Feature spec for epic E11 (tooling track, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md) §Harness & evaluation.
+Grilled and decided with the owner on 2026-07-09.
+Status: **v1 approved (2026-07-15, farewell-roadmap grill)**
+—
+the re-review condition ("E9 ships first") was satisfied with room to spare:
+E9, E12 *and* E3 shipped before this spec was picked back up.
+§Re-review below records the deltas. **v1 scope = the Batch core + the `run` CLI**;
+`play` and `replay` are deferred to v2 (owner lock — direct play is the most complex piece and the
+least needed for balance work; Runs stay replayable by construction, Policy + seed).
+This session also served as the grill that unparks #202 (its trigger named the cluster-B grill; the
+harness slice was grilled here, the UI slices of cluster B stay parked for M4).
 
-Grill inputs: session 2026-07-09 (seven-question grill, all decisions owner-confirmed);
-[playtest-2026-07-09-living.md](../design-notes/playtest-2026-07-09-living.md) §New owner
-inputs (performance board shares the Ledger); the #60 dominance-suite bots
-(`src/sim/economy.test.ts` — the proven per-tick policy pattern this generalizes).
+Grill inputs:
+session 2026-07-09 (seven-question grill, all decisions owner-confirmed);
+[playtest-2026-07-09-living.md](../design-notes/playtest-2026-07-09-living.md) §New owner inputs
+(performance board shares the Ledger);
+the #60 dominance-suite bots (`src/sim/economy.test.ts` — the proven per-tick policy pattern this
+generalizes).
 
-Scope in one line: a headless evaluation harness that lets an AI agent test game
-versions — play batches of games via deterministic policies, analyze aggregated
-telemetry, hunt bugs with perverse strategies — with every game replayable.
+Scope in one line:
+a headless evaluation harness that lets an AI agent test game versions —
+play batches of games via deterministic policies, analyze aggregated telemetry, hunt bugs with
+perverse strategies —
+with every game replayable.
 
 ## Design
 
 ### Purpose (owner, 2026-07-09)
 
-The primary user is an agent testing a build. Three canonical uses:
+The primary user is an agent testing a build.
+Three canonical uses:
 
 1. **Tactic optimization** — "play 100 games and derive the optimal tactic under the
    current balance."
@@ -34,13 +40,14 @@ The primary user is an agent testing a build. Three canonical uses:
 3. **Adversarial exploration** — "play X games trying unusual strategies to find bugs
    and unintended strategies/effects."
 
-Companion play (agent playing live alongside the owner in the browser) is explicitly
-out of scope; the harness's telemetry may later feed such an experience cheaply.
+Companion play (agent playing live alongside the owner in the browser) is explicitly out of scope;
+the harness's telemetry may later feed such an experience cheaply.
 
 ### The two-layer loop (decision: hybrid, policy-first)
 
 An LLM cannot sit in the per-move loop of 500 games (cost, latency, and — decisively —
-non-reproducibility). The architecture separates:
+non-reproducibility).
+The architecture separates:
 
 - **Policy layer (the core):** strategies are deterministic, parameterized TS functions
   (Policy). The agent's loop is *write/modify a policy → run a Batch → read the report →
@@ -69,10 +76,13 @@ non-reproducibility). The architecture separates:
 
 ### Placement & dependency rule (locked in the grill)
 
-Top-level `harness/` directory, **outside the Vite bundle**; run with `tsx`. The harness
-imports `src/sim` as a plain consumer (ADR-0002); the sim never imports the harness.
-Policies live in `harness/policies/`. The #60 bots stay where they are (tests remain
-self-contained); their pattern is generalized, not moved.
+Top-level `harness/` directory, **outside the Vite bundle**;
+run with `tsx`.
+The harness imports `src/sim` as a plain consumer (ADR-0002);
+the sim never imports the harness.
+Policies live in `harness/policies/`.
+The #60 bots stay where they are (tests remain self-contained);
+their pattern is generalized, not moved.
 
 ### Policy contract (decision: per-tick pure function)
 
@@ -85,11 +95,11 @@ type Policy<M> = {
 };
 ```
 
-Polled every tick (the sim is fast; "decide only when docked" is just returning `[]`
-underway). Full `World` in, player-visible reads by convention; `diagnostic` marks
-policies allowed super-player knowledge. A formal Observation layer is deliberately
-deferred until information fog gives it meaning (an Events-gradient candidate,
-post-1.0 — PRD §Long-term fantasy; formerly "E6").
+Polled every tick (the sim is fast; "decide only when docked" is just returning `[]` underway).
+Full `World` in, player-visible reads by convention;
+`diagnostic` marks policies allowed super-player knowledge.
+A formal Observation layer is deliberately deferred until information fog gives it meaning (an
+Events-gradient candidate, post-1.0 — PRD §Long-term fantasy; formerly "E6").
 
 ### CLI (decision: direct sim import, no MCP, no browser)
 
@@ -104,15 +114,17 @@ An MCP adapter over the same core is a parked idea (portfolio demo), not first s
 
 ### Ledger schema (shared with the performance board)
 
-JSONL per Run, one line per `LedgerEvent` — **the union `src/sim/ledger.ts` already
-emits**, not a harness-local shape. The in-game performance board consumes the same
-stream: one vocabulary, two consumers, and schema drift between them is spec drift.
+JSONL per Run, one line per `LedgerEvent` — **the union `src/sim/ledger.ts` already emits**,
+not a harness-local shape.
+The in-game performance board consumes the same stream:
+one vocabulary, two consumers, and schema drift between them is spec drift.
 
-The grammar law (#203, `CONTEXT.md` — Ledger) is what makes per-kind aggregation
-mechanical: every thaler-moving kind carries `thalers` — a signed total for the
-movement, never a unit price — and every rank-moving kind carries `pointsDelta`.
-`ledger.test.ts` enforces it exhaustively; a new kind left unclassified fails to
-typecheck.
+The grammar law (#203, `CONTEXT.md` — Ledger) is what makes per-kind aggregation mechanical:
+every thaler-moving kind carries `thalers` —
+a signed total for the movement, never a unit price —
+and every rank-moving kind carries `pointsDelta`.
+`ledger.test.ts` enforces it exhaustively;
+a new kind left unclassified fails to typecheck.
 
 Kinds as built (2026-07-28), grouped by what they move:
 
@@ -129,10 +141,10 @@ Kinds as built (2026-07-28), grouped by what they move:
   `cargoValue`, `siteStoreValue`, `buildingStoreValue` (E13/OQ8; E15's Plant reuses the
   last field rather than adding a fifth).
 
-The 2026-07-09 draft of this section named `unitPrice`, `thalersAfter` and a departure
-event. None of them shipped, and the harness must not reintroduce them: a per-unit price
-is `thalers / qty`, a running balance is a fold over the stream, and only docking is
-charged. **Report writers derive; the emitter stays the sim's.**
+The 2026-07-09 draft of this section named `unitPrice`, `thalersAfter` and a departure event.
+None of them shipped, and the harness must not reintroduce them:
+a per-unit price is `thalers / qty`, a running balance is a fold over the stream, and only docking
+is charged. **Report writers derive; the emitter stays the sim's.**
 
 ## Testing
 
@@ -175,24 +187,27 @@ What changed in the world since the 2026-07-09 draft, and what it means for v1:
 - **Fleet-aware reporting:** per-ship metric rows + company rollup; hold utilization
   across the fleet.
 
-**v1 cut (approved):** `harness/` skeleton + policy contract + `advanceDays` seam,
-Batch runner + metrics + report (JSON + Markdown), runtime assertions + anomaly list,
-`docs/experiments/` convention. **Deferred to v2:** `harness play` (interactive
-protocol), `harness replay --script` (session replay — batch Runs need no script to
-reproduce), the MCP adapter (parked).
+**v1 cut (approved):** `harness/` skeleton + policy contract + `advanceDays` seam, Batch runner +
+metrics + report (JSON + Markdown), runtime assertions + anomaly list, `docs/experiments/`
+convention. **Deferred to v2:**
+`harness play` (interactive protocol), `harness replay --script` (session replay — batch Runs need
+no script to reproduce), the MCP adapter (parked).
 
 ## Issue cut
 
-v1 approved 2026-07-15; issues are cut once the approving PR merges, per WORKFLOW.
-Suggested slices (each `procedural`): (1) skeleton + policy contract + `advanceDays`
-seam + do-nothing/gradient policies, with guardrail suites refactored onto the seam;
-(2) Batch runner + metrics + reports; (3) runtime assertions + anomaly list +
-`docs/experiments/` convention + closing #202/#115 into their new homes.
+v1 approved 2026-07-15;
+issues are cut once the approving PR merges, per WORKFLOW.
+Suggested slices (each `procedural`):
+(1) skeleton + policy contract + `advanceDays` seam + do-nothing/gradient policies, with guardrail
+suites refactored onto the seam;
+(2) Batch runner + metrics + reports;
+(3) runtime assertions + anomaly list + `docs/experiments/` convention + closing #202/#115 into
+their new homes.
 
 ## Portfolio note
 
-This epic doubles as an evals/AI-quality portfolio artifact: deterministic sim as
-substrate, policies as the unit of comparison, dominance comparisons as encoded design
-goals, adversarial batches with replayable anomalies, and experiments documented with
-their conclusions. The README/report formats should stay legible to a reader who has
-never seen the game.
+This epic doubles as an evals/AI-quality portfolio artifact:
+deterministic sim as substrate, policies as the unit of comparison, dominance comparisons as encoded
+design goals, adversarial batches with replayable anomalies, and experiments documented with their
+conclusions.
+The README/report formats should stay legible to a reader who has never seen the game.

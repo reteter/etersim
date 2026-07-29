@@ -1,32 +1,39 @@
 # E8 — Living economy
 
-Feature spec for epic E8 (milestone M2 — Living Region, [PRD](../PRD.md)). Terms per
-[CONTEXT.md](../../CONTEXT.md). Grilled and decided with the owner on 2026-07-08.
-Status: **approved** (2026-07-08); **shipped** (#57–#63, epic closed 2026-07-09).
+Feature spec for epic E8 (milestone M2 — Living Region, [PRD](../PRD.md)).
+Terms per [CONTEXT.md](../../CONTEXT.md).
+Grilled and decided with the owner on 2026-07-08.
+Status: **approved**
+(2026-07-08); **shipped**
+(#57–#63, epic closed 2026-07-09).
 
-Grill inputs: [playtest-2026-07-07-market-legibility.md §3–4](../design-notes/playtest-2026-07-07-market-legibility.md)
+Grill inputs:
+[playtest-2026-07-07-market-legibility.md §3–4](../design-notes/playtest-2026-07-07-market-legibility.md)
 (saturation root cause, price board idea, v2 grill decisions),
-[playtest-2026-07-08-orb.md §2/6/7/10](../design-notes/playtest-2026-07-08-orb.md)
-(free-time arbitrage re-confirmed; two new requirements: per-archetype price bias and
-bid-ask spread; price board confirmed).
+[playtest-2026-07-08-orb.md §2/6/7/10](../design-notes/playtest-2026-07-08-orb.md) (free-time
+arbitrage re-confirmed; two new requirements: per-archetype price bias and bid-ask spread; price
+board confirmed).
 
-Scope in one line: the region's markets become self-balancing and structurally varied —
+Scope in one line:
+the region's markets become self-balancing and structurally varied —
 price-elastic flows, per-archetype price bias, bid-ask spread, trade osmosis with ambient
-visualization, daily stochastic flow drift — plus a region-wide price board overlay.
-Explicit non-goals: simulated NPC ships as agents (osmosis is a flow; the "rich" variant
-stays a Horizon idea), ship upkeep (parked, E3-era), information fog (E6), the per-good
-comparison badge in remote port view (subsumed by the price board; revisit only if a
-playtest shows the port panel still needs it), keybind configuration (#56, separate
-scope), route automation (E9).
+visualization, daily stochastic flow drift —
+plus a region-wide price board overlay.
+Explicit non-goals:
+simulated NPC ships as agents (osmosis is a flow; the "rich" variant stays a Horizon idea), ship
+upkeep (parked, E3-era), information fog (E6), the per-good comparison badge in remote port view
+(subsumed by the price board; revisit only if a playtest shows the port panel still needs it),
+keybind configuration (#56, separate scope), route automation (E9).
 
 ## Design
 
 ### Principle: durable gradients, transient opportunities
 
-Two playtests said the same thing: *"that's not a decision anymore, it's an algorithm."*
-Today every market drifts monotonically to floor or ceiling and pins there; waiting is
-free and the floor→ceiling spread is guaranteed. E8 replaces that dead landscape with a
-region that holds two kinds of profit:
+Two playtests said the same thing:
+*"that's not a decision anymore, it's an algorithm."* Today every market drifts monotonically to
+floor or ceiling and pins there;
+waiting is free and the floor→ceiling spread is guaranteed.
+E8 replaces that dead landscape with a region that holds two kinds of profit:
 
 - **Structural gradients** — persistent, moderate price differences between port
   archetypes (a mining outpost always values grain above an agrarian breadbasket).
@@ -36,16 +43,15 @@ region that holds two kinds of profit:
   observant player to beat the region's own correction. The reward for *watching* the
   region work (owner's v2 fantasy: observe-and-orchestrate).
 
-Everything below is calibrated against this split. Balance targets (tuning these is not
-spec drift): resting producer→consumer price gaps of roughly **25–40%** across the
-region, a buy+sell round trip costing **~5%** of value, osmosis waking above **~15%**
-relative price gap.
+Everything below is calibrated against this split.
+Balance targets (tuning these is not spec drift):
+resting producer→consumer price gaps of roughly **25–40%** across the region, a buy+sell round trip
+costing **~5%** of value, osmosis waking above **~15%** relative price gap.
 
 ### Price-elastic flows (soft saturation)
 
-Production and consumption respond to price with a continuous multiplier in
-**[0.25×, 1.5×]**, equal to 1× at the good's effective base price (stock at
-equilibrium):
+Production and consumption respond to price with a continuous multiplier in **[0.25×, 1.5×]**, equal
+to 1× at the good's effective base price (stock at equilibrium):
 
 - Unfavorable price slows a flow down to the **0.25× floor, never to zero**: a port cut
   off from trade (regional shortage, player draining a market, future E6 lane cuts)
@@ -56,14 +62,13 @@ equilibrium):
   producers speed up, cheap goods make consumers eat through surplus. The region heals
   shortages at the source and recovers quickly after player action.
 
-Consumption still stops entirely at stock 0 and production at the stock cap (unchanged
-hard limits).
+Consumption still stops entirely at stock 0 and production at the stock cap (unchanged hard limits).
 
 ### Per-archetype price bias (structural variation)
 
-**Corrects the root cause of playtest-orb observation #6** (identical extreme prices
-everywhere): `basePrice` was global per good, so every port quoted the same curve. Now
-each port gets an **effective base price** per good:
+**Corrects the root cause of playtest-orb observation #6** (identical extreme prices everywhere):
+`basePrice` was global per good, so every port quoted the same curve.
+Now each port gets an **effective base price** per good:
 
 ```
 effectiveBase(port, good) = basePrice(good) × archetypeBias[archetype][good] × portJitter
@@ -91,9 +96,10 @@ effectiveBase(port, good) = basePrice(good) × archetypeBias[archetype][good] ×
 
 ### Bid-ask spread (anti-scalp friction)
 
-**Corrects the `market.ts` claim** "a buy-then-sell round trip at one market never
-profits" — true only instantaneously; waiting one tick captured consumption drift for
-free (playtest-orb observation #10). Fix:
+**Corrects the `market.ts` claim** "a buy-then-sell round trip at one market never profits" —
+true only instantaneously;
+waiting one tick captured consumption drift for free (playtest-orb observation #10).
+Fix:
 
 - Quotes gain a spread of **~2.5% per side**: buying pays the marginal-price walk
   ×1.025 (ask), selling receives it ×0.975 (bid). A round trip costs ~5% of value —
@@ -109,8 +115,8 @@ free (playtest-orb observation #10). Fix:
 
 ### Trade osmosis (the lazy competitor)
 
-Osmosis (CONTEXT.md) is the region's self-balancing flow — designed deliberately as a
-competitor the player always outruns:
+Osmosis (CONTEXT.md) is the region's self-balancing flow —
+designed deliberately as a competitor the player always outruns:
 
 - **Deadband:** no flow below **~15% relative price gap** on a lane. Structural
   gradients from bias survive at rest; osmosis reacts to real disequilibria (crises,
@@ -136,20 +142,23 @@ competitor the player always outruns:
 > ([route-events-2026-07-14](../design-notes/route-events-2026-07-14.md)). Still
 > cosmetic, view-local, derived from `osmosisPulse`; original text kept for history.
 
-The "living region" must be visible, not just simulated. Active osmosis renders as
-**small ambient pulses** traveling along the lane in the flow's direction — glyphs
-*clearly smaller* than the Controlled Ship, read as signal moving through a network,
-not as vessels (owner call, 2026-07-08). Frequency/intensity scales with flow
-magnitude. Purely cosmetic and UI-side: derived from sim state, no entities in
-`src/sim`, no tick-driven sim cost. Thanks to the deadband, lanes at rest stay quiet —
-the map keeps the "quieter lanes" calm of PR #55, and a busy lane is a diagnostic: it
-points at a price gap worth investigating.
+The "living region" must be visible, not just simulated.
+Active osmosis renders as **small ambient pulses** traveling along the lane in the flow's direction
+—
+glyphs *clearly smaller* than the Controlled Ship, read as signal moving through a network, not as
+vessels (owner call, 2026-07-08).
+Frequency/intensity scales with flow magnitude.
+Purely cosmetic and UI-side:
+derived from sim state, no entities in `src/sim`, no tick-driven sim cost.
+Thanks to the deadband, lanes at rest stay quiet —
+the map keeps the "quieter lanes" calm of PR #55, and a busy lane is a diagnostic:
+it points at a price gap worth investigating.
 
 ### Stochastic flow drift (the region breathes)
 
-Drift lives on **flows, not equilibria** — it must create real disequilibria that
-elasticity and osmosis then visibly chase, without silently moving the player's learned
-price anchors:
+Drift lives on **flows, not equilibria** —
+it must create real disequilibria that elasticity and osmosis then visibly chase, without silently
+moving the player's learned price anchors:
 
 - Each port × good carries a drift multiplier in **[0.7, 1.3]** applied to its
   production/consumption rate, on top of the elasticity multiplier.
@@ -319,8 +328,10 @@ Milestone **E8 — Living economy** (filed 2026-07-08).
 | #62 | ui | `feat(ui)`: region price board overlay (TopBar button, hotkey, highlights) | #57 |
 | #63 | ui | `feat(ui)`: ambient osmosis pulses on the map | #59 |
 
-Sequencing note: E8 runs after E10 (shipped) and **before E9** (owner, 2026-07-07) —
-routes need a living economy underneath, and E9's fleet reuses the gradients this epic
-creates. #57 is the keystone; #58/#59 parallelize after it, UI tracks parallelize
-against sim tracks (#61/#62 after #57, #63 after #59). The invariant and dominance
-suites land with #60, closing the epic's loop.
+Sequencing note:
+E8 runs after E10 (shipped) and **before E9** (owner, 2026-07-07) —
+routes need a living economy underneath, and E9's fleet reuses the gradients this epic creates.
+#57 is the keystone;
+#58/#59 parallelize after it, UI tracks parallelize against sim tracks (#61/#62 after #57, #63 after
+#59).
+The invariant and dominance suites land with #60, closing the epic's loop.

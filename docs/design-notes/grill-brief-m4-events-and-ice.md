@@ -1,11 +1,12 @@
 # Grill brief — M4 Economic events + Aether ice
 
-A **grill brief** is the scenario for a future owner grill: the questions that grill
-must resolve, the rails already locked, and the known traps. Written at the
-fantasy-roadmap grill (2026-07-16) for whichever orchestrator leads the M4 grills.
+A **grill brief** is the scenario for a future owner grill:
+the questions that grill must resolve, the rails already locked, and the known traps.
+Written at the fantasy-roadmap grill (2026-07-16) for whichever orchestrator leads the M4 grills.
 
-**This grill decides:** the shape of the region's first weather — economic events
-delivered as *Głos Eteru* dispatches — and the concrete market model of Aether ice.
+**This grill decides:** the shape of the region's first weather —
+economic events delivered as *Głos Eteru* dispatches —
+and the concrete market model of Aether ice.
 
 ## Rails (locked, don't relitigate — link, build on)
 
@@ -55,10 +56,10 @@ delivered as *Głos Eteru* dispatches — and the concrete market model of Aethe
 
 ## Acceptance criteria (pre-registered, `world-model-implications.md` W6/W7/W8)
 
-Written before the feature so these land as acceptance criteria, not discoveries — the
-window for that closes when M4 starts (`world-model-implications.md` §Honest limits). Each
-keeps its falsifier and its named check; an implication without those is lore, per the
-register's own admission rule.
+Written before the feature so these land as acceptance criteria, not discoveries —
+the window for that closes when M4 starts (`world-model-implications.md` §Honest limits).
+Each keeps its falsifier and its named check;
+an implication without those is lore, per the register's own admission rule.
 
 - **W6 — there is no separate magic system.** From PRD §Pillars 3 and `CONTEXT.md` Arcane
   good: *"flows through the same market mechanisms as any other good — there is no separate
