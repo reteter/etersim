@@ -400,7 +400,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
           value="31"
         />
         <button
-          aria-label="Kup Zboże"
+          aria-label="Kup: Zboże"
           class="market-row__trade-btn--faded"
           type="button"
         >
@@ -409,7 +409,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
            (₸15/u)
         </button>
         <button
-          aria-label="Sprzedaj Zboże"
+          aria-label="Sprzedaj: Zboże"
           disabled=""
           type="button"
         >
@@ -479,7 +479,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
           value="10"
         />
         <button
-          aria-label="Kup Tekstylia"
+          aria-label="Kup: Tekstylia"
           class="market-row__trade-btn--faded"
           type="button"
         >
@@ -488,7 +488,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
            (₸44/u)
         </button>
         <button
-          aria-label="Sprzedaj Tekstylia"
+          aria-label="Sprzedaj: Tekstylia"
           disabled=""
           type="button"
         >
@@ -558,7 +558,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
           value="7"
         />
         <button
-          aria-label="Kup Sól eteryczna"
+          aria-label="Kup: Sól eteryczna"
           class="market-row__trade-btn--faded"
           type="button"
         >
@@ -567,7 +567,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
            (₸66/u)
         </button>
         <button
-          aria-label="Sprzedaj Sól eteryczna"
+          aria-label="Sprzedaj: Sól eteryczna"
           disabled=""
           type="button"
         >
@@ -637,7 +637,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
           value="4"
         />
         <button
-          aria-label="Kup Elektronika"
+          aria-label="Kup: Elektronika"
           class="market-row__trade-btn--bright"
           type="button"
         >
@@ -646,7 +646,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
            (₸112/u)
         </button>
         <button
-          aria-label="Sprzedaj Elektronika"
+          aria-label="Sprzedaj: Elektronika"
           disabled=""
           type="button"
         >
@@ -716,7 +716,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
           value="1"
         />
         <button
-          aria-label="Kup Drewno"
+          aria-label="Kup: Drewno"
           class="market-row__trade-btn--faded"
           type="button"
         >
@@ -725,7 +725,7 @@ exports[`PortPanel fleet resolution (#319) > single-ship render is stable (prese
            (₸278/u)
         </button>
         <button
-          aria-label="Sprzedaj Drewno"
+          aria-label="Sprzedaj: Drewno"
           disabled=""
           type="button"
         >

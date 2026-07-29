@@ -13,7 +13,7 @@ async function startNewGame(page: Page) {
 async function buyGrain(page: Page, qty: number) {
   const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
   await grainRow.getByRole('spinbutton', { name: /zboże ilość/i }).fill(String(qty));
-  await grainRow.getByRole('button', { name: 'Kup Zboże', exact: true }).click();
+  await grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true }).click();
 }
 
 /** Opens the docked port's market for the Controlled Ship (mirrors the

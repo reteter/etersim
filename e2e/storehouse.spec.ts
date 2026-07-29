@@ -174,8 +174,8 @@ test.describe('PortPanel Storehouse section (#101)', () => {
     await expect(page.locator('.storehouse-section')).toBeVisible();
     await expect(page.locator('.storehouse-row__label')).toContainText('20/200');
 
-    const storeBtn = page.getByRole('button', { name: /^Złóż Zboże$/ });
-    const withdrawBtn = page.getByRole('button', { name: /^Pobierz Zboże$/ });
+    const storeBtn = page.getByRole('button', { name: /^Złóż: Zboże$/ });
+    const withdrawBtn = page.getByRole('button', { name: /^Pobierz: Zboże$/ });
     await expect(storeBtn).toBeEnabled();
     await expect(withdrawBtn).toBeEnabled();
 
@@ -200,7 +200,7 @@ test.describe('PortPanel Storehouse section (#101)', () => {
     const agrarianIdx = world.region.ports.findIndex((p) => p.id === agrarianPortId);
     await page.locator('g.port').nth(agrarianIdx).click({ force: true });
 
-    const withdrawBtn = page.getByRole('button', { name: /^Pobierz Zboże$/ });
+    const withdrawBtn = page.getByRole('button', { name: /^Pobierz: Zboże$/ });
     await expect(withdrawBtn).toBeDisabled();
     await expect(withdrawBtn).toHaveAttribute('title', /Ładownia pełna/);
   });
@@ -225,17 +225,17 @@ test.describe('Route editor — store/withdraw chips (#101)', () => {
 
     // Stop 1 at the non-storehouse port: no store/withdraw column at all.
     await stopRows.nth(0).locator('select').selectOption(otherPortId);
-    await expect(stopRows.nth(0).getByRole('button', { name: /Zboże Złóż — przystanek 1/ })).toHaveCount(0);
+    await expect(stopRows.nth(0).getByRole('button', { name: /Zboże: Złóż — przystanek 1/ })).toHaveCount(0);
 
     // Stop 2 at the storehouse port: store/withdraw chips render.
     await stopRows.nth(1).locator('select').selectOption(agrarianPortId);
-    const storeChip = stopRows.nth(1).getByRole('button', { name: /^Zboże Złóż — przystanek 2$/ });
+    const storeChip = stopRows.nth(1).getByRole('button', { name: /^Zboże: Złóż — przystanek 2$/ });
     await expect(storeChip).toBeVisible();
 
     // Buy grain at Stop 1, store it at Stop 2 — a two-Stop loop.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: /^Zboże Kup — przystanek 1$/ })
+      .getByRole('button', { name: /^Zboże: Kup — przystanek 1$/ })
       .click();
     await storeChip.click();
 
@@ -291,12 +291,12 @@ test.describe('Route editor — store/withdraw chips (#101)', () => {
     await stopRows.nth(0).locator('select').selectOption(agrarianPortId);
     await stopRows
       .nth(0)
-      .getByRole('button', { name: /^Zboże Pobierz — przystanek 1$/ })
+      .getByRole('button', { name: /^Zboże: Pobierz — przystanek 1$/ })
       .click();
     await stopRows.nth(1).locator('select').selectOption(otherPortId);
     await stopRows
       .nth(1)
-      .getByRole('button', { name: /^Zboże Sprzedaj — przystanek 2$/ })
+      .getByRole('button', { name: /^Zboże: Sprzedaj — przystanek 2$/ })
       .click();
 
     const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });

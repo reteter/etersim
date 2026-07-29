@@ -334,7 +334,7 @@ function MarketRow({
               type="button"
               className={canBuy ? shadingClass(buyTier) : undefined}
               disabled={!canBuy}
-              aria-label={`Kup ${GOOD_NAME_PL[good]}`}
+              aria-label={`Kup: ${GOOD_NAME_PL[good]}`}
               onClick={() => dispatch({ kind: "buy", shipId: ship.id, good, qty: clampedQty })}
             >
               Kup {quoteLabel(buyTotal)}
@@ -344,7 +344,7 @@ function MarketRow({
               type="button"
               className={canSell ? shadingClass(sellTier) : undefined}
               disabled={!canSell}
-              aria-label={`Sprzedaj ${GOOD_NAME_PL[good]}`}
+              aria-label={`Sprzedaj: ${GOOD_NAME_PL[good]}`}
               onClick={() => dispatch({ kind: "sell", shipId: ship.id, good, qty: clampedQty })}
             >
               Sprzedaj {quoteLabel(sellTotal)}
@@ -921,7 +921,7 @@ function StorehouseSection({
                   className="menu-btn"
                   disabled={!canStore}
                   title={canStore ? undefined : held <= 0 ? "Brak towaru w ładowni" : "Skład pełny"}
-                  aria-label={`Złóż ${GOOD_NAME_PL[good]}`}
+                  aria-label={`Złóż: ${GOOD_NAME_PL[good]}`}
                   onClick={() => dispatch({ kind: "storeGood", shipId: ship.id, good })}
                 >
                   Złóż
@@ -931,7 +931,7 @@ function StorehouseSection({
                   className="menu-btn"
                   disabled={!canWithdraw}
                   title={canWithdraw ? undefined : holdFull ? "Ładownia pełna" : "Skład pusty"}
-                  aria-label={`Pobierz ${GOOD_NAME_PL[good]}`}
+                  aria-label={`Pobierz: ${GOOD_NAME_PL[good]}`}
                   onClick={() => dispatch({ kind: "withdrawGood", shipId: ship.id, good })}
                 >
                   Pobierz

@@ -185,14 +185,27 @@ UI language sweep (`src/ui/goodDisplay.ts`'s `GOOD_NAME_PL`). **Owner-ratified 2
   (Clearwood, owner decision 2026-07-28): clearwood literally *is* processed wood, so the
   pair mirrors the English lineage rather than colliding by accident)
 
-**Good name grammar** (owner decision 2026-07-28, #184 review): `GOOD_NAME_PL` holds
-nominative, capitalized forms only — correct for a label (`Zboże: 40/60`, `Sprzedaj Zboże`)
-but wrong inside a sentence, where Polish needs an oblique case and a mid-sentence capital is
-also wrong. Rejected fix: a second, inflected name table (doubles every future good's entries,
-and E15 adds two shortly). **The law instead: restructure running text as `<Nazwa> ×<qty>`,
-never `<qty> <Nazwa>`** — the good name is never preceded by a bare number or followed by an
-inflected agreement, in any surface, forever. Label-style uses (a bare name, a name before a
-count with no verb, an aria-label) are unaffected — this only binds sentences.
+**Good name grammar** (owner decision 2026-07-28, #184 review, widened same day after a second
+pass found the same defect in verb-prefixed aria-labels): `GOOD_NAME_PL` holds nominative,
+capitalized forms only — correct for a label (`Zboże: 40/60`) but wrong wherever Polish grammar
+would demand an oblique case, and a mid-sentence capital is also wrong. Rejected fix: a second,
+inflected name table (doubles every future good's entries, and E15 adds two shortly).
+
+**The general law: a good name is never inflected, so it is never the bare object of a verb
+and never sits directly after a preposition** — case is what Polish uses to mark that
+relationship, word order doesn't exempt it (`Zboże Kup` needs the fix exactly as much as
+`Kup Zboże` does; the object reading doesn't depend on which side of the verb the noun sits
+on). **The instances of the fix so far:**
+- running text with a quantity: `<Nazwa> ×<qty>`, never `<qty> <Nazwa>` (e.g. `Kupiono: Zboże
+  ×3`, not `Kupiono 3 Zboże`)
+- a verb immediately adjacent to a name: insert `: ` between them (e.g. `Kup: Zboże`, not
+  `Kup Zboże`; `Zboże: Kup`, not `Zboże Kup`)
+
+Both are the same move — break the adjacency with a separator — applied wherever it's needed,
+not two different rules. Label-style uses are unaffected and need no separator: a bare name, a
+name before a non-verb noun (`Zboże ilość`), a name already followed by a colon
+(`Skup uwagę na: Zboże`), or a name joined to something by `·`/`→`/`—` are all fine as they
+already are.
 
 **Arcane good** (PL: towar magiczny):
 A category of goods of magical origin or use.

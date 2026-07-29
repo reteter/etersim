@@ -59,7 +59,7 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // Stop 1: buy grain, qty = 5, minMargin = 3.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Kup — przystanek 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
       .click();
     const qtyBuy = stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 1`);
     const marginInput = stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 1`);
@@ -72,7 +72,7 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // confirm neither input remains.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Dostarcz — przystanek 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Dostarcz — przystanek 1$`) })
       .click();
     await expect(stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 1`)).toHaveCount(0);
     await expect(
@@ -83,7 +83,7 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // setOrder's replace-not-merge semantics) — then re-set both.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Kup — przystanek 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
       .click();
     await stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 1`).fill('5');
     await stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 1`).fill('3');
@@ -91,7 +91,7 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // Stop 2: sell grain, qty = 2 — minMargin must never show for sell.
     await stopRows
       .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Sprzedaj — przystanek 2$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Sprzedaj — przystanek 2$`) })
       .click();
     const qtySell = stopRows.nth(1).getByLabel(`${GOOD_NAME_PL.grain} ilość — przystanek 2`);
     await expect(qtySell).toBeVisible();
@@ -133,11 +133,11 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
 
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Kup — przystanek 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
       .click();
     await stopRows
       .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Sprzedaj — przystanek 2$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Sprzedaj — przystanek 2$`) })
       .click();
     await dialog.getByRole('button', { name: /^Zapisz trasę$/ }).click();
 
@@ -169,12 +169,12 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // reference — no sell anywhere on the route) ⇒ gate inactive.
     await stopRows
       .nth(0)
-      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Kup — przystanek 1$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
       .click();
     await stopRows.nth(0).getByLabel(`${GOOD_NAME_PL.grain} próg marży — przystanek 1`).fill('3');
     await stopRows
       .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Dostarcz — przystanek 2$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Dostarcz — przystanek 2$`) })
       .click();
 
     const warning = stopRows.nth(0).locator('.stop-row__gate-warning');
@@ -185,7 +185,7 @@ test.describe('Route editor — qty + Margin Gate inputs (#263)', () => {
     // must clear (resolveReferencePort now resolves).
     await stopRows
       .nth(1)
-      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Sprzedaj — przystanek 2$`) })
+      .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Sprzedaj — przystanek 2$`) })
       .click();
     await expect(warning).toHaveCount(0);
   });

@@ -73,12 +73,12 @@ async function createGrainRoute(dialog: Locator, a: string, b: string) {
   await stopRows.nth(0).locator('select').selectOption(a);
   await stopRows
     .nth(0)
-    .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Kup — przystanek 1$`) })
+    .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
     .click();
   await stopRows.nth(1).locator('select').selectOption(b);
   await stopRows
     .nth(1)
-    .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain} Sprzedaj — przystanek 2$`) })
+    .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Sprzedaj — przystanek 2$`) })
     .click();
 
   const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });

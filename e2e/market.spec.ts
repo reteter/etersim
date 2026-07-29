@@ -116,7 +116,7 @@ test.describe('market: Buy cap reason (#124)', () => {
 
     const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
     await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Ładownia pełna');
-    await expect(grainRow.getByRole('button', { name: 'Kup Zboże', exact: true })).toBeDisabled();
+    await expect(grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true })).toBeDisabled();
   });
 
   test('low stock: names "Only 12 in stock" near Buy max, matching the Stock column', async ({
@@ -145,7 +145,7 @@ test.describe('market: Buy cap reason (#124)', () => {
 
     const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
     await expect(grainRow.locator('.market-row__cap-hint')).toHaveText('Nie stać cię na żaden zakup');
-    await expect(grainRow.getByRole('button', { name: 'Kup Zboże', exact: true })).toBeDisabled();
+    await expect(grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true })).toBeDisabled();
   });
 
   test('thin purse: names the affordable cap when thalers bind but buyMax stays positive (#375)', async ({
@@ -171,7 +171,7 @@ test.describe('market: Buy cap reason (#124)', () => {
     await expect(grainRow.locator('.market-row__cap-hint')).toHaveText(
       `Kasa ogranicza zakup do ${affordable}`,
     );
-    await expect(grainRow.getByRole('button', { name: 'Kup Zboże', exact: true })).toBeEnabled();
+    await expect(grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true })).toBeEnabled();
   });
 });
 
@@ -193,7 +193,7 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
 
     // Player dials it down — Kup then acts on the lowered qty, not the max.
     await qtyInput.fill('4');
-    const buyButton = grainRow.getByRole('button', { name: 'Kup Zboże', exact: true });
+    const buyButton = grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true });
     await expect(buyButton).toContainText('Kup');
     await buyButton.click();
 
@@ -214,7 +214,7 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
     await expect(grainRow.getByRole('button', { name: /sell max/i })).toHaveCount(0);
     // The Sell action's aria-label is the Polish "Sprzedaj <good>" (#184);
     // its visible text is the same "Sprzedaj" label.
-    await expect(grainRow.getByRole('button', { name: 'Sprzedaj Zboże', exact: true })).toContainText(
+    await expect(grainRow.getByRole('button', { name: 'Sprzedaj: Zboże', exact: true })).toContainText(
       'Sprzedaj',
     );
   });
@@ -232,7 +232,7 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
 
     const qtyInput = grainRow.getByRole('spinbutton', { name: /zboże ilość/i });
     await qtyInput.fill('7');
-    await grainRow.getByRole('button', { name: 'Kup Zboże', exact: true }).click();
+    await grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true }).click();
 
     await expect(grainRow.locator('.market-row__held')).toContainText('7');
   });
@@ -317,7 +317,7 @@ test.describe('market-quality signal shading (#396, E16 package e)', () => {
     // agree by construction.
     await openMarket(page, homeName);
     const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
-    const buyButton = grainRow.getByRole('button', { name: 'Kup Zboże', exact: true });
+    const buyButton = grainRow.getByRole('button', { name: 'Kup: Zboże', exact: true });
     await expect(buyButton).toHaveClass(/market-row__trade-btn--bright/);
   });
 
@@ -332,7 +332,7 @@ test.describe('market-quality signal shading (#396, E16 package e)', () => {
 
     // Fresh ship, empty hold — nothing to sell.
     const grainRow = page.locator('.market-row').filter({ hasText: 'Zboże' });
-    const sellButton = grainRow.getByRole('button', { name: 'Sprzedaj Zboże', exact: true });
+    const sellButton = grainRow.getByRole('button', { name: 'Sprzedaj: Zboże', exact: true });
     await expect(sellButton).toBeDisabled();
     // Unavailable, not "faded" — the shading class never applies to a
     // disabled action (E16 spec: unavailable ≠ merely faded).

@@ -17,12 +17,16 @@ import type { GoodId } from "../sim";
  * collision with Clearwood included).
  *
  * These are **nominative, capitalized label forms only** (CONTEXT.md's "Good
- * name grammar", owner decision 2026-07-28) — correct for `Zboże: 40/60` or
- * an aria-label, wrong inside a sentence. Callers embedding a name in running
- * text must restructure around `<Nazwa> ×<qty>`, never `<qty> <Nazwa>` — see
- * `LedgerOverlay.tsx`'s `describeTransaction` and `TopBar.tsx`'s
- * `routedSaleNote` for the pattern. No second, inflected table — ever, for
- * any future good.
+ * name grammar", owner decision 2026-07-28, widened same day) — correct for a
+ * bare label (`Zboże: 40/60`) but never the bare object of a verb and never
+ * directly after a preposition, in either word order (`Kup Zboże` and
+ * `Zboże Kup` are the same defect). Callers must break the adjacency with a
+ * separator instead of inflecting the name — `<Nazwa> ×<qty>` for a quantity
+ * (`LedgerOverlay.tsx`'s `describeTransaction`, `TopBar.tsx`'s
+ * `routedSaleNote`), `<Verb>: <Nazwa>` or `<Nazwa>: <Verb>` next to a bare
+ * verb (`PortPanel.tsx`'s buy/sell/store/withdraw aria-labels,
+ * `RoutesTab.tsx`'s per-good order chips). No second, inflected table —
+ * ever, for any future good.
  */
 export const GOOD_NAME_PL: Record<GoodId, string> = {
   grain: "Zboże",

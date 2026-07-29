@@ -186,7 +186,7 @@ function StopRow({
                     <button
                       type="button"
                       aria-pressed={active}
-                      aria-label={`${GOOD_NAME_PL[good]} ${kindLabel(kind)} — przystanek ${index + 1}`}
+                      aria-label={`${GOOD_NAME_PL[good]}: ${kindLabel(kind)} — przystanek ${index + 1}`}
                       className={active ? "chip chip--active" : "chip"}
                       onClick={() => setOrder(good, kind)}
                     >

@@ -132,7 +132,7 @@ test.describe('price board — market-free order kinds (#419, docs/specs/E16-wor
     await hqDialog.getByRole('tab', { name: 'Trasy' }).click();
     await hqDialog.locator('.route-row').first().getByRole('button', { name: /^Edytuj$/ }).click();
 
-    const storeChip = hqDialog.getByRole('button', { name: /^Zboże Złóż — przystanek 1$/ });
+    const storeChip = hqDialog.getByRole('button', { name: /^Zboże: Złóż — przystanek 1$/ });
     await expect(storeChip).toBeVisible();
     await expect(storeChip).toHaveAttribute('aria-pressed', 'true');
   });
