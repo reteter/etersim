@@ -26,12 +26,17 @@ idea → grill → feature spec → user approval → GH issues → implementati
    later reader can see was run. It exists because two specs reached this state unnoticed —
    #424 (E11's `LedgerEvent` union) and #425 (E15's `SAVE_VERSION` v14, already consumed) —
    each of which would have handed a coder a contract the code contradicts.
+   **Same trigger, second obligation: the epic-start mirror snapshot.** Run
+   `pwsh -File scripts/mirror-snapshot.ps1 -Epic E<n>` before the first dispatch. It is the
+   undo half of the retired owner-merge gate ([ADR-0010](../adr/0010-the-driver-merges.md)) and
+   it verifies the mirror rather than trusting the push, so a red here blocks the dispatch.
 6. **Implementation** — branch `feat/<issue>-<slug>` (or `fix/`, `chore/`). Conventional
    commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`). Sim code grows test-first
    (TDD, Vitest; the evidence alternative lives in the CODER.md TDD line).
 7. **PR** — body links `Closes #<n>`. Before merge: tests green, typecheck + lint clean, and
-   the wave check for the change's tier closed ([verification.md](verification.md)). The user
-   merges — final call on every PR.
+   the wave check for the change's tier closed ([verification.md](verification.md)). **The
+   driver merges its own PR** once those gates are closed ([ADR-0010](../adr/0010-the-driver-merges.md));
+   coder subagents never merge. The owner's final call is on design and scope, not per-PR.
 8. **Spec sync** — if implementation drifted from the spec, updating the spec is part of the
    task, not optional cleanup.
 
