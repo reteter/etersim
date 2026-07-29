@@ -132,19 +132,21 @@ The in-game performance board consumes the same stream:
 one vocabulary, two consumers, and schema drift between them is spec drift.
 
 The grammar law (#203, `CONTEXT.md` — Ledger) is what makes per-kind aggregation mechanical:
-every thaler-moving kind carries `thalers` — a **positive magnitude**, never a unit price
-and never a signed delta — and every rank-moving kind carries `pointsDelta`.
+every thaler-moving kind carries `thalers` —
+a **positive magnitude**, never a unit price and never a signed delta —
+and every rank-moving kind carries `pointsDelta`.
 `ledger.test.ts` enforces it exhaustively;
 a new kind left unclassified fails to typecheck.
 
-**`thalers` carries no sign.** Direction is implied by `kind` alone, except for `trade`,
-where it is implied by `side` (`buy`/`sell`) as well — a consumer summing `thalers` across
-kinds must apply a per-kind sign itself; the Ledger does not carry one. `harness/metrics.ts`'s
-`signedThalers` is the reference implementation of that sign table (every thaler-carrying
-kind is a debit against the Company's purse **except** `trade` on the `sell` side and
-`contractFee`, credited to the Company on a met settlement, `contract.ts`'s `settleOne`) —
-copy it rather than re-deriving the direction per consumer (found false against as-built
-code during the tier-3 wave check on #233, 2026-07-29; #450).
+**`thalers` carries no sign.** Direction is implied by `kind` alone, except for `trade`, where it is
+implied by `side` (`buy`/`sell`) as well —
+a consumer summing `thalers` across kinds must apply a per-kind sign itself;
+the Ledger does not carry one.
+`harness/metrics.ts`'s `signedThalers` is the reference implementation of that sign table (every
+thaler-carrying kind is a debit against the Company's purse **except** `trade` on the `sell` side
+and `contractFee`, credited to the Company on a met settlement, `contract.ts`'s `settleOne`) —
+copy it rather than re-deriving the direction per consumer (found false against as-built code during
+the tier-3 wave check on #233, 2026-07-29; #450).
 
 Kinds as built (2026-07-28), grouped by what they move:
 

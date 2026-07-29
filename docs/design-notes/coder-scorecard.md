@@ -627,6 +627,31 @@ One docs-sync item (spec-index row still called #419 pending) applied as a follo
 | 07-29 | #451 | #233 | 3 | 2 blocking; 3 fix-now; 3 routed (#446, #449, #450) | 1 | pass | Reviewer verified **all 19 Ledger kinds against their emitters** — not against the code's own table or its tests — and found zero sign errors, confirming `contractFee` is a credit despite the spec grouping it under "Costs". Blocking: `contractFee` sat in `COST_KINDS`, making a documented *"always <= 0 by construction"* invariant false and placing a credit under a "negative = spent" column (no wrong number had printed only because no reference policy enrolls); and `--seeds ,` produced a complete all-zeros report at exit 0, indistinguishable **in the artifacts** from a Batch that genuinely earned nothing. The session's best finding was non-blocking and came from **mutation testing**: `reconcileThalers` guards 3 of 10 movement kinds — flipping `laborFee`+`enrollmentFee`+`autoDraw`+`rush`+`refitStart` together left 62/62 green, because no reference policy founds, builds, enrolls or contracts (→ #449; the fix loop's new fixture incidentally narrowed it to one kind). Merged `0a94bd1`. |
 | 07-29 | #452 | #125, #173 | 2 | 0 | 0 | pass | Cleanest wave of the session — no blocking or should-fix findings. Coder caught, before shipping, that a naive SVG-attribute→CSS port would rotate every skiff about the **map centre**, because SVG2's default `transform-origin` is 50%/50% of the nearest viewport; pinned `transform-box: view-box; transform-origin: 0 0`. All three #161-lock laws (pause freezes / Speed scales / `prefers-reduced-motion` freezes at spawn) are pinned by e2e asserting **both** the class and the actual style value, so a passing test cannot mean merely "the class is right". Reviewer verified fee-preview/charge parity on both sides (`sailability.ts` vs `tick.ts:76-90`) and that all four amended e2e regexes were **tightened**, not loosened. Two design calls routed to the playtest rather than decided in review: the 0.3s "hop-and-hold" glide and `opacity: 0.55`. Merged `4a75406`. |
 
+| 07-29 | (this PR) | #446, #449, #450 | 3 | 2 blocking (one shared root);
+3 non-blocking | 1 | pass | The reviewer **re-ran the coder’s own key evidence instead of reading it**:
+a per-kind sign-flip table over all ten thaler kinds, 10/10 individually detected, confirming the
+`EXPECTED_SIGN` oracle is genuinely independent.
+That mattered because the coder’s *first* version of that test was a tautology (`flippedSum` derived
+from `signedThalers`, so a real mutation moved both sides identically) —
+caught by the coder’s own advisor and self-reported.
+Both blockers shared one root: **the Markdown surface was carried through the wave and the JSON surface was not.**
+An unreached milestone aggregated as `{median:0,...}` in `report.json`, so `doNothing` —
+which never launches a ship —
+would have scored 0 world-days to launch and beaten every policy that does;
+and `WORLD_DAYS_NOTE` never reached `report.json`, making a spec sentence this same PR added (“every
+report surface that prints it says so where the reader meets the number”) false against its own
+as-built code —
+the #450 failure class, committed inside the #450 fix.
+Best non-blocking finding (N1) was the same shape one layer in:
+the fixture covered 10 *kinds* but 11 *sign cases*, and a `trade`/buy flip was caught only by older
+tests written for other purposes —
+precisely the accidental-coverage dependency #449’s own owner comment warned about.
+Fixture rebuilt around explicit sign cases; **driver-run mutation table on the fix head: 11/11 individually detected, zero cross-row leakage.**
+The tier-3 reviewer was killed by a session limit mid-re-check, after confirming both blockers on
+the emitted file;
+the driver finished the one remaining mechanical probe inline rather than paying a full transcript
+replay to resume it. |
+
 ## Reading the sample
 
 Judge on trend, not single rows:
