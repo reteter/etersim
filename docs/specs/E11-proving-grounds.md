@@ -61,10 +61,22 @@ The architecture separates:
 
 - **Metrics per Run:** profit/day, net-worth curve, voyages, hold utilization, per-good
   P&L, **strategy churn** (count of carried-good switches + distribution of consecutive
-  same-good hauls — separates pendulum policies from opportunists), violation flags.
+  same-good hauls — separates pendulum policies from opportunists), violation flags,
+  **world-days to milestone** (`founding`/`launch`/`shipyardBuilt`/`refitStart`/
+  `refitComplete`/`completed`, `event.tick / TICKS_PER_DAY`; a milestone not reached
+  within the Run's day horizon is reported as such, not omitted — #446, `docs/PRD.md`
+  §Where 1.0 ends's pacing-anchor lock).
 - **Batch reports:** per-seed aggregates (median/spread), head-to-head policy
-  comparisons (the #60 dominance guardrail generalized into a reusable comparison), and
-  an anomaly list with seeds for replay.
+  comparisons (the #60 dominance guardrail generalized into a reusable comparison),
+  **median/spread of world-days to milestone across seeds** (with the count of seeds
+  that reached it), and an anomaly list with seeds for replay.
+- **World-days ≠ wall-clock hours (#446 Part 2).** The PRD's playtime anchor (`docs/PRD.md`
+  §Where 1.0 ends, ~8–12 hours to credits) is wall-clock; the speed ladder (pause/1×/10×/100×,
+  ADR-0003) and how much a human pauses/deliberates make the two units non-convertible
+  without a model of player behaviour, which this metric does not build (that is #448's
+  scope — session recording + replay). A world-days figure must never be read as progress
+  against the hours anchor; every report surface that prints it says so where the reader
+  meets the number.
 - **Runtime invariant assertions (toggleable):** the invariant-suite properties checked
   live inside every Run of a Batch. Bug-hunt mode = perverse policies + assertions on +
   large N.
@@ -121,18 +133,30 @@ one vocabulary, two consumers, and schema drift between them is spec drift.
 
 The grammar law (#203, `CONTEXT.md` — Ledger) is what makes per-kind aggregation mechanical:
 every thaler-moving kind carries `thalers` —
-a signed total for the movement, never a unit price —
+a **positive magnitude**, never a unit price and never a signed delta —
 and every rank-moving kind carries `pointsDelta`.
 `ledger.test.ts` enforces it exhaustively;
 a new kind left unclassified fails to typecheck.
+
+**`thalers` carries no sign.** Direction is implied by `kind` alone, except for `trade`, where it is
+implied by `side` (`buy`/`sell`) as well —
+a consumer summing `thalers` across kinds must apply a per-kind sign itself;
+the Ledger does not carry one.
+`harness/metrics.ts`'s `signedThalers` is the reference implementation of that sign table (every
+thaler-carrying kind is a debit against the Company's purse **except** `trade` on the `sell` side
+and `contractFee`, credited to the Company on a met settlement, `contract.ts`'s `settleOne`) —
+copy it rather than re-deriving the direction per consumer (found false against as-built code during
+the tier-3 wave check on #233, 2026-07-29; #450).
 
 Kinds as built (2026-07-28), grouped by what they move:
 
 - **Goods:** `trade` (`shipId`, `portId`, `good`, `side`, `qty`, `thalers`, optional
   `routeId`), plus the market-free `delivery`, `store` and `withdraw` — those three
   carry `qty` and no `thalers`.
-- **Costs:** `dockingFee` (`routeId`-tagged since #391, so a route's net margin is
-  derivable), `upkeep`, `laborFee`, `enrollmentFee`, `contractFee`, `autoDraw`, `rush`.
+- **Cost-family kinds** (grouped by *emitter*, not by direction — `contractFee` here is a
+  **credit**, see the sign-table note above): `dockingFee` (`routeId`-tagged since #391, so
+  a route's net margin is derivable), `upkeep`, `laborFee`, `enrollmentFee`, `contractFee`,
+  `autoDraw`, `rush`.
 - **Milestones:** `founding`, `launch`, `shipyardBuilt`, `refitStart`, `refitComplete`,
   and `completed` (a guild Building activated, with `buildingType`).
 - **Guild standing:** `settlement` (`outcome` met/missed/breached/resigned, plus

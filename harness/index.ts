@@ -15,11 +15,13 @@ export { POLICY_NAMES, POLICY_REGISTRY, resolvePolicy, type PolicyFactory } from
 // invoked via `npm run harness -- run ...`, not imported — these exports are
 // for a script or a test that wants to run a Batch programmatically.
 export {
+  aggregateMilestones,
   runBatchRun,
   runOne,
   runPolicyBatch,
   type AggregateStat,
   type BatchAggregate,
+  type MilestoneAggregate,
   type PolicyBatchReport,
   type RunRecord,
 } from "./batch.ts";
@@ -30,6 +32,7 @@ export {
   computeGoodsPnL,
   computeGuildStandings,
   computeHoldUtilization,
+  computeMilestoneTimings,
   computeNetWorthCurve,
   computeRunMetrics,
   computeSettlementCounts,
@@ -42,12 +45,21 @@ export {
   type DaySnapshot,
   type GoodPnL,
   type GuildStanding,
+  type MilestoneTiming,
   type NetWorthPoint,
   type RunMetrics,
   type SettlementCounts,
   type ShipHoldUtilization,
   type ThalerReconciliation,
 } from "./metrics.ts";
+export {
+  COST_KINDS,
+  MILESTONE_KINDS,
+  REVENUE_KINDS,
+  THALER_MOVEMENT_KINDS,
+  type LedgerKind,
+  type MilestoneKind,
+} from "./ledgerKinds.ts";
 export { compareAllPairs, compareBatches, type PolicyComparison } from "./compare.ts";
 export { parseSeeds, printHelp, runCommand, type RunCommandResult } from "./runCommand.ts";
 export {
@@ -56,6 +68,7 @@ export {
   round,
   ROUND_DP,
   CADENCE_NOTE,
+  WORLD_DAYS_NOTE,
   type AnomalyEntry,
   type BatchReport,
   type PolicyReportEntry,

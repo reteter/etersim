@@ -2,6 +2,7 @@ import {
   ECONOMIC_ARCHETYPES,
   GOOD_IDS,
   rankOf,
+  TICKS_PER_DAY,
   type Company,
   type EconomicArchetype,
   type GoodId,
@@ -9,7 +10,7 @@ import {
   type NetWorthBreakdown,
   type ShipId,
 } from "../src/sim/index.ts";
-import { COST_KINDS, REVENUE_KINDS, THALER_MOVEMENT_KINDS, type LedgerKind } from "./ledgerKinds.ts";
+import { COST_KINDS, MILESTONE_KINDS, REVENUE_KINDS, THALER_MOVEMENT_KINDS, type LedgerKind, type MilestoneKind } from "./ledgerKinds.ts";
 
 /**
  * Per-Run metrics, derived purely from a Run's Ledger and a set of daily
@@ -106,6 +107,39 @@ export interface ChurnStats {
    *  (spec: "distribution of consecutive same-good hauls" — a pendulum
    *  policy produces many short runs, an opportunist a few long ones). */
   readonly runLengths: readonly number[];
+}
+
+/**
+ * One milestone kind's world-days timing (#446, `docs/specs/E11-proving-grounds.md`
+ * §Evaluation model): "world-days" means *simulated* days inside the Run
+ * (`event.tick / TICKS_PER_DAY`) — **never wall-clock hours**. The PRD's
+ * playtime anchor (`docs/PRD.md` §Where 1.0 ends, ~8–12 hours) is wall-clock;
+ * converting between the two needs a player-time model this metric does not
+ * build (#448). A milestone the Run never reached is its own row
+ * (`reached: false`), not an omission — an unreached milestone is a result.
+ */
+export interface MilestoneTiming {
+  readonly kind: MilestoneKind;
+  readonly reached: boolean;
+  /** `event.tick` of the *first* Ledger event of this kind, or `null` if
+   *  unreached within the Run's day horizon. A milestone kind that can repeat
+   *  (e.g. `completed`, once per Storehouse) is timed at its first
+   *  occurrence — "world-days to milestone" reads as "world-days until this
+   *  kind of progress first happened", not every occurrence. */
+  readonly tick: number | null;
+  readonly worldDays: number | null;
+}
+
+/** Per-Run milestone timing, one row per `MILESTONE_KINDS` entry in that
+ *  array's canonical order (determinism, §Laws 1 — never `Object.keys`
+ *  order). A pure fold over the Ledger; the Run's day horizon is implicit in
+ *  which milestones the Ledger does or does not contain. */
+export function computeMilestoneTimings(ledger: readonly LedgerEvent[]): readonly MilestoneTiming[] {
+  return MILESTONE_KINDS.map((kind) => {
+    const event = ledger.find((e) => e.kind === kind);
+    if (!event) return { kind, reached: false, tick: null, worldDays: null };
+    return { kind, reached: true, tick: event.tick, worldDays: event.tick / TICKS_PER_DAY };
+  });
 }
 
 export interface ThalerReconciliation {
@@ -331,7 +365,13 @@ export function computeChurn(ledger: readonly LedgerEvent[]): ChurnStats {
 /** Reconciles the Ledger's own thaler movements against the Company's
  *  observed purse delta (the Value law, CONTEXT.md — Ledger). Verified as a
  *  test, not assumed true; a non-zero `drift` is a finding, not a bug in
- *  this function (§Laws 7/8). */
+ *  this function (§Laws 7/8).
+ *
+ *  **Coverage split (#449, doc comment restated in `harness/batch.ts` where
+ *  the real-Run guard lives):** a real Run over the reference policies
+ *  exercises only 3 of the 10 `THALER_MOVEMENT_KINDS` (`trade`, `dockingFee`,
+ *  `upkeep`); the other 7 are guarded only by the synthetic fixture in
+ *  `metrics.test.ts`. */
 export function reconcileThalers(
   ledger: readonly LedgerEvent[],
   startThalers: number,
@@ -371,6 +411,7 @@ export interface RunMetrics {
   readonly settlementCounts: SettlementCounts;
   readonly activeContractLoad: readonly { readonly day: number; readonly tick: number; readonly count: number }[];
   readonly reconciliation: ThalerReconciliation;
+  readonly milestoneTimings: readonly MilestoneTiming[];
 }
 
 export interface ComputeRunMetricsArgs {
@@ -400,5 +441,6 @@ export function computeRunMetrics(args: ComputeRunMetricsArgs): RunMetrics {
     settlementCounts: computeSettlementCounts(ledger),
     activeContractLoad: computeActiveContractLoad(daily),
     reconciliation: reconcileThalers(ledger, netWorthStart.thalers, netWorthEnd.thalers),
+    milestoneTimings: computeMilestoneTimings(ledger),
   };
 }

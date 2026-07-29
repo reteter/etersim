@@ -1,12 +1,53 @@
 import { describe, expect, it } from "vitest";
-import { advanceDays, createWorld } from "../src/sim/index.ts";
-import { reconcileThalers } from "./metrics.ts";
-import { runBatchRun, runOne, runPolicyBatch } from "./batch.ts";
+import { advanceDays, createWorld, TICKS_PER_DAY } from "../src/sim/index.ts";
+import { reconcileThalers, type MilestoneTiming, type RunMetrics } from "./metrics.ts";
+import { aggregateMilestones, runBatchRun, runOne, runPolicyBatch, type RunRecord } from "./batch.ts";
 import { parseSeeds } from "./runCommand.ts";
 import { gradientLoop } from "./policies/gradientLoop.ts";
 import { doNothing } from "./policies/doNothing.ts";
+import { MILESTONE_KINDS } from "./ledgerKinds.ts";
 
 const DAYS = 30;
+
+/** Minimal, fully-synthetic RunRecord for `aggregateMilestones` tests — every
+ *  milestone unreached except `founding`, which is reached at `foundingTick`
+ *  (or unreached when `null`). Every other `RunMetrics` field is a zero
+ *  value; `aggregateMilestones` reads only `metrics.milestoneTimings`. */
+function fakeRunRecord(seed: number, foundingTick: number | null): RunRecord {
+  const milestoneTimings: readonly MilestoneTiming[] = MILESTONE_KINDS.map((kind) =>
+    kind === "founding" && foundingTick !== null
+      ? { kind, reached: true, tick: foundingTick, worldDays: foundingTick / TICKS_PER_DAY }
+      : { kind, reached: false, tick: null, worldDays: null },
+  );
+  const zeroNetWorth = { thalers: 0, cargoValue: 0, siteStoreValue: 0, buildingStoreValue: 0, total: 0 };
+  const metrics: RunMetrics = {
+    days: 10,
+    netWorthStart: zeroNetWorth,
+    netWorthEnd: zeroNetWorth,
+    profitPerDay: 0,
+    netWorthCurve: [],
+    costLines: [],
+    revenueLines: [],
+    voyages: { total: 0, byShip: {} },
+    holdUtilization: { byShip: [], fleetMean: 0 },
+    goodsPnL: [],
+    churn: { switches: 0, runLengths: [] },
+    guildStandings: [],
+    settlementCounts: { met: 0, missed: 0, breached: 0, resigned: 0 },
+    activeContractLoad: [],
+    reconciliation: { ledgerSum: 0, startThalers: 0, endThalers: 0, drift: 0 },
+    milestoneTimings,
+  };
+  return {
+    policy: "doNothing",
+    params: {},
+    seed,
+    days: 10,
+    replayCommand: "n/a",
+    ledger: [],
+    metrics,
+  };
+}
 
 describe("runBatchRun — day-chunked, but tick-for-tick identical to the one-shot seam", () => {
   it("produces the same end World as advanceDays(world, days, decide) called once (doNothing)", () => {
@@ -113,5 +154,49 @@ describe("runPolicyBatch — N Runs over a seed grid, aggregated", () => {
     const batch = runPolicyBatch("doNothing", {}, [1, 2], DAYS);
     const [a, b] = batch.runs.map((r) => r.metrics.profitPerDay).sort((x, y) => x - y);
     expect(batch.aggregate.profitPerDay.median).toBeCloseTo((a + b) / 2, 10);
+  });
+
+  describe("aggregate.milestoneDays (#446 — world-days to milestone, a distribution across seeds)", () => {
+    it("one row per MILESTONE_KINDS entry, in canonical order, whether or not any seed reached it", () => {
+      const batch = runPolicyBatch("doNothing", {}, [1, 2, 3], DAYS);
+      expect(batch.aggregate.milestoneDays.map((m) => m.kind)).toEqual([
+        "founding",
+        "launch",
+        "shipyardBuilt",
+        "refitStart",
+        "refitComplete",
+        "completed",
+      ]);
+      // doNothing never founds a Headquarters — every milestone unreached by
+      // every seed (vacuity guard: this is a real, checked fact, not assumed).
+      for (const row of batch.aggregate.milestoneDays) {
+        expect(row.reachedSeeds).toBe(0);
+        expect(row.totalSeeds).toBe(3);
+        // wave-check B1: unreached must be unrepresentable as a number, never
+        // aggregateStat([])'s {median:0,min:0,max:0} — a consumer reading
+        // .worldDays.median without checking reachedSeeds would otherwise
+        // read "reached at world-day 0", not "never reached".
+        expect(row.worldDays).toBeNull();
+      }
+    });
+
+    it("medians world-days only across the seeds that actually reached the milestone", () => {
+      // Hand-built RunRecords (not a real Run) so "reached by some seeds, not
+      // others" is exercised deliberately, without depending on which
+      // milestones a reference policy happens to reach (incident 0005: don't
+      // let a real Run's accidental coverage stand in for a fixture shaped
+      // on purpose).
+      const runs = [fakeRunRecord(1, 24), fakeRunRecord(2, 48), fakeRunRecord(3, null)];
+      const rows = aggregateMilestones(runs);
+      const founding = rows.find((m) => m.kind === "founding")!;
+      expect(founding.reachedSeeds).toBe(2);
+      expect(founding.totalSeeds).toBe(3);
+      expect(founding.worldDays).toEqual({ median: 1.5, min: 1, max: 2 });
+      // Every other milestone stays unreached by all three fake Runs.
+      for (const row of rows) {
+        if (row.kind === "founding") continue;
+        expect(row.reachedSeeds).toBe(0);
+      }
+    });
   });
 });

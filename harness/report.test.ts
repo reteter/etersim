@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runPolicyBatch } from "./batch.ts";
-import { buildReport, renderMarkdown, round } from "./report.ts";
+import { buildReport, renderMarkdown, round, WORLD_DAYS_NOTE } from "./report.ts";
 
 describe("round", () => {
   it("rounds to the given decimal place", () => {
@@ -112,5 +112,49 @@ describe("buildReport + renderMarkdown — determinism (spec §Testing: identica
     const md = renderMarkdown(batches, report);
     expect(md).toContain("Revenue lines (₸, always ≥ 0)");
     expect(md).toContain("Cost lines (₸, always ≤ 0)");
+  });
+
+  describe("World-days to milestone (#446)", () => {
+    it("names the unit as world-days and states, next to the numbers, that it is not wall-clock hours", () => {
+      const batches = [runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+      const report = buildReport(batches, DAYS);
+      const md = renderMarkdown(batches, report);
+      expect(md).toContain("World-days to milestone");
+      expect(md).toContain("world-days");
+      expect(md).toMatch(/not.*wall-clock hours/);
+      expect(md).toContain("#448");
+    });
+
+    it("lists every MILESTONE_KINDS row in the batch-aggregate table, reached count included, even when no seed reached it", () => {
+      // gradientLoop never founds a Headquarters — every milestone unreached.
+      const batches = [runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+      const report = buildReport(batches, DAYS);
+      const md = renderMarkdown(batches, report);
+      expect(md).toContain("| founding | 0/2 |");
+      expect(md).toContain("| completed | 0/2 |");
+    });
+
+    it("per-Run detail reports 'not reached' for an unreached milestone rather than a blank or a zero", () => {
+      const batches = [runPolicyBatch("gradientLoop", {}, [1], DAYS)];
+      const report = buildReport(batches, DAYS);
+      const md = renderMarkdown(batches, report);
+      expect(md).toContain("not reached");
+    });
+
+    it("wave-check B2: report.json carries the unit note (a report surface, not just the Markdown)", () => {
+      const batches = [runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+      const report = buildReport(batches, DAYS);
+      expect(report.worldDaysNote).toBe(WORLD_DAYS_NOTE);
+      expect(report.worldDaysNote).toMatch(/not.*wall-clock hours/);
+    });
+
+    it("wave-check B1: report.json's milestoneDays.worldDays is null, not {median:0,min:0,max:0}, when no seed reached it", () => {
+      // gradientLoop never founds a Headquarters — every milestone unreached.
+      const batches = [runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+      const report = buildReport(batches, DAYS);
+      const founding = report.policies[0].aggregate.milestoneDays.find((m) => m.kind === "founding")!;
+      expect(founding.reachedSeeds).toBe(0);
+      expect(founding.worldDays).toBeNull();
+    });
   });
 });

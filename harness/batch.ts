@@ -9,6 +9,7 @@ import {
 import { computeRunMetrics, type DaySnapshot, type RunMetrics } from "./metrics.ts";
 import type { Policy } from "./policy.ts";
 import { resolvePolicy } from "./policies/registry.ts";
+import { MILESTONE_KINDS, type MilestoneKind } from "./ledgerKinds.ts";
 
 /**
  * Batch runner (#233, docs/specs/E11-proving-grounds.md §Evaluation model /
@@ -26,6 +27,22 @@ import { resolvePolicy } from "./policies/registry.ts";
  * contract). Numbers from a Batch describe *scripted* play, not human
  * cadence — stated again in the Markdown report, where the reader meets the
  * numbers (task package, "Command-cadence fidelity").
+ *
+ * **Thaler reconciliation coverage (#449).** `runOne`'s Run is checked against
+ * `reconcileThalers` (`harness/metrics.ts`, where the reconciliation itself
+ * lives — `harness/batch.test.ts`'s "reconciles every thaler movement..."
+ * test is the real-Run guard) over all ten `THALER_MOVEMENT_KINDS`
+ * (`harness/ledgerKinds.ts`). But **a real Run over the reference policies
+ * (`doNothing`, `gradientLoop`) exercises only three of them**: `trade`,
+ * `dockingFee` and `upkeep` — neither policy founds a Headquarters, builds,
+ * enrolls in a guild or refits, so `laborFee`, `enrollmentFee`, `contractFee`,
+ * `autoDraw`, `rush`, `founding` and `refitStart` never appear in a real
+ * seed's Ledger. Those seven are guarded **only** by the synthetic Ledger
+ * fixture in `harness/metrics.test.ts` ("reconcileThalers over a synthetic
+ * fixture covering all ten THALER_MOVEMENT_KINDS") — a green reconciliation
+ * over N real seeds proves the Value law for the three kinds a Run actually
+ * moves, nothing about the other seven. A builder/contractor reference
+ * policy would close that gap for real Runs (out of scope here, #449).
  */
 
 /** Advances `world` one day at a time rather than in one `advanceDays(world,
@@ -131,15 +148,54 @@ export function aggregateStat(values: readonly number[]): AggregateStat {
   return { median: median(sorted), min: sorted[0], max: sorted[sorted.length - 1] };
 }
 
+/** One milestone kind's cross-seed distribution (#446 — "how long until the
+ *  first ship launches, across N seeds" as a distribution instead of an
+ *  anecdote). `worldDays` is `null` when `reachedSeeds === 0` — a milestone
+ *  no seed reached is **unrepresentable** as a number rather than encoded as
+ *  `{median:0,min:0,max:0}` (wave-check finding, B1: `aggregateStat([])`'s
+ *  empty-input convention, read by a consumer that never checks
+ *  `reachedSeeds`, silently reads as "reached at world-day 0" — the same
+ *  "confidently wrong number, no crash" class #449 exists to close, one
+ *  level up). Mirrors the per-Run shape one level down
+ *  (`MilestoneTiming.worldDays: number | null`, `harness/metrics.ts`) —
+ *  one encoding for "unreached", not two. Units are **world-days, not
+ *  wall-clock hours** — see `computeMilestoneTimings` and PRD §Where 1.0
+ *  ends. */
+export interface MilestoneAggregate {
+  readonly kind: MilestoneKind;
+  readonly reachedSeeds: number;
+  readonly totalSeeds: number;
+  readonly worldDays: AggregateStat | null;
+}
+
+/** Per-kind medians/spreads over `MILESTONE_KINDS`, in that array's canonical
+ *  order, across every Run in a Batch — the batch-aggregate half of #446. */
+export function aggregateMilestones(runs: readonly RunRecord[]): readonly MilestoneAggregate[] {
+  return MILESTONE_KINDS.map((kind) => {
+    const reached = runs
+      .map((r) => r.metrics.milestoneTimings.find((m) => m.kind === kind))
+      .filter((m) => m !== undefined && m.reached && m.worldDays !== null);
+    const worldDaysValues = reached.map((m) => m!.worldDays!);
+    return {
+      kind,
+      reachedSeeds: reached.length,
+      totalSeeds: runs.length,
+      worldDays: reached.length > 0 ? aggregateStat(worldDaysValues) : null,
+    };
+  });
+}
+
 /** Per-seed medians/spreads across a Batch, over the metrics an agent reads
  *  first (spec §Evaluation model / §Portfolio note): profit/day, voyages,
- *  fleet hold utilization, final net worth. Every other per-Run metric stays
- *  reachable in `runs[].metrics` for a deeper read. */
+ *  fleet hold utilization, final net worth, world-days to milestone
+ *  (`milestoneDays`, #446). Every other per-Run metric stays reachable in
+ *  `runs[].metrics` for a deeper read. */
 export interface BatchAggregate {
   readonly profitPerDay: AggregateStat;
   readonly voyages: AggregateStat;
   readonly fleetHoldUtilization: AggregateStat;
   readonly netWorthEnd: AggregateStat;
+  readonly milestoneDays: readonly MilestoneAggregate[];
 }
 
 export interface PolicyBatchReport {
@@ -165,6 +221,7 @@ export function runPolicyBatch(
     voyages: aggregateStat(runs.map((r) => r.metrics.voyages.total)),
     fleetHoldUtilization: aggregateStat(runs.map((r) => r.metrics.holdUtilization.fleetMean)),
     netWorthEnd: aggregateStat(runs.map((r) => r.metrics.netWorthEnd.total)),
+    milestoneDays: aggregateMilestones(runs),
   };
   return { policy: policyName, params, seeds, days, runs, aggregate };
 }
