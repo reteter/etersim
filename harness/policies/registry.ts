@@ -26,9 +26,12 @@ export const POLICY_REGISTRY: Readonly<Record<string, PolicyFactory>> = {
 export const POLICY_NAMES: readonly string[] = ["doNothing", "gradientLoop"];
 
 export function resolvePolicy(name: string, params: Record<string, unknown>): Policy<unknown> {
-  const factory = POLICY_REGISTRY[name];
-  if (!factory) {
+  // `Object.hasOwn`, not `POLICY_REGISTRY[name]` truthiness — a plain object
+  // literal inherits `Object.prototype`, so `name === "constructor"` or
+  // `"__proto__"` would otherwise resolve to an inherited value instead of
+  // failing the "Unknown policy" check below (wave-check finding).
+  if (!Object.hasOwn(POLICY_REGISTRY, name)) {
     throw new Error(`Unknown policy "${name}" — known policies: ${POLICY_NAMES.join(", ")}`);
   }
-  return factory(params);
+  return POLICY_REGISTRY[name](params);
 }

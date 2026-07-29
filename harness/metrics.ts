@@ -9,7 +9,7 @@ import {
   type NetWorthBreakdown,
   type ShipId,
 } from "../src/sim/index.ts";
-import { COST_KINDS, THALER_MOVEMENT_KINDS, type LedgerKind } from "./ledgerKinds.ts";
+import { COST_KINDS, REVENUE_KINDS, THALER_MOVEMENT_KINDS, type LedgerKind } from "./ledgerKinds.ts";
 
 /**
  * Per-Run metrics, derived purely from a Run's Ledger and a set of daily
@@ -140,8 +140,8 @@ export function signedThalers(event: LedgerEvent): number | null {
  *  upkeep, labor/enrollment fees, rush premiums"). A kind with zero events
  *  in this Run is still reported, at 0, so a Batch's Markdown always shows
  *  the same columns. */
-export function computeCostLines(ledger: readonly LedgerEvent[]): readonly CostLine[] {
-  return COST_KINDS.map((kind) => {
+function sumSignedByKind(ledger: readonly LedgerEvent[], kinds: readonly LedgerKind[]): readonly CostLine[] {
+  return kinds.map((kind) => {
     let thalers = 0;
     let count = 0;
     for (const event of ledger) {
@@ -152,6 +152,19 @@ export function computeCostLines(ledger: readonly LedgerEvent[]): readonly CostL
     }
     return { kind, thalers, count };
   });
+}
+
+export function computeCostLines(ledger: readonly LedgerEvent[]): readonly CostLine[] {
+  return sumSignedByKind(ledger, COST_KINDS);
+}
+
+/** Per-kind sums over `REVENUE_KINDS` (today just `contractFee` — a met
+ *  contract's fee, paid *to* the Company, `contract.ts`'s `settleOne`). Kept
+ *  structurally separate from `computeCostLines` so `CostLine.thalers <= 0`
+ *  stays true by construction rather than by convention — a `contractFee`
+ *  entry mixed into the cost lines would have quietly violated that. */
+export function computeRevenueLines(ledger: readonly LedgerEvent[]): readonly CostLine[] {
+  return sumSignedByKind(ledger, REVENUE_KINDS);
 }
 
 /** Per-good trade P&L (buy/sell quantities and net thalers), in `GOOD_IDS`
@@ -346,6 +359,7 @@ export interface RunMetrics {
   readonly profitPerDay: number;
   readonly netWorthCurve: readonly NetWorthPoint[];
   readonly costLines: readonly CostLine[];
+  readonly revenueLines: readonly CostLine[];
   readonly voyages: { readonly total: number; readonly byShip: Readonly<Record<ShipId, number>> };
   readonly holdUtilization: {
     readonly byShip: readonly ShipHoldUtilization[];
@@ -377,6 +391,7 @@ export function computeRunMetrics(args: ComputeRunMetricsArgs): RunMetrics {
     profitPerDay: days > 0 ? (netWorthEnd.total - netWorthStart.total) / days : 0,
     netWorthCurve: computeNetWorthCurve(ledger),
     costLines: computeCostLines(ledger),
+    revenueLines: computeRevenueLines(ledger),
     voyages: computeVoyages(ledger),
     holdUtilization: computeHoldUtilization(daily),
     goodsPnL: computeGoodsPnL(ledger),

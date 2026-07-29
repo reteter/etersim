@@ -11,8 +11,18 @@ import { GOOD_IDS } from "../src/sim/index.ts";
  *
  * Rounding (incidents 0023/0024 — never pin full float precision): every
  * number in `report.json`/`report.md` is rounded to `ROUND_DP` decimal
- * places, stated here and restated in the Markdown itself. The per-Run
- * Ledger JSONL files stay unrounded raw sim output — rounding there would
+ * places, stated here and restated in the Markdown itself.
+ *
+ * **`report.json` and `report.md` round independently from the same raw
+ * numbers — never round-then-aggregate** (wave-check finding). `buildReport`
+ * rounds each already-final `PolicyBatchReport`/`RunRecord` value once for
+ * `report.json`. `renderMarkdown` takes the *raw* `PolicyBatchReport[]`
+ * (the same objects `buildReport` was given, unrounded) and computes every
+ * median/aggregate itself before rounding at print time — reading the
+ * already-rounded `BatchReport` for anything numeric would recompute a
+ * median over pre-rounded inputs, which can disagree with the same median
+ * computed once from raw values and rounded after. The per-Run Ledger JSONL
+ * files stay unrounded raw sim output throughout — rounding there would
  * violate "the emitter stays the sim's".
  */
 export const ROUND_DP = 2;
@@ -78,6 +88,12 @@ export const CADENCE_NOTE =
   "The UI lets a paused player queue several commands between ticks (ADR-0005); a Run cannot reproduce " +
   "that burst cadence. These numbers describe scripted, per-tick play, not human play cadence.";
 
+export const VOYAGES_CAVEAT =
+  "\"Voyages\" counts dockingFee events — an arrival is only counted if the Company's purse had " +
+  "at least 1 ₸ left to charge (`chargeDockingFee`, `src/sim/tick.ts`, skips the event entirely at " +
+  "0 ₸). A Company that goes broke mid-Run will show fewer voyages than it actually sailed. " +
+  "(Incident 0020: never treat a count from an unverified path as the result.)";
+
 export function buildReport(policyBatches: readonly PolicyBatchReport[], days: number): BatchReport {
   const policies: PolicyReportEntry[] = policyBatches.map((batch) => ({
     policy: batch.policy,
@@ -109,8 +125,15 @@ function pct(fraction: number): string {
  * Markdown summary (spec §Portfolio note): legible to a reader who has never
  * seen the game. Names the units, defines a Run/thaler in one sentence
  * each, and never assumes the glossary.
+ *
+ * Takes the **raw** `policyBatches` (the same unrounded objects `buildReport`
+ * was given) — every median/aggregate here is computed from raw per-Run
+ * values and rounded once at print time; `report` supplies only the
+ * non-numeric parts (`days`, `roundedToDp`, `cadenceNote`, `anomalies`) plus
+ * the JSON's own rounded `comparisons` is *not* read either — comparisons
+ * are recomputed here from the raw Batches for the same round-once reason.
  */
-export function renderMarkdown(report: BatchReport): string {
+export function renderMarkdown(policyBatches: readonly PolicyBatchReport[], report: BatchReport): string {
   const lines: string[] = [];
   lines.push("# Batch report");
   lines.push("");
@@ -126,44 +149,52 @@ export function renderMarkdown(report: BatchReport): string {
   lines.push(`Run length: **${report.days} days** per Run.`);
   lines.push("");
 
-  for (const policy of report.policies) {
-    lines.push(`## Policy: \`${policy.policy}\``);
-    if (Object.keys(policy.params).length > 0) {
+  for (const batch of policyBatches) {
+    lines.push(`## Policy: \`${batch.policy}\``);
+    if (Object.keys(batch.params).length > 0) {
       lines.push("");
-      lines.push(`Parameters: \`${JSON.stringify(policy.params)}\``);
+      lines.push(`Parameters: \`${JSON.stringify(batch.params)}\``);
     }
     lines.push("");
-    lines.push(`Seeds run: ${policy.seeds.join(", ")} (${policy.seeds.length} Run(s)).`);
+    lines.push(`Seeds run: ${batch.seeds.join(", ")} (${batch.seeds.length} Run(s)).`);
     lines.push("");
     lines.push("### Batch aggregate (median across seeds, min–max spread)");
+    lines.push("");
+    lines.push(`> **Voyages caveat:** ${VOYAGES_CAVEAT}`);
     lines.push("");
     lines.push("| Metric | Median | Min | Max |");
     lines.push("| --- | --- | --- | --- |");
     lines.push(
-      `| Profit/day (₸) | ${policy.aggregate.profitPerDay.median} | ${policy.aggregate.profitPerDay.min} | ${policy.aggregate.profitPerDay.max} |`,
+      `| Profit/day (₸) | ${round(batch.aggregate.profitPerDay.median)} | ${round(batch.aggregate.profitPerDay.min)} | ${round(batch.aggregate.profitPerDay.max)} |`,
     );
     lines.push(
-      `| Voyages (arrivals charged a docking fee) | ${policy.aggregate.voyages.median} | ${policy.aggregate.voyages.min} | ${policy.aggregate.voyages.max} |`,
+      `| Voyages (arrivals charged a docking fee — see caveat above) | ${round(batch.aggregate.voyages.median)} | ${round(batch.aggregate.voyages.min)} | ${round(batch.aggregate.voyages.max)} |`,
     );
     lines.push(
-      `| Fleet hold utilization | ${pct(policy.aggregate.fleetHoldUtilization.median)} | ${pct(policy.aggregate.fleetHoldUtilization.min)} | ${pct(policy.aggregate.fleetHoldUtilization.max)} |`,
+      `| Fleet hold utilization | ${pct(batch.aggregate.fleetHoldUtilization.median)} | ${pct(batch.aggregate.fleetHoldUtilization.min)} | ${pct(batch.aggregate.fleetHoldUtilization.max)} |`,
     );
     lines.push(
-      `| Net worth at Run end (₸) | ${policy.aggregate.netWorthEnd.median} | ${policy.aggregate.netWorthEnd.min} | ${policy.aggregate.netWorthEnd.max} |`,
+      `| Net worth at Run end (₸) | ${round(batch.aggregate.netWorthEnd.median)} | ${round(batch.aggregate.netWorthEnd.min)} | ${round(batch.aggregate.netWorthEnd.max)} |`,
     );
     lines.push("");
 
     lines.push("### Per-Run detail");
     lines.push("");
-    lines.push("| Seed | Profit/day (₸) | Voyages | Fleet hold util. | Cost lines (₸, negative = spent) |");
-    lines.push("| --- | --- | --- | --- | --- |");
-    for (const run of policy.runs) {
+    lines.push(
+      "| Seed | Profit/day (₸) | Voyages | Fleet hold util. | Cost lines (₸, always ≤ 0) | Revenue lines (₸, always ≥ 0) |",
+    );
+    lines.push("| --- | --- | --- | --- | --- | --- |");
+    for (const run of batch.runs) {
       const costSummary = run.metrics.costLines
         .filter((l) => l.count > 0)
-        .map((l) => `${l.kind}: ${l.thalers}`)
+        .map((l) => `${l.kind}: ${round(l.thalers)}`)
+        .join(", ");
+      const revenueSummary = run.metrics.revenueLines
+        .filter((l) => l.count > 0)
+        .map((l) => `${l.kind}: ${round(l.thalers)}`)
         .join(", ");
       lines.push(
-        `| ${run.seed} | ${run.metrics.profitPerDay} | ${run.metrics.voyages.total} | ${pct(run.metrics.holdUtilization.fleetMean)} | ${costSummary || "(none)"} |`,
+        `| ${run.seed} | ${round(run.metrics.profitPerDay)} | ${run.metrics.voyages.total} | ${pct(run.metrics.holdUtilization.fleetMean)} | ${costSummary || "(none)"} | ${revenueSummary || "(none)"} |`,
       );
     }
     lines.push("");
@@ -180,12 +211,12 @@ export function renderMarkdown(report: BatchReport): string {
     lines.push("| Good | Median net (₸) | Median bought (units) | Median sold (units) |");
     lines.push("| --- | --- | --- | --- |");
     for (const good of GOOD_IDS) {
-      const nets = policy.runs.map((r) => r.metrics.goodsPnL.find((g) => g.good === good)?.netThalers ?? 0);
-      const bought = policy.runs.map((r) => r.metrics.goodsPnL.find((g) => g.good === good)?.boughtQty ?? 0);
-      const sold = policy.runs.map((r) => r.metrics.goodsPnL.find((g) => g.good === good)?.soldQty ?? 0);
+      const nets = batch.runs.map((r) => r.metrics.goodsPnL.find((g) => g.good === good)?.netThalers ?? 0);
+      const bought = batch.runs.map((r) => r.metrics.goodsPnL.find((g) => g.good === good)?.boughtQty ?? 0);
+      const sold = batch.runs.map((r) => r.metrics.goodsPnL.find((g) => g.good === good)?.soldQty ?? 0);
       if (nets.every((n) => n === 0) && bought.every((n) => n === 0) && sold.every((n) => n === 0)) continue;
       lines.push(
-        `| ${good} | ${aggregateStat(nets).median} | ${aggregateStat(bought).median} | ${aggregateStat(sold).median} |`,
+        `| ${good} | ${round(aggregateStat(nets).median)} | ${round(aggregateStat(bought).median)} | ${round(aggregateStat(sold).median)} |`,
       );
     }
     lines.push("");
@@ -195,17 +226,19 @@ export function renderMarkdown(report: BatchReport): string {
         "switches often, an opportunist rarely)",
     );
     lines.push("");
-    const switches = policy.runs.map((r) => r.metrics.churn.switches);
-    lines.push(`Median switches per Run: **${aggregateStat(switches).median}** (min ${aggregateStat(switches).min}, max ${aggregateStat(switches).max}).`);
+    const switches = batch.runs.map((r) => r.metrics.churn.switches);
+    lines.push(
+      `Median switches per Run: **${round(aggregateStat(switches).median)}** (min ${round(aggregateStat(switches).min)}, max ${round(aggregateStat(switches).max)}).`,
+    );
     lines.push("");
 
     lines.push("### Hold utilization per ship (median across seeds)");
     lines.push("");
-    const shipIds = [...new Set(policy.runs.flatMap((r) => r.metrics.holdUtilization.byShip.map((s) => s.shipId)))];
+    const shipIds = [...new Set(batch.runs.flatMap((r) => r.metrics.holdUtilization.byShip.map((s) => s.shipId)))];
     lines.push("| Ship | Median utilization |");
     lines.push("| --- | --- |");
     for (const shipId of shipIds) {
-      const utils = policy.runs.map(
+      const utils = batch.runs.map(
         (r) => r.metrics.holdUtilization.byShip.find((s) => s.shipId === shipId)?.meanUtilization ?? 0,
       );
       lines.push(`| ${shipId} | ${pct(aggregateStat(utils).median)} |`);
@@ -214,7 +247,7 @@ export function renderMarkdown(report: BatchReport): string {
 
     lines.push("### Settlement outcomes (guild contracts, summed across all seeds)");
     lines.push("");
-    const settled = policy.runs.reduce(
+    const settled = batch.runs.reduce(
       (acc, r) => ({
         met: acc.met + r.metrics.settlementCounts.met,
         missed: acc.missed + r.metrics.settlementCounts.missed,
@@ -230,30 +263,30 @@ export function renderMarkdown(report: BatchReport): string {
 
     lines.push("### Guild rank/points at Run end (median final points across seeds, only guilds ever engaged)");
     lines.push("");
-    const guildIds = [...new Set(policy.runs.flatMap((r) => r.metrics.guildStandings.map((g) => g.guildId)))];
+    const guildIds = [...new Set(batch.runs.flatMap((r) => r.metrics.guildStandings.map((g) => g.guildId)))];
     if (guildIds.length === 0) {
       lines.push("No guild ever enrolled or settled a contract in this Batch.");
     } else {
       lines.push("| Guild | Median final points | Median final rank |");
       lines.push("| --- | --- | --- |");
       for (const guildId of guildIds) {
-        const points = policy.runs.map(
+        const points = batch.runs.map(
           (r) => r.metrics.guildStandings.find((g) => g.guildId === guildId)?.finalPoints ?? 0,
         );
-        const ranks = policy.runs.map(
+        const ranks = batch.runs.map(
           (r) => r.metrics.guildStandings.find((g) => g.guildId === guildId)?.finalRank ?? 1,
         );
-        lines.push(`| ${guildId} | ${aggregateStat(points).median} | ${aggregateStat(ranks).median} |`);
+        lines.push(`| ${guildId} | ${round(aggregateStat(points).median)} | ${round(aggregateStat(ranks).median)} |`);
       }
     }
     lines.push("");
 
     lines.push("### Active-contract load (median count of contracts held at once, across all daily samples and seeds)");
     lines.push("");
-    const loads = policy.runs.flatMap((r) => r.metrics.activeContractLoad.map((p) => p.count));
+    const loads = batch.runs.flatMap((r) => r.metrics.activeContractLoad.map((p) => p.count));
     lines.push(
       loads.length > 0
-        ? `Median ${aggregateStat(loads).median}, min ${aggregateStat(loads).min}, max ${aggregateStat(loads).max}.`
+        ? `Median ${round(aggregateStat(loads).median)}, min ${round(aggregateStat(loads).min)}, max ${round(aggregateStat(loads).max)}.`
         : "No daily samples (a zero-day Run).",
     );
     lines.push("");
@@ -262,20 +295,26 @@ export function renderMarkdown(report: BatchReport): string {
     lines.push("");
   }
 
-  if (report.comparisons.length > 0) {
+  const comparisons = compareAllPairs(policyBatches);
+  if (comparisons.length > 0) {
     lines.push("## Head-to-head comparisons");
     lines.push("");
     lines.push(
       "Generalizes the game's own dominance guardrail (`src/sim/economy.test.ts`): a more effortful " +
         "strategy should not out-earn a simpler one by more than the stated tolerance, or the balance " +
-        "goal it encodes is not holding.",
+        "goal it encodes is not holding. **Ratio and tolerance are only meaningful against a strictly " +
+        "positive baseline (column B)** — against a zero or negative B, a raw ratio would misread " +
+        "magnitude as direction, so those cells read \"n/a\" and the **delta** column (A − B, always " +
+        "well-defined regardless of sign) is the one to trust instead.",
     );
     lines.push("");
-    lines.push("| A | B | A median (₸/day) | B median (₸/day) | Ratio A/B | A within tolerance? |");
-    lines.push("| --- | --- | --- | --- | --- | --- |");
-    for (const c of report.comparisons) {
+    lines.push("| A | B | A median (₸/day) | B median (₸/day) | Delta A−B | Ratio A/B | A within tolerance? |");
+    lines.push("| --- | --- | --- | --- | --- | --- | --- |");
+    for (const c of comparisons) {
+      const ratioCell = c.profitPerDayRatio === null ? `n/a (${c.profitPerDayRatioNote})` : `${round(c.profitPerDayRatio)}`;
+      const withinCell = c.aWithinTolerance === null ? "n/a" : c.aWithinTolerance ? "yes" : "**no**";
       lines.push(
-        `| ${c.a} | ${c.b} | ${c.aProfitPerDayMedian} | ${c.bProfitPerDayMedian} | ${c.profitPerDayRatio} | ${c.aWithinTolerance ? "yes" : "**no**"} |`,
+        `| ${c.a} | ${c.b} | ${round(c.aProfitPerDayMedian)} | ${round(c.bProfitPerDayMedian)} | ${round(c.profitPerDayDelta)} | ${ratioCell} | ${withinCell} |`,
       );
     }
     lines.push("");

@@ -18,15 +18,19 @@ import type { LedgerEvent } from "../src/sim/index.ts";
  * grammar law itself.
  */
 export const GOODS_KINDS = ["trade", "delivery", "store", "withdraw"] as const;
-export const COST_KINDS = [
-  "dockingFee",
-  "upkeep",
-  "laborFee",
-  "enrollmentFee",
-  "contractFee",
-  "autoDraw",
-  "rush",
-] as const;
+/** Every kind here is a debit against the Company's purse, verified by
+ *  `metrics.test.ts`'s invariant test (every `CostLine.thalers <= 0` over a
+ *  fixture covering all of them). `contractFee` is deliberately **not**
+ *  here, even though the spec's own §Ledger schema "Costs" grouping lists
+ *  it — `contract.ts:337,341` (`settleOne`) pays `feePerPeriod` *to* the
+ *  Company on a met settlement, so it is a credit, not a sink. That spec
+ *  wording is a misnomer against as-built (tracked as its own finding,
+ *  outside this wave's scope — §Laws 7/8: not something to quietly patch
+ *  here). See `REVENUE_KINDS` below for where `contractFee` lives instead. */
+export const COST_KINDS = ["dockingFee", "upkeep", "laborFee", "enrollmentFee", "autoDraw", "rush"] as const;
+/** Thaler-carrying kinds that are credits to the Company's purse, `trade`
+ *  (on the `sell` side) aside — today just the met-contract fee. */
+export const REVENUE_KINDS = ["contractFee"] as const;
 export const MILESTONE_KINDS = [
   "founding",
   "launch",
@@ -41,6 +45,7 @@ export const SNAPSHOT_KINDS = ["netWorth"] as const;
 export const ALL_LEDGER_KINDS = [
   ...GOODS_KINDS,
   ...COST_KINDS,
+  ...REVENUE_KINDS,
   ...MILESTONE_KINDS,
   ...STANDING_KINDS,
   ...SNAPSHOT_KINDS,

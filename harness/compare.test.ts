@@ -45,11 +45,44 @@ describe("compareBatches — the #60 dominance guardrail, generalized", () => {
     expect(compareBatches(a, b, 1.05).aWithinTolerance).toBe(false);
   });
 
-  it("b's median at exactly zero reports NaN rather than Infinity or a silent 0", () => {
+  it("b's median at exactly zero: no ratio, no tolerance verdict, an explanatory note, but a well-defined delta", () => {
     const a = fixture("a", 5);
     const b = fixture("b", 0);
     const result = compareBatches(a, b);
-    expect(Number.isNaN(result.profitPerDayRatio)).toBe(true);
+    expect(result.profitPerDayRatio).toBeNull();
+    expect(result.aWithinTolerance).toBeNull();
+    expect(result.profitPerDayRatioNote).toMatch(/b's median is 0/);
+    expect(result.profitPerDayDelta).toBe(5);
+  });
+
+  it("both medians exactly zero: still no ratio, delta is 0, and the note says so", () => {
+    const a = fixture("a", 0);
+    const b = fixture("b", 0);
+    const result = compareBatches(a, b);
+    expect(result.profitPerDayRatio).toBeNull();
+    expect(result.aWithinTolerance).toBeNull();
+    expect(result.profitPerDayRatioNote).toMatch(/both medians are exactly 0/);
+    expect(result.profitPerDayDelta).toBe(0);
+  });
+
+  it("a negative baseline: no ratio (a naive a/b would misread magnitude as direction), but the delta correctly shows a outearning b", () => {
+    const a = fixture("a", -5);
+    const b = fixture("b", -10);
+    const result = compareBatches(a, b);
+    expect(result.profitPerDayRatio).toBeNull();
+    expect(result.aWithinTolerance).toBeNull();
+    expect(result.profitPerDayRatioNote).toMatch(/negative/);
+    // a=-5 outearns b=-10 by 5/day — the delta says so unambiguously.
+    expect(result.profitPerDayDelta).toBe(5);
+  });
+
+  it("a strictly positive baseline still yields a ratio and a delta that agree in sign", () => {
+    const a = fixture("a", 12);
+    const b = fixture("b", 10);
+    const result = compareBatches(a, b);
+    expect(result.profitPerDayRatio).toBeCloseTo(1.2, 10);
+    expect(result.profitPerDayRatioNote).toBeNull();
+    expect(result.profitPerDayDelta).toBe(2);
   });
 });
 

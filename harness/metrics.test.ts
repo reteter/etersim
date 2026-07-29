@@ -8,6 +8,7 @@ import {
   computeGuildStandings,
   computeHoldUtilization,
   computeNetWorthCurve,
+  computeRevenueLines,
   computeSettlementCounts,
   computeVoyages,
   reconcileThalers,
@@ -64,6 +65,39 @@ describe("computeCostLines", () => {
     expect(docking).toEqual({ kind: "dockingFee", thalers: -10, count: 2 });
     expect(upkeep).toEqual({ kind: "upkeep", thalers: -10, count: 1 });
     expect(rush).toEqual({ kind: "rush", thalers: 0, count: 0 });
+  });
+
+  it("every COST_KINDS entry is <= 0, even over a fixture exercising every cost kind plus a met contractFee (the invariant the doc comment claims)", () => {
+    const ledger: LedgerEvent[] = [
+      { kind: "dockingFee", tick: 1, shipId: "s0", portId: "p1", thalers: 5 },
+      { kind: "upkeep", tick: 24, shipId: "s0", thalers: 10 },
+      { kind: "laborFee", tick: 2, thalers: 100 },
+      { kind: "enrollmentFee", tick: 3, guildId: "agrarian", thalers: 400 },
+      { kind: "autoDraw", tick: 4, portId: "p1", good: "grain", qty: 5, thalers: 20 },
+      { kind: "rush", tick: 5, portId: "p1", good: "grain", qty: 5, thalers: 30 },
+      // contractFee is a *credit* (settleOne pays it to the Company on a met
+      // settlement) — deliberately included here to prove it does not leak
+      // into computeCostLines and flip the invariant.
+      { kind: "contractFee", tick: 6, guildId: "agrarian", contractId: "c1", thalers: 999 },
+    ];
+    const lines = computeCostLines(ledger);
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) expect(line.thalers).toBeLessThanOrEqual(0);
+    // Not vacuous: at least one line actually moved money.
+    expect(lines.some((l) => l.thalers < 0)).toBe(true);
+    // The credit is excluded entirely from the cost-line kind set.
+    expect(lines.find((l) => l.kind === "contractFee")).toBeUndefined();
+  });
+});
+
+describe("computeRevenueLines", () => {
+  it("sums contractFee as a positive total — the credit computeCostLines must never carry", () => {
+    const ledger: LedgerEvent[] = [
+      { kind: "contractFee", tick: 1, guildId: "agrarian", contractId: "c1", thalers: 150 },
+      { kind: "contractFee", tick: 2, guildId: "agrarian", contractId: "c2", thalers: 50 },
+    ];
+    const lines = computeRevenueLines(ledger);
+    expect(lines).toEqual([{ kind: "contractFee", thalers: 200, count: 2 }]);
   });
 });
 

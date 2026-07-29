@@ -25,6 +25,17 @@ describe("parseSeeds", () => {
     expect(() => parseSeeds("1,abc")).toThrow(/not an integer/);
     expect(() => parseSeeds("0")).toThrow(/positive integer/);
   });
+
+  it("rejects an empty seed set rather than silently producing a zero-Run Batch (blocker: --seeds ',' used to parse to [])", () => {
+    expect(() => parseSeeds(",")).toThrow(/empty seed set/);
+    expect(() => parseSeeds("")).toThrow(); // bare empty string: no comma, falls to the "must be a positive integer" branch
+  });
+
+  it("rejects a non-positive seed even in list form, consistent with the bare-N form (blocker: '0,'/'-5,' used to pass straight to createWorld)", () => {
+    expect(() => parseSeeds("0,")).toThrow(/positive integer/);
+    expect(() => parseSeeds("-5,")).toThrow(/positive integer/);
+    expect(() => parseSeeds("1,-5,3")).toThrow(/positive integer/);
+  });
 });
 
 describe("runCommand — CLI smoke", () => {
@@ -106,5 +117,25 @@ describe("runCommand — CLI smoke", () => {
       const seedsFlag = /--seeds ([^ ]+)/.exec(run.replayCommand)![1];
       expect(parseSeeds(seedsFlag)).toEqual([run.seed]);
     }
+  });
+
+  it("an empty --seeds value throws rather than writing a zero-Run, all-zeros report (blocker)", () => {
+    expect(() =>
+      runCommand(["--policy", "doNothing", "--seeds", ",", "--days", "5", "--out", outDir], log),
+    ).toThrow(/empty seed set/);
+    // Nothing was written — the failure happened before any file touched disk.
+    expect(existsSync(join(outDir, "report.json"))).toBe(false);
+  });
+
+  it("an unknown policy in a multi-policy invocation fails before running anything, and before the first (valid) policy's expensive Batch runs (blocker: ordering)", () => {
+    expect(() =>
+      runCommand(
+        ["--policy", "doNothing,notAPolicy", "--seeds", "5", "--days", "30", "--out", outDir],
+        log,
+      ),
+    ).toThrow(/Unknown policy "notAPolicy"/);
+    // Validation happens before mkdir/run — no runs/ directory, no partial report.
+    expect(existsSync(join(outDir, "runs"))).toBe(false);
+    expect(existsSync(join(outDir, "report.json"))).toBe(false);
   });
 });
