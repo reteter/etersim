@@ -111,6 +111,39 @@ export function assertContentPreserved(original, reflowed, relPath) {
   }
 }
 
+/**
+ * The second, independent property: the document still *parses* the same.
+ *
+ * Word equality is not enough, and the corpus sweep proved it — a wrap that put
+ * "+" at a line start turned prose into a bullet list with an identical word
+ * stream, and assertContentPreserved passed it. Two implementations of one
+ * insufficient property are not two checks; this is a different property.
+ *
+ * Compares the flattened node-type sequence, which is sensitive to exactly what
+ * we care about (a paragraph becoming a list, a `<br>` moving, a table ending
+ * early) and indifferent to line positions, which is the whole point of the
+ * tool.
+ */
+export function assertStructurePreserved(original, reflowed, relPath) {
+  const shape = (src) => {
+    const types = [];
+    const walk = (node) => {
+      types.push(node.type);
+      for (const child of node.children ?? []) walk(child);
+    };
+    walk(unified().use(remarkParse).use(remarkGfm).parse(src));
+    return types.join(",");
+  };
+
+  if (shape(original) !== shape(reflowed)) {
+    throw new Error(
+      `normalize-markdown: refusing to write ${relPath} — reflow changed the document's parsed structure. ` +
+        `The words match, so this is a line-start reparse (prose becoming a list or blockquote) ` +
+        `or a moved hard break; nothing was written.`,
+    );
+  }
+}
+
 const SOFT_LIMIT = 100;
 
 // Trailing punctuation that ends a clause. Order doesn't matter; checked as
@@ -441,6 +474,7 @@ function runCli(argv) {
     try {
       reflowed = reflowMarkdown(original);
       assertContentPreserved(original, reflowed, relPath);
+      assertStructurePreserved(original, reflowed, relPath);
     } catch (err) {
       console.error(`normalize-markdown: ${relPath}: ${err.message}`);
       anyError = true;

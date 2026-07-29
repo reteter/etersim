@@ -17,6 +17,7 @@ import {
   reflowMarkdown,
   collectTargets,
   assertContentPreserved,
+  assertStructurePreserved,
 } from "./normalize-markdown.mjs";
 
 const parseMd = (s) => unified().use(remarkParse).use(remarkGfm).parse(s);
@@ -346,5 +347,28 @@ describe("assertContentPreserved — the sweep's corruption guard (#384)", () =>
 
   it("throws when words are reordered", () => {
     expect(() => assertContentPreserved("a b", "b a", "x.md")).toThrow(/x\.md/);
+  });
+});
+
+describe("assertStructurePreserved — the property word-equality cannot see (#384)", () => {
+  it("passes when only line positions moved", () => {
+    expect(() =>
+      assertStructurePreserved("one two three four", "one two\nthree four", "x.md"),
+    ).not.toThrow();
+  });
+
+  // The exact corruption the corpus sweep shipped once: identical words,
+  // prose turned into a bullet list. assertContentPreserved passes this.
+  it("throws when a wrap turns prose into a list, which the content check passes", () => {
+    const before = "removed the worktree + branch, and verified";
+    const after = "removed the worktree\n+ branch, and verified";
+    expect(() => assertContentPreserved(before, after, "x.md")).not.toThrow();
+    expect(() => assertStructurePreserved(before, after, "x.md")).toThrow(/x\.md/);
+  });
+
+  it("throws when prose acquires a blockquote", () => {
+    expect(() =>
+      assertStructurePreserved("see the note > here", "see the note\n> here", "x.md"),
+    ).toThrow(/x\.md/);
   });
 });
