@@ -39,6 +39,7 @@ export const MILESTONE_KINDS = [
   "refitComplete",
   "completed",
 ] as const;
+export type MilestoneKind = (typeof MILESTONE_KINDS)[number];
 export const STANDING_KINDS = ["settlement"] as const;
 export const SNAPSHOT_KINDS = ["netWorth"] as const;
 

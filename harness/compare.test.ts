@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { PolicyBatchReport } from "./batch.ts";
 import { compareAllPairs, compareBatches } from "./compare.ts";
+import { MILESTONE_KINDS } from "./ledgerKinds.ts";
 
 /** A minimal, synthetic PolicyBatchReport fixture — only `policy` and
  *  `aggregate.profitPerDay.median` are read by `compareBatches`, so the rest
- *  is filled with harmless placeholders rather than a real Batch run. */
+ *  is filled with harmless placeholders rather than a real Batch run.
+ *  `milestoneDays` (#446) is a required `BatchAggregate` field `compareBatches`
+ *  never reads — filled with "unreached by every seed" rows to satisfy the
+ *  type, not to exercise the metric here. */
 function fixture(policy: string, profitPerDayMedian: number): PolicyBatchReport {
   return {
     policy,
@@ -17,6 +21,12 @@ function fixture(policy: string, profitPerDayMedian: number): PolicyBatchReport 
       voyages: { median: 0, min: 0, max: 0 },
       fleetHoldUtilization: { median: 0, min: 0, max: 0 },
       netWorthEnd: { median: 0, min: 0, max: 0 },
+      milestoneDays: MILESTONE_KINDS.map((kind) => ({
+        kind,
+        reachedSeeds: 0,
+        totalSeeds: 1,
+        worldDays: { median: 0, min: 0, max: 0 },
+      })),
     },
   };
 }

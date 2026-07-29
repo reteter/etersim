@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Company, LedgerEvent } from "../src/sim/index.ts";
+import { TICKS_PER_DAY } from "../src/sim/index.ts";
 import {
   computeActiveContractLoad,
   computeChurn,
@@ -7,6 +8,7 @@ import {
   computeGoodsPnL,
   computeGuildStandings,
   computeHoldUtilization,
+  computeMilestoneTimings,
   computeNetWorthCurve,
   computeRevenueLines,
   computeSettlementCounts,
@@ -15,6 +17,7 @@ import {
   signedThalers,
   type DaySnapshot,
 } from "./metrics.ts";
+import { MILESTONE_KINDS, THALER_MOVEMENT_KINDS } from "./ledgerKinds.ts";
 
 /** Minimal fixtures — synthetic Ledger arrays, never a real Run's byte-exact
  *  numbers (incidents 0023/0024: no float precision pinned as a fixture).
@@ -248,5 +251,160 @@ describe("reconcileThalers", () => {
     const ledger: LedgerEvent[] = [{ kind: "dockingFee", tick: 1, shipId: "s0", portId: "p1", thalers: 5 }];
     const result = reconcileThalers(ledger, 500, 400); // -100 unaccounted
     expect(result.drift).toBe(-95);
+  });
+
+  /**
+   * #449 — the guard historically covered 3 of 10 thaler-movement kinds
+   * because no real reference-policy Run reaches the building/guild kinds
+   * (no policy founds a Headquarters, builds, enrolls or refits). This
+   * fixture is synthetic on purpose (cheaper than a builder policy written
+   * solely to exercise a guard) and carries every one of
+   * `THALER_MOVEMENT_KINDS` exactly once, at a distinct, known amount, so a
+   * sign bug in any single kind is individually detectable rather than
+   * hiding behind another kind's cancelling error.
+   */
+  describe("reconcileThalers over a synthetic fixture covering all ten THALER_MOVEMENT_KINDS (#449)", () => {
+    const AMOUNTS: Readonly<Record<(typeof THALER_MOVEMENT_KINDS)[number], number>> = {
+      trade: 111, // sell — a credit
+      dockingFee: 7,
+      upkeep: 13,
+      laborFee: 29,
+      enrollmentFee: 41,
+      contractFee: 53, // a credit (settleOne pays it to the Company)
+      autoDraw: 17,
+      rush: 19,
+      founding: 23,
+      refitStart: 31,
+    };
+
+    function buildFixtureLedger(): LedgerEvent[] {
+      return [
+        { kind: "trade", tick: 1, shipId: "s0", portId: "p1", good: "grain", side: "sell", qty: 1, thalers: AMOUNTS.trade },
+        { kind: "dockingFee", tick: 2, shipId: "s0", portId: "p1", thalers: AMOUNTS.dockingFee },
+        { kind: "upkeep", tick: 3, shipId: "s0", thalers: AMOUNTS.upkeep },
+        { kind: "laborFee", tick: 4, thalers: AMOUNTS.laborFee },
+        { kind: "enrollmentFee", tick: 5, guildId: "agrarian", thalers: AMOUNTS.enrollmentFee },
+        { kind: "contractFee", tick: 6, guildId: "agrarian", contractId: "c1", thalers: AMOUNTS.contractFee },
+        { kind: "autoDraw", tick: 7, portId: "p1", good: "grain", qty: 1, thalers: AMOUNTS.autoDraw },
+        { kind: "rush", tick: 8, portId: "p1", good: "grain", qty: 1, thalers: AMOUNTS.rush },
+        { kind: "founding", tick: 9, portId: "p1", thalers: AMOUNTS.founding },
+        { kind: "refitStart", tick: 10, shipId: "s0", portId: "p1", thalers: AMOUNTS.refitStart },
+      ];
+    }
+
+    it("has exactly one event per THALER_MOVEMENT_KINDS entry (fixture completeness, not a partial cover)", () => {
+      const ledger = buildFixtureLedger();
+      for (const kind of THALER_MOVEMENT_KINDS) {
+        expect(ledger.filter((e) => e.kind === kind)).toHaveLength(1);
+      }
+    });
+
+    it("reconciles to zero drift — the known-good baseline every mutation below is compared against", () => {
+      const ledger = buildFixtureLedger();
+      // Credits: trade(sell) + contractFee. Every other kind is a debit.
+      const credits = AMOUNTS.trade + AMOUNTS.contractFee;
+      const debits =
+        AMOUNTS.dockingFee +
+        AMOUNTS.upkeep +
+        AMOUNTS.laborFee +
+        AMOUNTS.enrollmentFee +
+        AMOUNTS.autoDraw +
+        AMOUNTS.rush +
+        AMOUNTS.founding +
+        AMOUNTS.refitStart;
+      const start = 1000;
+      const end = start + credits - debits;
+      const result = reconcileThalers(ledger, start, end);
+      expect(result).toEqual({ ledgerSum: credits - debits, startThalers: start, endThalers: end, drift: 0 });
+    });
+
+    /** The oracle this table-driven test checks `signedThalers` against —
+     *  independent of `signedThalers` itself (it must not read from
+     *  production code, or a real sign bug there would silently move the
+     *  oracle too, and the test below would stop being able to fail). */
+    const EXPECTED_SIGN: Readonly<Record<(typeof THALER_MOVEMENT_KINDS)[number], 1 | -1>> = {
+      trade: 1, // sell — a credit
+      dockingFee: -1,
+      upkeep: -1,
+      laborFee: -1,
+      enrollmentFee: -1,
+      contractFee: 1, // a credit (settleOne pays it to the Company)
+      autoDraw: -1,
+      rush: -1,
+      founding: -1,
+      refitStart: -1,
+    };
+
+    /**
+     * The "prove the guard can fail" evidence (#449 AC), against the real
+     * `reconcileThalers` — not a self-referential recomputation of
+     * `signedThalers`. For each kind `k`, `endWithFlippedK` is the purse
+     * total the Company would show if every kind settled at its
+     * independently-known `EXPECTED_SIGN`, **except** `k`, which is
+     * (wrongly) assumed flipped. `reconcileThalers` computes `ledgerSum` from
+     * the real, correctly-signed `signedThalers` — so if production is
+     * correct, `ledgerSum` disagrees with the flipped-`k` purse total by
+     * exactly `2 * AMOUNTS[k]`, and `drift` is non-zero: this row passes only
+     * because `signedThalers`' sign for `k` matches the oracle. If a future
+     * edit flipped `signedThalers` for kind `k`, `ledgerSum` would equal the
+     * flipped-`k` total exactly, `drift` would be 0, and **this row would go
+     * red** — the mechanical proof the guard can fail, per kind.
+     */
+    it.each(THALER_MOVEMENT_KINDS)("kind %s: signedThalers matches the independent oracle, and a flip of just this kind is caught as drift", (kindToFlip) => {
+      const ledger = buildFixtureLedger();
+      const eventOfKind = ledger.find((e) => e.kind === kindToFlip)!;
+      // Direct per-kind assertion: production's sign for this kind, checked
+      // against the oracle table above (not derived from signedThalers).
+      expect(signedThalers(eventOfKind)).toBe(EXPECTED_SIGN[kindToFlip] * AMOUNTS[kindToFlip]);
+
+      const oracleSum = THALER_MOVEMENT_KINDS.reduce((acc, k) => acc + EXPECTED_SIGN[k] * AMOUNTS[k], 0);
+      // Same total, but kind `k`'s own contribution is negated — the
+      // hypothetical purse total under a flipped sign for `k` alone.
+      const flippedKContribution = oracleSum - 2 * EXPECTED_SIGN[kindToFlip] * AMOUNTS[kindToFlip];
+      const start = 1000;
+      const endWithFlippedK = start + flippedKContribution;
+      const result = reconcileThalers(ledger, start, endWithFlippedK);
+      expect(result.drift, `kind ${kindToFlip}: ${JSON.stringify(result)}`).not.toBe(0);
+    });
+  });
+});
+
+describe("computeMilestoneTimings (#446 — world-days to milestone)", () => {
+  it("reports world-days = tick / TICKS_PER_DAY for every reached milestone, in MILESTONE_KINDS order", () => {
+    const ledger: LedgerEvent[] = [
+      { kind: "founding", tick: TICKS_PER_DAY * 2, portId: "p1", thalers: 300 },
+      { kind: "launch", tick: TICKS_PER_DAY * 3, shipId: "s1", portId: "p1" },
+    ];
+    const timings = computeMilestoneTimings(ledger);
+    expect(timings.map((t) => t.kind)).toEqual(MILESTONE_KINDS);
+
+    const founding = timings.find((t) => t.kind === "founding")!;
+    expect(founding).toEqual({ kind: "founding", reached: true, tick: TICKS_PER_DAY * 2, worldDays: 2 });
+
+    const launch = timings.find((t) => t.kind === "launch")!;
+    expect(launch).toEqual({ kind: "launch", reached: true, tick: TICKS_PER_DAY * 3, worldDays: 3 });
+  });
+
+  it("reports an unreached milestone as its own row (reached: false, worldDays: null) rather than omitting it", () => {
+    const ledger: LedgerEvent[] = [{ kind: "founding", tick: TICKS_PER_DAY, portId: "p1", thalers: 300 }];
+    const timings = computeMilestoneTimings(ledger);
+    expect(timings).toHaveLength(MILESTONE_KINDS.length);
+    const shipyardBuilt = timings.find((t) => t.kind === "shipyardBuilt")!;
+    expect(shipyardBuilt).toEqual({ kind: "shipyardBuilt", reached: false, tick: null, worldDays: null });
+  });
+
+  it("an empty Ledger reports every milestone unreached (vacuity guard)", () => {
+    const timings = computeMilestoneTimings([]);
+    expect(timings).toHaveLength(MILESTONE_KINDS.length);
+    expect(timings.every((t) => !t.reached && t.tick === null && t.worldDays === null)).toBe(true);
+  });
+
+  it("uses the first occurrence when a milestone kind repeats (e.g. two Storehouses completing)", () => {
+    const ledger: LedgerEvent[] = [
+      { kind: "completed", tick: TICKS_PER_DAY * 5, portId: "p1", buildingType: "storehouse" },
+      { kind: "completed", tick: TICKS_PER_DAY * 9, portId: "p2", buildingType: "storehouse" },
+    ];
+    const completed = computeMilestoneTimings(ledger).find((t) => t.kind === "completed")!;
+    expect(completed).toEqual({ kind: "completed", reached: true, tick: TICKS_PER_DAY * 5, worldDays: 5 });
   });
 });

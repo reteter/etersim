@@ -1,6 +1,7 @@
 import { aggregateStat, type PolicyBatchReport, type RunRecord } from "./batch.ts";
 import { compareAllPairs, type PolicyComparison } from "./compare.ts";
 import { GOOD_IDS } from "../src/sim/index.ts";
+import { MILESTONE_KINDS } from "./ledgerKinds.ts";
 
 /**
  * Batch report writer (docs/specs/E11-proving-grounds.md §CLI / §Portfolio
@@ -87,6 +88,17 @@ export const CADENCE_NOTE =
   "A Run applies at most one command batch per tick (the Policy contract is polled once per tick). " +
   "The UI lets a paused player queue several commands between ticks (ADR-0005); a Run cannot reproduce " +
   "that burst cadence. These numbers describe scripted, per-tick play, not human play cadence.";
+
+/** #446 Part 2: the load-bearing unit warning, printed where the reader
+ *  meets a world-days number (owner comment 2026-07-29 — "not politeness; it
+ *  is what keeps the cheap metric from being read as the expensive one"). */
+export const WORLD_DAYS_NOTE =
+  "These are **world-days** — simulated days inside the Run (`event.tick / TICKS_PER_DAY`), " +
+  "not wall-clock hours. The PRD's pacing anchor (`docs/PRD.md` §Where 1.0 ends, ~8–12 hours " +
+  "to credits) is measured in wall-clock time by owner playtest; converting world-days to " +
+  "hours needs a model of player behaviour (speed-ladder usage, pauses) this Batch does not " +
+  "build — that is #448's scope. Do not read a world-days figure as progress against the " +
+  "hours anchor.";
 
 export const VOYAGES_CAVEAT =
   "\"Voyages\" counts dockingFee events — an arrival is only counted if the Company's purse had " +
@@ -176,6 +188,35 @@ export function renderMarkdown(policyBatches: readonly PolicyBatchReport[], repo
     lines.push(
       `| Net worth at Run end (₸) | ${round(batch.aggregate.netWorthEnd.median)} | ${round(batch.aggregate.netWorthEnd.min)} | ${round(batch.aggregate.netWorthEnd.max)} |`,
     );
+    lines.push("");
+
+    lines.push(
+      "### World-days to milestone (median/spread across the seeds that reached it — #446, PRD's pacing lock)",
+    );
+    lines.push("");
+    lines.push(`> **Unit note:** ${WORLD_DAYS_NOTE}`);
+    lines.push("");
+    lines.push("| Milestone | Reached | Median world-days | Min | Max |");
+    lines.push("| --- | --- | --- | --- | --- |");
+    for (const row of batch.aggregate.milestoneDays) {
+      const stat =
+        row.reachedSeeds > 0
+          ? `${round(row.worldDays.median)} | ${round(row.worldDays.min)} | ${round(row.worldDays.max)}`
+          : "not reached by any seed | — | —";
+      lines.push(`| ${row.kind} | ${row.reachedSeeds}/${row.totalSeeds} | ${stat} |`);
+    }
+    lines.push("");
+    lines.push("Per-Run milestone timing (world-days, or \"not reached\" within this Run's day horizon):");
+    lines.push("");
+    lines.push(`| Seed | ${MILESTONE_KINDS.join(" | ")} |`);
+    lines.push(`| --- | ${MILESTONE_KINDS.map(() => "---").join(" | ")} |`);
+    for (const run of batch.runs) {
+      const cells = MILESTONE_KINDS.map((kind) => {
+        const timing = run.metrics.milestoneTimings.find((m) => m.kind === kind);
+        return timing?.reached && timing.worldDays !== null ? `${round(timing.worldDays)}` : "not reached";
+      });
+      lines.push(`| ${run.seed} | ${cells.join(" | ")} |`);
+    }
     lines.push("");
 
     lines.push("### Per-Run detail");

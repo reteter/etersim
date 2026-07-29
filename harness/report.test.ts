@@ -113,4 +113,32 @@ describe("buildReport + renderMarkdown — determinism (spec §Testing: identica
     expect(md).toContain("Revenue lines (₸, always ≥ 0)");
     expect(md).toContain("Cost lines (₸, always ≤ 0)");
   });
+
+  describe("World-days to milestone (#446)", () => {
+    it("names the unit as world-days and states, next to the numbers, that it is not wall-clock hours", () => {
+      const batches = [runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+      const report = buildReport(batches, DAYS);
+      const md = renderMarkdown(batches, report);
+      expect(md).toContain("World-days to milestone");
+      expect(md).toContain("world-days");
+      expect(md).toMatch(/not.*wall-clock hours/);
+      expect(md).toContain("#448");
+    });
+
+    it("lists every MILESTONE_KINDS row in the batch-aggregate table, reached count included, even when no seed reached it", () => {
+      // gradientLoop never founds a Headquarters — every milestone unreached.
+      const batches = [runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+      const report = buildReport(batches, DAYS);
+      const md = renderMarkdown(batches, report);
+      expect(md).toContain("| founding | 0/2 |");
+      expect(md).toContain("| completed | 0/2 |");
+    });
+
+    it("per-Run detail reports 'not reached' for an unreached milestone rather than a blank or a zero", () => {
+      const batches = [runPolicyBatch("gradientLoop", {}, [1], DAYS)];
+      const report = buildReport(batches, DAYS);
+      const md = renderMarkdown(batches, report);
+      expect(md).toContain("not reached");
+    });
+  });
 });
