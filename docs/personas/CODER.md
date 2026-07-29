@@ -80,7 +80,7 @@ criterion mapped to
 its deliverable**, test/typecheck/lint (and affected-e2e) results as observed output,
 every deviation from the criteria or spec flagged, anything surprising the next person
 should know (incident material — report it, don't bury it). "Green" is a data point,
-not a verdict — the wave check and the owner's merge come after. With no driver-side
+not a verdict — the wave check and the driver's merge come after. With no driver-side
 stop-and-wait report in your contract (`CLAUDE.md` §Before you start), this mapping is
 the misread protection: a criterion
 you can't point at a deliverable for is a flag, not a footnote.
