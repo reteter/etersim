@@ -171,6 +171,21 @@ test('proto shots — board reading, board authoring, role highlight, Trasy rost
   await page.screenshot({ path: `${SHOTS}13-trasy-roster.png` });
 });
 
+/** The vendored mockup itself, dark theme, framed on the workbench card so
+ *  the grid and the ribbon are both in frame — the side-by-side reference
+ *  for shots 10-13. Not a test of anything; a capture of the contract. */
+test('proto shot — the vendored mockup, dark theme', async ({ page }) => {
+  await page.goto(`file:///${process.cwd().replace(/\\/g, '/')}/docs/design-notes/m4-workbench-mockup.html`);
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+  await page.getByText('Odtwórz przykład').click();
+  // The mockup's scripted demo plays over several seconds; wait for the
+  // ribbon to actually carry both order chips before shooting.
+  await expect(page.locator('#ribbon .ochip')).toHaveCount(2, { timeout: 30_000 });
+  await page.locator('.ribbon-pane').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `${SHOTS}14-mockup-dark.png` });
+});
+
 /**
  * D6's load-bearing claim, checked rather than asserted in prose: the ribbon
  * is fixed **horizontally**, so more Stops must not make it taller. This is

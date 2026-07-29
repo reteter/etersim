@@ -1313,7 +1313,25 @@ body {
   text-overflow: ellipsis;
 }
 
-/* #468 D2: `.price-board__trend--*` retired with the trend rendering. */
+/* #468 D2: `.price-board__trend--*` retired with the trend rendering.
+
+   The cell-language key under the grid (the mockup's `.legend` strip). */
+.price-board__key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.1rem;
+  margin: 0.55rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #262d39;
+  font-size: 0.7rem;
+  color: #8891a3;
+}
+
+.price-board__key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
 
 /* Board authoring (#394, docs/specs/E16-workbench.md — board fusion): the
    "Nowa trasa" bar, in-draft/suggested row states, and the per-cell order

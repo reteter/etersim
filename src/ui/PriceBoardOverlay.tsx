@@ -804,6 +804,31 @@ export function PriceBoardOverlay({
             );
           })}
           </div>
+          {/* Key for the cell's visual language, under the grid — the
+              mockup's own `.legend` strip, which explains exactly the three
+              channels this reformat introduced. NOT the #127 trend legend
+              D2 removed (that explained a rendering that no longer exists);
+              this explains the one that replaced it. Flagged in the
+              completion report as a mockup-sourced addition beyond the
+              literal task list — strike it if the owner wants the board
+              silent about its own palette. */}
+          <p className="price-board__key">
+            <span className="price-board__key-item">
+              <span className="price-board__bid price-board__bid--best" aria-hidden="true">
+                <span className="price-board__tri">▲</span>
+              </span>
+              bid — sprzedajesz tu
+            </span>
+            <span className="price-board__key-item">
+              <span className="price-board__ask price-board__ask--best" aria-hidden="true">
+                <span className="price-board__tri">▼</span>
+              </span>
+              ask — kupujesz tu
+            </span>
+            <span className="price-board__key-item">
+              <strong>jaśniej</strong> = najlepszy rynek w regionie
+            </span>
+          </p>
           {/* #405 nit 2: RouteRibbon's editable dock only renders at >=2
               Stops (its loop-closure graphic needs at least two nodes), so a
               1-stop draft had no way to remove a mis-clicked first Stop
