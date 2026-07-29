@@ -1,4 +1,4 @@
-import { aggregateStat, type PolicyBatchReport, type RunRecord } from "./batch.ts";
+import { aggregateStat, type AnomalyEntry, type PolicyBatchReport, type RunRecord } from "./batch.ts";
 import { compareAllPairs, type PolicyComparison } from "./compare.ts";
 import { GOOD_IDS } from "../src/sim/index.ts";
 import { MILESTONE_KINDS } from "./ledgerKinds.ts";
@@ -51,17 +51,6 @@ function deepRound(value: unknown, dp: number): unknown {
   return value;
 }
 
-/** The anomaly list's shape (#234 owns *what counts as one*; this wave ships
- *  the plumbing only — every Run already carries `seed` and `replayCommand`,
- *  so a future check has everything it needs to flag one). Always empty in
- *  this wave's reports. */
-export interface AnomalyEntry {
-  readonly policy: string;
-  readonly seed: number;
-  readonly reason: string;
-  readonly replayCommand: string;
-}
-
 /** One policy's rounded, JSON-safe Batch summary — `runs` keeps every field
  *  of `RunRecord` except the raw Ledger (written to its own JSONL file by
  *  the CLI, never embedded in `report.json`). */
@@ -88,6 +77,12 @@ export interface BatchReport {
   readonly worldDaysNote: string;
   readonly policies: readonly PolicyReportEntry[];
   readonly comparisons: readonly PolicyComparison[];
+  /** Runtime invariant violations (#234, `harness/invariants.ts`), flattened
+   *  across every Run in every policy Batch. **Populated only when a Run was
+   *  started with `--enable-assertions`** (`runCommand.ts` → `runPolicyBatch`
+   *  → `runOne` → `runBatchRun`'s `options.enableAssertions`); a Batch run
+   *  without that flag always reports this as `[]`, since the invariant
+   *  checks themselves never ran — not because nothing was wrong. */
   readonly anomalies: readonly AnomalyEntry[];
 }
 
@@ -119,13 +114,17 @@ export function buildReport(policyBatches: readonly PolicyBatchReport[], days: n
     params: batch.params,
     seeds: batch.seeds,
     runs: batch.runs.map((run) => {
-      const { policy, params, seed, days: runDays, replayCommand, metrics } = run;
-      return { policy, params, seed, days: runDays, replayCommand, metrics };
+      const { policy, params, seed, days: runDays, replayCommand, metrics, anomalies } = run;
+      return { policy, params, seed, days: runDays, replayCommand, metrics, anomalies };
     }),
     aggregate: batch.aggregate,
   }));
   const rounded = deepRound(policies, ROUND_DP) as readonly PolicyReportEntry[];
   const comparisons = deepRound(compareAllPairs(policyBatches), ROUND_DP) as readonly PolicyComparison[];
+
+  // Flatten anomalies from all runs across all policy batches (#234).
+  const anomalies: AnomalyEntry[] = policyBatches.flatMap((batch) => batch.runs.flatMap((run) => run.anomalies));
+
   return {
     days,
     roundedToDp: ROUND_DP,
@@ -133,7 +132,7 @@ export function buildReport(policyBatches: readonly PolicyBatchReport[], days: n
     worldDaysNote: WORLD_DAYS_NOTE,
     policies: rounded,
     comparisons,
-    anomalies: [],
+    anomalies,
   };
 }
 
@@ -373,9 +372,11 @@ export function renderMarkdown(policyBatches: readonly PolicyBatchReport[], repo
   lines.push("");
   if (report.anomalies.length === 0) {
     lines.push(
-      "None flagged. This Batch does not run the invariant-assertion checks that decide what counts " +
-        "as an anomaly (that check lands with #234); every Run's seed and replay command are still " +
-        "recorded above for manual replay.",
+      "None flagged. Anomalies are only checked when a Batch is run with `--enable-assertions` " +
+        "(`harness/invariants.ts`, #234) — if this Batch used that flag, zero anomalies means every " +
+        "invariant check passed on every Run; if it did not, this list was never populated in the " +
+        "first place. Every Run's seed and replay command are still recorded above for manual replay " +
+        "either way.",
     );
   } else {
     lines.push("| Policy | Seed | Reason | Replay |");

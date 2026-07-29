@@ -102,6 +102,12 @@ export function printHelp(log: (line: string) => void = console.log): void {
       "             is not read as \"seeds 1..7\".",
       "  --days     World days per Run (a positive integer).",
       "  --out      Output directory for runs/*.jsonl, report.json and report.md.",
+      "  --enable-assertions",
+      "             Check runtime invariants (harness/invariants.ts) at every day",
+      "             boundary and record violations as report.json's anomalies list.",
+      "             Off by default (extra per-day check cost); turn on for an",
+      "             explicit bug-hunt run, e.g. against a deliberately adversarial",
+      "             policy (docs/experiments/README.md §Bug-hunt mode).",
     ].join("\n"),
   );
 }
@@ -121,6 +127,7 @@ export function runCommand(argv: readonly string[], log: (line: string) => void 
       days: { type: "string" },
       out: { type: "string" },
       help: { type: "boolean" },
+      "enable-assertions": { type: "boolean" },
     },
   });
 
@@ -145,11 +152,14 @@ export function runCommand(argv: readonly string[], log: (line: string) => void 
   }
   for (const name of policyNames) resolvePolicy(name, params); // throws "Unknown policy" up front
   const outDir = values.out;
+  const runOptions = { enableAssertions: values["enable-assertions"] === true };
 
   const runsDir = join(outDir, "runs");
   mkdirSync(runsDir, { recursive: true });
 
-  const batches: PolicyBatchReport[] = policyNames.map((name) => runPolicyBatch(name, params, seeds, days));
+  const batches: PolicyBatchReport[] = policyNames.map((name) =>
+    runPolicyBatch(name, params, seeds, days, runOptions),
+  );
 
   for (const batch of batches) {
     for (const run of batch.runs) {

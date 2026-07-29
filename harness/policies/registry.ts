@@ -1,6 +1,7 @@
 import type { Policy } from "../policy.ts";
 import { doNothing } from "./doNothing.ts";
 import { gradientLoop, type GradientLoopParams } from "./gradientLoop.ts";
+import { greedyContractor } from "./greedyContractor.ts";
 
 /**
  * Name → factory lookup for the `harness run --policy <name>` CLI (#233).
@@ -21,9 +22,12 @@ export const POLICY_REGISTRY: Readonly<Record<string, PolicyFactory>> = {
   // surface as gradientLoop's own runtime lookup failure (`world.region.ports
   // .find(...)!`) rather than re-validating the shape here.
   gradientLoop: (params) => gradientLoop(params as GradientLoopParams),
+  // Deliberately adversarial reference policy (docs/experiments/README.md
+  // §Bug-hunt mode) — takes no params.
+  greedyContractor: () => greedyContractor,
 };
 
-export const POLICY_NAMES: readonly string[] = ["doNothing", "gradientLoop"];
+export const POLICY_NAMES: readonly string[] = ["doNothing", "gradientLoop", "greedyContractor"];
 
 export function resolvePolicy(name: string, params: Record<string, unknown>): Policy<unknown> {
   // `Object.hasOwn`, not `POLICY_REGISTRY[name]` truthiness — a plain object

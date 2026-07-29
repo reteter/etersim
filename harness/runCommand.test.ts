@@ -93,6 +93,32 @@ describe("runCommand — CLI smoke", () => {
     expect(md).toContain("gradientLoop");
   });
 
+  it("accepts --enable-assertions on a healthy Batch without changing report shape (smoke — the discriminating proof of the wiring is batch.test.ts's broken-World fixture)", () => {
+    // A healthy Batch with assertions genuinely running gives the same
+    // empty anomalies list a Batch without the flag would — this test only
+    // proves the flag parses and the Batch still completes; it cannot by
+    // itself distinguish "checked and clean" from "never checked" (both
+    // give `[]`). That discrimination is `batch.test.ts`'s deliberately-
+    // broken-World fixture through the real runOne -> buildReport path.
+    const result = runCommand(
+      ["--policy", "doNothing", "--seeds", "1", "--days", "5", "--out", outDir, "--enable-assertions"],
+      log,
+    );
+    expect(result.exitCode).toBe(0);
+    const report = JSON.parse(readFileSync(join(outDir, "report.json"), "utf8"));
+    expect(report.anomalies).toEqual([]);
+  });
+
+  it("without --enable-assertions, report.json's anomalies is the empty default", () => {
+    const result = runCommand(
+      ["--policy", "doNothing", "--seeds", "1", "--days", "5", "--out", outDir],
+      log,
+    );
+    expect(result.exitCode).toBe(0);
+    const report = JSON.parse(readFileSync(join(outDir, "report.json"), "utf8"));
+    expect(report.anomalies).toEqual([]);
+  });
+
   it("is deterministic end to end: two invocations to two directories write byte-identical files", () => {
     const outDir2 = mkdtempSync(join(tmpdir(), "harness-smoke-"));
     try {
