@@ -177,4 +177,53 @@ describe("check-behavior-preserving CLI", () => {
       expect(implicit.stdout).toBe(explicit.stdout);
     });
   });
+
+  it("includes harness/ tests in the corpus (issue #442) — all three dirs contribute non-zero diffs", () => {
+    // Anchor the corpus against a known answer: verify that all three
+    // directories (src/, e2e/, harness/) contribute assertion-line diffs
+    // when test files change in each (incident 0020).
+    withTempRepo((dir) => {
+      // Create test files in src/, e2e/, and harness/ directories.
+      const srcTest = join(dir, "src", "example.test.ts");
+      const e2eTest = join(dir, "e2e", "example.spec.ts");
+      const harnessTest = join(dir, "harness", "example.test.ts");
+
+      mkdirSync(join(dir, "src"), { recursive: true });
+      mkdirSync(join(dir, "e2e"), { recursive: true });
+      mkdirSync(join(dir, "harness"), { recursive: true });
+
+      writeFileSync(srcTest, "it('test', () => { expect(1).toBe(1); });\n");
+      writeFileSync(e2eTest, "test('example', () => { expect(true).toBe(true); });\n");
+      writeFileSync(harnessTest, "it('harness test', () => { expect(0).toBeGreaterThan(-1); });\n");
+
+      const base = commitAll(dir, "initial");
+
+      // Modify each file to add assertion lines.
+      writeFileSync(srcTest, "it('test', () => { expect(1).toBe(1); });\nit('new', () => { expect(2).toBe(2); });\n");
+      writeFileSync(e2eTest, "test('example', () => { expect(true).toBe(true); });\ntest('another', () => { expect(false).toBe(false); });\n");
+      writeFileSync(harnessTest, "it('harness test', () => { expect(0).toBeGreaterThan(-1); });\nit('new', () => { expect(5).toBeLessThan(10); });\n");
+      commitAll(dir, "modify tests");
+
+      const result = runCli([base], dir);
+
+      // The corpus should be listed unconditionally.
+      expect(result.stdout).toContain("scanning corpus:");
+      expect(result.stdout).toContain("src/**/*.test.ts");
+      expect(result.stdout).toContain("e2e/**/*.spec.ts");
+      expect(result.stdout).toContain("harness/**/*.test.ts");
+
+      // All three test files should appear in the assertion diffs (proves each dir contributes non-zero).
+      expect(result.stdout).toContain("src/example.test.ts:");
+      expect(result.stdout).toContain("e2e/example.spec.ts:");
+      expect(result.stdout).toContain("harness/example.test.ts:");
+
+      // Each file should have assertion-line diffs in the output (proves non-zero for each).
+      // The assertions appear on the added lines (marked with +):
+      expect(result.stdout).toMatch(/expect\(2\)\.toBe/); // src
+      expect(result.stdout).toMatch(/expect\(false\)\.toBe/); // e2e
+      expect(result.stdout).toMatch(/expect\(5\)\.toBeLessThan/); // harness
+
+      expect(result.status).toBe(2); // Review needed: assertion diffs found in all dirs.
+    });
+  });
 });

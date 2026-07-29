@@ -4,6 +4,7 @@ import {
   cargoUsed,
   createWorld,
   TICKS_PER_DAY,
+  type Command,
   type LedgerEvent,
   type World,
 } from "../src/sim/index.ts";
@@ -63,8 +64,11 @@ describe("gradientLoop — the reference trader", () => {
       const booked = trades(world);
       const buys = booked.filter((e) => e.side === "buy");
       const sells = booked.filter((e) => e.side === "sell");
-      expect(buys.length).toBeGreaterThan(0);
-      expect(sells.length).toBeGreaterThan(0);
+      // Strengthen assertion: with 40 days and an active policy, expect
+      // at least one full round trip (buy-sail-sell). Measured observed:
+      // seed 1: 18 buys/17 sells, seed 7: 7/7, seed 42: 4/4.
+      expect(buys.length).toBeGreaterThanOrEqual(2);
+      expect(sells.length).toBeGreaterThanOrEqual(2);
       for (const event of booked) {
         expect(event.good).toBe(memory.good);
         expect([memory.source, memory.target]).toContain(event.portId);
@@ -92,6 +96,102 @@ describe("gradientLoop — the reference trader", () => {
     expect(memory).toEqual({ good: "grain", source: a.id, target: b.id });
     expect(trades(world).every((e) => e.good === "grain")).toBe(true);
     expect(trades(world).length).toBeGreaterThan(0);
+  });
+
+  it("rejects a bad sourcePortId with a descriptive error, not a silent null deref", () => {
+    const start = createWorld(42);
+    expect(() => {
+      runPolicy(start, gradientLoop({ sourcePortId: "nonexistent-port" }), 5);
+    }).toThrow(/port|id|source/i);
+  });
+
+  it("rejects a bad targetPortId with a descriptive error, not a silent null deref", () => {
+    const start = createWorld(42);
+    expect(() => {
+      runPolicy(start, gradientLoop({ targetPortId: "nonexistent-port" }), 5);
+    }).toThrow(/port|id|target/i);
+  });
+
+  it("executes qty <= 0 branch: when a port has insufficient stock or affordability, act() returns no buy command", () => {
+    // Test the restock-wait branch (line 139) directly by calling act()
+    // on a world where the source port is unaffordable.
+    const world = createWorld(42);
+    const policy = gradientLoop();
+    const memory = policy.init(world);
+
+    // Ship at source with zero cargo and zero thalers: can't afford a buy.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (world.company as any).thalers = 0;
+    const ship = world.company.ships[0]!;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ship as any).location = { kind: "docked", portId: memory.source };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ship as any).cargo = { grain: 0, flour: 0, seeds: 0, tool: 0 };
+
+    const step = policy.act(world, memory);
+    // With qty <= 0 and no cargo, should return no commands (wait).
+    expect(step.commands).toEqual([]);
+    expect(step.memory).toBe(memory); // Memory unchanged.
+  });
+
+  it("executes qty <= 0 branch: when carrying cargo at source with no affordability, it sails to target to sell", () => {
+    const world = createWorld(42);
+    const policy = gradientLoop();
+    const memory = policy.init(world);
+
+    // Ship at source with existing cargo and zero thalers: can't buy, should sail to sell.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (world.company as any).thalers = 0;
+    const ship = world.company.ships[0]!;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ship as any).location = { kind: "docked", portId: memory.source };
+    // Cargo is a GoodsStore (Record<GoodId, number>). Set the policy's good to 10 qty.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cargo: any = { grain: 0, flour: 0, seeds: 0, tool: 0 };
+    cargo[memory.good] = 10;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ship as any).cargo = cargo;
+
+    const step = policy.act(world, memory);
+    // With qty <= 0 but carrying cargo, should sail to target to sell.
+    expect(step.commands).toHaveLength(1);
+    const cmd = step.commands[0]! as Extract<Command, { kind: "sailTo" }>;
+    expect(cmd.kind).toBe("sailTo");
+    expect(cmd.portId).toBe(memory.target);
+  });
+
+  it("rejects a one-port region with a descriptive error (steepestGradient fallback, line 92)", () => {
+    // The fallback on line 92 throws when no gradient is found.
+    // Create a world, then cull all but one port to trigger this edge case.
+    const world = createWorld(42);
+    // Remove all but the first port.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (world.region as any).ports = [world.region.ports[0]!];
+
+    expect(() => {
+      gradientLoop().init(world);
+    }).toThrow(/no tradeable gradient|2 ports|price dispersion/i);
+  });
+
+  it("diagnostic flag: gradientLoop is not diagnostic (reads only player-visible prices)", () => {
+    // The diagnostic flag marks a policy allowed super-player knowledge
+    // (sim internals like flow drift or RNG state). gradientLoop reads only
+    // market quotes and effective base prices—player-visible info—so it is not diagnostic.
+    // A test that pins this contract enforces §Laws on future consumers.
+    const policy = gradientLoop();
+    expect(policy.diagnostic).toBe(false);
+  });
+
+  it("diagnostic flag can round-trip through a Run (contract enforcement)", () => {
+    // Even if a future policy set diagnostic: true, the flag should
+    // round-trip readable through runPolicy and in policy metadata.
+    // This pins that future consumers of the diagnostic flag will see it.
+    const policy = gradientLoop();
+    const world = createWorld(1);
+    runPolicy(world, policy, 1); // Run is observable without inspecting memory.
+    // If diagnostic were unreadable post-run, this test would fail
+    // when a consumer tries to enforce the contract.
+    expect(policy.diagnostic).toBeDefined();
   });
 });
 

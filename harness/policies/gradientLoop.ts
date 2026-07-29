@@ -87,9 +87,14 @@ function steepestGradient(world: World): GradientLoopMemory {
   }
   // Every generated region has cross-port dispersion in every good
   // (economy.test.ts's invariant suite pins exactly that), so `best` is
-  // always found; the fallback keeps the policy total rather than throwing
-  // inside a Batch.
-  return best ?? { good: GOOD_IDS[0], source: world.region.ports[0].id, target: world.region.ports[1].id };
+  // always found. If no gradient exists (edge case: one-port or all-zero-price
+  // region), throw rather than returning an invalid loop.
+  if (!best) {
+    throw new Error(
+      `steepestGradient: no tradeable gradient found in the region (need at least 2 ports with price dispersion)`,
+    );
+  }
+  return best;
 }
 
 /**
@@ -102,12 +107,36 @@ function steepestGradient(world: World): GradientLoopMemory {
 export function gradientLoop(params: GradientLoopParams = {}): Policy<GradientLoopMemory> {
   return {
     name: "gradientLoop",
+    // Not diagnostic: the policy reads only player-visible prices (market quotes
+    // and effective base prices), not sim internals like flow drift or RNG state.
+    diagnostic: false,
     init(world) {
       const found = steepestGradient(world);
+      const source = params.sourcePortId ?? found.source;
+      const target = params.targetPortId ?? found.target;
+
+      // Validate explicit port IDs, if provided.
+      if (params.sourcePortId) {
+        const sourcePortExists = world.region.ports.some((p) => p.id === params.sourcePortId);
+        if (!sourcePortExists) {
+          throw new Error(
+            `gradientLoop: sourcePortId "${params.sourcePortId}" does not exist in this region`,
+          );
+        }
+      }
+      if (params.targetPortId) {
+        const targetPortExists = world.region.ports.some((p) => p.id === params.targetPortId);
+        if (!targetPortExists) {
+          throw new Error(
+            `gradientLoop: targetPortId "${params.targetPortId}" does not exist in this region`,
+          );
+        }
+      }
+
       return {
         good: params.good ?? found.good,
-        source: params.sourcePortId ?? found.source,
-        target: params.targetPortId ?? found.target,
+        source,
+        target,
       };
     },
     act(world, memory) {

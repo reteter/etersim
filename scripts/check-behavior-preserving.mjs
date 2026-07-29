@@ -47,8 +47,8 @@ Usage:
   headRef   optional. Git ref to diff to. Defaults to HEAD.
 
 What it does:
-  1. Finds test files changed between baseRef and headRef, matching either
-     src/**/*.test.ts(x) or e2e/**/*.spec.ts.
+  1. Finds test files changed between baseRef and headRef, matching any of:
+     src/**/*.test.ts(x), e2e/**/*.spec.ts, or harness/**/*.test.ts.
   2. Hard-fails (exit 1) if any matched test file was added or deleted —
      "no test added or removed" is a literal, mechanical check.
   3. For every matched file that was only modified, prints every +/- diff
@@ -67,7 +67,7 @@ Exit codes: 0 clean, 1 hard violation (test added/removed), 2 review needed
 the full contract.
 `;
 
-const TEST_FILE_RE = /^src\/.*\.test\.tsx?$|^e2e\/.*\.spec\.ts$/;
+const TEST_FILE_RE = /^src\/.*\.test\.tsx?$|^e2e\/.*\.spec\.ts$|^harness\/.*\.test\.ts$/;
 
 // Non-exhaustive on purpose (documented in --help and the header comment
 // above) — extend this list as new matcher styles show up in the suite.
@@ -178,9 +178,24 @@ export function run(argv) {
   const nameStatusRaw = git(["diff", "--name-status", baseRef, headRef]);
   const changed = parseNameStatus(nameStatusRaw).filter((rec) => TEST_FILE_RE.test(rec.path));
 
+  // Extract directories that *changed* (for display after results).
+  const dirsChanged = new Set();
+  for (const rec of changed) {
+    const match = rec.path.match(/^([^/]+)\//);
+    if (match) {
+      dirsChanged.add(match[1]);
+    }
+  }
+
   console.log(
     `check-behavior-preserving: ${changed.length} test file(s) changed between ${baseRef} and ${headRef}.`,
   );
+  console.log(
+    `check-behavior-preserving: scanning corpus: src/**/*.test.ts(x), e2e/**/*.spec.ts, harness/**/*.test.ts`,
+  );
+  if (dirsChanged.size > 0) {
+    console.log(`check-behavior-preserving: directories with changes: ${Array.from(dirsChanged).sort().join(", ")}`);
+  }
 
   const added = changed.filter((rec) => rec.status === "A");
   const deleted = changed.filter((rec) => rec.status === "D");
