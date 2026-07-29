@@ -148,24 +148,24 @@ export function aggregateStat(values: readonly number[]): AggregateStat {
   return { median: median(sorted), min: sorted[0], max: sorted[sorted.length - 1] };
 }
 
-/** Per-seed medians/spreads across a Batch, over the metrics an agent reads
- *  first (spec §Evaluation model / §Portfolio note): profit/day, voyages,
- *  fleet hold utilization, final net worth. Every other per-Run metric stays
- *  reachable in `runs[].metrics` for a deeper read. */
 /** One milestone kind's cross-seed distribution (#446 — "how long until the
  *  first ship launches, across N seeds" as a distribution instead of an
- *  anecdote). `worldDays` medians/spreads **only over the seeds that
- *  actually reached this milestone** — reading it without `reachedSeeds` is
- *  a category error (e.g. `reachedSeeds: 0` reports `{median:0,min:0,max:0}`
- *  by `aggregateStat`'s own empty-input convention, which means "no seed
- *  reached it", not "reached at world-day 0"). Units are **world-days, not
- *  wall-clock hours** — see `computeMilestoneTimings` (`harness/metrics.ts`)
- *  and PRD §Where 1.0 ends. */
+ *  anecdote). `worldDays` is `null` when `reachedSeeds === 0` — a milestone
+ *  no seed reached is **unrepresentable** as a number rather than encoded as
+ *  `{median:0,min:0,max:0}` (wave-check finding, B1: `aggregateStat([])`'s
+ *  empty-input convention, read by a consumer that never checks
+ *  `reachedSeeds`, silently reads as "reached at world-day 0" — the same
+ *  "confidently wrong number, no crash" class #449 exists to close, one
+ *  level up). Mirrors the per-Run shape one level down
+ *  (`MilestoneTiming.worldDays: number | null`, `harness/metrics.ts`) —
+ *  one encoding for "unreached", not two. Units are **world-days, not
+ *  wall-clock hours** — see `computeMilestoneTimings` and PRD §Where 1.0
+ *  ends. */
 export interface MilestoneAggregate {
   readonly kind: MilestoneKind;
   readonly reachedSeeds: number;
   readonly totalSeeds: number;
-  readonly worldDays: AggregateStat;
+  readonly worldDays: AggregateStat | null;
 }
 
 /** Per-kind medians/spreads over `MILESTONE_KINDS`, in that array's canonical
@@ -180,11 +180,16 @@ export function aggregateMilestones(runs: readonly RunRecord[]): readonly Milest
       kind,
       reachedSeeds: reached.length,
       totalSeeds: runs.length,
-      worldDays: aggregateStat(worldDaysValues),
+      worldDays: reached.length > 0 ? aggregateStat(worldDaysValues) : null,
     };
   });
 }
 
+/** Per-seed medians/spreads across a Batch, over the metrics an agent reads
+ *  first (spec §Evaluation model / §Portfolio note): profit/day, voyages,
+ *  fleet hold utilization, final net worth, world-days to milestone
+ *  (`milestoneDays`, #446). Every other per-Run metric stays reachable in
+ *  `runs[].metrics` for a deeper read. */
 export interface BatchAggregate {
   readonly profitPerDay: AggregateStat;
   readonly voyages: AggregateStat;

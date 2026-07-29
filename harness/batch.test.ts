@@ -172,6 +172,11 @@ describe("runPolicyBatch — N Runs over a seed grid, aggregated", () => {
       for (const row of batch.aggregate.milestoneDays) {
         expect(row.reachedSeeds).toBe(0);
         expect(row.totalSeeds).toBe(3);
+        // wave-check B1: unreached must be unrepresentable as a number, never
+        // aggregateStat([])'s {median:0,min:0,max:0} — a consumer reading
+        // .worldDays.median without checking reachedSeeds would otherwise
+        // read "reached at world-day 0", not "never reached".
+        expect(row.worldDays).toBeNull();
       }
     });
 

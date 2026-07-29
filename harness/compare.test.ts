@@ -25,7 +25,7 @@ function fixture(policy: string, profitPerDayMedian: number): PolicyBatchReport 
         kind,
         reachedSeeds: 0,
         totalSeeds: 1,
-        worldDays: { median: 0, min: 0, max: 0 },
+        worldDays: null,
       })),
     },
   };

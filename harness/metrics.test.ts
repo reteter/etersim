@@ -258,113 +258,140 @@ describe("reconcileThalers", () => {
    * because no real reference-policy Run reaches the building/guild kinds
    * (no policy founds a Headquarters, builds, enrolls or refits). This
    * fixture is synthetic on purpose (cheaper than a builder policy written
-   * solely to exercise a guard) and carries every one of
-   * `THALER_MOVEMENT_KINDS` exactly once, at a distinct, known amount, so a
-   * sign bug in any single kind is individually detectable rather than
-   * hiding behind another kind's cancelling error.
+   * solely to exercise a guard).
+   *
+   * **Cases, not kinds** (wave-check finding N1): `trade` has two distinct
+   * sign cases (`sell` a credit, `buy` a debit) and a fixture covering only
+   * one of them lets a `buy`-side sign bug hide behind the older
+   * `signedThalers`/`computeGoodsPnL` unit tests instead of this guard. Each
+   * of the 11 cases below (10 kinds, `trade` split into `sell`/`buy`) appears
+   * exactly once, at a distinct, known, non-zero amount, so a sign bug in any
+   * single case is individually detectable — no other case's contribution
+   * can cancel it.
    */
-  describe("reconcileThalers over a synthetic fixture covering all ten THALER_MOVEMENT_KINDS (#449)", () => {
-    const AMOUNTS: Readonly<Record<(typeof THALER_MOVEMENT_KINDS)[number], number>> = {
-      trade: 111, // sell — a credit
-      dockingFee: 7,
-      upkeep: 13,
-      laborFee: 29,
-      enrollmentFee: 41,
-      contractFee: 53, // a credit (settleOne pays it to the Company)
-      autoDraw: 17,
-      rush: 19,
-      founding: 23,
-      refitStart: 31,
-    };
-
-    function buildFixtureLedger(): LedgerEvent[] {
-      return [
-        { kind: "trade", tick: 1, shipId: "s0", portId: "p1", good: "grain", side: "sell", qty: 1, thalers: AMOUNTS.trade },
-        { kind: "dockingFee", tick: 2, shipId: "s0", portId: "p1", thalers: AMOUNTS.dockingFee },
-        { kind: "upkeep", tick: 3, shipId: "s0", thalers: AMOUNTS.upkeep },
-        { kind: "laborFee", tick: 4, thalers: AMOUNTS.laborFee },
-        { kind: "enrollmentFee", tick: 5, guildId: "agrarian", thalers: AMOUNTS.enrollmentFee },
-        { kind: "contractFee", tick: 6, guildId: "agrarian", contractId: "c1", thalers: AMOUNTS.contractFee },
-        { kind: "autoDraw", tick: 7, portId: "p1", good: "grain", qty: 1, thalers: AMOUNTS.autoDraw },
-        { kind: "rush", tick: 8, portId: "p1", good: "grain", qty: 1, thalers: AMOUNTS.rush },
-        { kind: "founding", tick: 9, portId: "p1", thalers: AMOUNTS.founding },
-        { kind: "refitStart", tick: 10, shipId: "s0", portId: "p1", thalers: AMOUNTS.refitStart },
-      ];
+  describe("reconcileThalers over a synthetic fixture covering all ten THALER_MOVEMENT_KINDS / eleven sign cases (#449)", () => {
+    /** One movement's known amount, its correct sign (independent oracle —
+     *  must not read from `signedThalers`, or a real sign bug there would
+     *  silently move the oracle too and the test below would stop being able
+     *  to fail), and the event carrying it. */
+    interface SignCase {
+      readonly id: string;
+      readonly kind: (typeof THALER_MOVEMENT_KINDS)[number];
+      readonly amount: number;
+      readonly expectedSign: 1 | -1;
+      readonly event: LedgerEvent;
     }
 
-    it("has exactly one event per THALER_MOVEMENT_KINDS entry (fixture completeness, not a partial cover)", () => {
+    const CASES: readonly SignCase[] = [
+      {
+        id: "trade-sell",
+        kind: "trade",
+        amount: 111,
+        expectedSign: 1, // a credit
+        event: { kind: "trade", tick: 1, shipId: "s0", portId: "p1", good: "grain", side: "sell", qty: 1, thalers: 111 },
+      },
+      {
+        id: "trade-buy",
+        kind: "trade",
+        amount: 77,
+        expectedSign: -1, // a debit — the case the #233 fixture never reached
+        event: { kind: "trade", tick: 1, shipId: "s1", portId: "p1", good: "grain", side: "buy", qty: 1, thalers: 77 },
+      },
+      {
+        id: "dockingFee",
+        kind: "dockingFee",
+        amount: 7,
+        expectedSign: -1,
+        event: { kind: "dockingFee", tick: 2, shipId: "s0", portId: "p1", thalers: 7 },
+      },
+      { id: "upkeep", kind: "upkeep", amount: 13, expectedSign: -1, event: { kind: "upkeep", tick: 3, shipId: "s0", thalers: 13 } },
+      { id: "laborFee", kind: "laborFee", amount: 29, expectedSign: -1, event: { kind: "laborFee", tick: 4, thalers: 29 } },
+      {
+        id: "enrollmentFee",
+        kind: "enrollmentFee",
+        amount: 41,
+        expectedSign: -1,
+        event: { kind: "enrollmentFee", tick: 5, guildId: "agrarian", thalers: 41 },
+      },
+      {
+        id: "contractFee",
+        kind: "contractFee",
+        amount: 53,
+        expectedSign: 1, // a credit (settleOne pays it to the Company)
+        event: { kind: "contractFee", tick: 6, guildId: "agrarian", contractId: "c1", thalers: 53 },
+      },
+      {
+        id: "autoDraw",
+        kind: "autoDraw",
+        amount: 17,
+        expectedSign: -1,
+        event: { kind: "autoDraw", tick: 7, portId: "p1", good: "grain", qty: 1, thalers: 17 },
+      },
+      { id: "rush", kind: "rush", amount: 19, expectedSign: -1, event: { kind: "rush", tick: 8, portId: "p1", good: "grain", qty: 1, thalers: 19 } },
+      { id: "founding", kind: "founding", amount: 23, expectedSign: -1, event: { kind: "founding", tick: 9, portId: "p1", thalers: 23 } },
+      {
+        id: "refitStart",
+        kind: "refitStart",
+        amount: 31,
+        expectedSign: -1,
+        event: { kind: "refitStart", tick: 10, shipId: "s0", portId: "p1", thalers: 31 },
+      },
+    ];
+
+    function buildFixtureLedger(): readonly LedgerEvent[] {
+      return CASES.map((c) => c.event);
+    }
+
+    it("carries every THALER_MOVEMENT_KINDS entry — trade with both a sell and a buy case, every other kind once", () => {
       const ledger = buildFixtureLedger();
       for (const kind of THALER_MOVEMENT_KINDS) {
-        expect(ledger.filter((e) => e.kind === kind)).toHaveLength(1);
+        const expectedCount = kind === "trade" ? 2 : 1;
+        expect(ledger.filter((e) => e.kind === kind), `kind ${kind}`).toHaveLength(expectedCount);
       }
+      expect(ledger.filter((e) => e.kind === "trade" && e.side === "sell")).toHaveLength(1);
+      expect(ledger.filter((e) => e.kind === "trade" && e.side === "buy")).toHaveLength(1);
     });
 
     it("reconciles to zero drift — the known-good baseline every mutation below is compared against", () => {
       const ledger = buildFixtureLedger();
-      // Credits: trade(sell) + contractFee. Every other kind is a debit.
-      const credits = AMOUNTS.trade + AMOUNTS.contractFee;
-      const debits =
-        AMOUNTS.dockingFee +
-        AMOUNTS.upkeep +
-        AMOUNTS.laborFee +
-        AMOUNTS.enrollmentFee +
-        AMOUNTS.autoDraw +
-        AMOUNTS.rush +
-        AMOUNTS.founding +
-        AMOUNTS.refitStart;
+      const oracleSum = CASES.reduce((acc, c) => acc + c.expectedSign * c.amount, 0);
       const start = 1000;
-      const end = start + credits - debits;
+      const end = start + oracleSum;
       const result = reconcileThalers(ledger, start, end);
-      expect(result).toEqual({ ledgerSum: credits - debits, startThalers: start, endThalers: end, drift: 0 });
+      expect(result).toEqual({ ledgerSum: oracleSum, startThalers: start, endThalers: end, drift: 0 });
     });
-
-    /** The oracle this table-driven test checks `signedThalers` against —
-     *  independent of `signedThalers` itself (it must not read from
-     *  production code, or a real sign bug there would silently move the
-     *  oracle too, and the test below would stop being able to fail). */
-    const EXPECTED_SIGN: Readonly<Record<(typeof THALER_MOVEMENT_KINDS)[number], 1 | -1>> = {
-      trade: 1, // sell — a credit
-      dockingFee: -1,
-      upkeep: -1,
-      laborFee: -1,
-      enrollmentFee: -1,
-      contractFee: 1, // a credit (settleOne pays it to the Company)
-      autoDraw: -1,
-      rush: -1,
-      founding: -1,
-      refitStart: -1,
-    };
 
     /**
      * The "prove the guard can fail" evidence (#449 AC), against the real
      * `reconcileThalers` — not a self-referential recomputation of
-     * `signedThalers`. For each kind `k`, `endWithFlippedK` is the purse
-     * total the Company would show if every kind settled at its
-     * independently-known `EXPECTED_SIGN`, **except** `k`, which is
-     * (wrongly) assumed flipped. `reconcileThalers` computes `ledgerSum` from
-     * the real, correctly-signed `signedThalers` — so if production is
-     * correct, `ledgerSum` disagrees with the flipped-`k` purse total by
-     * exactly `2 * AMOUNTS[k]`, and `drift` is non-zero: this row passes only
-     * because `signedThalers`' sign for `k` matches the oracle. If a future
-     * edit flipped `signedThalers` for kind `k`, `ledgerSum` would equal the
-     * flipped-`k` total exactly, `drift` would be 0, and **this row would go
-     * red** — the mechanical proof the guard can fail, per kind.
+     * `signedThalers`. For each case `c`, `endWithFlippedC` is the purse
+     * total the Company would show if every case settled at its
+     * independently-known `expectedSign`, **except** `c`, which is (wrongly)
+     * assumed flipped. `reconcileThalers` computes `ledgerSum` from the real,
+     * correctly-signed `signedThalers` — so if production is correct,
+     * `ledgerSum` disagrees with the flipped-`c` purse total by exactly
+     * `2 * c.amount`, and `drift` is non-zero: this row passes only because
+     * `signedThalers`' sign for `c` matches the oracle. If a future edit
+     * flipped `signedThalers` for this case (including a `trade`/`side`
+     * regression that only hits `buy`, not `sell` — N1's own gap, now its
+     * own row), `ledgerSum` would equal the flipped-`c` total exactly,
+     * `drift` would be 0, and **this row would go red** — the mechanical
+     * proof the guard can fail, per sign case, not merely per kind.
      */
-    it.each(THALER_MOVEMENT_KINDS)("kind %s: signedThalers matches the independent oracle, and a flip of just this kind is caught as drift", (kindToFlip) => {
+    it.each(CASES)("case $id: signedThalers matches the independent oracle, and a flip of just this case is caught as drift", (c) => {
       const ledger = buildFixtureLedger();
-      const eventOfKind = ledger.find((e) => e.kind === kindToFlip)!;
-      // Direct per-kind assertion: production's sign for this kind, checked
+      // Direct per-case assertion: production's sign for this case, checked
       // against the oracle table above (not derived from signedThalers).
-      expect(signedThalers(eventOfKind)).toBe(EXPECTED_SIGN[kindToFlip] * AMOUNTS[kindToFlip]);
+      expect(signedThalers(c.event)).toBe(c.expectedSign * c.amount);
 
-      const oracleSum = THALER_MOVEMENT_KINDS.reduce((acc, k) => acc + EXPECTED_SIGN[k] * AMOUNTS[k], 0);
-      // Same total, but kind `k`'s own contribution is negated — the
-      // hypothetical purse total under a flipped sign for `k` alone.
-      const flippedKContribution = oracleSum - 2 * EXPECTED_SIGN[kindToFlip] * AMOUNTS[kindToFlip];
+      const oracleSum = CASES.reduce((acc, other) => acc + other.expectedSign * other.amount, 0);
+      // Same total, but case `c`'s own contribution is negated — the
+      // hypothetical purse total under a flipped sign for `c` alone.
+      const flippedCContribution = oracleSum - 2 * c.expectedSign * c.amount;
       const start = 1000;
-      const endWithFlippedK = start + flippedKContribution;
-      const result = reconcileThalers(ledger, start, endWithFlippedK);
-      expect(result.drift, `kind ${kindToFlip}: ${JSON.stringify(result)}`).not.toBe(0);
+      const endWithFlippedC = start + flippedCContribution;
+      const result = reconcileThalers(ledger, start, endWithFlippedC);
+      expect(result.drift, `case ${c.id}: ${JSON.stringify(result)}`).not.toBe(0);
     });
   });
 });

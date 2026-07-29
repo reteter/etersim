@@ -79,6 +79,13 @@ export interface BatchReport {
   /** ADR-0005 cadence note, restated here (not only in code comments) —
    *  stated once in the report, next to the numbers it qualifies. */
   readonly cadenceNote: string;
+  /** #446 Part 2's unit warning, carried onto `report.json` (wave-check
+   *  finding B2) — `report.json` is a report surface (spec §Evaluation
+   *  model, "aggregate report (JSON + Markdown summary)") and the one #234's
+   *  assertions and any agent consumer actually read; the note travels with
+   *  `policies[].aggregate.milestoneDays` the same way `cadenceNote` already
+   *  travels with the profit/voyages numbers. */
+  readonly worldDaysNote: string;
   readonly policies: readonly PolicyReportEntry[];
   readonly comparisons: readonly PolicyComparison[];
   readonly anomalies: readonly AnomalyEntry[];
@@ -123,6 +130,7 @@ export function buildReport(policyBatches: readonly PolicyBatchReport[], days: n
     days,
     roundedToDp: ROUND_DP,
     cadenceNote: CADENCE_NOTE,
+    worldDaysNote: WORLD_DAYS_NOTE,
     policies: rounded,
     comparisons,
     anomalies: [],
@@ -200,7 +208,7 @@ export function renderMarkdown(policyBatches: readonly PolicyBatchReport[], repo
     lines.push("| --- | --- | --- | --- | --- |");
     for (const row of batch.aggregate.milestoneDays) {
       const stat =
-        row.reachedSeeds > 0
+        row.worldDays !== null
           ? `${round(row.worldDays.median)} | ${round(row.worldDays.min)} | ${round(row.worldDays.max)}`
           : "not reached by any seed | — | —";
       lines.push(`| ${row.kind} | ${row.reachedSeeds}/${row.totalSeeds} | ${stat} |`);

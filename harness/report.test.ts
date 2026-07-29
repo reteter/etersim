@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runPolicyBatch } from "./batch.ts";
-import { buildReport, renderMarkdown, round } from "./report.ts";
+import { buildReport, renderMarkdown, round, WORLD_DAYS_NOTE } from "./report.ts";
 
 describe("round", () => {
   it("rounds to the given decimal place", () => {
@@ -139,6 +139,22 @@ describe("buildReport + renderMarkdown — determinism (spec §Testing: identica
       const report = buildReport(batches, DAYS);
       const md = renderMarkdown(batches, report);
       expect(md).toContain("not reached");
+    });
+
+    it("wave-check B2: report.json carries the unit note (a report surface, not just the Markdown)", () => {
+      const batches = [runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+      const report = buildReport(batches, DAYS);
+      expect(report.worldDaysNote).toBe(WORLD_DAYS_NOTE);
+      expect(report.worldDaysNote).toMatch(/not.*wall-clock hours/);
+    });
+
+    it("wave-check B1: report.json's milestoneDays.worldDays is null, not {median:0,min:0,max:0}, when no seed reached it", () => {
+      // gradientLoop never founds a Headquarters — every milestone unreached.
+      const batches = [runPolicyBatch("gradientLoop", {}, seeds, DAYS)];
+      const report = buildReport(batches, DAYS);
+      const founding = report.policies[0].aggregate.milestoneDays.find((m) => m.kind === "founding")!;
+      expect(founding.reachedSeeds).toBe(0);
+      expect(founding.worldDays).toBeNull();
     });
   });
 });

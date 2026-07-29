@@ -52,7 +52,14 @@ export {
   type ShipHoldUtilization,
   type ThalerReconciliation,
 } from "./metrics.ts";
-export { MILESTONE_KINDS, type MilestoneKind } from "./ledgerKinds.ts";
+export {
+  COST_KINDS,
+  MILESTONE_KINDS,
+  REVENUE_KINDS,
+  THALER_MOVEMENT_KINDS,
+  type LedgerKind,
+  type MilestoneKind,
+} from "./ledgerKinds.ts";
 export { compareAllPairs, compareBatches, type PolicyComparison } from "./compare.ts";
 export { parseSeeds, printHelp, runCommand, type RunCommandResult } from "./runCommand.ts";
 export {
