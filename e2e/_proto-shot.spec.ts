@@ -287,4 +287,22 @@ test('D6 — a 7-Stop route is exactly as tall as a 2-Stop route', async ({ page
   expect(manyStop!.height).toBe(twoStop!.height);
   expect(manyStop!.width).toBe(twoStop!.width);
   await page.screenshot({ path: `${SHOTS}crop-many-stops.png` });
+
+  // The chip block is wider than its Stop column and bleeds into the legs on
+  // both sides, so the dense case — adjacent Stops both carrying orders at
+  // full Stop count — is where chips could collide. Nothing else renders it.
+  await rows.nth(2).locator('.price-board__cell-btn').nth(0).click();
+  await rows.nth(3).locator('.price-board__cell-btn').nth(0).click();
+  await page.waitForTimeout(700);
+  await dialog.locator('.route-ribbon').screenshot({
+    path: `${SHOTS}15-dense-route-with-chips.png`,
+  });
+
+  // Measured, not eyeballed: the two chips must not overlap horizontally.
+  const chips = dialog.locator('.route-ribbon__chip');
+  await expect(chips).toHaveCount(2);
+  const a = (await chips.nth(0).boundingBox())!;
+  const b = (await chips.nth(1).boundingBox())!;
+  const [left, right] = a.x <= b.x ? [a, b] : [b, a];
+  expect(left.x + left.width).toBeLessThanOrEqual(right.x);
 });

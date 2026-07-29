@@ -402,9 +402,20 @@ export function PriceBoardOverlay({
           ? `sprzedaj całość · ${GOOD_NAME_PL[good]}`
           : `${ORDER_VERB_PL[order.kind]}${qtyPart} · ${GOOD_NAME_PL[good]}`;
       const legalKinds = legalOrderKinds(world.company.buildings, port.id, good);
+      // Dense-Route short form: keep the **good name**, drop the verb word,
+      // and let the same triangle the grid's cells use carry the direction
+      // (▲ = you sell / bid, ▼ = you buy / ask, #468 D4). Truncating the full
+      // phrase instead would eat the good name first and leave "sprzedaj c…".
+      const shortLabel =
+        order.kind === "buy"
+          ? `▼ ${GOOD_NAME_PL[good]}`
+          : order.kind === "sell"
+            ? `▲ ${GOOD_NAME_PL[good]}`
+            : `${ORDER_VERB_PL[order.kind]} · ${GOOD_NAME_PL[good]}`;
       return {
         key: cellKey,
         label,
+        shortLabel,
         side: order.kind === "buy" ? "buy" : order.kind === "sell" ? "sell" : "plain",
         ariaLabel: `${GOOD_NAME_PL[good]}: więcej opcji`,
         onClick: () => toggleExpanded(cellKey, good),

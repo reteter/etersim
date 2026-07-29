@@ -2450,21 +2450,56 @@ body {
    port, rendered as a row of Stops each holding a column of chips. */
 /* Wider than its Stop column, centred, and bleeding equally into the legs on
    both sides via negative margins — so a chip can be legible without
-   participating in the rail's width (see `.route-ribbon__node`). */
+   participating in the rail's width (see `.route-ribbon__node`).
+
+   The bleed is only safe while the Stops are far apart. On a long Route the
+   slot pitch drops below the chip block's width and two adjacent Stops
+   carrying orders overlap — verified, it happened. `data-dense` (set by the
+   component past 4 Stops) drops the block back to its column width, so
+   chips ellipsize instead of colliding. Flagged: on a dense Route the chip
+   loses its good name to the ellipsis, which is exactly the pressure D7's
+   context menu relieves. */
+.route-ribbon {
+  --orders-w: 9rem;
+}
+
 .route-ribbon__orders {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  margin: 6px -1.75rem 0;
-  width: 9rem;
+  width: var(--orders-w);
+  margin: 6px calc((5.5rem - var(--orders-w)) / 2) 0;
 }
 
+/* Dense: no bleed at all, and the block is narrower than the Stop column, so
+   two adjacent chips cannot meet however long the Route gets. Written
+   directly on the element rather than through the variable — the overlap is
+   a correctness property, not a preference, and it is asserted in
+   `_proto-shot.spec.ts`. */
+.route-ribbon[data-dense="true"] .route-ribbon__orders {
+  width: 4.6rem;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.route-ribbon__chip {
+  overflow: hidden;
+}
+
+/* `max-width` + `min-width: 0` are load-bearing, not tidiness. This wrapper
+   sits between `.route-ribbon__orders` (a fixed width) and the chip (whose
+   own `max-width: 100%` resolves against *this* box). As a column flex item
+   it defaults to max-content, so without the cap the chip escaped its
+   container and adjacent Stops' chips overlapped on a long Route — measured
+   at 15.6px before this line existed. */
 .route-ribbon__order {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .route-ribbon__chip {
@@ -2503,6 +2538,7 @@ body {
 .route-ribbon__chip-label {
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0; /* lets the ellipsis actually engage inside the flex chip */
 }
 
 /* The "więcej" drawer, relocated (#468 D7): the board's existing markup,

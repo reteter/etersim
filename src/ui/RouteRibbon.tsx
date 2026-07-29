@@ -36,6 +36,12 @@ export interface RouteRibbonOrderChip {
   /** Player-facing, already legible (spec §Runtime execution legibility):
    *  `kup · Zboże`, `sprzedaj całość · Zboże` — never an opaque "sell". */
   readonly label: string;
+  /** Dense-Route fallback (past 4 Stops the column is too narrow for the full
+   *  phrase). Truncating `label` would eat the **good name** first — the more
+   *  informative half — and leave "sprzedaj c…", so the caller supplies a
+   *  short form that drops the verb word instead and lets the trade triangle
+   *  carry the direction, exactly as the grid's cells do. */
+  readonly shortLabel?: string;
   /** Which side of the trade the chip is — drives the dedicated trade pair
    *  (#468 D4): `sell` renders rust, `buy` green. `plain` is the market-free
    *  three (deliver/store/withdraw), which take no trade hue at all. */
@@ -136,6 +142,9 @@ export function RouteRibbon({
   // the whole ribbon, not per Stop — the rail grows once, uniformly, so the
   // captions of order-less Stops stay on the same baseline as the rest.
   const hasActionRow = nodes.some((n) => (n.orders?.length ?? 0) > 0);
+  // Past 4 Stops the slot pitch drops below a full-phrase chip; see
+  // `RouteRibbonOrderChip.shortLabel`.
+  const dense = nodes.length > 4;
 
   const classes = ["route-ribbon"];
   if (compact) classes.push("route-ribbon--compact");
@@ -144,6 +153,10 @@ export function RouteRibbon({
     <div
       className={classes.join(" ")}
       data-has-actions={hasActionRow}
+      /* Past 4 Stops the slot pitch drops below the order chips' block
+         width, and adjacent chips overlap — index.css narrows the block to
+         its column instead. A layout fact about spacing, not a mode. */
+      data-dense={nodes.length > 4}
       aria-label={`Wstążka trasy: ${routeName}`}
       role="group"
     >
@@ -234,9 +247,16 @@ export function RouteRibbon({
                   </div>
                 )}
                 <div className="route-ribbon__orders">
-                  {orders.map((chip) => (
+                  {orders.map((chip) => {
+                    const text = dense ? (chip.shortLabel ?? chip.label) : chip.label;
+                    return (
                     <div className="route-ribbon__order" key={chip.key}>
-                      <span className={`route-ribbon__chip route-ribbon__chip--${chip.side}`}>
+                      {/* `title` always carries the full phrase, so the dense
+                          short form never hides what the order actually is. */}
+                      <span
+                        className={`route-ribbon__chip route-ribbon__chip--${chip.side}`}
+                        title={chip.label}
+                      >
                         {chip.onClick ? (
                           <button
                             type="button"
@@ -244,10 +264,10 @@ export function RouteRibbon({
                             aria-label={chip.ariaLabel}
                             onClick={chip.onClick}
                           >
-                            {chip.label}
+                            {text}
                           </button>
                         ) : (
-                          <span className="route-ribbon__chip-label">{chip.label}</span>
+                          <span className="route-ribbon__chip-label">{text}</span>
                         )}
                         {chip.onRemove && (
                           <button
@@ -262,7 +282,8 @@ export function RouteRibbon({
                       </span>
                       {chip.drawer}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
