@@ -97,6 +97,7 @@ A brief goes HIST when its grill happens.
 | [pause-cause-note-2026-07-14](pause-cause-note-2026-07-14.md) | HIST | Grill of #130. Outcome: **no hint system exists** — it would violate the law that mechanics arrive with buildings, not tutorials. |
 | [route-events-2026-07-14](route-events-2026-07-14.md) | HIST | Grill of #131, split into three layers: ambient skiffs shipped, encounter offers parked (#131), intrusive events parked to multiregion. |
 | [route-automation-grill-2026-07-21](route-automation-grill-2026-07-21.md) | HIST | Grill of #357: conditional Stops rejected (reaffirms the E9 frozen-bet lock), auto-sell-at-best out of scope. The playtest signal was a legibility gap, not an automation gap. |
+| [m4-workbench-mockup](m4-workbench-mockup.html) | **LIVE** | The 2026-07-22 grill's working mockup — E16's visual reference, vendored 2026-07-29 after the as-built board was found to share almost none of its visual language. **Open it in a browser, don't read it.** Binding on structure and idiom to the extent the visual grill ratifies it. |
 
 ## Playtests
 

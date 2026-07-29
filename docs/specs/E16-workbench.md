@@ -17,8 +17,25 @@ stays map-side), and Professor ui-store review
 [Finding 4](../design-notes/professor-review-ui-store-2026-07-14.md) (the "re-derive per surface vs.
 one selector" anti-pattern this epic's signal must not repeat).
 Visual reference:
-the grill mockup (`m4-workbench-mockup.html`, published as an Artifact 2026-07-22) —
-a working demo of the port-centric build gesture, the ribbon, and the signal's three renderings.
+the grill mockup —
+[`../design-notes/m4-workbench-mockup.html`](../design-notes/m4-workbench-mockup.html), built at the
+2026-07-22 grill, published as an Artifact then and **vendored into the repo 2026-07-29**.
+
+> **As-built visual drift, found 2026-07-29 (owner, at the #440 playtest).** The board honors the
+> mockup's *mechanics* (port-centric spine, highlight-only pairing, hue-free signal) and almost none
+> of its *visual language*: the ribbon renders as two ~20px icons plus a text list of Stops rather
+> than a rail of archetype nodes carrying the order chips; orders live in the grid cells instead of
+> on the ribbon; quotes read `₸12 = ₸13` on one line instead of stacked bid-over-ask; the signal
+> renders as a background plaque, not the `opacity + weight` this spec specifies; the signal legend,
+> the archetype glyph/label in port headers and the base price in good headers are absent.
+> **Root cause is documented here because it is a spec defect, not only a code one:** this section
+> described the mockup as "a working demo of the port-centric build gesture, the ribbon, and the
+> signal's three renderings" — reducing a visual reference to three mechanics — and the file it cited
+> did not exist in the repo, so implementers and reviewers alike worked from prose with nothing to
+> diff against.
+> A **visual grill** (owner decision 2026-07-29) settles what the mockup binds before any further
+> board work; this spec gains a visual-contract section from it. Until then, treat the §Design prose
+> below as describing *intent*, not as-built.
 
 Scope in one line:
 the Price Board becomes the game's **workbench** —
