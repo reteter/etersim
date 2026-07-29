@@ -183,6 +183,15 @@ export function RegionMap({
   const openShip = useGameStore((s) => s.openShip);
   const controlledShipId = useGameStore((s) => s.controlledShipId);
   const selectedRouteId = useGameStore((s) => s.selectedRouteId);
+  const speed = useGameStore((s) => s.speed);
+  // View-local easing (#173): glide between consecutive tick positions
+  // instead of jumping once per tick. Position itself stays a pure function
+  // of `tick` (skiffPosition.ts, #161 lock) — this only toggles a CSS
+  // transition class, same precedent as `.route-ribbon__ship--animating`.
+  // Paused freezes (no ticks, so no new position to glide toward anyway,
+  // but the class drop also cancels any transition already in flight);
+  // reduced motion never glides.
+  const skiffAnimating = !reducedMotion && speed !== "paused";
   const routes = useGameStore((s) => s.world?.company.routes ?? []);
 
   const [hoveredPortId, setHoveredPortId] = useState<PortId | null>(null);
@@ -339,9 +348,21 @@ export function RegionMap({
               {glyphs.map((glyph, i) => (
                 <polygon
                   key={i}
-                  className="osmosis-skiff"
+                  className={
+                    skiffAnimating ? "osmosis-skiff osmosis-skiff--animating" : "osmosis-skiff"
+                  }
+                  data-animating={skiffAnimating}
                   points={SKIFF_HULL_POINTS}
-                  transform={`translate(${glyph.x}, ${glyph.y}) rotate(${glyph.angleDeg})`}
+                  // CSS `transform` (not the SVG attribute) so the
+                  // `--animating` transition has a property that actually
+                  // changes between tick updates (route-ribbon__ship
+                  // precedent). transform-origin pinned to 0 0 in index.css
+                  // for exact parity with the old attribute-based rotation.
+                  style={
+                    {
+                      transform: `translate(${glyph.x}px, ${glyph.y}px) rotate(${glyph.angleDeg}deg)`,
+                    } as CSSProperties
+                  }
                 />
               ))}
             </g>

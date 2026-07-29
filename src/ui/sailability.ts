@@ -1,11 +1,13 @@
-import type { PortId, Region, Ship } from "../sim";
+import { DOCKING_FEE, type PortId, type Region, type Ship } from "../sim";
 import { previewCourseTicks } from "./coursePreview";
 
 /**
  * Why the Controlled Ship can't sail to a given port right now, or null when
- * it can — in which case `eta` carries the previewed voyage ticks. The
- * "no course" case is belt-and-suspenders: worldgen guarantees a connected
- * region, but a disabled button with a hint beats a vanishing one.
+ * it can — in which case `eta`/`dockingFee` carry the previewed voyage ticks
+ * and the ₸ charged on arrival (#125 — the fee was previously invisible
+ * before the player committed to a manual sail). The "no course" case is
+ * belt-and-suspenders: worldgen guarantees a connected region, but a
+ * disabled button with a hint beats a vanishing one.
  *
  * Lives in its own module (not PortPanel.tsx) so both the Sail button
  * (PortPanel.tsx's `SailControl`) and the `<g>` keybind (#217, TopBar.tsx)
@@ -24,17 +26,32 @@ export function sailability(
   portId: PortId,
   region: Region,
   locked = false,
-): { disabledHint: string; eta: null } | { disabledHint: null; eta: number } {
+):
+  | { disabledHint: string; eta: null; dockingFee: null }
+  | { disabledHint: null; eta: number; dockingFee: number } {
   if (locked) {
-    return { disabledHint: "W przebudowie w stoczni — postój zablokowany.", eta: null };
+    return {
+      disabledHint: "W przebudowie w stoczni — postój zablokowany.",
+      eta: null,
+      dockingFee: null,
+    };
   }
   if (ship.location.kind !== "docked") {
-    return { disabledHint: "W drodze — musi zadokować, by popłynąć gdzie indziej.", eta: null };
+    return {
+      disabledHint: "W drodze — musi zadokować, by popłynąć gdzie indziej.",
+      eta: null,
+      dockingFee: null,
+    };
   }
   if (ship.location.portId === portId) {
-    return { disabledHint: "Już tu zadokowany.", eta: null };
+    return { disabledHint: "Już tu zadokowany.", eta: null, dockingFee: null };
   }
   const eta = previewCourseTicks(region, ship.location.portId, portId);
-  if (eta === null) return { disabledHint: "Brak kursu do tego portu.", eta: null };
-  return { disabledHint: null, eta };
+  if (eta === null) return { disabledHint: "Brak kursu do tego portu.", eta: null, dockingFee: null };
+  const targetPort = region.ports.find((p) => p.id === portId);
+  // Belt-and-suspenders (mirrors the "no course" case above): a resolvable
+  // course implies a resolvable port, but a disabled hint beats a crash.
+  if (!targetPort) return { disabledHint: "Brak kursu do tego portu.", eta: null, dockingFee: null };
+  const dockingFee = DOCKING_FEE[targetPort.archetype];
+  return { disabledHint: null, eta, dockingFee };
 }
