@@ -1,4 +1,4 @@
-import { aggregateStat, type PolicyBatchReport, type RunRecord } from "./batch.ts";
+import { aggregateStat, type AnomalyEntry, type PolicyBatchReport, type RunRecord } from "./batch.ts";
 import { compareAllPairs, type PolicyComparison } from "./compare.ts";
 import { GOOD_IDS } from "../src/sim/index.ts";
 import { MILESTONE_KINDS } from "./ledgerKinds.ts";
@@ -49,17 +49,6 @@ function deepRound(value: unknown, dp: number): unknown {
     return out;
   }
   return value;
-}
-
-/** The anomaly list's shape (#234 owns *what counts as one*; this wave ships
- *  the plumbing only — every Run already carries `seed` and `replayCommand`,
- *  so a future check has everything it needs to flag one). Always empty in
- *  this wave's reports. */
-export interface AnomalyEntry {
-  readonly policy: string;
-  readonly seed: number;
-  readonly reason: string;
-  readonly replayCommand: string;
 }
 
 /** One policy's rounded, JSON-safe Batch summary — `runs` keeps every field
@@ -119,13 +108,17 @@ export function buildReport(policyBatches: readonly PolicyBatchReport[], days: n
     params: batch.params,
     seeds: batch.seeds,
     runs: batch.runs.map((run) => {
-      const { policy, params, seed, days: runDays, replayCommand, metrics } = run;
-      return { policy, params, seed, days: runDays, replayCommand, metrics };
+      const { policy, params, seed, days: runDays, replayCommand, metrics, anomalies } = run;
+      return { policy, params, seed, days: runDays, replayCommand, metrics, anomalies };
     }),
     aggregate: batch.aggregate,
   }));
   const rounded = deepRound(policies, ROUND_DP) as readonly PolicyReportEntry[];
   const comparisons = deepRound(compareAllPairs(policyBatches), ROUND_DP) as readonly PolicyComparison[];
+
+  // Flatten anomalies from all runs across all policy batches (#234).
+  const anomalies: AnomalyEntry[] = policyBatches.flatMap((batch) => batch.runs.flatMap((run) => run.anomalies));
+
   return {
     days,
     roundedToDp: ROUND_DP,
@@ -133,7 +126,7 @@ export function buildReport(policyBatches: readonly PolicyBatchReport[], days: n
     worldDaysNote: WORLD_DAYS_NOTE,
     policies: rounded,
     comparisons,
-    anomalies: [],
+    anomalies,
   };
 }
 

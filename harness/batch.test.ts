@@ -46,6 +46,7 @@ function fakeRunRecord(seed: number, foundingTick: number | null): RunRecord {
     replayCommand: "n/a",
     ledger: [],
     metrics,
+    anomalies: [],
   };
 }
 

@@ -20,6 +20,7 @@ export {
   runOne,
   runPolicyBatch,
   type AggregateStat,
+  type AnomalyEntry,
   type BatchAggregate,
   type MilestoneAggregate,
   type PolicyBatchReport,
@@ -69,7 +70,6 @@ export {
   ROUND_DP,
   CADENCE_NOTE,
   WORLD_DAYS_NOTE,
-  type AnomalyEntry,
   type BatchReport,
   type PolicyReportEntry,
 } from "./report.ts";
