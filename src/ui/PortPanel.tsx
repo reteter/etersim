@@ -384,7 +384,7 @@ function SailControl({
   locked: boolean;
 }) {
   const dispatch = useGameStore((s) => s.dispatch);
-  const { disabledHint, eta } = sailability(ship, portId, region, locked);
+  const { disabledHint, eta, dockingFee } = sailability(ship, portId, region, locked);
   const label = `Płyń tu — ${ship.name}`;
 
   if (disabledHint !== null) {
@@ -401,7 +401,7 @@ function SailControl({
       className="sail-btn"
       onClick={() => dispatch({ kind: "sailTo", shipId: ship.id, portId })}
     >
-      {label} (~{eta} ticków)
+      {label} (~{eta} ticków, opłata dokowa ₸{dockingFee})
     </button>
   );
 }
