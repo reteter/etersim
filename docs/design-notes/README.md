@@ -48,7 +48,7 @@ HIST, ask whether the flip would hide an obligation; if it would, file it first.
 
 | Note | Status | What it says |
 | --- | --- | --- |
-| [professor-construction-review](professor-construction-review.md) | **LIVE** | End-to-end construction review. Engine certified sound; F4 and F7 resolved by [ADR-0008](../adr/0008-one-goods-store.md). Still live for F5 and F6. |
+| [professor-construction-review](professor-construction-review.md) | **LIVE** | End-to-end construction review. Engine certified sound; F4 and F7 resolved by [ADR-0008](../adr/0008-one-goods-store.md). Still live for F5 and F6, whose obligation is carried by **#441** — the next pass on this subsystem, gated before the first E15 dispatch. |
 | [professor-review-src-sim-2026-07-13](professor-review-src-sim-2026-07-13.md) | HIST | First `src/sim` review. Verdict: honestly built — purity holds, one seeded stream, manual/routed equivalence enforced by construction. |
 | [professor-review-ui-store-2026-07-14](professor-review-ui-store-2026-07-14.md) | HIST | UI + store bridge review: a UI born single-ship that grew a fleet underneath it. Its three parked findings became #319/#320/#321 — read §Parked findings unparked for what the parking cost. |
 | [professor-review-sim-guilds-contracts-2026-07-14](professor-review-sim-guilds-contracts-2026-07-14.md) | HIST | E3-close review of guilds/contracts/settlement. Four findings, all accounted for; source of the **ledger grammar law**. |

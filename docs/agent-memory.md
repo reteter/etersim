@@ -174,3 +174,41 @@ every citation in the same commit. And a citation breaks because a **different**
 changed, so it is never findable by reading the file you edited (this is what issue #432's
 `check:citations` is for). Prefer surgical edits over a script whenever the item count is
 small enough to hand-verify; the script is for hundreds of edits, not for twenty.
+
+## Language sweeps: the evidence is the rendered text, not the diff (feedback, 2026-07-29)
+
+A translation sweep into an **inflected** language cannot be verified by reading a diff or by a
+green suite. Observed twice in one wave (s31, #184): `Kupiono 3 Zboże` shipped past four gates,
+then the identical defect shipped again one layer down as `Kup Sól eteryczna` in an aria-label.
+
+Three things made it invisible, and all three recur in any such sweep:
+
+- **The suite protected the bug.** e2e assertions were transcribed *from the broken output* —
+  `e2e/ledger.spec.ts` asserted `'Kupiono 3 Zboże'` literally. String and test move together in a
+  sweep, so nothing ever goes red.
+- **The defect hides where the form happens to agree.** Three of five goods have accusative =
+  nominative, so only two of five exposed it. A spot check of "a couple of strings" passes.
+- **Reviewers checked the wrong object.** Each verified that an aria-label had a matching e2e
+  selector — true, and irrelevant. Nobody read the sentence and asked whether a person says it
+  that way.
+
+The discipline: **demand the rendered strings, before and after, for every affected case** — the
+full value set, not a sample — and read them as language. Ask for the artifact, not the diff, and
+not the gate output. Finding the second occurrence required listing *all ~40* call sites of the
+display map; the reviewer's list of seven was symptoms, not the pattern.
+
+Design corollary the owner chose here, worth reaching for first: **make inflection impossible
+rather than correct**. `<Nazwa> ×<qty>` and `Kup: <Nazwa>` need no case forms, so no future good
+can reintroduce the bug — a rule a person could break became a shape they cannot.
+
+## A mechanical pass verifies which files it actually hit (feedback, 2026-07-29)
+
+Corollary to the bulk-edit entry above, from outside docs. In s31 a coder ran several `sed`
+passes over `e2e/`, each intended to cover a file set it did not actually target — the same miss
+repeated across four patterns. Nothing surfaced until the **full** Playwright suite ran twice and
+the breakage was chased backwards.
+
+"I already did that file" is memory, not evidence. After any scripted multi-file edit, print the
+list of files the command **actually changed** (`git diff --name-only`) and reconcile it against
+the list you intended, per item. The failure is silent by construction: a `sed` that matches
+nothing exits 0.

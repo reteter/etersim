@@ -188,5 +188,20 @@ table.
 | F7 | Deliver addressing is inexpressible intent once E15 plants coexist with sites | **Settled-decision challenge — grill agenda** | Label: E15 spec Deliver targeting rule; new fact: four-deep chain makes the convention gameplay-significant |
 | — | Determinism, purity, v13, Reserve, ledger grammar, quote/charge discipline: verified sound | No routing needed | — |
 
+**Update 2026-07-29 — F5 and F6 now have an issue: [#441](../../../issues/441).** This note stays
+**LIVE** for exactly those two, and the obligation no longer lives only here. #441 schedules the
+next Professor pass on this same subsystem (construction / stores / buildings) immediately **before
+the first E15 coder dispatch**, and names F5 and F6 as findings that pass must resolve or re-route.
+
+The sequencing reason is F5's own condition. F5 says optional fields mean the compiler cannot flag a
+dropped field *when the type grows* — and **E15 grows that type**, adding Processing Plants on the
+E13.0 `GoodsStore`/`StorePolicy` foundation with plant stores folding into `buildingStoreValue`.
+Reviewing the floor before adding a storey is cheaper than reviewing it after, which is why the pass
+is a gate on E15 rather than a follow-up to it.
+
+Flipping this note to HIST requires F5 and F6 to be discharged, not merely filed
+([documentation.md](../workflows/documentation.md) — before marking a note HIST, if flipping it
+would hide an obligation, file the obligation *then* flip).
+
 *The Professor reads, cites and questions; he edits nothing. These findings reach
 the codebase through the owner's pipeline — grill, spec, issues — never directly.*
