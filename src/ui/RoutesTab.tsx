@@ -23,6 +23,7 @@ import {
   parseQtyInput,
   storehouseAt,
 } from "./routeAuthoring";
+import { RouteRibbon, type RouteRibbonNode } from "./RouteRibbon";
 
 /** Column headers for the per-good order table (Polish, 2026-07-14 UI grill:
  *  new visible labels ship Polish). The chip buttons underneath used to keep
@@ -329,11 +330,27 @@ function RouteRow({
   const unassignedShips = world.company.ships.filter((s) => s.assignment?.routeId !== route.id);
   const [assignShipId, setAssignShipId] = useState<ShipId | "">("");
 
+  // Read-only ribbon roster (#468 §C, E16 visual prototype): the same
+  // component the board authors with, in its no-`edit`/no-`onSelectStop`
+  // mode, so the Route reads as one visual language on both surfaces. The
+  // existing list editor below stays exactly as it was — this prototype adds
+  // a view, it does not replace the editor, and it deliberately does not
+  // build #393's "Edytuj →" seam.
+  const ribbonNodes: RouteRibbonNode[] = route.stops.flatMap((stop) => {
+    const port = world.region.ports.find((p) => p.id === stop.portId);
+    return port ? [{ portId: port.id, name: port.name, archetype: port.archetype }] : [];
+  });
+
   return (
     <div className={selected ? "route-row route-row--selected" : "route-row"}>
       <button type="button" className="route-row__name" onClick={onSelect}>
         {route.name}
       </button>
+      {ribbonNodes.length >= 2 && (
+        <div className="route-row__ribbon">
+          <RouteRibbon routeName={route.name} nodes={ribbonNodes} compact />
+        </div>
+      )}
       <div className="route-row__metrics">
         <span>Kurs: {metrics.totalCourseTicks}t/pętla</span>
         <span>Opłaty dokowe/pętla: {metrics.lastLoopDockingFees ?? "—"}</span>

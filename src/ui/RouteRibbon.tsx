@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { PortArchetype, PortId } from "../sim";
 import { ARCHETYPE_ICONS, ShipIcon } from "./icons";
 import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
@@ -6,25 +6,53 @@ import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 /**
  * Route ribbon (CONTEXT.md — Route ribbon; docs/specs/E16-workbench.md —
  * Route ribbon component): the single visual language for a Route — ordered
- * Stops as planet-style archetype-colored nodes along a schematic rail, the
- * route line, a loop-closing return arc + ↻ marker, and an optional gliding
- * Ship.
+ * Stops as archetype-colored nodes along a schematic rail, port names as
+ * captions, the route line, a loop-closing return arc + ↻ marker, and an
+ * optional gliding Ship.
  *
  * This component only *renders* what it is given — a resolved node list
  * (`portId → archetype`/`name` already looked up by the caller), never a
  * bare `Route` — so it never reaches into the store (E16 spec, "the
- * component must not reach into the store"). Read-only mode shipped in #392
- * (no `edit` prop passed: no add/remove/reorder affordances). #394 adds an
- * **editable mode** (`edit` prop): per-node remove + reorder buttons. Order
- * attach/edit itself lives in the board's grid cells, not the ribbon (E16
- * spec — UX latitude on "where order-editing lives"), so the ribbon's
- * authoring surface is deliberately scoped to Stop-level manipulation.
+ * component must not reach into the store").
+ *
+ * **E16 visual prototype (#468 D6):** the rail moved from a single flat SVG
+ * to a DOM rail with an SVG only for the return arc, because the mockup
+ * (`docs/design-notes/m4-workbench-mockup.html`) puts three DOM-natural
+ * tiers under each node: a **reserved status band above** the node (empty
+ * today, room the owner asked for explicitly), the **port-name caption**,
+ * and an **action row of order chips**. The ribbon is fixed *horizontally*
+ * (legs flex, so ten Stops do not make it taller) and grows *vertically in
+ * one step* when the action row appears — animated, `prefers-reduced-motion`
+ * honored, via two known `min-height` values in `index.css` (a
+ * `height: auto` transition would silently no-op).
  */
+
+/** One order chip on a Stop's action row. Resolved by the caller — the
+ *  ribbon never maps a `StopOrder` to Polish itself. `drawer` is the board's
+ *  existing "więcej" panel, rendered under its chip rather than in the grid
+ *  cell the chip used to live in (#468 D7 moves the surface, not the rules). */
+export interface RouteRibbonOrderChip {
+  readonly key: string;
+  /** Player-facing, already legible (spec §Runtime execution legibility):
+   *  `kup · Zboże`, `sprzedaj całość · Zboże` — never an opaque "sell". */
+  readonly label: string;
+  /** Which side of the trade the chip is — drives the dedicated trade pair
+   *  (#468 D4): `sell` renders rust, `buy` green. `plain` is the market-free
+   *  three (deliver/store/withdraw), which take no trade hue at all. */
+  readonly side: "buy" | "sell" | "plain";
+  readonly ariaLabel?: string;
+  readonly onClick?: () => void;
+  readonly onRemove?: () => void;
+  readonly removeAriaLabel?: string;
+  readonly drawer?: ReactNode;
+}
 
 export interface RouteRibbonNode {
   readonly portId: PortId;
   readonly name: string;
   readonly archetype: PortArchetype;
+  /** Absent/empty ⇒ this Stop contributes no action row. */
+  readonly orders?: readonly RouteRibbonOrderChip[];
 }
 
 /**
@@ -53,129 +81,74 @@ export interface RouteRibbonProps {
   readonly paused?: boolean;
   /** Present ⇒ editable mode (#394 board authoring): each node gets a
    *  remove button and reorder (◀/▶) buttons. Absent ⇒ read-only (#392
-   *  roster rows) — the "no authoring affordances" guarantee that mode's
-   *  test asserts. */
+   *  roster rows, and the Trasy roster) — the "no authoring affordances"
+   *  guarantee that mode's test asserts. */
   readonly edit?: {
     readonly onRemoveStop: (index: number) => void;
     readonly onMoveStop: (index: number, direction: -1 | 1) => void;
   };
+  /** Stop selection (#468 D3): the selected Stop's port drives the board's
+   *  producing/consuming highlight. Selection is a *reading* gesture — it
+   *  never moves where an order attaches. Read-only mode passes neither. */
+  readonly selectedIndex?: number | null;
+  readonly onSelectStop?: (index: number) => void;
+  /** Compact roster variant (Trasy tab): same rail, smaller nodes, no
+   *  reserved status band, captions kept. */
+  readonly compact?: boolean;
 }
 
-const NODE_SPACING = 32;
-const NODE_Y = 14;
-const RETURN_ARC_DIP = 22;
-const NODE_RADIUS = 6;
-const ICON_SIZE = 7;
-const SHIP_ICON_SIZE = 6;
-
-interface Point {
-  readonly x: number;
-  readonly y: number;
-}
-
-function nodeCenter(i: number): Point {
-  return { x: NODE_SPACING / 2 + i * NODE_SPACING, y: NODE_Y };
-}
-
-/** Point at parameter `t` (0..1) along a quadratic Bezier from `a` to `b`
- *  with control point `c` — used both to draw the return-arc `<path>` and to
- *  place the Ship glyph on it at the same `t`, so the glyph never drifts off
- *  the drawn line. */
-function quadraticPoint(a: Point, b: Point, c: Point, t: number): Point {
-  const mt = 1 - t;
-  return {
-    x: mt * mt * a.x + 2 * mt * t * c.x + t * t * b.x,
-    y: mt * mt * a.y + 2 * mt * t * c.y + t * t * b.y,
-  };
-}
-
-/** Ship position along the loop at `progress` (see RouteRibbonShipState),
- *  plus which leg it's on (needed by the caller to decide intermediate-Stop
- *  dimming during the return phase). */
-function shipOnRibbon(
-  nodes: readonly RouteRibbonNode[],
+/** Ship position along the loop, as a percentage of the rail's width.
+ *  Forward legs walk left→right across the rail; the return leg walks back.
+ *  Approximate by design — the rail is a flex layout, so node centers are
+ *  not exactly at `i/(n-1)`; nothing depends on sub-pixel accuracy here. */
+function shipOnRail(
+  nodeCount: number,
   progress: number,
-): { point: Point; onReturnLeg: boolean } {
-  const legCount = nodes.length;
+): { percent: number; onReturnLeg: boolean } {
+  const legCount = nodeCount;
   const wrapped = ((progress % legCount) + legCount) % legCount;
   const leg = Math.min(legCount - 1, Math.floor(wrapped));
   const t = wrapped - leg;
   const onReturnLeg = leg === legCount - 1;
-
-  if (!onReturnLeg) {
-    const a = nodeCenter(leg);
-    const b = nodeCenter(leg + 1);
-    return { point: { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }, onReturnLeg };
-  }
-
-  const last = nodeCenter(legCount - 1);
-  const first = nodeCenter(0);
-  const control = { x: (last.x + first.x) / 2, y: RETURN_ARC_DIP };
-  return { point: quadraticPoint(last, first, control, t), onReturnLeg };
+  const span = nodeCount - 1;
+  if (!onReturnLeg) return { percent: ((leg + t) / span) * 100, onReturnLeg };
+  return { percent: (1 - t) * 100, onReturnLeg };
 }
 
-export function RouteRibbon({ routeName, nodes, ship, paused, edit }: RouteRibbonProps) {
+export function RouteRibbon({
+  routeName,
+  nodes,
+  ship,
+  paused,
+  edit,
+  selectedIndex,
+  onSelectStop,
+  compact,
+}: RouteRibbonProps) {
   const reducedMotion = usePrefersReducedMotion();
   const animating = ship !== undefined && !reducedMotion && !paused;
 
   if (nodes.length < 2) return null; // route.ts: a Route needs >=2 Stops to exist at all
 
-  const width = NODE_SPACING * nodes.length;
-  const height = RETURN_ARC_DIP + 6;
-  const last = nodeCenter(nodes.length - 1);
-  const first = nodeCenter(0);
-  const control = { x: (last.x + first.x) / 2, y: RETURN_ARC_DIP };
-  const arcMid = quadraticPoint(last, first, control, 0.5);
-
-  const shipState = ship ? shipOnRibbon(nodes, ship.progress) : null;
+  const shipState = ship ? shipOnRail(nodes.length, ship.progress) : null;
   const dimIntermediates = shipState?.onReturnLeg ?? false;
+  // D6's second vertical state: the action row exists at all. One boolean for
+  // the whole ribbon, not per Stop — the rail grows once, uniformly, so the
+  // captions of order-less Stops stay on the same baseline as the rest.
+  const hasActionRow = nodes.some((n) => (n.orders?.length ?? 0) > 0);
+
+  const classes = ["route-ribbon"];
+  if (compact) classes.push("route-ribbon--compact");
 
   return (
     <div
-      className="route-ribbon"
-      role="img"
+      className={classes.join(" ")}
+      data-has-actions={hasActionRow}
       aria-label={`Wstążka trasy: ${routeName}`}
+      role="group"
     >
-      <svg
-        className="route-ribbon__svg"
-        viewBox={`0 0 ${width} ${height}`}
-        width={width}
-        height={height}
-      >
-        {/* Forward legs — the route line proper. */}
-        {nodes.slice(0, -1).map((node, i) => {
-          const a = nodeCenter(i);
-          const b = nodeCenter(i + 1);
-          return (
-            <line
-              key={`leg-${node.portId}`}
-              className="route-ribbon__leg"
-              x1={a.x}
-              y1={a.y}
-              x2={b.x}
-              y2={b.y}
-            />
-          );
-        })}
-
-        {/* Loop closure: the return leg drawn as a subtle arc + a ↻ marker
-            (CONTEXT.md — Route ribbon: "a cycle, not a dead-end line"). */}
-        <path
-          className="route-ribbon__return-arc"
-          d={`M ${last.x} ${last.y} Q ${control.x} ${control.y} ${first.x} ${first.y}`}
-          fill="none"
-        />
-        <text
-          className="route-ribbon__loop-marker"
-          x={arcMid.x}
-          y={arcMid.y}
-          textAnchor="middle"
-        >
-          ↻
-        </text>
-
+      <div className="route-ribbon__rail">
         {nodes.map((node, i) => {
-          const { x, y } = nodeCenter(i);
           const Icon = ARCHETYPE_ICONS[node.archetype];
           // Intermediate Stops (neither the return leg's origin — the last
           // Stop — nor its destination — the first Stop) dim while the Ship
@@ -183,93 +156,150 @@ export function RouteRibbon({ routeName, nodes, ship, paused, edit }: RouteRibbo
           // (E16 spec — "passing over, not stopping at, the middle Stops").
           const isIntermediate = i > 0 && i < nodes.length - 1;
           const dim = dimIntermediates && isIntermediate;
+          const selected = selectedIndex === i;
+          const stopClasses = ["route-ribbon__node"];
+          if (dim) stopClasses.push("route-ribbon__node--dim");
+          if (selected) stopClasses.push("route-ribbon__node--selected");
+          const orders = node.orders ?? [];
           return (
-            <g
-              key={node.portId}
-              className={dim ? "route-ribbon__node route-ribbon__node--dim" : "route-ribbon__node"}
-              data-testid="route-ribbon__node"
-              data-archetype={node.archetype}
-              style={{ "--port-color": `var(--archetype-${node.archetype})` } as CSSProperties}
-            >
-              <circle className="route-ribbon__node-disc" cx={x} cy={y} r={NODE_RADIUS} />
-              <Icon
-                className="route-ribbon__node-icon"
-                x={x - ICON_SIZE / 2}
-                y={y - ICON_SIZE / 2}
-                width={ICON_SIZE}
-                height={ICON_SIZE}
-              />
-              <text className="route-ribbon__node-label" x={x} y={y + NODE_RADIUS + 6} textAnchor="middle">
-                {node.name}
-              </text>
-            </g>
+            <div className="route-ribbon__slot" key={node.portId}>
+              {i > 0 && <div className="route-ribbon__leg" aria-hidden="true" />}
+              <div
+                className={stopClasses.join(" ")}
+                data-testid="route-ribbon__node"
+                data-archetype={node.archetype}
+                style={{ "--port-color": `var(--archetype-${node.archetype})` } as CSSProperties}
+              >
+                {/* Reserved room for future port-status icons (#468, owner
+                    dictation: "space reserved above each icon"). Rendered
+                    always and at a fixed height — the band is the reason ten
+                    Stops cannot make the ribbon taller, so it must never
+                    collapse just because it is empty today. */}
+                <div className="route-ribbon__status" aria-hidden="true" />
+                {onSelectStop ? (
+                  <button
+                    type="button"
+                    className="route-ribbon__disc route-ribbon__disc--btn"
+                    aria-pressed={selected}
+                    aria-label={`Przystanek ${i + 1}: ${node.name} — pokaż role portu`}
+                    onClick={() => onSelectStop(i)}
+                  >
+                    <Icon className="route-ribbon__node-icon" aria-hidden="true" />
+                  </button>
+                ) : (
+                  <span className="route-ribbon__disc">
+                    <Icon className="route-ribbon__node-icon" aria-hidden="true" />
+                  </span>
+                )}
+                <span className="route-ribbon__node-label">{node.name}</span>
+                {/* Stop controls live **inside the Stop's own column**, not
+                    in a shared row under the rail. A shared row wraps once a
+                    Route gets long, which made the ribbon grow with Stop
+                    count — exactly what D6 forbids ("ten Stops must not make
+                    it taller"). Per-column, every Stop pays the same fixed
+                    height and the growth is horizontal, where the legs
+                    already flex. */}
+                {edit && (
+                  <div
+                    className="route-ribbon__edit"
+                    role="group"
+                    aria-label={`Przystanek ${i + 1}: ${node.name} — edycja`}
+                  >
+                    <button
+                      type="button"
+                      className="menu-btn"
+                      aria-label={`Przesuń przystanek ${i + 1} wcześniej`}
+                      disabled={i === 0}
+                      onClick={() => edit.onMoveStop(i, -1)}
+                    >
+                      ◀
+                    </button>
+                    <button
+                      type="button"
+                      className="menu-btn"
+                      aria-label={`Usuń przystanek ${i + 1}: ${node.name}`}
+                      onClick={() => edit.onRemoveStop(i)}
+                    >
+                      ✕
+                    </button>
+                    <button
+                      type="button"
+                      className="menu-btn"
+                      aria-label={`Przesuń przystanek ${i + 1} później`}
+                      disabled={i === nodes.length - 1}
+                      onClick={() => edit.onMoveStop(i, 1)}
+                    >
+                      ▶
+                    </button>
+                  </div>
+                )}
+                <div className="route-ribbon__orders">
+                  {orders.map((chip) => (
+                    <div className="route-ribbon__order" key={chip.key}>
+                      <span className={`route-ribbon__chip route-ribbon__chip--${chip.side}`}>
+                        {chip.onClick ? (
+                          <button
+                            type="button"
+                            className="route-ribbon__chip-label route-ribbon__chip-label--btn"
+                            aria-label={chip.ariaLabel}
+                            onClick={chip.onClick}
+                          >
+                            {chip.label}
+                          </button>
+                        ) : (
+                          <span className="route-ribbon__chip-label">{chip.label}</span>
+                        )}
+                        {chip.onRemove && (
+                          <button
+                            type="button"
+                            className="route-ribbon__chip-x"
+                            aria-label={chip.removeAriaLabel}
+                            onClick={chip.onRemove}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                      {chip.drawer}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           );
         })}
+      </div>
 
-        {shipState && (
-          // Position via a wrapping <g>'s CSS `transform` (not the x/y
-          // attributes) so `.route-ribbon__ship--animating`'s transition
-          // has a property that actually changes between `progress` updates.
-          <g
-            className={
-              animating
-                ? "route-ribbon__ship route-ribbon__ship--animating"
-                : "route-ribbon__ship"
-            }
-            data-testid="route-ribbon__ship"
-            data-animating={animating}
-            style={
-              {
-                transform: `translate(${shipState.point.x}px, ${shipState.point.y}px)`,
-              } as CSSProperties
-            }
-          >
-            <ShipIcon
-              x={-SHIP_ICON_SIZE / 2}
-              y={-SHIP_ICON_SIZE / 2}
-              width={SHIP_ICON_SIZE}
-              height={SHIP_ICON_SIZE}
-            />
-          </g>
-        )}
+      {/* Loop closure: the return leg as an arc under the rail plus a ↻
+          marker (CONTEXT.md — Route ribbon: "a cycle, not a dead-end line").
+          Drawn as one non-uniformly-scaled path spanning first node → last
+          node, the mockup's `.loop-arc` idiom — the rail is a flex layout,
+          so there are no absolute node coordinates to fit a curve to. */}
+      <svg
+        className="route-ribbon__arc"
+        viewBox="0 0 100 20"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <path className="route-ribbon__return-arc" d="M 100 1 Q 50 30 0 1" fill="none" />
       </svg>
-      {edit && (
-        <div className="route-ribbon__edit" role="group" aria-label="Edytuj przystanki">
-          {nodes.map((node, i) => (
-            <div key={node.portId} className="route-ribbon__edit-row">
-              <span className="route-ribbon__edit-name">
-                #{i + 1} {node.name}
-              </span>
-              <button
-                type="button"
-                className="menu-btn"
-                aria-label={`Przesuń przystanek ${i + 1} wcześniej`}
-                disabled={i === 0}
-                onClick={() => edit.onMoveStop(i, -1)}
-              >
-                ◀
-              </button>
-              <button
-                type="button"
-                className="menu-btn"
-                aria-label={`Przesuń przystanek ${i + 1} później`}
-                disabled={i === nodes.length - 1}
-                onClick={() => edit.onMoveStop(i, 1)}
-              >
-                ▶
-              </button>
-              <button
-                type="button"
-                className="menu-btn"
-                aria-label={`Usuń przystanek ${i + 1}: ${node.name}`}
-                onClick={() => edit.onRemoveStop(i)}
-              >
-                Usuń
-              </button>
-            </div>
-          ))}
-        </div>
+      <span className="route-ribbon__loop-marker" title="Pętla wraca do przystanku 1">
+        ↻
+      </span>
+
+      {shipState && (
+        <span
+          className={
+            animating ? "route-ribbon__ship route-ribbon__ship--animating" : "route-ribbon__ship"
+          }
+          data-testid="route-ribbon__ship"
+          data-animating={animating}
+          style={{ left: `${shipState.percent}%` } as CSSProperties}
+        >
+          <ShipIcon aria-hidden="true" />
+        </span>
       )}
+
     </div>
   );
 }

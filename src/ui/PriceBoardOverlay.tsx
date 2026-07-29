@@ -1,8 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import {
-  effectiveBase,
+  ARCHETYPE_PROFILES,
   GOOD_IDS,
-  price,
   type GoodId,
   type Port,
   type PortId,
@@ -13,10 +12,17 @@ import { useGameStore } from "../store/gameStore";
 import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { computeMarketSignal, quotePortGood } from "../store/marketSignal";
 import { computeOfferLabels, OFFER_LABEL_TEXT } from "../store/offerLabels";
+import { GOOD_ICONS } from "./icons";
 import { KontraktyTab } from "./KontraktyTab";
 import { OverlayShell } from "./OverlayShell";
-import { priceTrend, TREND_GLYPH, TREND_LEGEND, type Trend } from "./priceTrend";
-import { quoteLabel } from "./quoteFormat";
+/* #468: the board renders **bare numbers**, like the mockup — a `₸` on every
+ * one of the grid's ~70 quotes is noise at this density, and the unit is
+ * stated once in the Port header instead. `quoteFormat.quoteLabel` stays the
+ * shared formatter for every other surface (PortPanel), where a lone quote
+ * does need its unit. The `—` for an untradable quote is preserved. */
+function boardQuote(value: number | null): string {
+  return value === null ? "—" : String(value);
+}
 import {
   appendStop,
   inferOrderKind,
@@ -35,7 +41,7 @@ import {
   storehouseAt,
   suggestedPairingPortIds,
 } from "./routeAuthoring";
-import { RouteRibbon, type RouteRibbonNode } from "./RouteRibbon";
+import { RouteRibbon, type RouteRibbonNode, type RouteRibbonOrderChip } from "./RouteRibbon";
 import { Tabs } from "./Tabs";
 
 /** #96 (docs/specs/E3-contracts-and-guilds.md — UX skeleton): the overlay's
@@ -43,25 +49,50 @@ import { Tabs } from "./Tabs";
  *  (KontraktyTab.tsx). */
 type Tab = "ceny" | "kontrakty";
 
-/** One port×good cell's two-sided quote plus the mid-price trend (E8). */
+/** One port×good cell's two-sided quote.
+ *
+ *  #468 D2: the mid-price **trend is gone from the UI entirely** — the cell's
+ *  triangles now carry the bid/ask direction, and one glyph cannot mean two
+ *  things (§Laws 9, ADR-0006, incident 0002). `src/ui/priceTrend.ts` and the
+ *  sim's `priceSnapshots` stay in place; only their UI consumers go, which is
+ *  why this interface lost its `trend` field and `portCells` its snapshot
+ *  parameter. */
 interface Cell {
   readonly bid: number | null;
   readonly ask: number | null;
-  readonly trend: Trend;
 }
 
 /** All cells for one port, keyed by good. `quotePortGood` (store/marketSignal)
  *  is the single quote source this board and the market-quality signal both
  *  read — sharing it is load-bearing (E16 spec — Trap 2): reimplementing the
  *  quote here would let the board's numbers silently drift from the signal's. */
-function portCells(port: Port, snapshot: Record<GoodId, number>): Record<GoodId, Cell> {
+function portCells(port: Port): Record<GoodId, Cell> {
   const cells = {} as Record<GoodId, Cell>;
   for (const good of GOOD_IDS) {
-    const { bid, ask } = quotePortGood(port, good);
-    const base = effectiveBase(port, good);
-    cells[good] = { bid, ask, trend: priceTrend(price(port.market[good], base), snapshot[good]) };
+    cells[good] = quotePortGood(port, good);
   }
   return cells;
+}
+
+/** The goods a port's archetype **produces or consumes** (#468 D3). A fact
+ *  about the world, like the archetype itself — deliberately not the
+ *  market-quality signal, which would make the highlight a suggestion and
+ *  cross the spec's *data ≠ suggestion* line. Every port trades every good
+ *  (`worldgen.ts:182`), so an "availability" filter would light up the whole
+ *  grid; role does not.
+ *
+ *  Producing and consuming share one treatment here — D3's own sub-choice
+ *  ("whether producing and consuming get two distinguishable highlight
+ *  treatments") is recorded as still open and is not decided in this
+ *  prototype. */
+function portRoleGoods(port: Port): Set<GoodId> {
+  const profile = ARCHETYPE_PROFILES[port.archetype];
+  const roles = new Set<GoodId>();
+  for (const good of GOOD_IDS) {
+    if ((profile.productionPerDay[good] ?? 0) > 0) roles.add(good);
+    if ((profile.consumptionPerDay[good] ?? 0) > 0) roles.add(good);
+  }
+  return roles;
 }
 
 // Widened to all five kinds (#419): the market-free three reuse RoutesTab's
@@ -75,6 +106,18 @@ const ORDER_KIND_LABEL: Record<StopOrder["kind"], string> = {
   withdraw: "Pobierz",
 };
 const MARKET_FREE_KINDS = new Set<StopOrder["kind"]>(["deliver", "store", "withdraw"]);
+
+/** Lowercase verb forms for the ribbon's order chips (#468, mockup's
+ *  `.ochip`: `kup · Grain`). The capitalized `ORDER_KIND_LABEL` above stays
+ *  the drawer's kind-picker labels — same concept, two grammatical slots: a
+ *  standalone button label vs. a verb inside a running chip phrase. */
+const ORDER_VERB_PL: Record<StopOrder["kind"], string> = {
+  buy: "kup",
+  sell: "sprzedaj",
+  deliver: "dostarcz",
+  store: "złóż",
+  withdraw: "pobierz",
+};
 
 /**
  * Region price board (#62): a bid/ask overview across every port and good so
@@ -145,6 +188,12 @@ export function PriceBoardOverlay({
   // order on a hidden good stays committed; it just isn't shown while
   // hidden). Not persisted (UI-local only, per the task package).
   const [hiddenGoods, setHiddenGoods] = useState<Set<GoodId>>(new Set());
+  // Ribbon Stop selection (#468 D3): a *reading* gesture — it drives the
+  // port-role highlight and nothing else. Deliberately not coupled to where
+  // an order attaches: `handleCellClick` keeps resolving the Stop from the
+  // clicked *row's* port (`lastStopIndexForPort`), so "selected Stop at port
+  // Y, click a cell in row X" has no ambiguity to resolve.
+  const [selectedStop, setSelectedStop] = useState<number | null>(null);
 
   if (!world) return null;
 
@@ -155,7 +204,7 @@ export function PriceBoardOverlay({
 
   const cellsByPort = {} as Record<PortId, Record<GoodId, Cell>>;
   for (const port of ports) {
-    cellsByPort[port.id] = portCells(port, world.priceSnapshots[port.id]);
+    cellsByPort[port.id] = portCells(port);
   }
   // Market-quality signal (store bridge, docs/specs/E16-workbench.md):
   // computed once here and subsumes this board's old local `columnExtremes`
@@ -179,11 +228,13 @@ export function PriceBoardOverlay({
     setDraft({ id: nextRouteId(world), name: `Trasa ${world.company.routes.length + 1}`, stops: [] });
     setExpanded(new Set());
     setFocusedGood(null);
+    setSelectedStop(null);
   };
   const cancelDraft = () => {
     setDraft(null);
     setExpanded(new Set());
     setFocusedGood(null);
+    setSelectedStop(null);
   };
   const saveDraft = () => {
     if (!draft || !isValidRouteDraft(draft)) return;
@@ -192,6 +243,7 @@ export function PriceBoardOverlay({
     setDraft(null);
     setExpanded(new Set());
     setFocusedGood(null);
+    setSelectedStop(null);
   };
 
   // Port-row click (spec §Construction is port-centric — the port-centric
@@ -252,11 +304,13 @@ export function PriceBoardOverlay({
     setFocusedGood(good); // contextual focus (#395): attaching follows the task
   };
 
-  const flipOrderKind = (stopIndex: number, good: GoodId, current: "buy" | "sell") => {
-    if (!draft) return;
-    setDraft(setStopOrder(draft, stopIndex, good, current === "buy" ? "sell" : "buy"));
-    setFocusedGood(good);
-  };
+  // #468 D7 (prototype consequence, flagged): the cell chip's ⇄ buy↔sell
+  // shortcut (#419 AC4) has no home once chips move to the ribbon's action
+  // row, and the mockup's `.ochip` carries no such control. Flip capability
+  // is **not** lost — the drawer's kind picker is "the complete truth about
+  // kind" (#419 AC1) and still lists buy and sell. `flipOrderKind` therefore
+  // goes; if the owner wants the one-click flip back it belongs in D7's
+  // context menu, not on the pill.
 
   // Drawer's kind picker (#419 AC1: "the drawer is the complete truth about
   // kind", every legal kind including buy/sell). `setStopOrderKind` always
@@ -319,9 +373,107 @@ export function PriceBoardOverlay({
   const effectiveFocus: GoodId | null =
     focusedGood !== null && !hiddenGoods.has(focusedGood) ? focusedGood : null;
 
-  const ribbonNodes: RouteRibbonNode[] = (draft?.stops ?? []).map((stop) => {
+  // Port-role highlight (#468 D3): driven by the ribbon's selected Stop, so
+  // it only exists while authoring. Null ⇒ no role dimming at all.
+  const selectedRolePort =
+    authoring && draft && selectedStop !== null && selectedStop < draft.stops.length
+      ? (ports.find((p) => p.id === draft.stops[selectedStop].portId) ?? null)
+      : null;
+  const roleGoods = selectedRolePort ? portRoleGoods(selectedRolePort) : null;
+
+  // Ribbon nodes, orders included (#468 D6/D7): the order chips live on the
+  // ribbon's action row under their port, not in the grid cell they used to
+  // occupy. The "więcej" drawer is *not* removed — it rides along with its
+  // chip, unchanged, so the market-free kind picker (#419) keeps working
+  // while the real context-menu home (D7) waits for a popover component.
+  const ribbonNodes: RouteRibbonNode[] = (draft?.stops ?? []).map((stop, stopIndex) => {
     const port = ports.find((p) => p.id === stop.portId)!;
-    return { portId: port.id, name: port.name, archetype: port.archetype };
+    const orders: RouteRibbonOrderChip[] = stop.orders.map((order) => {
+      const good = order.good;
+      const cellKey = `${port.id}:${good}`;
+      const qtyPart = order.qty === undefined ? "" : ` · ${order.qty} szt.`;
+      // Runtime execution legibility (spec §Runtime execution legibility,
+      // #398): a greedy sell reads as "sell everything", never an opaque
+      // "sprzedaj". `·` keeps the Good name out of a verb's object slot
+      // (store/goodDisplay.ts — Good name grammar).
+      const label =
+        order.kind === "sell" && order.qty === undefined
+          ? `sprzedaj całość · ${GOOD_NAME_PL[good]}`
+          : `${ORDER_VERB_PL[order.kind]}${qtyPart} · ${GOOD_NAME_PL[good]}`;
+      const legalKinds = legalOrderKinds(world.company.buildings, port.id, good);
+      return {
+        key: cellKey,
+        label,
+        side: order.kind === "buy" ? "buy" : order.kind === "sell" ? "sell" : "plain",
+        ariaLabel: `${GOOD_NAME_PL[good]}: więcej opcji`,
+        onClick: () => toggleExpanded(cellKey, good),
+        onRemove: () => removeOrder(stopIndex, good),
+        removeAriaLabel: `${GOOD_NAME_PL[good]}: usuń zlecenie`,
+        drawer: expanded.has(cellKey) ? (
+          <span className="price-board__order-more">
+            {/* #419 AC1: the drawer is the complete kind picker — every
+                kind legal in this cell, buy/sell included. */}
+            <span className="price-board__order-kind-picker">
+              {legalKinds.map((kind) => (
+                <button
+                  key={kind}
+                  type="button"
+                  aria-pressed={order.kind === kind}
+                  aria-label={`${GOOD_NAME_PL[good]}: ustaw zlecenie na ${ORDER_KIND_LABEL[kind]}`}
+                  className={order.kind === kind ? "menu-btn menu-btn--active" : "menu-btn"}
+                  onClick={() => pickOrderKind(stopIndex, good, kind)}
+                >
+                  {ORDER_KIND_LABEL[kind]}
+                </button>
+              ))}
+            </span>
+            {/* #419 AC4/AC6: deliver/store/withdraw take neither qty nor
+                minMargin (route.ts) — the drawer holds the kind picker
+                above and nothing else for them. */}
+            {(order.kind === "buy" || order.kind === "sell") && (
+              <input
+                type="number"
+                min={1}
+                step={1}
+                placeholder="ile"
+                title="Ile jednostek (puste = maksymalnie)"
+                aria-label={`${GOOD_NAME_PL[good]} ile sztuk`}
+                value={order.qty ?? ""}
+                onChange={(e) => {
+                  const result = parseQtyInput(e.target.value);
+                  if (result.kind === "ignore" || !draft) return;
+                  setDraft(
+                    patchStopOrder(draft, stopIndex, good, {
+                      qty: result.kind === "set" ? result.qty : undefined,
+                    }),
+                  );
+                }}
+              />
+            )}
+            {order.kind === "buy" && (
+              <input
+                type="number"
+                step={1}
+                placeholder="próg marży"
+                title="Próg marży: czekaj, aż dowóz się opłaci (puste = bez progu)"
+                aria-label={`${GOOD_NAME_PL[good]} próg marży`}
+                value={order.minMargin ?? ""}
+                onChange={(e) => {
+                  const result = parseMinMarginInput(e.target.value);
+                  if (result.kind === "ignore" || !draft) return;
+                  setDraft(
+                    patchStopOrder(draft, stopIndex, good, {
+                      minMargin: result.kind === "set" ? result.minMargin : undefined,
+                    }),
+                  );
+                }}
+              />
+            )}
+          </span>
+        ) : undefined,
+      };
+    });
+    return { portId: port.id, name: port.name, archetype: port.archetype, orders };
   });
 
   return (
@@ -346,7 +498,9 @@ export function PriceBoardOverlay({
         <KontraktyTab world={world} />
       ) : (
         <>
-          <p className="price-board__legend">{TREND_LEGEND}</p>
+          {/* #468 D2: the trend legend above the grid is gone with the trend
+              itself — #127 (which made it always-visible) is knowingly
+              reversed, because the thing it explained no longer renders. */}
           {hiddenGoods.size > 0 && (
             <div
               className={
@@ -393,6 +547,36 @@ export function PriceBoardOverlay({
               </>
             )}
           </div>
+          {/* #468: the ribbon docks **above the grid header**, not below the
+              grid. It is not always visible — the dock animates open with
+              authoring mode and the board's own height follows, smoothly
+              (`grid-template-rows: 0fr → 1fr` in index.css; a `height: auto`
+              transition would silently no-op). Rendered unconditionally in
+              the closed state so the transition has a start frame. */}
+          <div
+            className={
+              authoring && ribbonNodes.length >= 2
+                ? "price-board__ribbon-dock price-board__ribbon-dock--open"
+                : "price-board__ribbon-dock"
+            }
+          >
+            <div className="price-board__ribbon-dock-inner">
+              {ribbonNodes.length >= 2 && draft && (
+                <RouteRibbon
+                  routeName={draft.name}
+                  nodes={ribbonNodes}
+                  selectedIndex={selectedStop}
+                  onSelectStop={(index) =>
+                    setSelectedStop((prev) => (prev === index ? null : index))
+                  }
+                  edit={{
+                    onRemoveStop: removeStopFromDraft,
+                    onMoveStop: (index, direction) => setDraft(moveStop(draft, index, direction)),
+                  }}
+                />
+              )}
+            </div>
+          </div>
           <div
             className="price-board"
             role="table"
@@ -400,10 +584,19 @@ export function PriceBoardOverlay({
             style={{ "--good-count": visibleGoodIds.length } as CSSProperties}
           >
           <div className="price-board__row price-board__row--header" role="row">
-            <span className="price-board__port-header">Port</span>
+            <span className="price-board__port-header">
+              Port
+              {/* The unit, stated once — see `boardQuote` above. */}
+              <span className="price-board__unit-hint"> · ₸</span>
+            </span>
             {visibleGoodIds.map((good) => {
               const focused = effectiveFocus === good;
-              const dim = effectiveFocus !== null && !focused;
+              // Two independent dimmings share one channel here: contextual
+              // focus (#395) and the port-role highlight (#468 D3). Role
+              // highlight only exists while a ribbon Stop is selected.
+              const offRole = roleGoods !== null && !roleGoods.has(good);
+              const dim = (effectiveFocus !== null && !focused) || offRole;
+              const GoodIcon = GOOD_ICONS[good];
               return (
                 <span key={good} className="price-board__good-col" role="columnheader">
                   <button
@@ -411,12 +604,19 @@ export function PriceBoardOverlay({
                     className={
                       dim ? "price-board__good-header price-board__good-header--dim" : "price-board__good-header"
                     }
-                    title={TREND_LEGEND}
+                    title={GOOD_NAME_PL[good]}
                     aria-pressed={focused}
                     aria-label={`Skup uwagę na: ${GOOD_NAME_PL[good]}`}
                     onClick={() => toggleManualFocus(good)}
                   >
-                    {GOOD_NAME_PL[good]}
+                    {/* #468: goods render as icons like ports (ADR-0006, the
+                        same vendored set). The caption stays in the DOM but
+                        cannot widen its column — `.price-board__good-name`
+                        is an ellipsizing `minmax(0, 1fr)` child in
+                        index.css, so caption length never influences the
+                        grid's uniform column width. */}
+                    <GoodIcon className="price-board__good-icon" aria-hidden="true" />
+                    <span className="price-board__good-name">{GOOD_NAME_PL[good]}</span>
                   </button>
                   <button
                     type="button"
@@ -467,20 +667,34 @@ export function PriceBoardOverlay({
                   }
                 }}
               >
-                <span className="price-board__port-name">
-                  {port.name}
-                  {hasStorehouse && (
-                    <span className="price-board__storehouse-marker" title="Firma posiada tu Skład">
-                      {" "}
-                      ▣
-                    </span>
-                  )}
-                  {suggested && (
-                    <span className="price-board__pairing-hint" title="Sugerowany kolejny przystanek">
-                      {" "}
-                      ★
-                    </span>
-                  )}
+                {/* The archetype caption is a **sibling** of
+                    `.price-board__port-name`, never a child: `market.spec.ts`
+                    matches that element's textContent against an exact-anchored
+                    `^Name$`, so folding the caption inside would silently break
+                    an unrelated spec. */}
+                <span className="price-board__port-cell">
+                  <span className="price-board__port-name">
+                    {port.name}
+                    {hasStorehouse && (
+                      <span className="price-board__storehouse-marker" title="Firma posiada tu Skład">
+                        {" "}
+                        ▣
+                      </span>
+                    )}
+                    {suggested && (
+                      <span className="price-board__pairing-hint" title="Sugerowany kolejny przystanek">
+                        {" "}
+                        ★
+                      </span>
+                    )}
+                  </span>
+                  {/* Archetype caption, as in the mockup (`.port-th .parch`).
+                      Same English wording the PortPanel subtitle uses —
+                      translating the six archetype names is a grill-sized
+                      call (#184 flag), not a prototype one. */}
+                  <span className="price-board__port-arch">
+                    {port.archetype === "freeport" ? "free port" : port.archetype}
+                  </span>
                 </span>
                 {visibleGoodIds.map((good) => {
                   const cell = cellsByPort[port.id][good];
@@ -493,7 +707,9 @@ export function PriceBoardOverlay({
                   // Stable identity for the "więcej" expansion (#405 nit 1):
                   // portId, not stopIndex — see the `expanded` state comment.
                   const cellKey = `${port.id}:${good}`;
-                  const dim = effectiveFocus !== null && effectiveFocus !== good;
+                  const dim =
+                    (effectiveFocus !== null && effectiveFocus !== good) ||
+                    (roleGoods !== null && !roleGoods.has(good));
                   // Offer labels (#397, spec §Market-quality signal rendering
                   // 3): the word rendering of the same signal driving
                   // isBestAsk/isBestBid above — buy-side labels ride the ask,
@@ -502,36 +718,46 @@ export function PriceBoardOverlay({
                   const cellLabels = offerLabels.entries[port.id][good];
                   const buyLabelText = cellLabels.buy.map((l) => OFFER_LABEL_TEXT[l]).join(" · ");
                   const sellLabelText = cellLabels.sell.map((l) => OFFER_LABEL_TEXT[l]).join(" · ");
+                  // #468 D4: bid **left** with ▲, ask **right** with ▼, in the
+                  // dedicated trade pair (rust / green, index.css
+                  // `--trade-sell` / `--trade-buy`). The colours track the
+                  // *player's action*, which deliberately inverts the owner's
+                  // dictated cash-direction mapping — flagged at the table and
+                  // accepted; do not "fix" it back. The pair is new on purpose:
+                  // #5fbf7f/#d9705f already mean progress and warning.
                   const cellContent = (
                     <>
                       <span
                         className={
                           isBestBid ? "price-board__bid price-board__bid--best" : "price-board__bid"
                         }
+                        title={`Sprzedajesz tu (bid)${sellLabelText !== "" ? ` — ${sellLabelText}` : ""}`}
                       >
-                        {quoteLabel(cell.bid)}
-                      </span>
-                      <span
-                        className={`price-board__trend price-board__trend--${cell.trend}`}
-                        title={TREND_LEGEND}
-                      >
-                        {TREND_GLYPH[cell.trend]}
+                        <span className="price-board__tri" aria-hidden="true">
+                          ▲
+                        </span>
+                        {boardQuote(cell.bid)}
                       </span>
                       <span
                         className={
                           isBestAsk ? "price-board__ask price-board__ask--best" : "price-board__ask"
                         }
+                        title={`Kupujesz tu (ask)${buyLabelText !== "" ? ` — ${buyLabelText}` : ""}`}
                       >
-                        {quoteLabel(cell.ask)}
-                      </span>
-                      {sellLabelText !== "" && (
-                        <span className="price-board__offer-label" title="Sygnał jakości rynku — sprzedaż">
-                          {sellLabelText}
+                        <span className="price-board__tri" aria-hidden="true">
+                          ▼
                         </span>
-                      )}
-                      {buyLabelText !== "" && (
-                        <span className="price-board__offer-label" title="Sygnał jakości rynku — kupno">
-                          {buyLabelText}
+                        {boardQuote(cell.ask)}
+                      </span>
+                      {/* Offer labels (#397) survive the reformat as a second
+                          line under the quote pair, so they never widen a
+                          column (uniform width, #468). */}
+                      {(sellLabelText !== "" || buyLabelText !== "") && (
+                        <span
+                          className="price-board__offer-label"
+                          title="Sygnał jakości rynku"
+                        >
+                          {[sellLabelText, buyLabelText].filter((t) => t !== "").join(" · ")}
                         </span>
                       )}
                     </>
@@ -542,24 +768,25 @@ export function PriceBoardOverlay({
                   // an action it won't perform.
                   const isMarketFree = order !== undefined && MARKET_FREE_KINDS.has(order.kind);
                   const cellAriaLabel = isMarketFree
-                    ? `${GOOD_NAME_PL[good]} w ${port.name}: zlecenie ${ORDER_KIND_LABEL[order!.kind]} — zmień przez „więcej”`
+                    ? `${GOOD_NAME_PL[good]} w ${port.name}: zlecenie ${ORDER_KIND_LABEL[order!.kind]} — zmień przez „więcej” na wstążce`
                     : `${GOOD_NAME_PL[good]} w ${port.name}: dodaj zlecenie`;
-                  // Drawer's complete kind set (#419 AC1/AC7) — computed for
-                  // every cell that has an active order, shared with
-                  // RoutesTab via `legalOrderKinds` (routeAuthoring.ts).
-                  const legalKinds =
-                    order !== undefined ? legalOrderKinds(world.company.buildings, port.id, good) : [];
+                  // #468 D7: the cell no longer *holds* the order — the chip
+                  // (and its "więcej" drawer, unchanged) lives on the ribbon's
+                  // action row under the port. The cell keeps a hue-free
+                  // "an order rides this cell" mark so the grid still tells
+                  // you which good you already wired at this port.
+                  const attached = order !== undefined;
+                  const cellClasses = ["price-board__cell"];
+                  if (dim) cellClasses.push("price-board__cell--dim");
+                  if (attached) cellClasses.push("price-board__cell--attached");
                   return (
-                    <span
-                      key={good}
-                      className={dim ? "price-board__cell price-board__cell--dim" : "price-board__cell"}
-                      role="cell"
-                    >
+                    <span key={good} className={cellClasses.join(" ")} role="cell">
                       {authoring && inDraft ? (
                         <button
                           type="button"
                           className="price-board__cell-btn"
                           aria-label={cellAriaLabel}
+                          data-cell-key={cellKey}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCellClick(port.id, good);
@@ -570,120 +797,6 @@ export function PriceBoardOverlay({
                       ) : (
                         cellContent
                       )}
-                      {order && (
-                        <span
-                          className="price-board__order-chip"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <span className="price-board__order-chip-label">
-                            {order.kind === "sell" && order.qty === undefined
-                              ? // #398: a greedy sell order (route.ts's "today's
-                                // greedy behavior" — no qty cap) must read legibly
-                                // as "sell everything", not an opaque "Sprzedaj" —
-                                // the good's own name replaces the redundant
-                                // kind label rather than prefixing it.
-                                `sprzedaj całość · ${GOOD_NAME_PL[good]}`
-                              : `${ORDER_KIND_LABEL[order.kind]}${
-                                  order.qty === undefined ? "" : ` · ${order.qty} szt.`
-                                }`}
-                          </span>
-                          {/* #419 AC4: ⇄ stays a binary buy↔sell shortcut,
-                              omitted for the market-free three — changing
-                              their kind goes through the drawer only. */}
-                          {(order.kind === "buy" || order.kind === "sell") && (
-                            <button
-                              type="button"
-                              className="menu-btn"
-                              aria-label={`${GOOD_NAME_PL[good]}: zmień na ${order.kind === "buy" ? "sprzedaż" : "kupno"}`}
-                              onClick={() => flipOrderKind(stopIndex!, good, order.kind as "buy" | "sell")}
-                            >
-                              ⇄
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="menu-btn"
-                            aria-label={`${GOOD_NAME_PL[good]}: więcej opcji`}
-                            onClick={() => toggleExpanded(cellKey, good)}
-                          >
-                            więcej
-                          </button>
-                          <button
-                            type="button"
-                            className="menu-btn"
-                            aria-label={`${GOOD_NAME_PL[good]}: usuń zlecenie`}
-                            onClick={() => removeOrder(stopIndex!, good)}
-                          >
-                            ×
-                          </button>
-                          {expanded.has(cellKey) && (
-                            <span className="price-board__order-more">
-                              {/* #419 AC1: the drawer is the complete kind
-                                  picker — every kind legal in this cell,
-                                  buy/sell included. */}
-                              <span className="price-board__order-kind-picker">
-                                {legalKinds.map((kind) => (
-                                  <button
-                                    key={kind}
-                                    type="button"
-                                    aria-pressed={order.kind === kind}
-                                    aria-label={`${GOOD_NAME_PL[good]}: ustaw zlecenie na ${ORDER_KIND_LABEL[kind]}`}
-                                    className={
-                                      order.kind === kind ? "menu-btn menu-btn--active" : "menu-btn"
-                                    }
-                                    onClick={() => pickOrderKind(stopIndex!, good, kind)}
-                                  >
-                                    {ORDER_KIND_LABEL[kind]}
-                                  </button>
-                                ))}
-                              </span>
-                              {/* #419 AC4/AC6: deliver/store/withdraw take
-                                  neither qty nor minMargin (route.ts) — the
-                                  drawer holds the kind picker above and
-                                  nothing else for them. */}
-                              {(order.kind === "buy" || order.kind === "sell") && (
-                                <input
-                                  type="number"
-                                  min={1}
-                                  step={1}
-                                  placeholder="ile"
-                                  title="Ile jednostek (puste = maksymalnie)"
-                                  aria-label={`${GOOD_NAME_PL[good]} ile sztuk`}
-                                  value={order.qty ?? ""}
-                                  onChange={(e) => {
-                                    const result = parseQtyInput(e.target.value);
-                                    if (result.kind === "ignore" || !draft) return;
-                                    setDraft(
-                                      patchStopOrder(draft, stopIndex!, good, {
-                                        qty: result.kind === "set" ? result.qty : undefined,
-                                      }),
-                                    );
-                                  }}
-                                />
-                              )}
-                              {order.kind === "buy" && (
-                                <input
-                                  type="number"
-                                  step={1}
-                                  placeholder="próg marży"
-                                  title="Próg marży: czekaj, aż dowóz się opłaci (puste = bez progu)"
-                                  aria-label={`${GOOD_NAME_PL[good]} próg marży`}
-                                  value={order.minMargin ?? ""}
-                                  onChange={(e) => {
-                                    const result = parseMinMarginInput(e.target.value);
-                                    if (result.kind === "ignore" || !draft) return;
-                                    setDraft(
-                                      patchStopOrder(draft, stopIndex!, good, {
-                                        minMargin: result.kind === "set" ? result.minMargin : undefined,
-                                      }),
-                                    );
-                                  }}
-                                />
-                              )}
-                            </span>
-                          )}
-                        </span>
-                      )}
                     </span>
                   );
                 })}
@@ -691,18 +804,6 @@ export function PriceBoardOverlay({
             );
           })}
           </div>
-          {authoring && draft && draft.stops.length >= 2 && (
-            <div className="price-board__ribbon-dock">
-              <RouteRibbon
-                routeName={draft.name}
-                nodes={ribbonNodes}
-                edit={{
-                  onRemoveStop: removeStopFromDraft,
-                  onMoveStop: (index, direction) => setDraft(moveStop(draft, index, direction)),
-                }}
-              />
-            </div>
-          )}
           {/* #405 nit 2: RouteRibbon's editable dock only renders at >=2
               Stops (its loop-closure graphic needs at least two nodes), so a
               1-stop draft had no way to remove a mis-clicked first Stop
