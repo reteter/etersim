@@ -1080,7 +1080,10 @@ test.describe('trading interactions (when docked)', () => {
     let sailedAway = false;
     for (let i = 0; i < count; i++) {
       await portGroups.nth(i).click({ force: true });
-      const remoteSailBtn = page.getByRole('button', { name: /^Płyń tu — .+ \(~\d+ ticków\)$/ });
+      // #125: enabled label also carries the destination's docking fee.
+      const remoteSailBtn = page.getByRole('button', {
+        name: /^Płyń tu — .+ \(~\d+ ticków, opłata dokowa ₸\d+\)$/,
+      });
       if (await remoteSailBtn.count()) {
         await remoteSailBtn.click();
         sailedAway = true;
@@ -1110,7 +1113,9 @@ test.describe('trading interactions (when docked)', () => {
     // always exists).
     const portGroups = page.locator('g.port');
     const count = await portGroups.count();
-    const sailBtn = page.getByRole('button', { name: /^Płyń tu — .+ \(~\d+ ticków\)$/ });
+    const sailBtn = page.getByRole('button', {
+      name: /^Płyń tu — .+ \(~\d+ ticków, opłata dokowa ₸\d+\)$/,
+    });
     for (let i = 0; i < count; i++) {
       await portGroups.nth(i).click({ force: true });
       if (await sailBtn.count()) break;
@@ -1158,7 +1163,9 @@ test.describe('keybind <g> sails the Controlled Ship to the selected port (#217)
     // enabled Sail control.
     const portGroups = page.locator('g.port');
     const count = await portGroups.count();
-    const enabledSailBtn = page.getByRole('button', { name: /^Płyń tu — .+ \(~\d+ ticków\)$/ });
+    const enabledSailBtn = page.getByRole('button', {
+      name: /^Płyń tu — .+ \(~\d+ ticków, opłata dokowa ₸\d+\)$/,
+    });
     let selected = false;
     for (let i = 0; i < count; i++) {
       await portGroups.nth(i).click({ force: true });
@@ -1215,6 +1222,16 @@ test.describe('ambient osmosis skiffs on the map (#161, replaces the pulses #63)
     return map.locator(`.osmosis-lane[data-lane-id="${laneId}"] .osmosis-skiff`).first();
   }
 
+  /** Position is authored via the CSS `transform` inline style (#173, not
+   *  the SVG `transform` attribute — that's what lets `.osmosis-skiff--animating`
+   *  transition it). Reading the *specified* style value (not
+   *  getComputedStyle) is deliberate: it reflects the logical tick position
+   *  the moment it's set, regardless of whether a CSS transition is
+   *  mid-flight toward it — a computed-style read would be flaky mid-glide. */
+  async function skiffTransform(skiff: Locator): Promise<string | null> {
+    return skiff.getAttribute('style');
+  }
+
   test('active flow renders skiffs; quiet lanes render none (seeded)', async ({ page }) => {
     await startAtSeed66(page);
 
@@ -1244,13 +1261,17 @@ test.describe('ambient osmosis skiffs on the map (#161, replaces the pulses #63)
     const skiff = await firstActiveSkiff(map);
 
     await page.getByRole('button', { name: '⏸' }).click();
-    const frozenAt = await skiff.getAttribute('transform');
+    // Paused drops `.osmosis-skiff--animating` (RegionMap.tsx
+    // `skiffAnimating`), so any glide-in-flight is cancelled outright —
+    // a hard freeze, not a settle (#173).
+    await expect(skiff).not.toHaveClass(/osmosis-skiff--animating/);
+    const frozenAt = await skiffTransform(skiff);
     // A real-time wait while paused: a wall-clock-driven glyph (like the old
     // CSS-animated pulses) would keep moving here — the #72 misreading this
     // glyph is meant to resolve. Sim ticks don't advance while paused, so a
     // tick-derived position must not move either.
     await page.waitForTimeout(700);
-    await expect(skiff).toHaveAttribute('transform', frozenAt!);
+    expect(await skiffTransform(skiff)).toBe(frozenAt);
   });
 
   test('speed scales skiff motion: running (not paused) visibly advances position', async ({
@@ -1266,10 +1287,12 @@ test.describe('ambient osmosis skiffs on the map (#161, replaces the pulses #63)
     await page.getByRole('button', { name: '100x' }).click();
     await expect(map.locator('.osmosis-skiff').first()).toBeVisible();
     const skiff = await firstActiveSkiff(map);
+    // Running (not paused, not reduced-motion): the glide class is present.
+    await expect(skiff).toHaveClass(/osmosis-skiff--animating/);
 
-    const at1 = await skiff.getAttribute('transform');
+    const at1 = await skiffTransform(skiff);
     await page.waitForTimeout(700); // hundreds of ticks at 100x — well over one skiff cycle
-    const at2 = await skiff.getAttribute('transform');
+    const at2 = await skiffTransform(skiff);
     expect(at2).not.toBe(at1);
   });
 
@@ -1283,6 +1306,8 @@ test.describe('ambient osmosis skiffs on the map (#161, replaces the pulses #63)
     await page.getByRole('button', { name: '100x' }).click();
     await expect(map.locator('.osmosis-skiff').first()).toBeVisible();
     const skiff = await firstActiveSkiff(map);
+    // Reduced motion never glides, running or not (#173).
+    await expect(skiff).not.toHaveClass(/osmosis-skiff--animating/);
     const dateLabel = page.locator('.top-bar__date');
     const dateAt1 = await dateLabel.innerText();
 
@@ -1296,9 +1321,9 @@ test.describe('ambient osmosis skiffs on the map (#161, replaces the pulses #63)
     // negligible while the world-date readout still proves ticks genuinely
     // advanced (not just "nothing happened").
     await page.getByRole('button', { name: '1x' }).click();
-    const at1 = await skiff.getAttribute('transform');
+    const at1 = await skiffTransform(skiff);
     await page.waitForTimeout(1_200);
-    const at2 = await skiff.getAttribute('transform');
+    const at2 = await skiffTransform(skiff);
     await expect(dateLabel).not.toHaveText(dateAt1); // proves real ticks elapsed
     expect(at2).toBe(at1);
   });

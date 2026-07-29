@@ -884,16 +884,41 @@ body {
    distinct from the gold ship/course accents so the two signals never get
    confused (ADR-0006, incident 0002: gold is reserved for the Controlled
    Ship). Position is computed in JS from the sim tick (src/ui/skiffPosition.ts)
-   — no CSS animation, so pause/speed changes affect it for free; nothing
-   here needs a prefers-reduced-motion override (the frozen-frac branch lives
-   in the position math, not the stylesheet). */
+   — position itself is sim-tick anchored, never wall-clock (#161 lock); the
+   render-side glide between consecutive tick positions (#173) is presentation
+   only, added via `.osmosis-skiff--animating`'s transition below. */
 .region-map__osmosis {
   pointer-events: none;
 }
 
 .osmosis-skiff {
+  /* Toned down (#173, 2026-07-14 playtest): reduced opacity/contrast so
+     skiffs read as ambient background traffic rather than competing for
+     attention with the Controlled Ship — same blue hue, not a new color
+     (ADR-0006, one-color-one-meaning), just quieter. */
   fill: #7fb4e0;
-  filter: drop-shadow(0 0 0.6px #7fb4e0);
+  opacity: 0.55;
+  filter: drop-shadow(0 0 0.3px rgba(127, 180, 224, 0.5));
+  /* Rotation origin pinned to the element's own (0,0), matching the old
+     SVG `transform` *attribute*'s semantics exactly (translate, then rotate
+     about the new local origin) — the CSS default origin is the nearest
+     SVG viewport's center, which would swing every skiff around the map's
+     center instead of its own heading. */
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+
+/* Render-side easing (#173): glides between consecutive tick positions
+   instead of a once-per-tick jump. View-local only — position itself stays
+   a pure function of `tick` (#161 lock); this only interpolates how the
+   already-computed positions are *presented*. Class is applied only while
+   running and motion isn't reduced (RegionMap.tsx `skiffAnimating`), same
+   precedent as `.route-ribbon__ship--animating`: pausing/reduced-motion
+   drops the class, so the transition property itself is gone and the glyph
+   holds its authored tick position with no transition at all — a hard
+   freeze, not a settle. */
+.osmosis-skiff--animating {
+  transition: transform 0.3s linear;
 }
 
 .port {

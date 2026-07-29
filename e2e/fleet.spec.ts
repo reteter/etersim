@@ -168,7 +168,11 @@ test.describe('fleet list (#83/#54)', () => {
       .locator('g.port')
       .filter({ has: page.locator('.port__label', { hasText: exactOtherPort }) });
     await otherPortNode.click({ force: true });
-    const sailBtn = page.getByRole('button', { name: /^Płyń tu — .+ \(~\d+ ticków\)$/ });
+    // #125: the button also carries the destination's docking fee after
+    // the ETA — "opłata dokowa ₸<n>".
+    const sailBtn = page.getByRole('button', {
+      name: /^Płyń tu — .+ \(~\d+ ticków, opłata dokowa ₸\d+\)$/,
+    });
     await expect(sailBtn).toBeVisible();
     await sailBtn.click();
 
