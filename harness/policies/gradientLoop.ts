@@ -54,6 +54,18 @@ function midPrice(world: World, portId: PortId, good: GoodId): number {
 }
 
 /**
+ * Throws unless `portId` names a port that actually exists in `world.region`.
+ * Shared by `init`'s `sourcePortId`/`targetPortId` validation so both checks
+ * report the same descriptive shape instead of two hand-duplicated blocks.
+ */
+function requirePortExists(world: World, portId: PortId, paramName: "sourcePortId" | "targetPortId"): void {
+  const exists = world.region.ports.some((p) => p.id === portId);
+  if (!exists) {
+    throw new Error(`gradientLoop: ${paramName} "${portId}" does not exist in this region`);
+  }
+}
+
+/**
  * The steepest gradient in the region right now: the (good, cheapest port,
  * dearest port) triple with the largest dearest/cheapest price ratio.
  * Deterministic on ties — iteration follows `GOOD_IDS` and `region.ports`
@@ -111,27 +123,16 @@ export function gradientLoop(params: GradientLoopParams = {}): Policy<GradientLo
     // and effective base prices), not sim internals like flow drift or RNG state.
     diagnostic: false,
     init(world) {
+      // Validate explicit port IDs *before* any computation that assumes
+      // they exist (steepestGradient below), so a bad port ID on a
+      // degenerate region reports the actual "no such port" mistake instead
+      // of a gradient-computation error.
+      if (params.sourcePortId) requirePortExists(world, params.sourcePortId, "sourcePortId");
+      if (params.targetPortId) requirePortExists(world, params.targetPortId, "targetPortId");
+
       const found = steepestGradient(world);
       const source = params.sourcePortId ?? found.source;
       const target = params.targetPortId ?? found.target;
-
-      // Validate explicit port IDs, if provided.
-      if (params.sourcePortId) {
-        const sourcePortExists = world.region.ports.some((p) => p.id === params.sourcePortId);
-        if (!sourcePortExists) {
-          throw new Error(
-            `gradientLoop: sourcePortId "${params.sourcePortId}" does not exist in this region`,
-          );
-        }
-      }
-      if (params.targetPortId) {
-        const targetPortExists = world.region.ports.some((p) => p.id === params.targetPortId);
-        if (!targetPortExists) {
-          throw new Error(
-            `gradientLoop: targetPortId "${params.targetPortId}" does not exist in this region`,
-          );
-        }
-      }
 
       return {
         good: params.good ?? found.good,

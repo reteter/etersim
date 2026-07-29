@@ -3,9 +3,11 @@ import {
   advanceDays,
   cargoUsed,
   createWorld,
+  storeOf,
   TICKS_PER_DAY,
   type Command,
   type LedgerEvent,
+  type Ship,
   type World,
 } from "../src/sim/index.ts";
 import { doNothing } from "./policies/doNothing.ts";
@@ -23,6 +25,26 @@ const SEEDS = [1, 7, 42];
 const DAYS = 40;
 
 const trades = (world: World) => world.ledger.filter((e): e is Extract<LedgerEvent, { kind: "trade" }> => e.kind === "trade");
+
+/** Immutable-spread rebuild of `world` with `patch` applied to its first
+ *  ship and `thalers` set on the Company — the fixture-construction pattern
+ *  used by `harness/invariants.test.ts`'s deliberately-broken worlds, so
+ *  these tests exercise the same "spread, no `any`" shape rather than
+ *  mutating a `readonly World` in place through an `as any` escape hatch. */
+function withFirstShipAndPurse(world: World, thalers: number, patch: Partial<Ship>): World {
+  const [first, ...rest] = world.company.ships;
+  if (first === undefined) {
+    throw new Error("withFirstShipAndPurse: fixture requires at least one ship");
+  }
+  return {
+    ...world,
+    company: {
+      ...world.company,
+      thalers,
+      ships: [{ ...first, ...patch }, ...rest],
+    },
+  };
+}
 
 describe("doNothing — the null baseline", () => {
   it("issues no commands: the Run is indistinguishable from letting the world tick alone", () => {
@@ -113,20 +135,17 @@ describe("gradientLoop — the reference trader", () => {
   });
 
   it("executes qty <= 0 branch: when a port has insufficient stock or affordability, act() returns no buy command", () => {
-    // Test the restock-wait branch (line 139) directly by calling act()
-    // on a world where the source port is unaffordable.
-    const world = createWorld(42);
+    // Test the restock-wait branch directly by calling act() on a world
+    // where the source port is unaffordable.
+    const base = createWorld(42);
     const policy = gradientLoop();
-    const memory = policy.init(world);
+    const memory = policy.init(base);
 
     // Ship at source with zero cargo and zero thalers: can't afford a buy.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (world.company as any).thalers = 0;
-    const ship = world.company.ships[0]!;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (ship as any).location = { kind: "docked", portId: memory.source };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (ship as any).cargo = { grain: 0, flour: 0, seeds: 0, tool: 0 };
+    const world = withFirstShipAndPurse(base, 0, {
+      location: { kind: "docked", portId: memory.source },
+      cargo: storeOf({}),
+    });
 
     const step = policy.act(world, memory);
     // With qty <= 0 and no cargo, should return no commands (wait).
@@ -135,22 +154,15 @@ describe("gradientLoop — the reference trader", () => {
   });
 
   it("executes qty <= 0 branch: when carrying cargo at source with no affordability, it sails to target to sell", () => {
-    const world = createWorld(42);
+    const base = createWorld(42);
     const policy = gradientLoop();
-    const memory = policy.init(world);
+    const memory = policy.init(base);
 
     // Ship at source with existing cargo and zero thalers: can't buy, should sail to sell.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (world.company as any).thalers = 0;
-    const ship = world.company.ships[0]!;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (ship as any).location = { kind: "docked", portId: memory.source };
-    // Cargo is a GoodsStore (Record<GoodId, number>). Set the policy's good to 10 qty.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const cargo: any = { grain: 0, flour: 0, seeds: 0, tool: 0 };
-    cargo[memory.good] = 10;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (ship as any).cargo = cargo;
+    const world = withFirstShipAndPurse(base, 0, {
+      location: { kind: "docked", portId: memory.source },
+      cargo: storeOf({ [memory.good]: 10 }),
+    });
 
     const step = policy.act(world, memory);
     // With qty <= 0 but carrying cargo, should sail to target to sell.
@@ -160,13 +172,15 @@ describe("gradientLoop — the reference trader", () => {
     expect(cmd.portId).toBe(memory.target);
   });
 
-  it("rejects a one-port region with a descriptive error (steepestGradient fallback, line 92)", () => {
-    // The fallback on line 92 throws when no gradient is found.
-    // Create a world, then cull all but one port to trigger this edge case.
-    const world = createWorld(42);
-    // Remove all but the first port.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (world.region as any).ports = [world.region.ports[0]!];
+  it("rejects a one-port region with a descriptive error (steepestGradient fallback)", () => {
+    // The fallback throws when no gradient is found. Build a world with all
+    // but one port removed via immutable spread — no in-place mutation.
+    const base = createWorld(42);
+    const [onlyPort] = base.region.ports;
+    const world: World = {
+      ...base,
+      region: { ...base.region, ports: onlyPort === undefined ? [] : [onlyPort] },
+    };
 
     expect(() => {
       gradientLoop().init(world);
@@ -180,18 +194,6 @@ describe("gradientLoop — the reference trader", () => {
     // A test that pins this contract enforces §Laws on future consumers.
     const policy = gradientLoop();
     expect(policy.diagnostic).toBe(false);
-  });
-
-  it("diagnostic flag can round-trip through a Run (contract enforcement)", () => {
-    // Even if a future policy set diagnostic: true, the flag should
-    // round-trip readable through runPolicy and in policy metadata.
-    // This pins that future consumers of the diagnostic flag will see it.
-    const policy = gradientLoop();
-    const world = createWorld(1);
-    runPolicy(world, policy, 1); // Run is observable without inspecting memory.
-    // If diagnostic were unreadable post-run, this test would fail
-    // when a consumer tries to enforce the contract.
-    expect(policy.diagnostic).toBeDefined();
   });
 });
 

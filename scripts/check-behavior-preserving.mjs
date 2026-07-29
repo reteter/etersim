@@ -67,7 +67,18 @@ Exit codes: 0 clean, 1 hard violation (test added/removed), 2 review needed
 the full contract.
 `;
 
-const TEST_FILE_RE = /^src\/.*\.test\.tsx?$|^e2e\/.*\.spec\.ts$|^harness\/.*\.test\.ts$/;
+// Single source of truth for "what counts as a test file": each entry pairs
+// the regex clause with the human-readable glob it stands for, so the
+// "scanning corpus: ..." banner below is *derived* from the same list that
+// drives matching, not a hand-written string that can drift out of sync the
+// next time a clause is added (incident 0030 — a claim of coverage that
+// isn't mechanically tied to what's covered).
+const TEST_FILE_PATTERNS = [
+  { glob: "src/**/*.test.ts(x)", re: /^src\/.*\.test\.tsx?$/ },
+  { glob: "e2e/**/*.spec.ts", re: /^e2e\/.*\.spec\.ts$/ },
+  { glob: "harness/**/*.test.ts", re: /^harness\/.*\.test\.ts$/ },
+];
+const TEST_FILE_RE = new RegExp(TEST_FILE_PATTERNS.map((pattern) => pattern.re.source).join("|"));
 
 // Non-exhaustive on purpose (documented in --help and the header comment
 // above) — extend this list as new matcher styles show up in the suite.
@@ -191,7 +202,7 @@ export function run(argv) {
     `check-behavior-preserving: ${changed.length} test file(s) changed between ${baseRef} and ${headRef}.`,
   );
   console.log(
-    `check-behavior-preserving: scanning corpus: src/**/*.test.ts(x), e2e/**/*.spec.ts, harness/**/*.test.ts`,
+    `check-behavior-preserving: scanning corpus: ${TEST_FILE_PATTERNS.map((pattern) => pattern.glob).join(", ")}`,
   );
   if (dirsChanged.size > 0) {
     console.log(`check-behavior-preserving: directories with changes: ${Array.from(dirsChanged).sort().join(", ")}`);
