@@ -2,6 +2,7 @@ import { useState, type CSSProperties } from "react";
 import {
   ARCHETYPE_PROFILES,
   GOOD_IDS,
+  GOODS,
   type GoodId,
   type Port,
   type PortId,
@@ -634,6 +635,14 @@ export function PriceBoardOverlay({
                         grid's uniform column width. */}
                     <GoodIcon className="price-board__good-icon" aria-hidden="true" />
                     <span className="price-board__good-name">{GOOD_NAME_PL[good]}</span>
+                    {/* The mockup's per-column `bazowa 10` sub-caption: the
+                        good's reference price, so a column of three-digit
+                        numbers has a scale to be read against. Also
+                        width-neutral — it is the shortest line in the
+                        header. */}
+                    <span className="price-board__good-base">
+                      bazowa {GOODS[good].basePrice}
+                    </span>
                   </button>
                   <button
                     type="button"

@@ -1132,6 +1132,16 @@ body {
   white-space: nowrap;
 }
 
+.price-board__good-base {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #6b7488;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* #414: the emphasis signal for "interactive/focused" is weight, not color
    (docs/specs/E16-workbench.md §"Visual channel — intensity, not hue"; #395
    AC1) — a `color` shift here would be a second, grayscale-but-still-hue way
@@ -2352,12 +2362,18 @@ body {
   opacity: 0.85;
 }
 
+/* Fixed width, not content width. A wide order chip ("sprzedaj całość ·
+   Zboże") otherwise widened its own Stop column, and since the leg ends at
+   the column's edge while the disc centres inside it, the rail visibly
+   stopped short of the last node. Fixing the column decouples chip width
+   from rail geometry — the legs meet the discs, and the same chip cannot
+   nudge the layout by getting longer. */
 .route-ribbon__node {
   display: flex;
   flex-direction: column;
   align-items: center;
   flex: none;
-  max-width: 8.5rem;
+  width: 5.5rem;
 }
 
 /* Reserved room for future port-status icons — the owner asked for the space
@@ -2432,12 +2448,16 @@ body {
 
 /* The action row (D6's second vertical state): order chips under their own
    port, rendered as a row of Stops each holding a column of chips. */
+/* Wider than its Stop column, centred, and bleeding equally into the legs on
+   both sides via negative margins — so a chip can be legible without
+   participating in the rail's width (see `.route-ribbon__node`). */
 .route-ribbon__orders {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  margin-top: 6px;
+  margin: 6px -1.75rem 0;
+  width: 9rem;
 }
 
 .route-ribbon__order {
