@@ -115,6 +115,26 @@ async function boardWithTwoStopRoute(page: Page, world: World, aId: string, bId:
   await rowB.locator('.price-board__cell-btn').nth(0).click();
 
   await expect(dialog.locator('.route-ribbon__chip')).toHaveCount(2);
+
+  // Both ports infer the same kind here, which would leave the shot showing
+  // only the green half of D4's pair — and D4's inversion (rust = you sell)
+  // is the most contentious call in the set, so it must be *visible*.
+  // Flipping Stop 2 to a sell through the **relocated drawer** also puts the
+  // "więcej" panel on the ribbon in frame: direct evidence that D7 moved the
+  // drawer rather than removed it.
+  await dialog.locator('.route-ribbon__chip-label--btn').last().click();
+  await dialog.getByRole('button', { name: /ustaw zlecenie na Sprzedaj$/ }).click();
+  await expect(dialog.locator('.route-ribbon__chip--sell')).toHaveCount(1);
+  await expect(dialog.locator('.route-ribbon__chip--buy')).toHaveCount(1);
+
+  // Evidence crop while the drawer is open — the claim "D7 moved the
+  // 'więcej' drawer onto the ribbon, it was not removed" is worth a picture.
+  await expect(dialog.locator('.price-board__order-more')).toHaveCount(1);
+  await dialog.locator('.route-ribbon').screenshot({ path: `${SHOTS}crop-ribbon-drawer.png` });
+
+  // Collapse it again: shot 11 is the resting state, not a menu mid-use.
+  await dialog.locator('.route-ribbon__chip-label--btn').last().click();
+  await expect(dialog.locator('.price-board__order-more')).toHaveCount(0);
   return { dialog, rowA, rowB };
 }
 
@@ -184,6 +204,56 @@ test('proto shot — the vendored mockup, dark theme', async ({ page }) => {
   await page.locator('.ribbon-pane').scrollIntoViewIfNeeded();
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${SHOTS}14-mockup-dark.png` });
+});
+
+/**
+ * The two "grows smoothly" criteria, checked rather than eyeballed: a
+ * screenshot cannot tell a working transition from a dead one, and both
+ * `height: auto` (the dock) and an un-transitioned `min-height` (the action
+ * row) would fail *silently*, looking identical at rest. Sampling mid-flight
+ * is the only evidence that the interpolation actually happens.
+ */
+test('D6 — the dock and the action row both animate, rather than snapping', async ({ page }) => {
+  test.setTimeout(120_000);
+  const { world, agrarianPortId, otherPortId } = protoWorld('e16-visual-proto-motion');
+  await continueWithWorld(page, world);
+
+  await page.getByRole('button', { name: /tablica cen/i }).click();
+  const dialog = page.getByRole('dialog', { name: /tablica cen/i });
+  const dock = dialog.locator('.price-board__ribbon-dock-inner');
+
+  // (a) The dock opens with authoring mode: 0 → its resting height.
+  await expect(dock).toHaveCount(1);
+  const dockClosed = (await dock.boundingBox())!.height;
+  expect(dockClosed).toBe(0);
+  await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+  await page.waitForTimeout(60);
+  const dockMid = (await dock.boundingBox())!.height;
+  await page.waitForTimeout(700);
+  const dockOpen = (await dock.boundingBox())!.height;
+  expect(dockOpen).toBeGreaterThan(0);
+  expect(dockMid).toBeGreaterThan(0);
+  expect(dockMid).toBeLessThan(dockOpen); // caught mid-interpolation
+
+  // (b) The action row's step: the ribbon grows once the first order lands.
+  const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+  const aIdx = world.region.ports.findIndex((p) => p.id === agrarianPortId);
+  const bIdx = world.region.ports.findIndex((p) => p.id === otherPortId);
+  await rows.nth(aIdx).click();
+  await rows.nth(bIdx).click();
+  await page.waitForTimeout(600);
+  const ribbon = dialog.locator('.route-ribbon');
+  const bare = (await ribbon.boundingBox())!.height;
+
+  await rows.nth(aIdx).locator('.price-board__cell-btn').nth(0).click();
+  await page.waitForTimeout(60);
+  const growing = (await ribbon.boundingBox())!.height;
+  await page.waitForTimeout(700);
+  const grown = (await ribbon.boundingBox())!.height;
+
+  expect(grown).toBeGreaterThan(bare); // the step happened at all
+  expect(growing).toBeGreaterThan(bare); // ...and was interpolated, not snapped
+  expect(growing).toBeLessThan(grown);
 });
 
 /**

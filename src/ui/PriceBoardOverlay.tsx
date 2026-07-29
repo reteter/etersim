@@ -555,12 +555,29 @@ export function PriceBoardOverlay({
               the closed state so the transition has a start frame. */}
           <div
             className={
-              authoring && ribbonNodes.length >= 2
+              authoring
                 ? "price-board__ribbon-dock price-board__ribbon-dock--open"
                 : "price-board__ribbon-dock"
             }
           >
             <div className="price-board__ribbon-dock-inner">
+              {/* The dock opens with **authoring mode**, not with the second
+                  Stop — the package's "it appears with authoring mode" and
+                  the mockup's `.ribbon.empty::before` (a dashed frame
+                  carrying "Kliknij port w siatce → ląduje tu jako Stop")
+                  agree, and the mockup wins on appearance. `RouteRibbon`
+                  itself still returns null below 2 nodes (route.ts: a Route
+                  needs >=2 Stops), so the empty frame is the board's, not
+                  the component's. */}
+              {ribbonNodes.length < 2 && (
+                <div className="route-ribbon route-ribbon--empty">
+                  <p className="route-ribbon__empty-hint">
+                    {ribbonNodes.length === 0
+                      ? "Kliknij port w siatce → ląduje tu jako przystanek. Kliknij komórkę towaru → dopina zlecenie."
+                      : "Kliknij kolejny port → trasa domknie się w pętlę."}
+                  </p>
+                </div>
+              )}
               {ribbonNodes.length >= 2 && draft && (
                 <RouteRibbon
                   routeName={draft.name}

@@ -17,6 +17,21 @@
      this grey-slate has ~0% saturation and reads unmistakably distinct from
      gold's warm, saturated hue at a glance. */
   --archetype-freeport: #8c8f96;
+
+  /* Trade pair (#468 D4, E16 visual prototype) — a dedicated palette,
+     deliberately NOT the game's #5fbf7f / #d9705f, which already mean
+     progress and warning (founding-savings bar, Headquarters progress fill,
+     .route-row__suspended, whose own comment reads "a warning, not a new
+     meaning"). Reusing that pair for prices would have a player reading a
+     warning where none exists (§Laws 9, ADR-0006).
+
+     Colour tracks the **player's action**, not the direction of cash: green
+     = you buy (the ask), rust = you sell (the bid). That inverts one detail
+     of the owner's dictated layout — flagged at the table and accepted, so
+     it is not a bug to be "fixed" back. Dark-theme values taken from the
+     mockup's --buy / --sell tokens. */
+  --trade-buy: #5fbf8a;
+  --trade-sell: #db7a68;
 }
 
 html,
@@ -2293,6 +2308,23 @@ body {
   }
 }
 
+/* Empty state (the mockup's `.ribbon.empty::before`): authoring opens the
+   dock immediately, so the reserved room is visible and the growth to a real
+   rail is one continuous motion rather than a pop-in at the second Stop. */
+.route-ribbon--empty {
+  display: grid;
+  place-items: center;
+  padding: 0.7rem 1.4rem;
+}
+
+.route-ribbon__empty-hint {
+  margin: 0;
+  max-width: 32rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #6b7488;
+}
+
 .route-ribbon__rail {
   display: flex;
   align-items: flex-start;
@@ -2415,16 +2447,6 @@ body {
   gap: 3px;
 }
 
-/* The trade pair (#468 D4) — a dedicated palette, deliberately NOT the
-   game's #5fbf7f / #d9705f, which already mean progress and warning
-   (founding-savings bar, HQ progress fill, .route-row__suspended). Colour
-   tracks the *player's action*: green = you buy (ask), rust = you sell
-   (bid). Dark-theme values from the mockup's --buy / --sell tokens. */
-:root {
-  --trade-buy: #5fbf8a;
-  --trade-sell: #db7a68;
-}
-
 .route-ribbon__chip {
   display: inline-flex;
   align-items: center;
@@ -2461,6 +2483,40 @@ body {
 .route-ribbon__chip-label {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The "więcej" drawer, relocated (#468 D7): the board's existing markup,
+   re-laid-out for the Stop column it now sits in. Kept **in flow** rather
+   than floated — the dock's `overflow: hidden` (needed for the 0fr→1fr open)
+   would clip a positioned layer, and a real dismissible layer is D1/D7's
+   popover, deliberately out of this prototype's scope. Consequence, flagged:
+   opening a drawer is a third vertical state, which is exactly the one D7's
+   context menu is meant to remove. */
+.route-ribbon__order .price-board__order-more {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  width: 10rem;
+  margin-top: 0.15rem;
+  padding: 0.4rem;
+  border: 1px solid #2f3846;
+  border-radius: 7px;
+  background: #1b212b;
+}
+
+.route-ribbon__order .price-board__order-kind-picker {
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.route-ribbon__order .price-board__order-kind-picker .menu-btn {
+  padding: 0 0.3rem;
+  font-size: 0.65rem;
+}
+
+.route-ribbon__order .price-board__order-more input {
+  width: 100%;
+  font-size: 0.7rem;
 }
 
 .route-ribbon__chip-label--btn {
