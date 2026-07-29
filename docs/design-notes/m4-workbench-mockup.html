@@ -1,0 +1,758 @@
+<!--
+  M4 Workbench mockup — the visual reference for E16 (docs/specs/E16-workbench.md).
+
+  Provenance: built during the M4 grill on 2026-07-22 and published as a claude.ai
+  Artifact (841e1257-0cc8-459e-aafd-1c356ac9e865). Vendored into the repo on
+  2026-07-29 because its absence is why the board's as-built look could drift from
+  this design with nothing to diff it against — the spec cited a file that did not
+  exist here, so every review read prose instead of looking at the picture.
+
+  Open it in a browser. It is a working demo: click a port row to add a Stop, click
+  a good cell to attach an order.
+
+  Status: BINDING as the visual contract for the board, to the extent the
+  2026-07-29 visual grill ratifies it (the mockup is light-themed, the game is
+  dark — so it is a contract on structure, hierarchy and idiom, not on literal
+  hex values). Do not edit to match the code; the code moves to match this, or
+  the spec records a deliberate, dated departure.
+--><!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style></head><body>
+<style>
+  /* ===== M4 Workbench mockup — tokens ===== */
+  :root {
+    --ground: #eef0f3;
+    --panel: #ffffff;
+    --panel-2: #f6f7f9;
+    --line: #d7dbe1;
+    --line-strong: #c2c8d1;
+    --ink: #191d24;
+    --ink-2: #4a525e;
+    --ink-3: #7c8593;
+    --accent: #14818f;        /* aether-cyan (chosen accent) */
+    --accent-soft: #d3eef1;
+    --gold: #b7852b;          /* Controlled Ship ONLY (ADR-0006) */
+    --buy: #2c6e49;           /* semantic: buy order (green) */
+    --sell: #9a3b2f;          /* semantic: sell order (rust) */
+    --arch-agrarian: #79943c;
+    --arch-industrial: #ab5a36;
+    --arch-urban: #437ab6;
+    --arch-mining: #7e55ab;
+    --arch-verdant: #369169;
+    --arch-freeport: #8c8f96;
+    --shadow: 0 1px 2px rgba(20,24,32,.08), 0 8px 24px rgba(20,24,32,.06);
+    --radius: 10px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #14171d;
+      --panel: #1b1f27;
+      --panel-2: #21262f;
+      --line: #2c333e;
+      --line-strong: #3a424f;
+      --ink: #e7eaef;
+      --ink-2: #a9b2bf;
+      --ink-3: #6f7886;
+      --accent: #45b7c6;
+      --accent-soft: #16333a;
+      --gold: #e0a840;
+      --buy: #5fbf8a;
+      --sell: #db7a68;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --ground:#eef0f3; --panel:#fff; --panel-2:#f6f7f9; --line:#d7dbe1; --line-strong:#c2c8d1;
+    --ink:#191d24; --ink-2:#4a525e; --ink-3:#7c8593; --accent:#14818f; --accent-soft:#d3eef1;
+    --gold:#b7852b; --buy:#2c6e49; --sell:#9a3b2f; --shadow:0 1px 2px rgba(20,24,32,.08),0 8px 24px rgba(20,24,32,.06);
+  }
+  :root[data-theme="dark"] {
+    --ground:#14171d; --panel:#1b1f27; --panel-2:#21262f; --line:#2c333e; --line-strong:#3a424f;
+    --ink:#e7eaef; --ink-2:#a9b2bf; --ink-3:#6f7886; --accent:#45b7c6; --accent-soft:#16333a;
+    --gold:#e0a840; --buy:#5fbf8a; --sell:#db7a68; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .wrap {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    min-height: 100%;
+    padding: clamp(16px, 3vw, 40px);
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 1120px; margin: 0 auto; }
+
+  .eyebrow {
+    font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--accent); font-weight: 700; margin: 0 0 6px;
+  }
+  h1 { font-size: clamp(24px, 3.4vw, 36px); line-height: 1.1; margin: 0 0 10px; text-wrap: balance; letter-spacing: -.01em; }
+  .lede { font-size: 16px; color: var(--ink-2); max-width: 68ch; margin: 0 0 6px; }
+  .provisional {
+    display:inline-flex; gap:8px; align-items:center; margin-top:14px;
+    font-size:13px; color:var(--ink-2); background:var(--panel);
+    border:1px solid var(--line); border-radius:999px; padding:6px 14px;
+  }
+  .provisional b { color: var(--ink); }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--gold); box-shadow:0 0 0 3px color-mix(in srgb, var(--gold) 25%, transparent); }
+
+  section { margin-top: 34px; }
+  .sec-head { display:flex; align-items:baseline; gap:12px; margin-bottom:14px; }
+  .sec-num {
+    font-family:var(--mono); font-size:12px; color:var(--accent); font-weight:700;
+    border:1px solid var(--accent); border-radius:6px; padding:2px 7px; white-space:nowrap;
+  }
+  .sec-head h2 { font-size:19px; margin:0; letter-spacing:-.01em; }
+  .sec-head p { margin:2px 0 0; font-size:13.5px; color:var(--ink-3); }
+
+  /* ===== the workbench window ===== */
+  .window {
+    background: var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow: var(--shadow); overflow:hidden;
+  }
+  .titlebar {
+    display:flex; align-items:center; gap:12px; padding:11px 16px;
+    background: var(--panel-2); border-bottom:1px solid var(--line);
+  }
+  .titlebar .tt { font-weight:650; font-size:14px; letter-spacing:.01em; }
+  .titlebar .tabs { display:flex; gap:2px; margin-left:6px; }
+  .tab {
+    font-size:12.5px; padding:5px 12px; border-radius:7px 7px 0 0; color:var(--ink-3);
+    border:1px solid transparent; border-bottom:none; cursor:default;
+  }
+  .tab.on { color:var(--ink); background:var(--panel); border-color:var(--line); font-weight:600; }
+  .titlebar .spacer { flex:1; }
+  .titlebar .hint { font-size:12px; color:var(--ink-3); }
+
+  .workbench { display:grid; grid-template-columns: 1fr 268px; gap:0; }
+  @media (max-width: 860px){ .workbench { grid-template-columns: 1fr; } }
+
+  .board-pane { padding:16px 16px 20px; border-right:1px solid var(--line); min-width:0; }
+  @media (max-width: 860px){ .board-pane { border-right:none; border-bottom:1px solid var(--line); } }
+
+  .focus-bar {
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px;
+    font-size:12.5px; color:var(--ink-2);
+  }
+  .focus-bar label { color:var(--ink-3); text-transform:uppercase; letter-spacing:.08em; font-size:11px; }
+  .chip-toggle {
+    font-family:var(--sans); font-size:12px; padding:4px 10px; border-radius:999px;
+    border:1px solid var(--line-strong); background:var(--panel); color:var(--ink-2); cursor:pointer;
+  }
+  .chip-toggle.on { background:var(--accent-soft); border-color:var(--accent); color:var(--ink); font-weight:600; }
+  .chip-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* price grid */
+  .grid-scroll { overflow-x:auto; }
+  table.board { border-collapse:separate; border-spacing:0; width:100%; font-size:12.5px; }
+  table.board th, table.board td { padding:0; }
+  .col-good {
+    font-weight:600; font-size:11.5px; text-align:center; color:var(--ink-2);
+    padding:7px 6px 8px; border-bottom:1px solid var(--line); white-space:nowrap;
+    cursor:pointer; user-select:none;
+  }
+  .col-good .base { display:block; font-family:var(--mono); font-size:10px; color:var(--ink-3); font-weight:500; }
+  .col-good.dim { opacity:.32; }
+  .col-good.focused { color:var(--accent); }
+  .col-good.pair-target { color:var(--accent); }
+  .corner { border-bottom:1px solid var(--line); }
+  .col-ghost { color:var(--ink-3); font-weight:500; font-style:italic; opacity:.5; }
+
+  .port-th {
+    text-align:left; padding:8px 12px 8px 10px; border-bottom:1px solid var(--line);
+    cursor:pointer; white-space:nowrap; position:relative;
+  }
+  .port-th:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .port-th:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+  .port-th .pname { display:flex; align-items:center; gap:8px; font-weight:600; font-size:13px; }
+  .port-th .glyph {
+    width:15px; height:15px; border-radius:4px; flex:none;
+    border:1.5px solid var(--pc); background: color-mix(in srgb, var(--pc) 24%, transparent);
+  }
+  .port-th .parch { font-size:10.5px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em; margin-left:23px; }
+  .port-th .addhint {
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    font-size:10.5px; color:var(--accent); opacity:0; transition:opacity .12s;
+  }
+  .port-th:hover .addhint { opacity:1; }
+  .port-th.suggested { background: color-mix(in srgb, var(--gold) 14%, transparent); box-shadow: inset 3px 0 0 var(--gold); }
+  .port-th.in-route { box-shadow: inset 3px 0 0 var(--accent); }
+
+  td.cell { border-bottom:1px solid var(--line); text-align:center; }
+  .cell-inner {
+    display:flex; flex-direction:column; align-items:center; gap:1px; padding:6px 8px;
+    cursor:pointer; border-radius:6px; margin:2px; transition:background .1s;
+  }
+  .cell-inner:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  td.cell.dim .cell-inner { opacity:.3; }
+  .q { font-family:var(--mono); font-variant-numeric:tabular-nums; line-height:1.25; }
+  .q-bid { color:var(--sell); }
+  .q-ask { color:var(--buy); }
+  /* market-quality signal = intensity only (hue-free), 3 tiers */
+  .sig-strong { font-weight:750; opacity:1; }
+  .sig-strong::after { content:"▪"; font-size:7px; vertical-align:middle; margin-left:3px; color:var(--ink-3); }
+  .sig-mid { font-weight:600; opacity:.82; }
+  .sig-weak { font-weight:400; opacity:.42; }
+  .cell-inner:focus-visible { outline:2px solid var(--accent); outline-offset:-2px; }
+
+  .legend {
+    display:flex; flex-wrap:wrap; gap:16px; margin-top:12px; font-size:11.5px; color:var(--ink-3);
+    padding-top:10px; border-top:1px dashed var(--line);
+  }
+  .legend .li { display:flex; align-items:center; gap:6px; }
+  .swb { font-family:var(--mono); }
+
+  /* ===== steps rail ===== */
+  .steps-pane { padding:16px 16px 18px; background:var(--panel-2); }
+  .steps-pane h3 { font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-3); margin:0 0 12px; }
+  ol.steps { list-style:none; margin:0 0 16px; padding:0; display:flex; flex-direction:column; gap:2px; }
+  ol.steps li {
+    display:grid; grid-template-columns:22px 1fr; gap:9px; align-items:start;
+    font-size:12.5px; color:var(--ink-3); padding:7px 0; transition:color .15s;
+  }
+  ol.steps li .n {
+    width:22px; height:22px; border-radius:50%; display:grid; place-items:center;
+    font-family:var(--mono); font-size:11px; font-weight:700;
+    border:1.5px solid var(--line-strong); color:var(--ink-3);
+  }
+  ol.steps li.active { color:var(--ink); }
+  ol.steps li.active .n { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  ol.steps li.done { color:var(--ink-2); }
+  ol.steps li.done .n { border-color:var(--buy); color:var(--buy); background:transparent; }
+  ol.steps li.done .n::after { content:"✓"; }
+  ol.steps li.done .n .lbl { display:none; }
+  .btn {
+    font-family:var(--sans); font-size:12.5px; font-weight:600; cursor:pointer;
+    border-radius:8px; padding:8px 14px; border:1px solid var(--line-strong);
+    background:var(--panel); color:var(--ink); width:100%;
+  }
+  .btn:hover { border-color:var(--accent); }
+  .btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  :root[data-theme="dark"] .btn.primary, .btn.primary { color:#062227; }
+  @media (prefers-color-scheme: dark){ .btn.primary { color:#062227; } }
+
+  /* ===== the ribbon ===== */
+  .ribbon-pane { padding:16px 18px 20px; border-top:1px solid var(--line); background:var(--panel); }
+  .ribbon-head { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .ribbon-head .rl { font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-3); }
+  .ribbon-head .dispatch { margin-left:auto; display:flex; gap:6px; }
+  .mini-btn {
+    font-size:11.5px; padding:4px 10px; border-radius:7px; border:1px solid var(--line-strong);
+    background:var(--panel-2); color:var(--ink-2); cursor:pointer; display:inline-flex; align-items:center; gap:5px;
+  }
+  .mini-btn:hover { border-color:var(--accent); color:var(--ink); }
+  .mini-btn .shipdot { width:9px; height:9px; border-radius:2px; background:var(--gold); }
+
+  .ribbon {
+    position:relative; min-height:112px; border:1px dashed var(--line-strong); border-radius:10px;
+    background: var(--panel-2); padding:20px 26px 26px; overflow:hidden;
+  }
+  .ribbon.empty::before {
+    content:"Kliknij port w siatce → ląduje tu jako Stop. Kliknij komórkę towaru → dopina order.";
+    position:absolute; inset:0; display:grid; place-items:center; text-align:center;
+    color:var(--ink-3); font-size:12.5px; padding:0 30px;
+  }
+  .track {
+    position:relative; display:flex; align-items:flex-start; gap:0; min-height:70px;
+  }
+  .stop { position:relative; display:flex; flex-direction:column; align-items:center; }
+  .leg { flex:1; height:2px; align-self:flex-start; margin-top:16px; min-width:34px;
+         background:linear-gradient(90deg,var(--accent),var(--accent)); opacity:.55; position:relative; }
+  .stop-node {
+    width:34px; height:34px; border-radius:50%; border:2.5px solid var(--pc);
+    background: color-mix(in srgb, var(--pc) 22%, var(--panel)); display:grid; place-items:center;
+    font-family:var(--mono); font-size:11px; font-weight:700; color:var(--ink); position:relative; z-index:2;
+  }
+  .stop-name { font-size:11px; margin-top:6px; color:var(--ink-2); font-weight:600; white-space:nowrap; }
+  .stop-orders { display:flex; flex-direction:column; gap:3px; margin-top:6px; align-items:center; }
+  .ochip {
+    font-size:10px; font-family:var(--mono); padding:1.5px 7px; border-radius:999px; white-space:nowrap;
+    border:1px solid; font-weight:600;
+  }
+  .ochip.buy { color:var(--buy); border-color:color-mix(in srgb,var(--buy) 55%, transparent); background:color-mix(in srgb,var(--buy) 10%, transparent); }
+  .ochip.sell { color:var(--sell); border-color:color-mix(in srgb,var(--sell) 55%, transparent); background:color-mix(in srgb,var(--sell) 10%, transparent); }
+  .stop.active-stop .stop-node { box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 30%, transparent); }
+
+  /* return arc + loop marker */
+  .loop-mark {
+    position:absolute; right:12px; top:8px; font-size:12px; color:var(--ink-3);
+    display:flex; align-items:center; gap:5px;
+  }
+  .loop-arc { position:absolute; left:26px; right:26px; bottom:8px; height:16px; pointer-events:none; }
+  .ship {
+    position:absolute; top:9px; left:0; width:16px; height:16px; z-index:3;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,.3));
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .ship.sailing { animation: sail 6s linear infinite; }
+  }
+  @keyframes sail { from { left:12px; } to { left:calc(100% - 28px); } }
+
+  /* ===== satellite cards ===== */
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:760px){ .grid2 { grid-template-columns:1fr; } }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:18px 18px 20px; box-shadow:var(--shadow); }
+  .card h3 { margin:0 0 4px; font-size:15px; }
+  .card .sub { margin:0 0 14px; font-size:12.5px; color:var(--ink-3); }
+  .card p { font-size:13px; color:var(--ink-2); margin:0 0 10px; }
+
+  /* crux comparison */
+  .crux { display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  @media (max-width:760px){ .crux { grid-template-columns:1fr; } }
+  .crux > div { padding:18px; }
+  .crux .col-b { background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
+  .crux .col-a { background:var(--panel); border-right:1px solid var(--line); }
+  @media (max-width:760px){ .crux .col-a { border-right:none; border-bottom:1px solid var(--line); } }
+  .crux h4 { margin:0 0 3px; font-size:13.5px; display:flex; align-items:center; gap:8px; }
+  .badge { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:999px; }
+  .badge.rej { background:color-mix(in srgb,var(--sell) 15%,transparent); color:var(--sell); }
+  .badge.win { background:color-mix(in srgb,var(--buy) 15%,transparent); color:var(--buy); }
+  .crux .gesture { font-size:12px; color:var(--ink-3); margin:4px 0 12px; font-style:italic; }
+  .crux ul { margin:0; padding-left:18px; font-size:12.5px; color:var(--ink-2); }
+  .crux ul li { margin-bottom:6px; }
+
+  /* signal renderings */
+  .three { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:6px; }
+  @media (max-width:620px){ .three { grid-template-columns:1fr; } }
+  .rend { border:1px solid var(--line); border-radius:8px; padding:12px; background:var(--panel-2); }
+  .rend .rt { font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-3); margin-bottom:9px; }
+  .rend .demo { min-height:48px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; }
+  .action-row { display:flex; gap:6px; }
+  .act { font-size:11px; padding:5px 12px; border-radius:7px; border:1px solid var(--line-strong); font-family:var(--mono); }
+  .act.bright { border-color:var(--accent); background:var(--accent-soft); color:var(--ink); font-weight:700; }
+  .act.faded { opacity:.42; }
+  .lbl-chip { font-size:11px; padding:3px 10px; border-radius:999px; border:1px solid var(--accent); color:var(--accent); font-weight:700; letter-spacing:.04em; }
+  .lbl-chip.rare { border-color:var(--arch-mining); color:var(--arch-mining); }
+  .lbl-chip.urgent { border-color:var(--gold); color:var(--gold); }
+
+  /* roster */
+  .roster-row { display:flex; align-items:center; gap:14px; padding:11px 4px; border-bottom:1px solid var(--line); }
+  .roster-row:last-child { border-bottom:none; }
+  .mini-ribbon { display:flex; align-items:center; flex:1; min-width:0; }
+  .mini-node { width:16px; height:16px; border-radius:50%; border:2px solid var(--pc); background:color-mix(in srgb,var(--pc) 24%,transparent); flex:none; }
+  .mini-leg { height:2px; flex:1; background:var(--accent); opacity:.5; min-width:12px; }
+  .mini-loop { font-size:11px; color:var(--ink-3); margin-left:4px; }
+  .roster-meta { font-size:11.5px; color:var(--ink-3); white-space:nowrap; }
+  .roster-meta .ships { color:var(--gold); font-weight:600; }
+  .edit-link { font-size:11.5px; color:var(--accent); font-weight:600; cursor:pointer; white-space:nowrap; border:none; background:none; padding:4px 6px; }
+  .edit-link:hover { text-decoration:underline; }
+  .edit-link:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+  .note { font-size:12px; color:var(--ink-3); background:var(--panel-2); border-left:3px solid var(--accent); padding:10px 14px; border-radius:0 8px 8px 0; margin-top:12px; }
+  .note b { color:var(--ink-2); }
+
+  .footer { margin-top:40px; padding-top:18px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-3); display:flex; flex-wrap:wrap; gap:8px 20px; }
+  .footer b { color:var(--ink-2); }
+
+  .theme-toggle {
+    position:fixed; top:14px; right:14px; z-index:50; font-family:var(--sans); font-size:12px;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink-2); border-radius:999px;
+    padding:6px 13px; cursor:pointer; box-shadow:var(--shadow);
+  }
+  .theme-toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+
+<button class="theme-toggle" id="themeToggle" aria-label="Przełącz motyw">◐ motyw</button>
+
+<div class="wrap">
+<div class="page">
+
+  <p class="eyebrow">Grill M4 · Warsztat · mockup do decyzji</p>
+  <h1>Fuzja planowania tras w powierzchnię Price Board</h1>
+  <p class="lede">Jeden overlay: siatka cen (czytanie) + edytowalna wstążka trasy (autorstwo). Ten mockup ma <b>rozstrzygnąć krux</b> — bo warianty A i B dają identyczną trasę na końcu, różnią się tylko <i>gestem budowania</i>. Zbuduj trasę niżej, potem zobacz oba gesty obok siebie.</p>
+  <span class="provisional"><span class="dot"></span> Krux <b>(B) port-centric</b> — lock warunkowy, czeka na Twoją wizualną akceptację</span>
+
+  <!-- ================= THE WORKBENCH ================= -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">żywy</span>
+      <div><h2>Warsztat — zbuduj trasę klikając</h2>
+      <p>Kliknij <b>nazwę portu</b> → ląduje na wstążce jako Stop. Kliknij <b>komórkę towaru</b> → dopina order (kierunek z kontekstu). Powierzchnia <i>podpowiada</i> port pary — ale to Ty klikasz.</p></div>
+    </div>
+
+    <div class="window">
+      <div class="titlebar">
+        <span class="tt">Tablica cen</span>
+        <div class="tabs"><span class="tab on">Ceny · Trasa</span><span class="tab">Kontrakty</span></div>
+        <span class="spacer"></span>
+        <span class="hint" id="wbHint">Zacznij od portu-producenta (jasny <b>ask</b>).</span>
+      </div>
+
+      <div class="workbench">
+        <div class="board-pane">
+          <div class="focus-bar">
+            <label>Skup na towarze:</label>
+            <button class="chip-toggle on" data-focus="none">Wszystkie</button>
+            <button class="chip-toggle" data-focus="grain">Grain</button>
+            <button class="chip-toggle" data-focus="textiles">Textiles</button>
+            <button class="chip-toggle" data-focus="aetherSalt">Aether&nbsp;Salt</button>
+            <span style="margin-left:auto; color:var(--ink-3); font-size:11px;">przypinanie ukrywa kolumny (E15-proof)</span>
+          </div>
+          <div class="grid-scroll">
+            <table class="board" id="board" aria-label="Tablica cen regionu"></table>
+          </div>
+          <div class="legend">
+            <span class="li"><span class="q q-ask sig-strong swb">8</span> najlepszy rynek (jasny)</span>
+            <span class="li"><span class="q q-ask sig-mid swb">9</span> blisko najlepszego</span>
+            <span class="li"><span class="q q-ask sig-weak swb">15</span> możliwe, ale gorsze (wyblakły)</span>
+            <span class="li" style="margin-left:auto"><span class="q q-bid swb">bid</span>/<span class="q q-ask swb">ask</span> = sprzedaj/kup · sygnał = <b>intensywność, nie hue</b></span>
+          </div>
+        </div>
+
+        <div class="steps-pane">
+          <h3>Przepływ budowy</h3>
+          <ol class="steps" id="steps">
+            <li data-step="1"><span class="n"><span class="lbl">1</span></span><span>Kliknij <b>port-producenta</b> — dodaje Stop na wstążce</span></li>
+            <li data-step="2"><span class="n"><span class="lbl">2</span></span><span>Kliknij jego <b>komórkę towaru</b> (jasny ask) — dopina <span class="ochip buy" style="display:inline-block">kup</span></span></li>
+            <li data-step="3"><span class="n"><span class="lbl">3</span></span><span>Siatka <b>podświetla</b> port najlepszego bid — sugerowany następny Stop</span></li>
+            <li data-step="4"><span class="n"><span class="lbl">4</span></span><span>Kliknij ten port, potem jego komórkę — dopina <span class="ochip sell" style="display:inline-block">sprzedaj</span></span></li>
+            <li data-step="5"><span class="n"><span class="lbl">5</span></span><span>Pętla domyka się <b>↻</b>; przypisz statek</span></li>
+          </ol>
+          <button class="btn primary" id="demoBtn">▶ Odtwórz przykład</button>
+          <button class="btn" id="clearBtn" style="margin-top:8px;">Wyczyść trasę</button>
+        </div>
+      </div>
+
+      <div class="ribbon-pane">
+        <div class="ribbon-head">
+          <span class="rl">Trasa (wstążka — edytowalna)</span>
+          <span id="routeName" style="font-size:12px; color:var(--ink-2); font-weight:600;"></span>
+          <div class="dispatch">
+            <button class="mini-btn" id="assignBtn"><span class="shipdot"></span> Przypisz statek</button>
+            <button class="mini-btn">Płyń tu (Controlled)</button>
+          </div>
+        </div>
+        <div class="ribbon empty" id="ribbon">
+          <div class="track" id="track"></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Granica mapa ↔ board.</b> Wstążka jest <i>schematyczna</i> (skala umowna) — dlatego nie konkuruje z przestrzennym pięknem orrery. Mapa zostaje read-only: flota w ruchu, skiffy osmozy, postęp budów, klik = Controlled Ship. Autorstwo tras żyje tu, na boardzie.</div>
+  </section>
+
+  <!-- ================= THE CRUX ================= -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">krux</span>
+      <div><h2>Kręgosłup konstrukcji — decyzja, którą klepiesz</h2>
+      <p>Ta sama trasa końcowa, dwa gesty. Który jest kręgosłupem, a który tylko asystą?</p></div>
+    </div>
+    <div class="crux">
+      <div class="col-a">
+        <h4>Good-centric <span class="badge rej">odrzucone jako kręgosłup</span></h4>
+        <div class="gesture">gest: „poł najtańszy ask z najwyższym bid dla towaru X"</div>
+        <ul>
+          <li><b>Gubi kolejność</b> — a Margin Gate liczy marżę względem <i>następnego sell-stopu w kolejności trasy</i>. Bez kolejności semantyka E9.1 pęka.</li>
+          <li><b>Gubi kierunek</b> pętli — „od–do" nie mówi, którędy statek wraca.</li>
+          <li><b>Produkuje fragmenty per-towar</b>, które trzeba scalać po porcie (jeden Stop = jeden port + wiele orderów). Chcesz w Velharrow kupić Grain <i>i</i> Timber? Dwa gesty, jeden port — kto je łączy?</li>
+          <li>Pachnie „auto-sell-at-best", który osobny grill już odrzucił.</li>
+        </ul>
+      </div>
+      <div class="col-b">
+        <h4>Port-centric <span class="badge win">rekomendacja (B)</span></h4>
+        <div class="gesture">gest: układasz porty w sekwencję, dopinasz ordery — to robisz na wstążce wyżej</div>
+        <ul>
+          <li><b>Route = uporządkowana sekwencja portów</b> — dokładnie to, czym Stop jest w modelu (`route.ts`). Kolejność jest jawna i <i>load-bearing</i>.</li>
+          <li><b>Kierunek pętli oczywisty</b> — wstążka rysuje go wprost, z łukiem powrotnym ↻.</li>
+          <li><b>Struktura Stopu wypada sama</b> — port to węzeł, ordery to chipy na nim.</li>
+          <li><b>Good-centric zostaje jako asysta</b> — podświetlenie portu pary (nie auto-wiring). Czytasz towarami, budujesz portami.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SATELLITES ================= -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">spójność</span>
+      <div><h2>Reszta decyzji — jak to trzyma się kupy</h2></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Jeden sygnał, trzy renderingi</h3>
+        <p class="sub">„Jak dobry jest ten (port, towar, kierunek)" liczony <b>raz</b>, pokazany w trzech miejscach. Kanał = intensywność, świadomie <b>bez własnego hue</b> (nie koliduje z archetypem / trendem / złotem).</p>
+        <div class="three">
+          <div class="rend"><div class="rt">Board — emfaza komórki</div><div class="demo">
+            <span class="q q-ask sig-strong swb" style="font-size:15px">8</span>
+            <span class="q q-ask sig-weak swb">15</span></div></div>
+          <div class="rend"><div class="rt">PortPanel — odcień akcji</div><div class="demo">
+            <div class="action-row"><span class="act bright">Kup Grain</span></div>
+            <div class="action-row"><span class="act faded">Sprzedaj Grain</span></div></div></div>
+          <div class="rend"><div class="rt">#227 — etykieta (słowo)</div><div class="demo" style="gap:8px">
+            <span class="lbl-chip">okazja</span>
+            <span class="lbl-chip rare">rzadkie</span>
+            <span class="lbl-chip urgent">pilne</span></div></div>
+        </div>
+        <div class="note"><b>TODO (Twój):</b> odcień akcji w PortPanel wg cargo + wolnej ładowni — jasny „(blisko) najlepszy rynek", wyblakły „możesz, ale są lepsze porty". To ten sam sygnał, tu wyrenderowany.</div>
+      </div>
+
+      <div class="card">
+        <h3>Trasy — rejestr (read-only) + wejście do edycji</h3>
+        <p class="sub">Tab Trasy kurczy się do <b>inspektora</b>: te same wstążki, tylko do oglądania. Autorstwo idzie na board — łącze „Edytuj" otwiera trasę w edytorze wyżej.</p>
+        <div id="roster"></div>
+        <div class="note"><b>Szew, który advisor złapał:</b> rejestr jest read-only → wiersz ma <i>Edytuj →</i>, który wrzuca trasę na wstążkę-warsztat. Bez tego edycja istniejącej trasy wisi w próżni.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Cluster B, objaw (c) — czytelność wykonania w locie</h3>
+      <p class="sub">Z playtestu (#10): „sprzedaj wszystko" czytało się jak wyczyszczenie cargo. To nie powierzchnia planowania — to feedback w runtime.</p>
+      <p><b>Rekomendacja:</b> chip orderu czyta się jawnie jako <span class="ochip sell" style="display:inline-block">sprzedaj całość · Grain</span> (nie enigmatyczne „sell"), a w momencie wykonania — nota jak przy pauzie (#130): <i>„Ravenshoal: sprzedano całość Grain (34 szt.) — Stop 2"</i>. Do potwierdzenia albo świadomego zaparkowania przy pisaniu spec.</p>
+    </div>
+  </section>
+
+  <div class="footer">
+    <span><b>Locki:</b> semantyka tras E9/E9.1 zamrożona · jeden kolor = jedno znaczenie · mapa trzyma przyjemność</span>
+    <span><b>Zakres:</b> to spec epicki M4 Workbench (#376 = jedno issue pod nim; #227/#177/odcienie = towarzyszące)</span>
+    <span><b>Bez kodu w tej sesji</b> — wyjście: spec + CONTEXT.md + PRD §M4</span>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ---- theme toggle ----
+  var root = document.documentElement, tog = document.getElementById("themeToggle");
+  tog.addEventListener("click", function(){
+    var cur = root.getAttribute("data-theme");
+    if(!cur){ cur = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; }
+    root.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  });
+
+  // ---- data (real etersim tokens) ----
+  var ARCH = { agrarian:"var(--arch-agrarian)", industrial:"var(--arch-industrial)", urban:"var(--arch-urban)",
+               mining:"var(--arch-mining)", verdant:"var(--arch-verdant)", freeport:"var(--arch-freeport)" };
+  var ports = [
+    { id:"vel", name:"Velharrow",  arch:"agrarian"   },
+    { id:"sal", name:"Saltmere",   arch:"verdant"    },
+    { id:"bra", name:"Brassmoor",  arch:"urban"      },
+    { id:"tho", name:"Thornquay",  arch:"mining"     },
+    { id:"kru", name:"Kruxhaven",  arch:"industrial" },
+    { id:"pal", name:"Palegate",   arch:"freeport"   }
+  ];
+  var goods = [
+    { id:"grain",     name:"Grain",       base:10 },
+    { id:"textiles",  name:"Textiles",    base:40 },
+    { id:"aetherSalt",name:"Aether Salt", base:60 },
+    { id:"electronics",name:"Electronics",base:150 },
+    { id:"timber",    name:"Timber",      base:250 }
+  ];
+  // prices[portId][goodId] = [bid, ask]
+  var P = {
+    vel:{ grain:[6,8],   textiles:[42,46], aetherSalt:[74,79], electronics:[176,184], timber:[236,246] },
+    sal:{ grain:[7,9],   textiles:[40,44], aetherSalt:[70,75], electronics:[172,180], timber:[205,215] },
+    bra:{ grain:[11,13], textiles:[30,34], aetherSalt:[66,71], electronics:[188,196], timber:[262,272] },
+    tho:{ grain:[12,14], textiles:[52,57], aetherSalt:[46,50], electronics:[168,177], timber:[268,279] },
+    kru:{ grain:[13,15], textiles:[47,51], aetherSalt:[68,73], electronics:[121,129], timber:[300,311] },
+    pal:{ grain:[10,12], textiles:[44,48], aetherSalt:[64,69], electronics:[181,190], timber:[255,266] }
+  };
+  // best per good
+  var bestAsk={}, bestBid={}, bestAskPort={}, bestBidPort={};
+  goods.forEach(function(g){
+    var minA=Infinity,maxB=-Infinity,ap=null,bp=null;
+    ports.forEach(function(p){ var c=P[p.id][g.id]; if(c[1]<minA){minA=c[1];ap=p.id;} if(c[0]>maxB){maxB=c[0];bp=p.id;} });
+    bestAsk[g.id]=minA; bestBid[g.id]=maxB; bestAskPort[g.id]=ap; bestBidPort[g.id]=bp;
+  });
+  function askTier(pid,gid){ var a=P[pid][gid][1]; if(a===bestAsk[gid])return"sig-strong"; if(a<=bestAsk[gid]*1.12)return"sig-mid"; return"sig-weak"; }
+  function bidTier(pid,gid){ var b=P[pid][gid][0]; if(b===bestBid[gid])return"sig-strong"; if(b>=bestBid[gid]*0.9)return"sig-mid"; return"sig-weak"; }
+
+  // ---- state ----
+  var route=[];            // [{portId, orders:[{good,kind}]}]
+  var activeStop=-1;
+  var suggestPort=null;    // port highlighted as pairing suggestion
+  var focus="none";
+
+  var board=document.getElementById("board");
+  var track=document.getElementById("track");
+  var ribbon=document.getElementById("ribbon");
+  var routeName=document.getElementById("routeName");
+  var stepsEl=document.getElementById("steps");
+  var wbHint=document.getElementById("wbHint");
+
+  function portById(id){ return ports.filter(function(p){return p.id===id;})[0]; }
+
+  // ---- render board ----
+  function renderBoard(){
+    var html="<thead><tr><th class='corner'></th>";
+    goods.forEach(function(g){
+      var cls="col-good"; if(focus!=="none"&&focus!==g.id)cls+=" dim"; if(focus===g.id)cls+=" focused";
+      html+="<th class='"+cls+"' data-good='"+g.id+"' tabindex='0'>"+g.name+"<span class='base'>bazowa "+g.base+"</span></th>";
+    });
+    html+="<th class='col-good col-ghost'>+ ice…<br>+ E15</th></tr></thead><tbody>";
+    ports.forEach(function(p){
+      var inRoute = route.some(function(s){return s.portId===p.id;});
+      var sug = (suggestPort===p.id);
+      var thc="port-th"; if(sug)thc+=" suggested"; else if(inRoute)thc+=" in-route";
+      html+="<tr><th class='"+thc+"' data-port='"+p.id+"' tabindex='0' style='--pc:"+ARCH[p.arch]+"'>"+
+            "<span class='pname'><span class='glyph'></span>"+p.name+"</span>"+
+            "<span class='parch'>"+p.arch+"</span>"+
+            "<span class='addhint'>+ Stop</span></th>";
+      goods.forEach(function(g){
+        var c=P[p.id][g.id];
+        var dim=(focus!=="none"&&focus!==g.id)?" dim":"";
+        html+="<td class='cell"+dim+"'><div class='cell-inner' data-port='"+p.id+"' data-good='"+g.id+"' tabindex='0' role='button' aria-label='"+p.name+" "+g.name+"'>"+
+              "<span class='q q-bid "+bidTier(p.id,g.id)+"'>"+c[0]+"</span>"+
+              "<span class='q q-ask "+askTier(p.id,g.id)+"'>"+c[1]+"</span></div></td>";
+      });
+      html+="<td class='cell col-ghost'></td>";
+    });
+    html+="</tbody>";
+    board.innerHTML=html;
+  }
+
+  // ---- render ribbon ----
+  var SHIP_SVG="<svg class='ship SHIPCLS' viewBox='0 0 24 24' fill='none'><path d='M4 13h16l-2.5 5H6.5L4 13z' fill='var(--gold)'/><path d='M12 2v11' stroke='var(--gold)' stroke-width='1.6'/><path d='M12 3l6 3-6 3V3z' fill='var(--gold)' opacity='.8'/></svg>";
+  function renderRibbon(){
+    if(route.length===0){ ribbon.classList.add("empty"); track.innerHTML=""; routeName.textContent=""; return; }
+    ribbon.classList.remove("empty");
+    routeName.textContent="„Pętla "+portById(route[0].portId).name.slice(0,4)+"…"+(route.length>1?"–"+portById(route[route.length-1].portId).name.slice(0,4):"")+"”";
+    var html="";
+    route.forEach(function(s,i){
+      var p=portById(s.portId);
+      if(i>0) html+="<div class='leg'></div>";
+      var active=(i===activeStop)?" active-stop":"";
+      html+="<div class='stop"+active+"' style='--pc:"+ARCH[p.arch]+"'>"+
+            "<div class='stop-node'>"+(i+1)+"</div>"+
+            "<div class='stop-name'>"+p.name+"</div>"+
+            "<div class='stop-orders'>";
+      s.orders.forEach(function(o){
+        var g=goods.filter(function(gg){return gg.id===o.good;})[0];
+        var verb=o.kind==="buy"?"kup":"sprzedaj całość";
+        html+="<span class='ochip "+o.kind+"'>"+verb+" · "+g.name+"</span>";
+      });
+      html+="</div></div>";
+    });
+    track.innerHTML=html;
+    // loop closure + ship, only when it reads as a cycle
+    var old=ribbon.querySelector(".loop-mark, .ship, .loop-arc"); // cleanup handled by innerHTML of track; add extras:
+    var lm=document.createElement("div"); lm.className="loop-mark"; lm.innerHTML="↻ pętla wraca do Stop 1";
+    ribbon.appendChild(lm);
+    if(route.length>=2){
+      var sh=document.createElement("div");
+      sh.innerHTML=SHIP_SVG.replace("SHIPCLS", route.length>=2 && everyStopHasOrder() ? "sailing":"");
+      ribbon.appendChild(sh.firstChild);
+    }
+  }
+  function everyStopHasOrder(){ return route.every(function(s){return s.orders.length>0;}); }
+  function clearExtras(){ var e=ribbon.querySelectorAll(".loop-mark,.ship"); e.forEach(function(n){n.remove();}); }
+
+  // ---- steps progress ----
+  function updateSteps(){
+    var done=0;
+    if(route.length>=1) done=1;
+    if(route.length>=1 && route[0].orders.length>0) done=2;
+    if(suggestPort) done=3;
+    if(route.length>=2) done=4;
+    if(route.length>=2 && everyStopHasOrder()) done=5;
+    [].forEach.call(stepsEl.children,function(li){
+      var n=+li.getAttribute("data-step");
+      li.className=""; if(n<=done)li.className="done"; else if(n===done+1)li.className="active";
+    });
+    if(done===0) wbHint.innerHTML="Zacznij od portu-producenta (jasny <b>ask</b>).";
+    else if(done===1) wbHint.innerHTML="Kliknij <b>jasną komórkę ask</b> tego portu — dopnie <b>kup</b>.";
+    else if(done===2||done===3) wbHint.innerHTML="Podświetlony port = najlepszy <b>bid</b>. Kliknij go → następny Stop.";
+    else if(done===4) wbHint.innerHTML="Dopnij <b>sprzedaj</b> w drugim porcie.";
+    else wbHint.innerHTML="Trasa gotowa — pętla domknięta ↻. Przypisz statek.";
+  }
+
+  function redraw(){ clearExtras(); renderBoard(); renderRibbon(); updateSteps(); }
+
+  // ---- interactions ----
+  function addStop(pid){
+    if(route.length && route[route.length-1].portId===pid) return; // no immediate dup
+    if(route.some(function(s){return s.portId===pid;})) return;
+    route.push({portId:pid, orders:[]}); activeStop=route.length-1; suggestPort=null; redraw();
+  }
+  function addOrder(pid,gid){
+    var s=null; for(var i=0;i<route.length;i++) if(route[i].portId===pid){s=route[i];activeStop=i;break;}
+    if(!s){ addStop(pid); s=route[route.length-1]; }
+    if(s.orders.some(function(o){return o.good===gid;})) return;
+    // infer kind from context: is this port the best-ask (buy) or best-bid (sell) for the good?
+    var kind = (P[pid][gid][1] <= P[pid][gid][0]*1.0e9) ? null : null;
+    var isBuyCtx = askTier(pid,gid)==="sig-strong" || (bestBidPort[gid]!==pid && askTier(pid,gid)!=="sig-weak");
+    kind = (bestBidPort[gid]===pid) ? "sell" : "buy";
+    s.orders.push({good:gid, kind:kind});
+    // pairing suggestion (highlight only)
+    if(kind==="buy") suggestPort = bestBidPort[gid]; else suggestPort=null;
+    focus = gid; syncFocusChips();
+    redraw();
+  }
+  function syncFocusChips(){
+    [].forEach.call(document.querySelectorAll(".chip-toggle"),function(b){
+      b.classList.toggle("on", b.getAttribute("data-focus")===focus || (focus!=="none"&&false));
+    });
+    // if focus is a good not in chip list, mark 'Wszystkie' off but leave column focus
+    var match=document.querySelector('.chip-toggle[data-focus="'+focus+'"]');
+    if(!match){ document.querySelector('.chip-toggle[data-focus="none"]').classList.remove("on"); }
+  }
+
+  board.addEventListener("click",function(e){
+    var pth=e.target.closest(".port-th"); if(pth){ addStop(pth.getAttribute("data-port")); return; }
+    var cell=e.target.closest(".cell-inner"); if(cell){ addOrder(cell.getAttribute("data-port"), cell.getAttribute("data-good")); return; }
+    var gh=e.target.closest(".col-good[data-good]"); if(gh){ focus=(focus===gh.getAttribute("data-good"))?"none":gh.getAttribute("data-good"); syncFocusChips(); renderBoard(); return; }
+  });
+  board.addEventListener("keydown",function(e){
+    if(e.key!=="Enter"&&e.key!==" ")return;
+    var t=e.target;
+    if(t.classList.contains("port-th")){ e.preventDefault(); addStop(t.getAttribute("data-port")); }
+    else if(t.classList.contains("cell-inner")){ e.preventDefault(); addOrder(t.getAttribute("data-port"),t.getAttribute("data-good")); }
+    else if(t.classList.contains("col-good")){ e.preventDefault(); focus=(focus===t.getAttribute("data-good"))?"none":t.getAttribute("data-good"); syncFocusChips(); renderBoard(); }
+  });
+
+  [].forEach.call(document.querySelectorAll(".chip-toggle"),function(b){
+    b.addEventListener("click",function(){ focus=b.getAttribute("data-focus"); syncFocusChips(); renderBoard(); });
+  });
+
+  document.getElementById("clearBtn").addEventListener("click",function(){ route=[];activeStop=-1;suggestPort=null;focus="none";syncFocusChips();redraw(); });
+
+  // ---- scripted demo ----
+  var demoBtn=document.getElementById("demoBtn");
+  demoBtn.addEventListener("click",function(){
+    route=[];activeStop=-1;suggestPort=null;focus="none";syncFocusChips();redraw();
+    var seq=[
+      function(){ addStop("vel"); },
+      function(){ addOrder("vel","grain"); },            // buy grain @ Velharrow, suggests Kruxhaven
+      function(){ addStop("kru"); },
+      function(){ addOrder("kru","grain"); },            // sell grain @ Kruxhaven
+      function(){ suggestPort=null; focus="none"; syncFocusChips(); redraw(); }
+    ];
+    demoBtn.disabled=true; demoBtn.textContent="▶ odtwarzam…";
+    var i=0; (function next(){ if(i>=seq.length){ demoBtn.disabled=false; demoBtn.textContent="▶ Odtwórz przykład"; return; } seq[i++](); setTimeout(next, 900); })();
+  });
+
+  // ---- roster (read-only ribbons) ----
+  function miniRibbon(stops){
+    var h="<div class='mini-ribbon'>";
+    stops.forEach(function(pid,i){ var p=portById(pid); if(i>0)h+="<div class='mini-leg'></div>"; h+="<div class='mini-node' style='--pc:"+ARCH[p.arch]+"'></div>"; });
+    h+="<span class='mini-loop'>↻</span></div>"; return h;
+  }
+  var rosterData=[
+    { stops:["vel","kru"], name:"Grain Run", ships:2 },
+    { stops:["tho","bra","kru"], name:"Salt & Cloth", ships:1 },
+    { stops:["sal","kru","bra"], name:"Timber Loop", ships:0 }
+  ];
+  var roster=document.getElementById("roster"); var rh="";
+  rosterData.forEach(function(r){
+    rh+="<div class='roster-row'>"+miniRibbon(r.stops)+
+        "<span class='roster-meta'>"+r.name+" · <span class='ships'>"+(r.ships?r.ships+" ▸":"0")+"</span> stat.</span>"+
+        "<button class='edit-link'>Edytuj →</button></div>";
+  });
+  roster.innerHTML=rh;
+  [].forEach.call(roster.querySelectorAll(".edit-link"),function(b){
+    b.addEventListener("click",function(){ document.querySelector(".window").scrollIntoView({behavior:"smooth",block:"start"}); });
+  });
+
+  document.getElementById("assignBtn").addEventListener("click",function(){ this.innerHTML="<span class='shipdot'></span> Ravenshoal przypisany ✓"; });
+
+  redraw();
+})();
+</script>
+
+</body></html>
