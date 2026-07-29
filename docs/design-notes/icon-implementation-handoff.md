@@ -1,7 +1,8 @@
 # Icon / Glyph Implementation Handoff
 
 **Created**:
-2026-07-07 (during E2 follow-up design session) **Origin**:  
+2026-07-07 (during E2 follow-up design session)  
+**Origin**:
 Controlled Ship header design (follow-up to #28 / issue #32)
 
 > **Resolved (2026-07-07):** strategy locked in the approved

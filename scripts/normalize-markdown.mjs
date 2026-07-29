@@ -299,6 +299,27 @@ function tokenizeParagraph(paragraphNode, source) {
 }
 
 /**
+ * Tokens that are ordinary prose mid-line but become *block syntax* when they
+ * start one: bullet and ordered-list markers, blockquote marks, table pipes and
+ * fences. Reflow may never place one at a line start (#384).
+ *
+ * Found the expensive way: the corpus sweep wrapped incident 0012's prose
+ * "…orphaned harness worktree + branch, and…" so that "+" led a line, silently
+ * turning a sentence into a bullet list. Both content checks passed it — the
+ * word stream is identical — so this is guarded by AST-shape tests instead.
+ *
+ * Deliberately narrow. `-word` or `#123` are *not* hazards: a bullet needs a
+ * space after its marker, and an ATX heading needs one after the `#`. Only a
+ * bare marker token qualifies. `>` is the exception CommonMark grants no such
+ * grace — `>quoted` is a blockquote — so any token starting with it counts.
+ */
+function isLineStartUnsafe(text) {
+  if (text.startsWith(">")) return true;
+  if (text.startsWith("```") || text.startsWith("~~~")) return true;
+  return /^(?:[-+*#|]|\d+[.)])$/.test(text);
+}
+
+/**
  * Lay out a token stream into wrapped lines per the semantic-break rule.
  */
 function layoutLines(tokens) {
@@ -326,8 +347,18 @@ function layoutLines(tokens) {
 
     // Micro-rule: never let a non-first-child `strong` span lead a wrapped
     // line. Suppress the break here and defer it to right after this token.
+    // A pending hard break is the author's own explicit break: no cosmetic
+    // micro-rule may defer it past the next token, which would move the `<br>`
+    // to a different line and regroup the content around it.
     let deferBreakToAfter = false;
-    if (doBreak && token.isStrong && !token.isFirstChild) {
+    if (doBreak && !pendingSuffix && token.isStrong && !token.isFirstChild) {
+      doBreak = false;
+      deferBreakToAfter = true;
+    }
+
+    // Same mechanism, harder requirement: a block-syntax token may never lead a
+    // line — with the same exemption for an explicit hard break.
+    if (doBreak && !pendingSuffix && isLineStartUnsafe(token.text)) {
       doBreak = false;
       deferBreakToAfter = true;
     }

@@ -292,8 +292,8 @@ gazette *Głos Eteru* is the same name the PRD uses (`:352`).
 All three inline citations resolve (`grill-brief-m4-events-and-ice.md`,
 `grill-brief-m6-zoom-out.md`, `E10-orrery-view.md`).
 The **built** minority spot-checks clean against code:
-Free port's *"price bias exactly 1.0, exactly one per region"* is `region.ts:112` (the all-1.0 row)
-+ `worldgen.ts:61,81` (one freeport slot);
+Free port's *"price bias exactly 1.0, exactly one per region"* is `region.ts:112` (the all-1.0 row) +
+`worldgen.ts:61,81` (one freeport slot);
 Economic archetype's `PortArchetype = EconomicArchetype | "freeport"` is `region.ts:40`;
 Orrery view and Orbit ring are E10, epic complete. **Count anchored**:
 exactly 17 convention entries, no wrap artifact.

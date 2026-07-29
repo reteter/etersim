@@ -8,8 +8,7 @@ the glossary entry first (Documentation law, WORKFLOW.md). -->
 Feature spec for epic E<n> (milestone <M?> — <name>, [PRD](../PRD.md)).
 Terms per [CONTEXT.md](../../CONTEXT.md).
 Grilled and decided with the owner on <date>.
-Status: **draft**
-| **approved (<date>)**.
+Status: **draft** | **approved (<date>)**.
 
 Grill inputs:
 <issues, design notes, playtest observations that fed the grill —

@@ -26,9 +26,9 @@ The two coders diverged in their workaround:
 
 Recovery:
 both branches carried the correct work on origin.
-The Orchestrator reset the stale local `agent-218` to origin, removed the orphaned harness worktree
-+ branch, and verified both diffs (including #154's Bash-heredoc-written files for escaping
-corruption — none found) before opening PRs #248 / #249.
+The Orchestrator reset the stale local `agent-218` to origin, removed the orphaned harness worktree +
+branch, and verified both diffs (including #154's Bash-heredoc-written files for escaping corruption
+— none found) before opening PRs #248 / #249.
 
 ## Impact
 

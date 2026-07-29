@@ -10,11 +10,16 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
 import {
   reflowMarkdown,
   collectTargets,
   assertContentPreserved,
 } from "./normalize-markdown.mjs";
+
+const parseMd = (s) => unified().use(remarkParse).use(remarkGfm).parse(s);
 
 describe("reflowMarkdown — content preservation", () => {
   it("never adds, drops or reorders words (whitespace-normalized content is byte-for-byte equal)", () => {
@@ -59,6 +64,18 @@ describe("reflowMarkdown — hard line breaks (the #384 sweep bug)", () => {
     expect(out.split("\n").length).toBeGreaterThan(1);
   });
 
+  // The author's explicit break outranks every cosmetic micro-rule. Found in
+  // icon-implementation-handoff.md: the bold-span rule deferred the break past
+  // "**Origin**:", moving the <br> a line later and regrouping the metadata.
+  it("does not let the bold micro-rule move a hard break past the bold span", () => {
+    const source = "**Created**: 2026-07-07 (during a session)  \n**Origin**: somewhere else";
+    const out = reflowMarkdown(source);
+    const hardBreakLine = out.split("\n").find((l) => l.endsWith("  "));
+    expect(hardBreakLine).toBeDefined();
+    expect(hardBreakLine).toContain("session)");
+    expect(hardBreakLine).not.toContain("**Origin**");
+  });
+
   // The whitespace-normalized guard is blind to this one: trailing spaces
   // normalize away on both sides, so a silently downgraded `<br>` would pass it.
   it("preserves the hard break itself, not just the newline (a <br> stays a <br>)", () => {
@@ -72,6 +89,41 @@ describe("reflowMarkdown — hard line breaks (the #384 sweep bug)", () => {
     const out = reflowMarkdown(source);
     expect(() => assertContentPreserved(source, out, "x.md")).not.toThrow();
   });
+});
+
+describe("reflowMarkdown — line-start reparse hazard (#384 corpus sweep)", () => {
+  // The whole-corpus sweep created thousands of new line starts, and a token
+  // that is harmless mid-line can be block syntax at line start. Found in
+  // incident 0012: prose "worktree + branch" wrapped so that "+" led a line,
+  // turning it into a bullet list. Both content checks pass this — the words
+  // are identical — which is why the real gate is an AST-shape comparison.
+  const shapeOf = (s) => {
+    const out = [];
+    const walk = (n) => {
+      out.push(n.type);
+      (n.children || []).forEach(walk);
+    };
+    walk(parseMd(s));
+    return out.join(",");
+  };
+
+  // 20 four-letter words + 19 spaces = 99 chars, so the *next* token always
+  // lands at 101 > SOFT_LIMIT and the wrap falls exactly on it. Without this
+  // each case would silently not exercise the boundary — a test that cannot
+  // fail is the thing this whole PR is about.
+  const padTo99 = Array(20).fill("word").join(" ");
+
+  for (const marker of ["+", "-", "*", ">", "1."]) {
+    it(`never lets a bare "${marker}" lead a wrapped line`, () => {
+      const source = `${padTo99} ${marker} branch, and the sentence continues well past here afterwards.`;
+      expect(padTo99.length).toBe(99); // the boundary is real, not assumed
+      const out = reflowMarkdown(source);
+      for (const line of out.split("\n")) {
+        expect(line.startsWith(marker)).toBe(false);
+      }
+      expect(shapeOf(out)).toBe(shapeOf(source));
+    });
+  }
 });
 
 describe("reflowMarkdown — bold-span micro-rule (the #341 bug fix)", () => {

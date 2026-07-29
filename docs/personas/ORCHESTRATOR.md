@@ -70,8 +70,8 @@ One consequence that rule does not carry:
 
 ## Dispatching coders: where the truth lives
 
-An issue's **newest acceptance-criteria comment supersedes its body** (../workflows/pipeline.md step
-4) —
+An issue's **newest acceptance-criteria comment supersedes its body** (../workflows/pipeline.md step 4)
+—
 read comments before dispatching.
 The coder prompt should carry everything the task needs, pre-resolved:
 the criteria pasted verbatim, pointers to the exact spec sections, explicit **scope boundaries**
