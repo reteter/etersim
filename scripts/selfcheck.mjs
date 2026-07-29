@@ -51,6 +51,15 @@ const SURFACERS = {
   "check:triggers": "candidate lines only — the law is about a promise, the pattern matches a word",
 };
 
+/**
+ * What to do about a red detector, printed with the failure. A gate whose output does not
+ * name its own remedy costs a session more than the drift it caught — and this one's remedy
+ * is a single command, which is the whole reason the owner agreed to wire it (#457).
+ */
+const DETECTOR_REMEDIES = {
+  "docs:normalize:check": "run `npm run docs:normalize` — it rewrites the listed files in place",
+};
+
 const TASK_KINDS = {
   docs: {
     label: "Docs-only change",
@@ -180,7 +189,10 @@ function detectorStep(cmd) {
         ? result("warn", "now green — remove its KNOWN_BASELINES entry", `${cmd} was pinned at ${known.count} (${known.ref})`)
         : result("pass", "green");
     }
-    if (!known) return result("fail", "RED and not a known baseline", tail(r.out, 25));
+    if (!known) {
+      const remedy = DETECTOR_REMEDIES[cmd];
+      return result("fail", remedy ? `RED — ${remedy}` : "RED and not a known baseline", tail(r.out, 25));
+    }
     const found = countViolations(r.out);
     if (found === null) return result("warn", `RED, count unreadable (expected ${known.count})`, tail(r.out, 25));
     if (found === known.count) {
@@ -220,6 +232,7 @@ function buildPlan(kind, offline) {
     detectors: [
       ["check:triggers", detectorStep("check:triggers")],
       ["check:glossary", detectorStep("check:glossary")],
+      ["docs:normalize", detectorStep("docs:normalize:check")],
     ],
   };
   return TASK_KINDS[kind].requires.flatMap((g) => groups[g].map(([label, run]) => ({ group: g, label, run })));
