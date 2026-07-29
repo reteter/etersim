@@ -10,7 +10,7 @@ import { computeRunMetrics, type DaySnapshot, type RunMetrics } from "./metrics.
 import type { Policy } from "./policy.ts";
 import { resolvePolicy } from "./policies/registry.ts";
 import { MILESTONE_KINDS, type MilestoneKind } from "./ledgerKinds.ts";
-import { checkInvariants } from "./invariants.ts";
+import { checkInvariants, dedupeViolationsByDay, type ViolationOccurrence } from "./invariants.ts";
 
 /** Anomaly entry for the report (#234 — world-model implications). */
 export interface AnomalyEntry {
@@ -61,9 +61,12 @@ export interface AnomalyEntry {
  *  nothing about which ticks run or in what order.
  *
  *  **Invariant assertions (#234)**: toggleable runtime checks at each day
- *  boundary. When enabled (via global flag), `checkInvariants` is called and
- *  violations are collected. Disabled by default in this wave; a CLI flag will
- *  enable them for explicit bug-hunt runs. */
+ *  boundary. When `options.enableAssertions` is set, `checkInvariants` is
+ *  called at every day boundary and violations are collected (deduped by
+ *  reason, `dedupeViolationsByDay`). Disabled by default — `harness run
+ *  --enable-assertions` (`runCommand.ts`) is the CLI path that turns this on
+ *  for an explicit bug-hunt run; a plain `harness run` never pays the extra
+ *  per-day check cost. */
 export function runBatchRun<M>(
   world: World,
   policy: Policy<M>,
@@ -78,8 +81,7 @@ export function runBatchRun<M>(
   let memory = policy.init(world);
   let current = world;
   const daily: DaySnapshot[] = [];
-  const allViolations: string[] = [];
-  const seenReasons = new Set<string>();
+  const occurrences: ViolationOccurrence[] = [];
 
   for (let day = 1; day <= days; day++) {
     current = advanceDays(current, 1, (w) => {
@@ -88,14 +90,13 @@ export function runBatchRun<M>(
       return step.commands;
     });
 
-    // Collect invariant violations at the day boundary if assertions are enabled.
+    // Collect invariant violations at the day boundary if assertions are
+    // enabled. Dedup happens once, after the loop (dedupeViolationsByDay) —
+    // not here — so a persistent violation across many days is recorded
+    // once, at the day it first appeared, not once per day.
     if (options.enableAssertions) {
-      const violations = checkInvariants(current, day);
-      for (const violation of violations) {
-        if (!seenReasons.has(violation)) {
-          allViolations.push(violation);
-          seenReasons.add(violation);
-        }
+      for (const reason of checkInvariants(current)) {
+        occurrences.push({ day, reason });
       }
     }
 
@@ -106,7 +107,7 @@ export function runBatchRun<M>(
       activeContracts: current.company.contracts.length,
     });
   }
-  return { world: current, memory, daily, anomalyReasons: allViolations };
+  return { world: current, memory, daily, anomalyReasons: dedupeViolationsByDay(occurrences) };
 }
 
 /** One Run's full record: enough to reproduce it (`policy` + `seed` + `days`
@@ -139,15 +140,21 @@ function replayCommandFor(policy: string, params: Readonly<Record<string, unknow
   return `npm run harness -- run --policy ${policy}${paramsFlag} --seeds ${seed}, --days ${days} --out <dir>`;
 }
 
-/** Runs one Policy over one seed, returning its full record. */
+/** Runs one Policy over one seed, returning its full record.
+ *
+ *  `options.world0` overrides the seed-derived starting World —
+ *  a test-only seam (never used by the CLI, which always starts from
+ *  `createWorld(seed)`) that lets a test drive a deliberately-broken World
+ *  fixture through the real `runOne` → `buildReport` wiring instead of
+ *  exercising `checkInvariants` in isolation. */
 export function runOne(
   policyName: string,
   params: Readonly<Record<string, unknown>>,
   seed: number,
   days: number,
-  options: { enableAssertions?: boolean } = {},
+  options: { enableAssertions?: boolean; world0?: World } = {},
 ): RunRecord {
-  const world0 = createWorld(seed);
+  const world0 = options.world0 ?? createWorld(seed);
   const policy = resolvePolicy(policyName, params);
   const { world, daily, anomalyReasons } = runBatchRun(world0, policy, days, options);
   const replayCmd = replayCommandFor(policyName, params, seed, days);
@@ -265,8 +272,9 @@ export function runPolicyBatch(
   params: Readonly<Record<string, unknown>>,
   seeds: readonly number[],
   days: number,
+  options: { enableAssertions?: boolean } = {},
 ): PolicyBatchReport {
-  const runs = seeds.map((seed) => runOne(policyName, params, seed, days));
+  const runs = seeds.map((seed) => runOne(policyName, params, seed, days, options));
   const aggregate: BatchAggregate = {
     profitPerDay: aggregateStat(runs.map((r) => r.metrics.profitPerDay)),
     voyages: aggregateStat(runs.map((r) => r.metrics.voyages.total)),

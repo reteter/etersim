@@ -77,6 +77,12 @@ export interface BatchReport {
   readonly worldDaysNote: string;
   readonly policies: readonly PolicyReportEntry[];
   readonly comparisons: readonly PolicyComparison[];
+  /** Runtime invariant violations (#234, `harness/invariants.ts`), flattened
+   *  across every Run in every policy Batch. **Populated only when a Run was
+   *  started with `--enable-assertions`** (`runCommand.ts` → `runPolicyBatch`
+   *  → `runOne` → `runBatchRun`'s `options.enableAssertions`); a Batch run
+   *  without that flag always reports this as `[]`, since the invariant
+   *  checks themselves never ran — not because nothing was wrong. */
   readonly anomalies: readonly AnomalyEntry[];
 }
 
@@ -366,9 +372,11 @@ export function renderMarkdown(policyBatches: readonly PolicyBatchReport[], repo
   lines.push("");
   if (report.anomalies.length === 0) {
     lines.push(
-      "None flagged. This Batch does not run the invariant-assertion checks that decide what counts " +
-        "as an anomaly (that check lands with #234); every Run's seed and replay command are still " +
-        "recorded above for manual replay.",
+      "None flagged. Anomalies are only checked when a Batch is run with `--enable-assertions` " +
+        "(`harness/invariants.ts`, #234) — if this Batch used that flag, zero anomalies means every " +
+        "invariant check passed on every Run; if it did not, this list was never populated in the " +
+        "first place. Every Run's seed and replay command are still recorded above for manual replay " +
+        "either way.",
     );
   } else {
     lines.push("| Policy | Seed | Reason | Replay |");

@@ -26,11 +26,22 @@ playtest-triggered analysis in an Analyst's findings (if replayed, a note links 
 When an assertion lands or a hypothesis is under pressure, run a Batch with a **perverse policy** —
 one designed to violate a known invariant or stress-test a boundary —
 plus `--enable-assertions` to exercise the checking logic itself.
-Example:
+
+Worked example: `harness/policies/greedyContractor.ts` enrolls in every guild it hasn't joined and
+spams `acceptContract` for every open offer, every tick, regardless of rank-gating or whether the
+fleet can actually deliver — the kind of enroll/accept churn a well-behaved reference policy
+(`gradientLoop`/`doNothing`) never generates, aimed at the guild/contract invariants
+(`harness/invariants.ts`: the desperation clause, the offer cap, offer-ID uniqueness, haulability).
 
 ```bash
-npm run harness -- run --policy someAdversarialPolicy --seeds 1,2,3,7,42 --days 100 --enable-assertions --out ./report-bug-hunt
+npm run harness -- run --policy greedyContractor --seeds 1,2,3,7,42 --days 100 --enable-assertions --out ./report-bug-hunt
 ```
+
+Run against those seeds/days on 2026-07-29: **zero anomalies** across all 5 seeds. This means
+either the guild/contract invariants held under this policy's pressure, or `greedyContractor` isn't
+perverse enough yet to trip them — reported plainly as a real, honest result, not as proof the
+invariants are bulletproof (incident 0020: never treat an unverified/undiscriminating result as
+the finding).
 
 The resulting report will have an `anomalies` section if the policy successfully triggers a
 violation;

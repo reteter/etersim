@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { advanceDays, createWorld, TICKS_PER_DAY } from "../src/sim/index.ts";
+import { advanceDays, createWorld, ECONOMIC_ARCHETYPES, TICKS_PER_DAY } from "../src/sim/index.ts";
 import { reconcileThalers, type MilestoneTiming, type RunMetrics } from "./metrics.ts";
-import { aggregateMilestones, runBatchRun, runOne, runPolicyBatch, type RunRecord } from "./batch.ts";
+import { aggregateMilestones, aggregateStat, runBatchRun, runOne, runPolicyBatch, type RunRecord } from "./batch.ts";
 import { parseSeeds } from "./runCommand.ts";
 import { gradientLoop } from "./policies/gradientLoop.ts";
 import { doNothing } from "./policies/doNothing.ts";
 import { MILESTONE_KINDS } from "./ledgerKinds.ts";
+import { buildReport } from "./report.ts";
 
 const DAYS = 30;
 
@@ -134,6 +135,83 @@ describe("runOne — determinism (spec §Testing: same policy + seed + days ⇒ 
 
   it("rejects an unknown policy name", () => {
     expect(() => runOne("notAPolicy", {}, 1, DAYS)).toThrow(/Unknown policy/);
+  });
+});
+
+describe("runOne -> buildReport — the anomaly-list wiring (#234)", () => {
+  it("a deliberately-broken World fixture's invariant violation appears in the flattened report anomalies, not just in checkInvariants isolation", () => {
+    // Deliberately-broken World: one ContractOffer with tier 99, outside the
+    // documented [1, 4] range (`checkTierRange`, harness/invariants.ts).
+    // Constructed directly rather than via natural offer generation — the
+    // point of this test is the wiring downstream of checkInvariants
+    // (runOne -> RunRecord.anomalies -> buildReport's flattened list), which
+    // harness/invariants.test.ts's isolated checkInvariants(...) calls never
+    // exercise, not the offer-generation logic itself.
+    const seed = 1;
+    const base = createWorld(seed);
+    const [port] = base.region.ports;
+    if (port === undefined) throw new Error("fixture requires at least one port");
+
+    const brokenOffer = {
+      id: "test:broken:offer",
+      guildId: ECONOMIC_ARCHETYPES[0]!, // any real guild id — a "freeport" port has none
+      portId: port.id,
+      good: "grain" as const,
+      quotaPerPeriod: 1,
+      periodDays: 1,
+      minPeriods: 1,
+      feePerPeriod: 1,
+      tier: 99,
+      requiredRank: 1,
+      // expectedTrips: 2 keeps this offer haulability-clean (checkOfferHaulability
+      // needs >= 2) so this fixture trips exactly the one deliberate violation
+      // (tier 99) and not an incidental second one.
+      basis: { sourcePortId: port.id, roundTripTicks: 10, expectedTrips: 2 },
+    };
+    // Craters this port's grain stock to below the shortage threshold so
+    // `refreshContractOffers` (`src/sim/contract.ts`) treats the broken
+    // offer as a surviving offer at the next day boundary instead of
+    // dropping it before checkInvariants ever sees it (`survivors` filter:
+    // an offer only survives if its (port, good) is still short).
+    const craterMarket = { ...port.market, grain: { ...port.market.grain, stock: 0 } };
+    const craterPort = { ...port, market: craterMarket };
+    const craterPorts = base.region.ports.map((p) => (p.id === port.id ? craterPort : p));
+    const brokenWorld = {
+      ...base,
+      region: { ...base.region, ports: craterPorts },
+      contractOffers: [brokenOffer],
+    };
+
+    const record = runOne("doNothing", {}, seed, 1, { enableAssertions: true, world0: brokenWorld });
+
+    expect(record.anomalies).not.toHaveLength(0);
+    expect(record.anomalies[0]!.reason).toContain("Tier range violation");
+    expect(record.anomalies[0]!.reason).toContain("Day 1");
+
+    const aggregate = {
+      profitPerDay: aggregateStat([record.metrics.profitPerDay]),
+      voyages: aggregateStat([record.metrics.voyages.total]),
+      fleetHoldUtilization: aggregateStat([record.metrics.holdUtilization.fleetMean]),
+      netWorthEnd: aggregateStat([record.metrics.netWorthEnd.total]),
+      milestoneDays: aggregateMilestones([record]),
+    };
+    const report = buildReport(
+      [{ policy: "doNothing", params: {}, seeds: [seed], days: 1, runs: [record], aggregate }],
+      1,
+    );
+
+    // The gap this closes: report.json's anomalies must actually contain
+    // what checkInvariants found, flattened across every Run — not `[]`
+    // because nothing wired the checks into a real Run.
+    expect(report.anomalies).toHaveLength(1);
+    expect(report.anomalies[0]!.reason).toContain("Tier range violation");
+    expect(report.anomalies[0]!.policy).toBe("doNothing");
+    expect(report.anomalies[0]!.seed).toBe(seed);
+  });
+
+  it("a healthy Run with assertions enabled reports zero anomalies (not because the checks never ran)", () => {
+    const record = runOne("doNothing", {}, 42, DAYS, { enableAssertions: true });
+    expect(record.anomalies).toEqual([]);
   });
 });
 
