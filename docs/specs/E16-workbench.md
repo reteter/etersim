@@ -221,6 +221,26 @@ are **unreachable** —
 `HeadquartersPanel` renders nothing without `company.headquarters`.
 That is exactly the early-game phase the savings story lives in, and the `PortPanel` bar covers it.
 
+#### Known defects the contract does *not* excuse (#469 item A, still open)
+
+Three findings from the driver's own review of the prototype are **unfixed in the code this section describes**,
+and are written here so a reader of the contract alone cannot mistake them for the intended look
+(surfaced by the tier-2 review, 2026-07-30):
+
+- **The ribbon splays on short Routes.** With 2 Stops the nodes fly to opposite edges and the leg
+  stretches half the panel — it reads as emptiness, not as a route (`index.css`, the
+  `.route-ribbon__slot:not(:first-child)` flex rule, whose own comment says Stops distribute across
+  the rail regardless of count). **This contradicts D6's "the nodes group compactly"** above; D6 is
+  the contract, the CSS is the defect.
+- **Stop numbering is absent.** The mockup put ① ② in the nodes. Order is **load-bearing** here, not
+  cosmetic — the Margin Gate's reference is *the next sell-stop in Route order* (ADR-0007) — and a loop
+  with a return arc makes "which one is first" a real question.
+- **The `◄ × ►` controls sit between the port name and its order chips** (`RouteRibbon.tsx`), breaking
+  the "this order belongs to this port" reading the mockup gets by putting chips directly under the
+  name.
+
+All three predate the relocations and are tracked on **#469 item A**.
+
 #### Held back by design, not forgotten
 
 - **D7's context menu**, and with it the removal of the "więcej" drawer: both wait on a
@@ -682,11 +702,15 @@ presentation only.
 
 UI epic → **Playwright E2E** is the gate (no sim TDD; nothing in `src/sim` changes).
 
-> **The visual rebuild rewrote this gate's targets** (2026-07-30). Fourteen specs asserted the
-> superseded layout and were suspended while the prototype was judged by eye — mockups carry no test
-> obligation (owner ruling 2026-07-29), which is a ruling about a *prototype*, not about a merge. They
-> are re-pointed at the new surfaces in the commit that merges the visual contract; the assertions
-> below are restated against it where the gesture changed.
+> **The visual rebuild rewrote this gate's targets, and the gate is OPEN on `main`** (2026-07-30,
+> owner decision). Fourteen specs were suspended while the prototype was judged by eye — mockups carry
+> no test obligation (owner ruling 2026-07-29), a ruling about a *prototype*, not about a merge. The
+> full run then showed the real number: **32 failing plus those 14, across nine files**, because the
+> rebuild moved surfaces that specs untouched by it still address. Rewriting them was **deliberately
+> not** folded into the merge; it is carried by four issues, one per cluster. **#472 is the one that is
+> not cosmetic** — `storehouse.spec.ts` holds the #404 regression guard proving the board does not
+> silently destroy a `store` order, and that guard is dark until #472 lands. The assertions below are
+> restated against the new surfaces so the rewrite has a target to be written against.
 
 - **Port-centric build flow:** ~~port-row click adds a Stop;~~ a **good-cell click** opens the radial
   menu, whose choice adds the Stop *and* attaches the order (D1); the pairing highlight appears on the

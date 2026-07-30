@@ -21,7 +21,7 @@ export type DailyNetInput = {
  * at all still appear — a day of pure deliveries is a real day with a zero
  * balance, and hiding it would leave a gap in the sequence the player reads as
  * missing data. Only the per-ship filter keeps row-per-event detail
- * (LedgerOverlay.tsx).
+ * (CompanyValueTab.tsx).
  */
 export function dailyNet(rows: readonly DailyNetInput[]): readonly DailyNet[] {
   const byDay = new Map<number, number>();
