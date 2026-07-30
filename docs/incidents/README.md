@@ -52,6 +52,7 @@ did — rows averaged 699 characters before the 2026-07-28 trim).
 | [0029](0029-engineer-hat-worn-silently-unvalidated-feasibility.md) | 2026-07-22 | Two grill forks that were feasibility questions in disguise were locked as Designer decisions carrying unchecked Engineer claims. A feasibility-shaped fork is an Engineer-hat trigger: announce it and name the test before the owner locks. |
 | [0030](0030-detector-merged-red-never-run.md) | 2026-07-28 | `check:triggers` had never exited 0 and sat in no gate, so the repo believed a law was mechanically enforced while nothing ran it. A tool that encodes a law is not the law being enforced: merge a detector green and wired to a gate in the same PR — or say plainly that a human enforces it. Closed the same day (#412): reclassified as a surfacer that exits 0 and gates nothing. |
 | [0031](0031-tier1-declared-with-half-the-check-run.md) | 2026-07-28 | Tier 1 was declared having run only the diff-vs-ACs half; knowing which documents recorded the decision stood in for the docs-sweep greps, which then found two live falsehoods. A tier claim names the command it ran and its output. |
+| [0032](0032-gate-decision-taken-on-an-unverified-number.md) | 2026-07-30 | The e2e gate's state was quoted to the owner from a `.skip` count (14) instead of from a run (46), and a merge decision was made on it, then had to be made again. Quote a gate's state only from the gate's own tool. |
 
 ## When to file
 
