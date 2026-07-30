@@ -1153,17 +1153,6 @@ body {
   font-weight: 700;
 }
 
-.price-board__good-hide-btn {
-  padding: 0 0.25rem;
-  font-size: 0.65rem;
-  line-height: 1;
-  opacity: 0.45;
-}
-
-.price-board__good-hide-btn:hover {
-  opacity: 1;
-}
-
 /* Contextual focus (#395, spec §Information density — "legibility tools
    over full data, never hiding"): intensity-only emphasis, no new hue
    (ADR-0006 one-color-one-meaning; incident 0002 — gold stays reserved for
@@ -1176,43 +1165,6 @@ body {
 
 .price-board__cell--dim {
   opacity: 0.4;
-}
-
-/* Hidden-columns affordance (#395 AC3): always visible while any column is
-   hidden, so a hidden column stays recoverable — never a silent, permanent
-   loss of information. */
-.price-board__hidden-note {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.8rem;
-  color: #8891a3;
-  opacity: 0.75;
-}
-
-/* Strand badge (#413): at least one hidden column carries a live draft
-   order — invisible on the grid but still fully committable via "Zapisz
-   trasę". Same opacity/weight intensity pairing as
-   .market-row__trade-btn--bright/--faded above (no new hue, ADR-0006): full
-   opacity plus bold weight against the note's own dimmer baseline. */
-.price-board__hidden-note--strand {
-  opacity: 1;
-  font-weight: 700;
-}
-
-/* #405 nit 2: the 1-stop draft's standalone remove affordance — same dock
-   position as `.price-board__ribbon-dock`, minus the ribbon graphic (which
-   needs >=2 Stops to draw a loop). */
-.price-board__single-stop-dock {
-  margin-top: 0.75rem;
-  border-top: 1px solid #2a3040;
-  padding-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  color: #a8b2c2;
 }
 
 /* Clickable rows (jump to that port's own panel) get the archetype accent
@@ -1257,12 +1209,41 @@ body {
   min-width: 0;
   font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
+  /* Owner directive: individual cells must read as discrete, hoverable
+     targets — a border by default (near-invisible against the row's own
+     background) that lights up on hover/interactivity, rather than the
+     grid reading as one undifferentiated strip. */
+  padding: 0.2rem 0.35rem;
+  border: 1px solid #1d222b;
+  border-radius: 4px;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+/* Only cells that actually do something on click get the "clickable"
+   affordance — a market-free cell (deliver/store/withdraw already wired)
+   stays visually inert, matching its click-inert behavior (#419 AC3). */
+.price-board__cell--interactive {
+  cursor: pointer;
+}
+
+.price-board__cell--interactive:hover {
+  background: color-mix(in srgb, #4c7bab 16%, transparent);
+  border-color: #4c7bab;
 }
 
 .price-board__cell-btn {
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: inherit;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
 }
 
 .price-board__bid,
@@ -1365,6 +1346,7 @@ body {
 .price-board__authoring-bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.6rem;
   margin-bottom: 0.5rem;
 }
@@ -1372,6 +1354,24 @@ body {
 .price-board__authoring-hint {
   color: #8891a3;
   font-size: 0.85rem;
+}
+
+/* Route tabs (owner directive): "Nowa trasa" + one tab per existing Route,
+   in the authoring bar's own row. `flex-wrap` so a Company with many Routes
+   grows the bar downward rather than squeezing tabs unreadably narrow. */
+.price-board__route-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.price-board__route-tab {
+  opacity: 0.6;
+}
+
+.price-board__route-tab--active {
+  opacity: 1;
+  border-color: #4c7bab;
 }
 
 .price-board__row--in-draft {
@@ -1384,6 +1384,24 @@ body {
 
 .price-board__pairing-hint {
   color: #e0c265;
+}
+
+/* Revisit gesture (owner directive): the only remaining way to append a
+   port already in the draft as a *fresh* Stop (Duskferry → Coppervale →
+   Duskferry), since cell clicks always resolve to the port's existing last
+   Stop. Recessive like the ribbon's own edit row — a maintenance
+   affordance, not part of the port cell's primary reading. */
+.price-board__port-add-btn {
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  opacity: 0.4;
+}
+
+.price-board__port-add-btn:hover,
+.price-board__port-add-btn:focus-visible {
+  opacity: 1;
 }
 
 /* Storehouse marker (#419, spec §The market-free kinds — "port row header
@@ -1401,18 +1419,6 @@ body {
   display: flex;
   gap: 0.2rem;
   flex-wrap: wrap;
-}
-
-.price-board__cell-btn {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: inherit;
-  font: inherit;
 }
 
 .price-board__order-chip {
@@ -1452,6 +1458,13 @@ body {
 }
 
 .price-board__ribbon-dock-inner {
+  /* `overflow-x`/`overflow-y` can't be split (visible, hidden) on one box —
+     browsers force a lone `visible` axis to `auto` the moment its sibling
+     axis isn't `visible` (the two-value overflow quirk), and `auto` still
+     can't reach *negative* overflow (bleed to the left of the box's own
+     start edge). The real fix is the edge-Stop drawer never bleeding past
+     this box at all — see `:first-child`/`:last-child` below — so this
+     stays the plain single-axis clip the 0fr→1fr collapse needs. */
   overflow: hidden;
   min-height: 0;
 }
@@ -1464,6 +1477,95 @@ body {
   .price-board__ribbon-dock {
     transition: none;
   }
+}
+
+/* Cell-click radial menu (owner directive, superseding #394's row-click):
+   a `position: fixed` fan of action buttons anchored to the clicked cell.
+   The backdrop is a transparent full-viewport catcher (click-outside closes,
+   same convention as `useOverlayDismiss`) sitting above the overlay itself
+   (`.overlay` is `z-index: 10`). */
+.radial-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.radial-menu {
+  position: fixed;
+  width: 0;
+  height: 0;
+}
+
+.radial-menu__label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -180%);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #10141a;
+  border: 1px solid #2a3040;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #a8b2c2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Classic radial-menu trick: rotate to the slot's angle, translate outward
+   by the ring radius, then rotate back — the button itself stays upright
+   while its position walks around the circle. */
+.radial-menu__item {
+  --radius: 60px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 64px;
+  margin: -32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+  border-radius: 50%;
+  border: 1px solid #3a4353;
+  background: #1b212b;
+  color: #e6e6e6;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transform: rotate(var(--angle)) translate(var(--radius)) rotate(calc(-1 * var(--angle)));
+  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+}
+
+.radial-menu__item:hover,
+.radial-menu__item:focus-visible {
+  border-color: #4c7bab;
+  background: color-mix(in srgb, #4c7bab 22%, #1b212b);
+  transform: rotate(var(--angle)) translate(calc(var(--radius) + 5px)) rotate(calc(-1 * var(--angle)));
+}
+
+/* The trade pair (#468 D4) carries over onto the menu's own buy/sell slots;
+   `deliver` is market-free and takes the neutral tint (matches
+   `.route-ribbon__chip--plain`). */
+.radial-menu__item--buy {
+  color: var(--trade-buy);
+}
+
+.radial-menu__item--sell {
+  color: var(--trade-sell);
+}
+
+.radial-menu__item--deliver {
+  color: #c3cbd8;
+}
+
+/* Single-Stop draft: the ribbon dock's own mini-rail (replaces the old
+   bottom-of-board dock) — one node, no legs/arc (a loop needs >=2 Stops),
+   just the remove control riding the same `.route-ribbon__edit` affordance
+   as a real Stop. */
+.route-ribbon__rail--single .route-ribbon__edit {
+  opacity: 0.9;
 }
 
 /* Read-only ribbon on a Trasy roster row (#468 §C): one ribbon per Route,
@@ -2483,6 +2585,21 @@ body {
   margin-right: 0;
 }
 
+/* Edge Stops (driver review of #469's screenshots, item 1): a centered
+   block bleeds equally both ways, but the first/last Stop has no rail to
+   bleed *into* on one side — that bleed used to run straight past the
+   ribbon dock's own clipped edge and get silently cut off (worst on the
+   "więcej" drawer, which is wider still than the orders block itself, see
+   below). Anchoring to the inward edge instead means neither block ever
+   needs to escape the dock's box in the first place. */
+.route-ribbon__slot:first-child .route-ribbon__orders {
+  margin-left: 0;
+}
+
+.route-ribbon__slot:last-child .route-ribbon__orders {
+  margin-right: 0;
+}
+
 .route-ribbon__chip {
   overflow: hidden;
 }
@@ -2500,6 +2617,18 @@ body {
   gap: 3px;
   max-width: 100%;
   min-width: 0;
+}
+
+/* The drawer (`price-board__order-more`, 10rem) is itself wider than the
+   orders block it rides in (`--orders-w`, 9rem) — a second, smaller bleed
+   on top of the block-level one above. Same edge-anchor treatment, same
+   reason. */
+.route-ribbon__slot:first-child .route-ribbon__order {
+  align-items: flex-start;
+}
+
+.route-ribbon__slot:last-child .route-ribbon__order {
+  align-items: flex-end;
 }
 
 .route-ribbon__chip {

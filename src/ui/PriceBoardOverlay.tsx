@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
 import {
   ARCHETYPE_PROFILES,
   GOOD_IDS,
@@ -13,7 +13,7 @@ import { useGameStore } from "../store/gameStore";
 import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { computeMarketSignal, quotePortGood } from "../store/marketSignal";
 import { computeOfferLabels, OFFER_LABEL_TEXT } from "../store/offerLabels";
-import { GOOD_ICONS } from "./icons";
+import { ARCHETYPE_ICONS, GOOD_ICONS } from "./icons";
 import { KontraktyTab } from "./KontraktyTab";
 import { OverlayShell } from "./OverlayShell";
 /* #468: the board renders **bare numbers**, like the mockup — a `₸` on every
@@ -26,7 +26,6 @@ function boardQuote(value: number | null): string {
 }
 import {
   appendStop,
-  inferOrderKind,
   isValidRouteDraft,
   lastStopIndexForPort,
   legalOrderKinds,
@@ -37,7 +36,6 @@ import {
   patchStopOrder,
   removeStop,
   removeStopOrder,
-  setStopOrder,
   setStopOrderKind,
   storehouseAt,
   suggestedPairingPortIds,
@@ -129,14 +127,13 @@ const ORDER_VERB_PL: Record<StopOrder["kind"], string> = {
  *
  * #394 (docs/specs/E16-workbench.md — board fusion): the Ceny tab gains a
  * **board-authoring layer**, additive over the existing navigation gesture.
- * Resolved ambiguity (flagged for the Orchestrator): the spec's "click a
- * port's row → append a Stop" would otherwise collide with the existing
- * "click a row → open that port's panel" gesture (#62, still under E2E
- * coverage). The two coexist by gating on **whether a draft is active**
- * (`draft !== null`, started via the "Nowa trasa" button, mirroring
- * `RoutesTab`'s `draft ? <editor> : <New route button>` shape): no draft ⇒
- * unchanged row-click-opens-port navigation; a draft active ⇒ row clicks
- * build the route instead. `B` still just opens the board (no new keybind).
+ * Gated on **whether a draft is active** (`draft !== null`, started via the
+ * "Nowa trasa" button): no draft ⇒ unchanged row-click-opens-port
+ * navigation; a draft active ⇒ the row stops navigating and its good cells
+ * become the authoring surface instead (owner directive, superseding #394's
+ * original row-click-appends-Stop gesture — see `openRadialMenu` below: a
+ * cell click places the Stop, if needed, and opens the radial action menu
+ * in one gesture). `B` still just opens the board (no new keybind).
  */
 export function PriceBoardOverlay({
   onClose,
@@ -184,17 +181,38 @@ export function PriceBoardOverlay({
   // building" per the AC — a stale focus from mid-authoring shouldn't
   // linger into a fresh session or a closed board.
   const [focusedGood, setFocusedGood] = useState<GoodId | null>(null);
-  // Column pinning (#395): goods hidden from the grid. Purely a display
-  // filter — never touches `draft`/orders/the sim (an already-attached
-  // order on a hidden good stays committed; it just isn't shown while
-  // hidden). Not persisted (UI-local only, per the task package).
-  const [hiddenGoods, setHiddenGoods] = useState<Set<GoodId>>(new Set());
   // Ribbon Stop selection (#468 D3): a *reading* gesture — it drives the
   // port-role highlight and nothing else. Deliberately not coupled to where
-  // an order attaches: `handleCellClick` keeps resolving the Stop from the
-  // clicked *row's* port (`lastStopIndexForPort`), so "selected Stop at port
+  // an order attaches: `openRadialMenu` keeps resolving the Stop from the
+  // clicked *cell's* port (`lastStopIndexForPort`), so "selected Stop at port
   // Y, click a cell in row X" has no ambiguity to resolve.
   const [selectedStop, setSelectedStop] = useState<number | null>(null);
+  // Cell-click radial menu (owner directive, superseding #394's row-click):
+  // the port/good the last cell click targeted, plus the click's viewport
+  // coordinates the menu opens at. `null` ⇒ closed. Viewport coordinates
+  // (not port/good-relative) because the menu is `position: fixed`, matching
+  // the click point regardless of the board's own scroll position.
+  const [radialMenu, setRadialMenu] = useState<{
+    portId: PortId;
+    good: GoodId;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  // Escape closes the radial menu without closing the whole overlay
+  // (OverlayShell's own Escape handler would otherwise fire on the same
+  // keystroke and dismiss both at once).
+  useEffect(() => {
+    if (!radialMenu) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setRadialMenu(null);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
+  }, [radialMenu]);
 
   if (!world) return null;
 
@@ -231,29 +249,37 @@ export function PriceBoardOverlay({
     setFocusedGood(null);
     setSelectedStop(null);
   };
+  // Loads an existing Route straight into the board's own authoring surface
+  // (owner directive — the board grows the "Edytuj →" seam #394 deliberately
+  // left to #393). Mirrors RoutesTab's `startEdit`: the draft *is* the
+  // existing Route, unmodified, so `editingExisting` below can tell "editing"
+  // from "brand new" by identity alone — no separate mode flag to drift out
+  // of sync with the draft itself.
+  const startEditRoute = (route: Route) => {
+    setDraft(route);
+    setExpanded(new Set());
+    setFocusedGood(null);
+    setSelectedStop(null);
+    selectRoute(route.id);
+  };
   const cancelDraft = () => {
     setDraft(null);
     setExpanded(new Set());
     setFocusedGood(null);
     setSelectedStop(null);
   };
+  // Same identity check as RoutesTab's `editingExisting`: a draft whose id
+  // matches a live Route is an edit-in-place; any other id (freshly minted
+  // by `nextRouteId` in `startDraft`) is a brand-new Route.
+  const editingExisting = draft !== null && world.company.routes.some((r) => r.id === draft.id);
   const saveDraft = () => {
     if (!draft || !isValidRouteDraft(draft)) return;
-    dispatch({ kind: "createRoute", route: draft });
+    dispatch({ kind: editingExisting ? "updateRoute" : "createRoute", route: draft });
     selectRoute(draft.id);
     setDraft(null);
     setExpanded(new Set());
     setFocusedGood(null);
     setSelectedStop(null);
-  };
-
-  // Port-row click (spec §Construction is port-centric — the port-centric
-  // spine): appends the port as a new Stop. Only reachable while a draft is
-  // active — see the class doc comment above for the coexistence rule with
-  // the default (no-draft) row-click-opens-port navigation.
-  const handleRowClick = (portId: PortId) => {
-    if (!draft) return;
-    setDraft(appendStop(draft, portId));
   };
 
   // Removes the Stop at `index` (ribbon's "Usuń"/reorder dock, and the
@@ -278,31 +304,57 @@ export function PriceBoardOverlay({
     }
   };
 
-  // Good-cell click (spec §Attaching orders): attaches an order to the most
-  // recently appended Stop at this port, kind inferred from the
-  // market-quality signal (stronger tier wins; tie/both-weak/both-absent
-  // handled by `inferOrderKind`). A cell for a port with no Stop yet in the
-  // draft does nothing — the player must place the Stop first (port-centric
-  // spine, not good-centric wiring).
+  // Good-cell click: the port-centric spine now runs entirely through the
+  // grid's cells (owner directive, superseding #394's row-click-appends-Stop
+  // gesture) — clicking any cell opens a radial action menu at the click
+  // point, offering the three market-legal kinds a cell can quick-attach
+  // (kup/sprzedaj/dostarcz; store/withdraw stay drawer-only, unchanged).
+  // Picking one both places the Stop (if the port isn't in the draft yet)
+  // and attaches the order — one gesture instead of two.
   //
-  // #419 AC3 — market-free cells are click-inert: a cell whose good already
-  // carries `deliver`/`store`/`withdraw` returns early, **before** reaching
-  // `inferOrderKind`. That inference always resolves to buy/sell when the
-  // good has any market at all (routeAuthoring.ts), so falling through would
-  // silently overwrite the market-free order with no cue — the exact bug
-  // #404/#419 exist to close. Removal is the chip's `×` only; changing kind
-  // goes through the drawer (`setStopOrderKind` below).
-  const handleCellClick = (portId: PortId, good: GoodId) => {
+  // #419 AC3 — market-free cells stay click-inert: a cell whose good already
+  // carries `deliver`/`store`/`withdraw` returns early, before the menu
+  // opens. Removal is the ribbon chip's `×` only; changing kind goes through
+  // the radial menu again (buy/sell) or the drawer (store/withdraw).
+  const openRadialMenu = (e: ReactMouseEvent, portId: PortId, good: GoodId) => {
     if (!draft) return;
     const stopIndex = lastStopIndexForPort(draft, portId);
-    if (stopIndex === null) return;
-    const existingKind = draft.stops[stopIndex].orders.find((o) => o.good === good)?.kind;
+    const existingKind =
+      stopIndex !== null ? draft.stops[stopIndex].orders.find((o) => o.good === good)?.kind : undefined;
     if (existingKind !== undefined && MARKET_FREE_KINDS.has(existingKind)) return;
-    const entry = signal.entries[portId][good];
-    const kind = existingKind === "buy" || existingKind === "sell" ? existingKind : inferOrderKind(entry);
-    if (kind === null) return;
-    setDraft(setStopOrder(draft, stopIndex, good, kind));
+    setRadialMenu({ portId, good, x: e.clientX, y: e.clientY });
+  };
+
+  const closeRadialMenu = () => setRadialMenu(null);
+
+  // Revisit gesture (owner directive): cell clicks always resolve to the
+  // port's *last* Stop (`lastStopIndexForPort`) so a player can attach
+  // several goods to the same Stop without spawning a duplicate — but that
+  // means cell clicks alone can never grow a Route past one Stop per port.
+  // This appends a fresh, order-less Stop for `portId` unconditionally (even
+  // if the port is already in the draft), so a Route can revisit a port —
+  // Duskferry → Coppervale → Duskferry → Emberdock — same shape as the old
+  // row-click gesture, just scoped to an explicit control instead of the
+  // whole row.
+  const addRepeatStop = (portId: PortId) => {
+    if (!draft) return;
+    const nextDraft = appendStop(draft, portId);
+    setDraft(nextDraft);
+    setSelectedStop(nextDraft.stops.length - 1);
+  };
+
+  const chooseRadialAction = (kind: "buy" | "sell" | "deliver") => {
+    if (!draft || !radialMenu) return;
+    const { portId, good } = radialMenu;
+    let workingDraft = draft;
+    let stopIndex = lastStopIndexForPort(workingDraft, portId);
+    if (stopIndex === null) {
+      workingDraft = appendStop(workingDraft, portId);
+      stopIndex = workingDraft.stops.length - 1;
+    }
+    setDraft(setStopOrderKind(workingDraft, stopIndex, good, kind));
     setFocusedGood(good); // contextual focus (#395): attaching follows the task
+    setRadialMenu(null);
   };
 
   // #468 D7 (prototype consequence, flagged): the cell chip's ⇄ buy↔sell
@@ -347,32 +399,8 @@ export function PriceBoardOverlay({
     setFocusedGood((prev) => (prev === good ? null : good));
   };
 
-  // Column pinning (#395 AC3): display-only, recoverable. Hiding the
-  // currently-focused good is handled by `effectiveFocus` below (derived,
-  // not an extra effect) rather than by clearing `focusedGood` here — that
-  // way un-hiding the same good later resumes its focus for free.
-  const hideGood = (good: GoodId) => {
-    setHiddenGoods((prev) => new Set(prev).add(good));
-  };
-  const restoreHiddenGoods = () => {
-    setHiddenGoods(new Set());
-  };
-
   const isValid = draft ? isValidRouteDraft(draft) : false;
-  const visibleGoodIds = GOOD_IDS.filter((good) => !hiddenGoods.has(good));
-  // Strand detection (#413): a hidden column can still carry a live draft
-  // order — it's fully committable via "Zapisz trasę" while invisible on
-  // the grid. Purely a read of `draft`, never a mutation (hiding stays the
-  // display-only filter #395 established) — badges the existing
-  // hidden-columns affordance instead of restricting or auto-unhiding.
-  const hiddenGoodsHaveOrders =
-    draft !== null &&
-    draft.stops.some((stop) => stop.orders.some((order) => hiddenGoods.has(order.good)));
-  // Never dims/focuses a good that's currently hidden — a hidden column has
-  // nothing to emphasize against, and the board would otherwise read as
-  // uniformly dimmed with nothing standing out.
-  const effectiveFocus: GoodId | null =
-    focusedGood !== null && !hiddenGoods.has(focusedGood) ? focusedGood : null;
+  const effectiveFocus: GoodId | null = focusedGood;
 
   // Port-role highlight (#468 D3): driven by the ribbon's selected Stop, so
   // it only exists while authoring. Null ⇒ no role dimming at all.
@@ -381,6 +409,15 @@ export function PriceBoardOverlay({
       ? (ports.find((p) => p.id === draft.stops[selectedStop].portId) ?? null)
       : null;
   const roleGoods = selectedRolePort ? portRoleGoods(selectedRolePort) : null;
+
+  // The 1-Stop draft's own port, for the ribbon's mini-rail (see the
+  // ribbon-dock JSX below) — the sole remaining case where a Stop's
+  // info/controls need rendering outside `RouteRibbon` itself (which draws
+  // nothing below 2 nodes, route.ts's own floor for a Route to exist).
+  const singleStopPort =
+    authoring && draft && draft.stops.length === 1
+      ? (ports.find((p) => p.id === draft.stops[0].portId) ?? null)
+      : null;
 
   // Ribbon nodes, orders included (#468 D6/D7): the order chips live on the
   // ribbon's action row under their port, not in the grid cell they used to
@@ -513,37 +550,51 @@ export function PriceBoardOverlay({
           {/* #468 D2: the trend legend above the grid is gone with the trend
               itself — #127 (which made it always-visible) is knowingly
               reversed, because the thing it explained no longer renders. */}
-          {hiddenGoods.size > 0 && (
-            <div
-              className={
-                hiddenGoodsHaveOrders
-                  ? "price-board__hidden-note price-board__hidden-note--strand"
-                  : "price-board__hidden-note"
-              }
-            >
-              <span>
-                Ukryte kolumny: {hiddenGoods.size}
-                {hiddenGoodsHaveOrders &&
-                  " · zawiera zlecenie w trasie — pozostaje zapisywalne mimo ukrycia"}
-              </span>
-              <button type="button" className="menu-btn" onClick={restoreHiddenGoods}>
-                Pokaż wszystkie
-              </button>
-            </div>
-          )}
           <div className="price-board__authoring-bar">
-            {!authoring ? (
-              <button type="button" className="menu-btn" onClick={startDraft}>
+            {/* Route tabs (owner directive): "Nowa trasa" plus one tab per
+                existing Route, always in this row regardless of authoring
+                state — picking a Route tab loads it straight into the
+                board's own authoring surface (`startEditRoute`), the "Edytuj
+                →" seam #394 originally left to #393, built here instead. */}
+            <div className="price-board__route-tabs" role="tablist" aria-label="Trasy">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authoring && !editingExisting}
+                className={
+                  authoring && !editingExisting
+                    ? "menu-btn price-board__route-tab price-board__route-tab--active"
+                    : "menu-btn price-board__route-tab"
+                }
+                onClick={startDraft}
+              >
                 Nowa trasa
               </button>
-            ) : (
+              {world.company.routes.map((route) => (
+                <button
+                  key={route.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={draft?.id === route.id}
+                  className={
+                    draft?.id === route.id
+                      ? "menu-btn price-board__route-tab price-board__route-tab--active"
+                      : "menu-btn price-board__route-tab"
+                  }
+                  onClick={() => startEditRoute(route)}
+                >
+                  {route.name}
+                </button>
+              ))}
+            </div>
+            {authoring && (
               <>
                 <span className="price-board__authoring-hint">
                   {draft!.stops.length === 0
-                    ? "Kliknij port, aby dodać pierwszy przystanek."
+                    ? "Kliknij komórkę towaru, aby dodać pierwszy przystanek."
                     : draft!.stops.length === 1
-                      ? "Kliknij kolejny port, aby dodać drugi przystanek."
-                      : "Kliknij port, aby dodać przystanek; kliknij komórkę towaru, aby dodać zlecenie."}
+                      ? "Kliknij komórkę towaru w kolejnym porcie, aby dodać drugi przystanek."
+                      : "Kliknij komórkę towaru, aby dodać przystanek lub zlecenie."}
                 </span>
                 <button
                   type="button"
@@ -551,7 +602,7 @@ export function PriceBoardOverlay({
                   disabled={!isValid}
                   onClick={saveDraft}
                 >
-                  Zapisz trasę
+                  {editingExisting ? "Zapisz zmiany" : "Zapisz trasę"}
                 </button>
                 <button type="button" className="menu-btn" onClick={cancelDraft}>
                   Anuluj
@@ -583,11 +634,47 @@ export function PriceBoardOverlay({
                   the component's. */}
               {ribbonNodes.length < 2 && (
                 <div className="route-ribbon route-ribbon--empty">
-                  <p className="route-ribbon__empty-hint">
-                    {ribbonNodes.length === 0
-                      ? "Kliknij port w siatce → ląduje tu jako przystanek. Kliknij komórkę towaru → dopina zlecenie."
-                      : "Kliknij kolejny port → trasa domknie się w pętlę."}
-                  </p>
+                  {singleStopPort ? (
+                    // The single-Stop draft's own mini-rail (replaces the old
+                    // bottom-of-board dock): the ribbon is now the *only*
+                    // place a Stop's info/controls live, even below the
+                    // 2-Stop floor RouteRibbon itself draws at.
+                    <div className="route-ribbon__rail route-ribbon__rail--single">
+                      <div className="route-ribbon__slot">
+                        <div
+                          className="route-ribbon__node"
+                          style={{ "--port-color": `var(--archetype-${singleStopPort.archetype})` } as CSSProperties}
+                        >
+                          <div className="route-ribbon__status" aria-hidden="true" />
+                          <span className="route-ribbon__disc">
+                            {(() => {
+                              const Icon = ARCHETYPE_ICONS[singleStopPort.archetype];
+                              return <Icon className="route-ribbon__node-icon" aria-hidden="true" />;
+                            })()}
+                          </span>
+                          <span className="route-ribbon__node-label">{singleStopPort.name}</span>
+                          <div
+                            className="route-ribbon__edit"
+                            role="group"
+                            aria-label={`Przystanek 1: ${singleStopPort.name} — edycja`}
+                          >
+                            <button
+                              type="button"
+                              className="menu-btn"
+                              aria-label={`Usuń przystanek 1: ${singleStopPort.name}`}
+                              onClick={() => removeStopFromDraft(0)}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="route-ribbon__empty-hint">
+                      Kliknij komórkę towaru w siatce → dodaje port jako przystanek i otwiera menu akcji.
+                    </p>
+                  )}
                 </div>
               )}
               {ribbonNodes.length >= 2 && draft && (
@@ -610,7 +697,7 @@ export function PriceBoardOverlay({
             className="price-board"
             role="table"
             aria-label="Regionalna tablica cen"
-            style={{ "--good-count": visibleGoodIds.length } as CSSProperties}
+            style={{ "--good-count": GOOD_IDS.length } as CSSProperties}
           >
           <div className="price-board__row price-board__row--header" role="row">
             <span className="price-board__port-header">
@@ -618,7 +705,7 @@ export function PriceBoardOverlay({
               {/* The unit, stated once — see `boardQuote` above. */}
               <span className="price-board__unit-hint"> · ₸</span>
             </span>
-            {visibleGoodIds.map((good) => {
+            {GOOD_IDS.map((good) => {
               const focused = effectiveFocus === good;
               // Two independent dimmings share one channel here: contextual
               // focus (#395) and the port-role highlight (#468 D3). Role
@@ -655,14 +742,6 @@ export function PriceBoardOverlay({
                       bazowa {GOODS[good].basePrice}
                     </span>
                   </button>
-                  <button
-                    type="button"
-                    className="menu-btn price-board__good-hide-btn"
-                    aria-label={`Ukryj kolumnę: ${GOOD_NAME_PL[good]}`}
-                    onClick={() => hideGood(good)}
-                  >
-                    ✕
-                  </button>
                 </span>
               );
             })}
@@ -691,7 +770,12 @@ export function PriceBoardOverlay({
                 style={{ "--port-color": `var(--archetype-${port.archetype})` } as CSSProperties}
                 role="row"
                 tabIndex={0}
-                onClick={() => (authoring ? handleRowClick(port.id) : openPort(port.id))}
+                // Port-adding now runs entirely through the grid's cells
+                // (see `openRadialMenu` below) — the row itself only jumps
+                // to the port's own panel, and only outside authoring.
+                onClick={() => {
+                  if (!authoring) openPort(port.id);
+                }}
                 onKeyDown={(e) => {
                   // Enter/Space activate the row, matching native button
                   // behavior (Harbor.tsx uses real <button>s for its rows;
@@ -699,8 +783,7 @@ export function PriceBoardOverlay({
                   // keyboard activation is wired explicitly instead).
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    if (authoring) handleRowClick(port.id);
-                    else openPort(port.id);
+                    if (!authoring) openPort(port.id);
                   }
                 }}
               >
@@ -724,6 +807,27 @@ export function PriceBoardOverlay({
                         ★
                       </span>
                     )}
+                    {/* Revisit gesture: always available while authoring,
+                        including for a port already in the draft — the
+                        only way left to place a Route that visits the same
+                        port twice (owner directive). */}
+                    {authoring && (
+                      <button
+                        type="button"
+                        className="menu-btn price-board__port-add-btn"
+                        aria-label={
+                          inDraft
+                            ? `Dodaj ${port.name} jako kolejny (powtórzony) przystanek`
+                            : `Dodaj ${port.name} jako przystanek`
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addRepeatStop(port.id);
+                        }}
+                      >
+                        +
+                      </button>
+                    )}
                   </span>
                   {/* Archetype caption, as in the mockup (`.port-th .parch`).
                       Same English wording the PortPanel subtitle uses —
@@ -733,7 +837,7 @@ export function PriceBoardOverlay({
                     {port.archetype === "freeport" ? "free port" : port.archetype}
                   </span>
                 </span>
-                {visibleGoodIds.map((good) => {
+                {GOOD_IDS.map((good) => {
                   const cell = cellsByPort[port.id][good];
                   const isBestAsk = signal.entries[port.id][good].buyTier === "strong";
                   const isBestBid = signal.entries[port.id][good].sellTier === "strong";
@@ -806,7 +910,9 @@ export function PriceBoardOverlay({
                   const isMarketFree = order !== undefined && MARKET_FREE_KINDS.has(order.kind);
                   const cellAriaLabel = isMarketFree
                     ? `${GOOD_NAME_PL[good]} w ${port.name}: zlecenie ${ORDER_KIND_LABEL[order!.kind]} — zmień przez „więcej” na wstążce`
-                    : `${GOOD_NAME_PL[good]} w ${port.name}: dodaj zlecenie`;
+                    : inDraft
+                      ? `${GOOD_NAME_PL[good]} w ${port.name}: wybierz akcję`
+                      : `${GOOD_NAME_PL[good]} w ${port.name}: dodaj przystanek i wybierz akcję`;
                   // #468 D7: the cell no longer *holds* the order — the chip
                   // (and its "więcej" drawer, unchanged) lives on the ribbon's
                   // action row under the port. The cell keeps a hue-free
@@ -816,9 +922,10 @@ export function PriceBoardOverlay({
                   const cellClasses = ["price-board__cell"];
                   if (dim) cellClasses.push("price-board__cell--dim");
                   if (attached) cellClasses.push("price-board__cell--attached");
+                  if (authoring && !isMarketFree) cellClasses.push("price-board__cell--interactive");
                   return (
                     <span key={good} className={cellClasses.join(" ")} role="cell">
-                      {authoring && inDraft ? (
+                      {authoring && !isMarketFree ? (
                         <button
                           type="button"
                           className="price-board__cell-btn"
@@ -826,7 +933,7 @@ export function PriceBoardOverlay({
                           data-cell-key={cellKey}
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCellClick(port.id, good);
+                            openRadialMenu(e, port.id, good);
                           }}
                         >
                           {cellContent}
@@ -841,6 +948,52 @@ export function PriceBoardOverlay({
             );
           })}
           </div>
+          {/* Cell-click radial menu (owner directive): a `position: fixed`
+              backdrop + fan of action buttons anchored to the click point.
+              Only the three market-legal kinds a cell quick-attaches
+              (kup/sprzedaj/dostarcz) — store/withdraw stay reachable through
+              the ribbon chip's "więcej" drawer, unchanged. */}
+          {radialMenu &&
+            (() => {
+              const good = radialMenu.good;
+              const actions = legalOrderKinds(world.company.buildings, radialMenu.portId, good).filter(
+                (k): k is "buy" | "sell" | "deliver" => k === "buy" || k === "sell" || k === "deliver",
+              );
+              return (
+                <div
+                  className="radial-menu-backdrop"
+                  onClick={closeRadialMenu}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    closeRadialMenu();
+                  }}
+                >
+                  <div
+                    className="radial-menu"
+                    style={{ left: radialMenu.x, top: radialMenu.y } as CSSProperties}
+                    role="menu"
+                    aria-label={`${GOOD_NAME_PL[good]}: wybierz akcję`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="radial-menu__label" aria-hidden="true">
+                      {GOOD_NAME_PL[good]}
+                    </span>
+                    {actions.map((kind, i) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        role="menuitem"
+                        className={`radial-menu__item radial-menu__item--${kind}`}
+                        style={{ "--angle": `${(i * 360) / actions.length - 90}deg` } as CSSProperties}
+                        onClick={() => chooseRadialAction(kind)}
+                      >
+                        {ORDER_KIND_LABEL[kind]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           {/* Key for the cell's visual language, under the grid — the
               mockup's own `.legend` strip, which explains exactly the three
               channels this reformat introduced. NOT the #127 trend legend
@@ -866,27 +1019,6 @@ export function PriceBoardOverlay({
               <strong>jaśniej</strong> = najlepszy rynek w regionie
             </span>
           </p>
-          {/* #405 nit 2: RouteRibbon's editable dock only renders at >=2
-              Stops (its loop-closure graphic needs at least two nodes), so a
-              1-stop draft had no way to remove a mis-clicked first Stop
-              short of "Anuluj" (discarding the whole draft). This standalone
-              affordance covers exactly that gap — same remove semantics and
-              label convention as the ribbon's own edit row. */}
-          {authoring && draft && draft.stops.length === 1 && (
-            <div className="price-board__single-stop-dock">
-              <span className="price-board__single-stop-name">
-                #1 {ports.find((p) => p.id === draft.stops[0].portId)?.name}
-              </span>
-              <button
-                type="button"
-                className="menu-btn"
-                aria-label={`Usuń przystanek 1: ${ports.find((p) => p.id === draft.stops[0].portId)?.name}`}
-                onClick={() => removeStopFromDraft(0)}
-              >
-                Usuń
-              </button>
-            </div>
-          )}
         </>
       )}
     </OverlayShell>

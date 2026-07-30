@@ -175,7 +175,11 @@ export function RouteRibbon({
           if (selected) stopClasses.push("route-ribbon__node--selected");
           const orders = node.orders ?? [];
           return (
-            <div className="route-ribbon__slot" key={node.portId}>
+            // `${portId}-${i}`, not the bare portId (#468, repeat-visit
+            // Routes): a Route can revisit a port — Duskferry → Coppervale →
+            // Duskferry — so `portId` alone collides as a React key once
+            // that's possible.
+            <div className="route-ribbon__slot" key={`${node.portId}-${i}`}>
               {i > 0 && <div className="route-ribbon__leg" aria-hidden="true" />}
               <div
                 className={stopClasses.join(" ")}
