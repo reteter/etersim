@@ -399,9 +399,13 @@ all Ports × all Goods in one table with bid/ask and trend per cell, highlightin
 and highest bid per good.
 Full information in M2 (fog is a parked E6 candidate).
 E16 (M4) makes this the game's **workbench** —
-Routes are authored on it and Ships dispatched from it, and the Headquarters Trasy tab demotes to a
-read-only Route-ribbon roster ([spec](docs/specs/E16-workbench.md));
-the as-built rewrite lands when E16 ships.
+Routes are authored on it and Ships dispatched from it, and
+~~the Headquarters Trasy tab demotes to a read-only Route-ribbon roster~~ **the Headquarters Trasy tab is removed entirely, the board absorbing the Route roster, the edit seam and the Route's operational controls**
+([spec](docs/specs/E16-workbench.md) §Visual contract, owner directive 2026-07-30);
+a cell carries stacked bid-over-ask, a trade-pair color encoding the player's *action*, and a
+direction triangle —
+the price trend is gone from the UI.
+The full as-built rewrite lands when E16 closes.
 _Avoid_:
 market overview, economy screen (as identifiers)
 
@@ -543,9 +547,12 @@ The visual language for a Route:
 its ordered Stops laid along a schematic rail as planet-style nodes in each Port's archetype color,
 connected by the route line, with the assigned Ship gliding the loop (returning home along a return
 arc + ↻; on Routes over two Stops the intermediate Stops dim during the return).
-One idiom, two surfaces: **editable**
-on the Price board (the authoring canvas) and **read-only** in the Headquarters Trasy tab (a roster,
-one ribbon per Route).
+One idiom,
+~~two surfaces: **editable** on the Price board (the authoring canvas) and **read-only** in the Headquarters Trasy tab (a roster, one ribbon per Route)~~
+— **one surface since 2026-07-30**:
+the Price board, editable while authoring.
+The read-only mode remains in the component and shipped in the E16 visual prototype, but the Trasy
+tab it was built for is gone (E16 §Visual contract, point 8).
 Schematic on purpose (umowna scale, not orrery geometry) so it does not compete with the map.
 _Avoid_:
 route strip, timeline (as identifiers)
@@ -563,8 +570,15 @@ Design principle: **buildings introduce mechanics**
 a new gameplay layer arrives with a Building, not with a tutorial.
 The sim model (Headquarters, Build Order, auto-draw/deliver/rush, launch) shipped in #81;
 the Headquarters-panel UI shipped in #84 (`HeadquartersPanel.tsx` Budowa tab — per-good build
-progress, auto-draw rate, stall reason, rush quote/execute; `PortPanel.tsx` gains the founding
-button and the HQ port's progress section) and #85 (Trasy tab, see Route above).
+progress, auto-draw rate, stall reason, rush quote/execute; `PortPanel.tsx` gains
+~~the founding button and~~ the HQ port's progress section) and #85 (~~Trasy tab~~, see Route
+above).
+Both struck 2026-07-30 (E16 §Visual contract):
+the founding button moved to the top bar, where one slot reads `Załóż siedzibę` before founding and
+`Siedziba` after —
+`PortPanel` keeps only the savings-progress bar;
+the Trasy tab is removed, and the panel's default tab is now **Wartość firmy**, which absorbed the
+retired Księga overlay.
 
 **Building** (PL: budynek):
 A Company-owned structure at a Port.
@@ -902,7 +916,9 @@ value, so the chart tells the honest investment story: a build is a visible dip,
 growth).
 Full retention.
 One schema, two consumers:
-the in-game performance board (E9) and the Harness (E11). **Value law**
+the in-game performance board (E9 — since 2026-07-30 the **Wartość firmy** tab of the Headquarters
+panel, not its own Księga overlay; its all-ships transaction view reads one net line per world day,
+while a per-ship filter restores per-event rows) and the Harness (E11). **Value law**
 (E13.0 grill, 2026-07-19):
 company value changes **only** through a booked Ledger event.
 Moving your own goods between Goods stores you own is not such an event, so a Transfer is
