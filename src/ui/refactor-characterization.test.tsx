@@ -107,14 +107,18 @@ describe("TopBar overlays — single-overlay behaviour (#320)", () => {
     await user.keyboard("b");
     expect(screen.queryByRole("table", { name: "Regionalna tablica cen" })).toBeNull();
 
-    // Ledger and Headquarters each open from their own button. We assert only
-    // that the opened overlay is present — never a two-overlays-open state,
-    // which #320 deliberately replaces with mutual exclusion.
-    await user.click(screen.getByRole("button", { name: "Księga" }));
-    expect(screen.getByRole("table", { name: "Transakcje" })).toBeInTheDocument();
-
+    // The Headquarters opens from its own button. We assert only that the
+    // opened overlay is present — never a two-overlays-open state, which #320
+    // deliberately replaces with mutual exclusion.
+    //
+    // The Księga button is gone (owner directive 2026-07-30, point 3): its two
+    // tabs moved into the Headquarters, whose default tab is now Wartość firmy.
+    // So the same reachability the old Księga click pinned is asserted here —
+    // the transaction log is one toggle inside the panel this button opens.
     await user.click(screen.getByRole("button", { name: "Siedziba" }));
     expect(screen.getByRole("dialog", { name: /siedziba/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Transakcje" }));
+    expect(screen.getByRole("table", { name: "Transakcje" })).toBeInTheDocument();
   });
 });
 

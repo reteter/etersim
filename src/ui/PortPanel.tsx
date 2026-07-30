@@ -404,13 +404,13 @@ function SailControl({
 
 /**
  * Headquarters section (docs/specs/E9 — UX skeleton: "PortPanel gains the
- * Headquarters section"): before founding, every port's panel offers the
- * founding button; after founding, only the HQ port's own panel shows the
- * per-good build progress bar — "readable from the port level" (owner
+ * Headquarters section"): before founding, every port's panel shows the savings
+ * progress toward the goal (the founding *button* itself lives in the top bar
+ * since the 2026-07-30 directive); after founding, only the HQ port's own panel
+ * shows the per-good build progress bar — "readable from the port level" (owner
  * requirement). Renders nothing at any other port.
  */
 function HeadquartersSection({ world, portId }: { world: World; portId: PortId }) {
-  const dispatch = useGameStore((s) => s.dispatch);
   const headquarters = world.company.headquarters;
 
   if (!headquarters) {
@@ -420,19 +420,16 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
     const canAfford = thalers >= FOUNDING_GOAL;
     return (
       <div className="founding-goal">
-        <button
-          type="button"
-          className="headquarters-found-btn"
-          disabled={!canAfford}
-          title={
-            canAfford
-              ? undefined
-              : `wymaga ₸${FOUNDING_GOAL} — koszt ₸${HEADQUARTERS_COST} + nienaruszalna rezerwa ₸${CONSTRUCTION_RESERVE}`
-          }
-          onClick={() => dispatch({ kind: "foundHeadquarters", portId })}
-        >
-          Załóż siedzibę — ₸{HEADQUARTERS_COST}
-        </button>
+        {/* The founding *button* moved to the top bar (owner directive
+            2026-07-30, point 1) — what stays here is the savings story: how
+            close the purse is to the goal, at the port the player is looking
+            at. Once the bar fills, the act itself is one click away in the top
+            bar, where it is reachable from anywhere. */}
+        <p className="founding-goal__caption">
+          {canAfford
+            ? `Możesz założyć Siedzibę — przycisk w górnym pasku (koszt ₸${HEADQUARTERS_COST})`
+            : `Na Siedzibę: ₸${HEADQUARTERS_COST} + nienaruszalna rezerwa ₸${CONSTRUCTION_RESERVE}`}
+        </p>
         <div
           className="founding-goal__bar"
           role="progressbar"

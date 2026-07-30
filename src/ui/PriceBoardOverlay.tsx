@@ -16,6 +16,7 @@ import { computeOfferLabels, OFFER_LABEL_TEXT } from "../store/offerLabels";
 import { ARCHETYPE_ICONS, GOOD_ICONS } from "./icons";
 import { KontraktyTab } from "./KontraktyTab";
 import { OverlayShell } from "./OverlayShell";
+import { RouteOpsStrip } from "./RouteOpsStrip";
 /* #468: the board renders **bare numbers**, like the mockup — a `₸` on every
  * one of the grid's ~70 quotes is noise at this density, and the unit is
  * stated once in the Port header instead. `quoteFormat.quoteLabel` stays the
@@ -280,6 +281,18 @@ export function PriceBoardOverlay({
     setExpanded(new Set());
     setFocusedGood(null);
     setSelectedStop(null);
+  };
+
+  // Route deletion, moved off the retired Trasy tab with the rest of the
+  // operational controls (owner directive 2026-07-30, point 8). Only reachable
+  // while an existing Route is loaded, so the deleted Route is always the one
+  // on screen — the draft is dropped with it, and the selection cleared, since
+  // both would otherwise point at a Route that no longer exists.
+  const deleteLoadedRoute = () => {
+    if (!draft) return;
+    dispatch({ kind: "deleteRoute", routeId: draft.id });
+    selectRoute(null);
+    cancelDraft();
   };
 
   // Removes the Stop at `index` (ribbon's "Usuń"/reorder dock, and the
@@ -691,6 +704,20 @@ export function PriceBoardOverlay({
                   }}
                 />
               )}
+              {/* The Route's operational half (owner directive 2026-07-30,
+                  point 8) — docked under the rail it belongs to, so geometry
+                  and operation read as one Route rather than two panels. Fed
+                  the **saved** Route, not the draft: loop metrics and ship
+                  assignment are facts about what has been running, and would
+                  otherwise flicker against unsaved edits. */}
+              {editingExisting &&
+                draft &&
+                (() => {
+                  const saved = world.company.routes.find((r) => r.id === draft.id);
+                  return saved ? (
+                    <RouteOpsStrip world={world} route={saved} onDelete={deleteLoadedRoute} />
+                  ) : null;
+                })()}
             </div>
           </div>
           <div

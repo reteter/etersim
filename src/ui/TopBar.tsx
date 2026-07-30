@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { isUnderRefit, SPEEDS, type Speed } from "../sim";
+import { CONSTRUCTION_RESERVE, HEADQUARTERS_COST, isUnderRefit, SPEEDS, type Speed } from "../sim";
 import { useGameStore } from "../store/gameStore";
+import { FOUNDING_GOAL } from "./foundingProgress";
 import { GameMenu } from "./GameMenu";
 import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { HeadquartersPanel } from "./HeadquartersPanel";
-import { LedgerOverlay } from "./LedgerOverlay";
 import { PriceBoardOverlay } from "./PriceBoardOverlay";
 import { sailability } from "./sailability";
 import { formatWorldDate } from "./worldDate";
@@ -48,6 +48,20 @@ export function TopBar() {
   const setSpeed = useGameStore((s) => s.setSpeed);
   const togglePause = useGameStore((s) => s.togglePause);
   const hasHeadquarters = useGameStore((s) => !!s.world?.company.headquarters);
+  const dispatch = useGameStore((s) => s.dispatch);
+  // The founding button's target port (points 1–2). Founding is paperwork, not
+  // a dockside act — the sim only requires the port to exist (commands.ts) — so
+  // the selection is the whole context needed, and its absence is the one hint
+  // worth spelling out.
+  const selection = useGameStore((s) => s.selection);
+  const selectedPortId = selection?.kind === "port" ? selection.id : null;
+  const canAffordFounding = thalers >= FOUNDING_GOAL;
+  const canFound = selectedPortId !== null && canAffordFounding;
+  const foundHint = !canAffordFounding
+    ? `wymaga ₸${FOUNDING_GOAL} — koszt ₸${HEADQUARTERS_COST} + nienaruszalna rezerwa ₸${CONSTRUCTION_RESERVE}`
+    : selectedPortId === null
+      ? "wybierz port na mapie — Siedziba powstaje w konkretnym porcie"
+      : undefined;
   const activeOverlay = useGameStore((s) => s.activeOverlay);
   const openOverlay = useGameStore((s) => s.openOverlay);
   const closeOverlay = useGameStore((s) => s.closeOverlay);
@@ -194,21 +208,37 @@ export function TopBar() {
       >
         Tablica cen
       </button>
-      <button type="button" className="menu-btn" onClick={() => openOverlay("ledger")}>
-        Księga
-      </button>
-      {/* Persistent shortcut once the Headquarters is founded (docs/specs/E9
-          — UX skeleton: "a persistent TopBar shortcut once founded"). */}
-      {hasHeadquarters && (
+      {/* One slot, two states (owner directive 2026-07-30, points 1–2): the
+          Company's own entry point, standing where Księga used to — before
+          founding it *is* the founding act, after founding it opens the
+          Siedziba (which now holds the Ledger's tabs too, so nothing was lost
+          with Księga's button). Founding needs no docked ship
+          (`foundHeadquarters`, commands.ts — "paperwork, no ship presence"),
+          only a port, so the target is the current selection, exactly as the
+          "g" sail hotkey above reads it. The savings progress bar stays in
+          PortPanel: it is the early-game story of *approaching* the goal, and
+          the top bar has no room to tell a story. */}
+      {hasHeadquarters ? (
         <button type="button" className="menu-btn" onClick={() => openOverlay("hq")}>
           Siedziba
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="menu-btn"
+          disabled={!canFound}
+          title={foundHint}
+          onClick={() => {
+            if (selectedPortId) dispatch({ kind: "foundHeadquarters", portId: selectedPortId });
+          }}
+        >
+          Załóż siedzibę — ₸{HEADQUARTERS_COST}
         </button>
       )}
       <GameMenu />
       {activeOverlay === "priceBoard" && (
         <PriceBoardOverlay onClose={closeOverlay} tab={priceBoardTab} onTabChange={setPriceBoardTab} />
       )}
-      {activeOverlay === "ledger" && <LedgerOverlay onClose={closeOverlay} />}
       {activeOverlay === "hq" && <HeadquartersPanel onClose={closeOverlay} />}
     </header>
   );

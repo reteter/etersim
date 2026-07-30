@@ -1748,8 +1748,12 @@ body {
   margin: 0.75rem 0;
 }
 
-.founding-goal .headquarters-found-btn {
-  margin: 0 0 0.5rem;
+/* The founding button left for the top bar (owner directive 2026-07-30) —
+   what stands above the bar now is the caption explaining what it fills. */
+.founding-goal__caption {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  color: #a8b2c2;
 }
 
 .founding-goal__bar {
@@ -2868,4 +2872,91 @@ body {
   padding: 0 0.25rem;
   font-size: 0.6rem;
   line-height: 1.2;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Wartość firmy — the Headquarters' default tab (owner directive 2026-07-30,
+   points 4-6). The headline number and the lens toggle share one row above the
+   chart: the value is the answer, the chart is its evidence. */
+
+.company-value__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+.company-value__total {
+  margin: 0;
+  text-align: left;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #e6e6e6;
+}
+
+.company-value__lens {
+  display: flex;
+  gap: 0.35rem;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Route ops strip — the Route's operational half, docked under the board's
+   ribbon (owner directive 2026-07-30, point 8; moved off the retired Trasy
+   tab). Reads as one band under the rail, not as a second panel. */
+
+.route-ops {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.route-ops__metrics {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: #a8b2c2;
+}
+
+.route-ops__result {
+  font-weight: 700;
+  color: #e6e6e6;
+}
+
+.route-ops__ships {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.route-ops__ship {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+/* Same warning hue the retired Trasy roster used for a suspended assignment —
+   a warning, not a new meaning (ADR-0006, §Laws 9). */
+.route-ops__suspended {
+  color: #d9705f;
+  font-weight: 600;
+}
+
+.route-ops__assign {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.route-ops__delete {
+  margin-left: auto;
 }

@@ -22,10 +22,10 @@ import { BuildProgress } from "./BuildProgress";
 import { GOOD_NAME_PL } from "../store/goodDisplay";
 import { GUILD_NAME_PL } from "./guildDisplay";
 import { OverlayShell } from "./OverlayShell";
-import { RoutesTab } from "./RoutesTab";
+import { CompanyValueTab } from "./CompanyValueTab";
 import { Tabs } from "./Tabs";
 
-type Tab = "construction" | "routes";
+type Tab = "value" | "construction";
 
 const STALL_LABEL: Record<"reserve" | "goods", string> = {
   reserve: "wstrzymane: rezerwa skarbca",
@@ -357,13 +357,21 @@ function ConstructionTab({ world }: { world: World }) {
 }
 
 /**
- * Headquarters view (docs/specs/E9 — UX skeleton): one panel, two tabs
- * (Budowa/Trasy). Reached from the TopBar shortcut (once founded) or the
- * HQ port's PortPanel section.
+ * Headquarters view (docs/specs/E9 — UX skeleton): one panel, two tabs.
+ * Reached from the TopBar shortcut, which is now the *only* entry point and the
+ * only home for the Company's own numbers (owner directive 2026-07-30):
+ *
+ * - **Wartość firmy** (default, point 4) absorbs the retired Księga overlay —
+ *   the Company's value and its transaction log, which are answers about the
+ *   Company and so belong where the Company lives.
+ * - **Budowa** unchanged.
+ * - **Trasy is gone** (point 8): Route authoring, the roster and now the
+ *   operational controls all live on the Price Board, so a Route has exactly
+ *   one surface instead of two competing ones.
  */
 export function HeadquartersPanel({ onClose }: { onClose: () => void }) {
   const world = useGameStore((s) => s.world);
-  const [tab, setTab] = useState<Tab>("construction");
+  const [tab, setTab] = useState<Tab>("value");
 
   if (!world || !world.company.headquarters) return null;
 
@@ -378,13 +386,13 @@ export function HeadquartersPanel({ onClose }: { onClose: () => void }) {
           active={tab}
           onChange={setTab}
           tabs={[
+            { id: "value", label: "Wartość firmy" },
             { id: "construction", label: "Budowa" },
-            { id: "routes", label: "Trasy" },
           ]}
         />
       }
     >
-      {tab === "construction" ? <ConstructionTab world={world} /> : <RoutesTab world={world} />}
+      {tab === "value" ? <CompanyValueTab world={world} /> : <ConstructionTab world={world} />}
     </OverlayShell>
   );
 }
