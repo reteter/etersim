@@ -9,7 +9,8 @@ import type { MouseEvent } from "react";
  * target, so nothing here needs `stopPropagation` to protect it.
  *
  * Shared because every current overlay built on `OverlayShell`
- * (PriceBoardOverlay, LedgerOverlay, HeadquartersPanel; #181) renders the
+ * (PriceBoardOverlay, HeadquartersPanel — the Księga overlay was the third
+ * until E16 folded it into HeadquartersPanel; #181) renders the
  * same `.overlay` > `.overlay__panel` shape — `OverlayShell` wires
  * `onBackdropClick` onto that outer `<div>` once, so individual overlays no
  * longer call this hook directly. CreditsOverlay and OptionsOverlay share

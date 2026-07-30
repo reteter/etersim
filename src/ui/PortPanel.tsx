@@ -13,7 +13,6 @@ import {
   HEADQUARTERS_COST,
   isUnderRefit,
   nextHoldStep,
-  price,
   quoteBuy,
   quoteSell,
   RANK_THRESHOLDS,
@@ -58,7 +57,10 @@ import {
   UrbanIcon,
   VerdantIcon,
 } from "./icons";
-import { priceTrend, TREND_GLYPH, TREND_LEGEND } from "./priceTrend";
+// #468 D2: `./priceTrend` keeps existing but has no UI consumer left — the
+// board handed its triangles to the bid/ask direction, so one glyph would
+// otherwise carry two meanings across two surfaces (§Laws 9, ADR-0006,
+// incident 0002). The module and the sim's `priceSnapshots` stay in place.
 import { quoteLabel } from "./quoteFormat";
 import { sailability } from "./sailability";
 
@@ -217,15 +219,15 @@ function computeSellMax(entry: MarketGood, base: number, ship: Ship, good: GoodI
 }
 
 /**
- * One good's market row: price, trend arrow vs. the last day snapshot and
- * stock — plus buy/sell controls with a live marginal quote when the
- * player's ship is docked here (docs/specs/E2-trade-loop.md — Market model).
+ * One good's market row: price and stock — plus buy/sell controls with a
+ * live marginal quote when the player's ship is docked here
+ * (docs/specs/E2-trade-loop.md — Market model). The trend arrow left with
+ * #468 D2.
  */
 function MarketRow({
   good,
   entry,
   base,
-  snapshotPrice,
   ship,
   thalers,
   trading,
@@ -236,7 +238,6 @@ function MarketRow({
   entry: MarketGood;
   /** The port's effective base price for this good (E8 price bias). */
   base: number;
-  snapshotPrice: number;
   ship: Ship;
   thalers: number;
   trading: boolean;
@@ -249,8 +250,9 @@ function MarketRow({
 }) {
   const dispatch = useGameStore((s) => s.dispatch);
 
-  const unitPrice = price(entry, base);
-  const trend = priceTrend(unitPrice, snapshotPrice);
+  // #468 D2: the mid-price `price(entry, base)` was read only to compute the
+  // trend against the day snapshot; the row's own numbers are the two-sided
+  // quotes below, which is all that renders now.
   // Two-sided single-unit quotes (E8 bid-ask spread, #61): always shown,
   // independent of docking, so the spread is visible while just browsing.
   const askUnit = quoteBuy(entry, base, 1);
@@ -306,12 +308,6 @@ function MarketRow({
               {held}
             </span>
           )}
-        </span>
-        <span
-          className={`market-row__trend market-row__trend--${trend}`}
-          title={TREND_LEGEND}
-        >
-          {TREND_GLYPH[trend]}
         </span>
         <span className="market-row__bid">{quoteLabel(bidUnit)}</span>
         <span className="market-row__ask">{quoteLabel(askUnit)}</span>
@@ -408,13 +404,13 @@ function SailControl({
 
 /**
  * Headquarters section (docs/specs/E9 — UX skeleton: "PortPanel gains the
- * Headquarters section"): before founding, every port's panel offers the
- * founding button; after founding, only the HQ port's own panel shows the
- * per-good build progress bar — "readable from the port level" (owner
+ * Headquarters section"): before founding, every port's panel shows the savings
+ * progress toward the goal (the founding *button* itself lives in the top bar
+ * since the 2026-07-30 directive); after founding, only the HQ port's own panel
+ * shows the per-good build progress bar — "readable from the port level" (owner
  * requirement). Renders nothing at any other port.
  */
 function HeadquartersSection({ world, portId }: { world: World; portId: PortId }) {
-  const dispatch = useGameStore((s) => s.dispatch);
   const headquarters = world.company.headquarters;
 
   if (!headquarters) {
@@ -424,19 +420,16 @@ function HeadquartersSection({ world, portId }: { world: World; portId: PortId }
     const canAfford = thalers >= FOUNDING_GOAL;
     return (
       <div className="founding-goal">
-        <button
-          type="button"
-          className="headquarters-found-btn"
-          disabled={!canAfford}
-          title={
-            canAfford
-              ? undefined
-              : `wymaga ₸${FOUNDING_GOAL} — koszt ₸${HEADQUARTERS_COST} + nienaruszalna rezerwa ₸${CONSTRUCTION_RESERVE}`
-          }
-          onClick={() => dispatch({ kind: "foundHeadquarters", portId })}
-        >
-          Załóż siedzibę — ₸{HEADQUARTERS_COST}
-        </button>
+        {/* The founding *button* moved to the top bar (owner directive
+            2026-07-30, point 1) — what stays here is the savings story: how
+            close the purse is to the goal, at the port the player is looking
+            at. Once the bar fills, the act itself is one click away in the top
+            bar, where it is reachable from anywhere. */}
+        <p className="founding-goal__caption">
+          {canAfford
+            ? `Możesz założyć Siedzibę — przycisk w górnym pasku (koszt ₸${HEADQUARTERS_COST})`
+            : `Na Siedzibę: ₸${HEADQUARTERS_COST} + nienaruszalna rezerwa ₸${CONSTRUCTION_RESERVE}`}
+        </p>
         <div
           className="founding-goal__bar"
           role="progressbar"
@@ -963,7 +956,9 @@ export function PortPanel({ portId }: { portId: PortId }) {
   const ship = resolveRelevantShip(world, controlledShipId);
   if (!ship) return null;
   const dockedHere = ship.location.kind === "docked" && ship.location.portId === port.id;
-  const snapshot = world.priceSnapshots[port.id];
+  // #468 D2: `world.priceSnapshots` lost its last UI reader here. It stays a
+  // sim concept (fed every day boundary, part of the save shape) — this is a
+  // rendering removal, not a sim change.
   const ArchetypeIcon = ARCHETYPE_ICONS[port.archetype];
   // Market-quality signal (docs/specs/E16-workbench.md §The market-quality
   // signal, package e): same selector `PriceBoardOverlay` reads, computed
@@ -999,7 +994,6 @@ export function PortPanel({ portId }: { portId: PortId }) {
       <div className="market" role="table" aria-label={`Rynek — ${port.name}`}>
         <div className="market__header" role="row">
           <span>Towar</span>
-          <span title={TREND_LEGEND}>Trend</span>
           <span>Sprzedaż</span>
           <span>Kupno</span>
           <span>Zapas</span>
@@ -1010,7 +1004,6 @@ export function PortPanel({ portId }: { portId: PortId }) {
             good={good}
             entry={port.market[good]}
             base={effectiveBase(port, good)}
-            snapshotPrice={snapshot[good]}
             ship={ship}
             thalers={world.company.thalers}
             trading={dockedHere}

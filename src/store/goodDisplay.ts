@@ -22,10 +22,11 @@ import type { GoodId } from "../sim";
  * directly after a preposition, in either word order (`Kup Zboże` and
  * `Zboże Kup` are the same defect). Callers must break the adjacency with a
  * separator instead of inflecting the name — `<Nazwa> ×<qty>` for a quantity
- * (`LedgerOverlay.tsx`'s `describeTransaction`, `TopBar.tsx`'s
+ * (`CompanyValueTab.tsx`'s `describeTransaction`, `TopBar.tsx`'s
  * `routedSaleNote`), `<Verb>: <Nazwa>` or `<Nazwa>: <Verb>` next to a bare
- * verb (`PortPanel.tsx`'s buy/sell/store/withdraw aria-labels,
- * `RoutesTab.tsx`'s per-good order chips). No second, inflected table —
+ * verb (`PortPanel.tsx`'s buy/sell/store/withdraw aria-labels, and the board's
+ * own order chips — `RoutesTab.tsx`'s chip table was the original example and
+ * is deleted, E16 §Visual contract point 8). No second, inflected table —
  * ever, for any future good.
  */
 export const GOOD_NAME_PL: Record<GoodId, string> = {

@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { type LedgerEvent, type PortId, type Ship, type ShipId, type World } from "../sim";
-import { useGameStore } from "../store/gameStore";
 import { GOOD_NAME_PL } from "../store/goodDisplay";
-import { OverlayShell } from "./OverlayShell";
-import { Tabs } from "./Tabs";
+import { dailyNet } from "./ledgerDaily";
 import { formatWorldDate } from "./worldDate";
 
 /** Polish labels for `SettlementEvent.outcome` (src/sim/ledger.ts) — the sim
@@ -16,7 +14,10 @@ const OUTCOME_LABEL_PL: Record<"met" | "missed" | "breached" | "resigned", strin
   resigned: "rozwiązany",
 };
 
-type Tab = "transactions" | "value";
+/** Which lens the Wartość firmy tab shows (owner directive 2026-07-30, points
+ *  5.2/6): the chart and the transaction log are two readings of the same
+ *  Ledger, so they share a tab and a toggle instead of two tabs. */
+type Lens = "chart" | "transactions";
 
 /** Sentinel for the ship filter's "show every ship" option — never a real
  *  ShipId (those come from `ship.ts`'s generator, e.g. "s0", "s1", ...). */
@@ -200,16 +201,41 @@ function describeTransaction(event: TransactionEvent, world: World): string {
   }
 }
 
-/** Transaction list: every Ledger event except netWorth snapshots, newest
- *  first, optionally filtered to one ship's events (company-wide events
- *  disappear under a specific-ship filter — they belong to no ship). */
+/** Delta cell: one class rule shared by the per-event rows and the daily
+ *  roll-up, so income/expense reads identically in both. */
+function DeltaCell({ delta }: { delta: number | null }) {
+  return (
+    <span
+      role="cell"
+      className={
+        delta === null
+          ? "ledger-list__delta"
+          : delta >= 0
+            ? "ledger-list__delta ledger-list__delta--income"
+            : "ledger-list__delta ledger-list__delta--expense"
+      }
+    >
+      {delta === null ? "—" : `${delta >= 0 ? "+" : "−"}₸${Math.abs(Math.round(delta))}`}
+    </span>
+  );
+}
+
+/**
+ * Transaction list: every Ledger event except netWorth snapshots, newest first.
+ *
+ * Two shapes, one per filter state (owner directive 2026-07-30, point 7):
+ * **Wszystkie statki** rolls the whole Company's day into a single balance line
+ * — at 100x a day's raw event stream is unreadable, and the question the
+ * all-ships view answers is "how did we do today". Picking a **ship** keeps
+ * row-per-event detail unchanged, because that view's question is "what did
+ * *this* ship do", and its answer is the sequence itself.
+ */
 function TransactionsTab({ world }: { world: World }) {
   const [filter, setFilter] = useState<ShipFilter>(ALL_SHIPS);
 
-  const events = world.ledger
-    .filter(isTransaction)
-    .filter((e) => filter === ALL_SHIPS || transactionShipId(e) === filter)
-    .reverse();
+  const transactions = world.ledger.filter(isTransaction);
+  const events = transactions.filter((e) => transactionShipId(e) === filter).reverse();
+  const days = dailyNet(transactions.map((e) => ({ tick: e.tick, delta: transactionDelta(e) })));
 
   return (
     <div>
@@ -229,34 +255,36 @@ function TransactionsTab({ world }: { world: World }) {
         </select>
       </div>
       <div className="ledger-list" role="table" aria-label="Transakcje">
-        {events.length === 0 ? (
-          <p className="overlay__text">Brak transakcji.</p>
-        ) : (
-          events.map((event, i) => {
-            const delta = transactionDelta(event);
-            return (
-              <div key={`${event.kind}-${event.tick}-${i}`} className="ledger-list__row" role="row">
+        {filter === ALL_SHIPS ? (
+          days.length === 0 ? (
+            <p className="overlay__text">Brak transakcji.</p>
+          ) : (
+            days.map((entry) => (
+              <div key={entry.day} className="ledger-list__row" role="row">
                 <span className="ledger-list__date" role="cell">
-                  {formatWorldDate(event.tick)}
+                  Dzień {entry.day}
                 </span>
                 <span className="ledger-list__desc" role="cell">
-                  {describeTransaction(event, world)}
+                  saldo dnia
                 </span>
-                <span
-                  role="cell"
-                  className={
-                    delta === null
-                      ? "ledger-list__delta"
-                      : delta >= 0
-                        ? "ledger-list__delta ledger-list__delta--income"
-                        : "ledger-list__delta ledger-list__delta--expense"
-                  }
-                >
-                  {delta === null ? "—" : `${delta >= 0 ? "+" : "−"}₸${Math.abs(Math.round(delta))}`}
-                </span>
+                <DeltaCell delta={entry.net} />
               </div>
-            );
-          })
+            ))
+          )
+        ) : events.length === 0 ? (
+          <p className="overlay__text">Brak transakcji.</p>
+        ) : (
+          events.map((event, i) => (
+            <div key={`${event.kind}-${event.tick}-${i}`} className="ledger-list__row" role="row">
+              <span className="ledger-list__date" role="cell">
+                {formatWorldDate(event.tick)}
+              </span>
+              <span className="ledger-list__desc" role="cell">
+                {describeTransaction(event, world)}
+              </span>
+              <DeltaCell delta={transactionDelta(event)} />
+            </div>
+          ))
         )}
       </div>
     </div>
@@ -271,11 +299,13 @@ function TransactionsTab({ world }: { world: World }) {
  *  drained into a ship worth 0 on this chart) both read as a dip, then
  *  steeper growth once the new ship earns — the "honest investment story"
  *  the spec calls for, with no extra chart-side logic needed. */
-function ValueTab({ world }: { world: World }) {
-  const points = world.ledger.filter(
-    (e): e is Extract<LedgerEvent, { kind: "netWorth" }> => e.kind === "netWorth",
-  );
+type NetWorthPoint = Extract<LedgerEvent, { kind: "netWorth" }>;
 
+function netWorthPoints(world: World): readonly NetWorthPoint[] {
+  return world.ledger.filter((e): e is NetWorthPoint => e.kind === "netWorth");
+}
+
+function ValueChart({ points }: { points: readonly NetWorthPoint[] }) {
   if (points.length === 0) {
     return <p className="overlay__text">Brak jeszcze migawek wartości — sprawdź po Dniu 1.</p>;
   }
@@ -294,7 +324,6 @@ function ValueTab({ world }: { world: World }) {
   const yFor = (v: number) => padY + (1 - (v - minV) / span) * (height - padY * 2);
 
   const path = points.map((p, i) => `${i === 0 ? "M" : "L"}${xFor(i)},${yFor(p.total)}`).join(" ");
-  const latest = points[points.length - 1];
 
   return (
     <div>
@@ -324,43 +353,55 @@ function ValueTab({ world }: { world: World }) {
           </circle>
         ))}
       </svg>
-      <p className="overlay__text">Wartość firmy: ₸{Math.round(latest.total)}</p>
     </div>
   );
 }
 
 /**
- * Performance board overlay (#86, PriceBoardOverlay pattern): the Ledger
- * made visible. Two tabs — Transakcje (transaction list, ship filter) and
- * Wartość firmy (company-value chart). Opened from a persistent TopBar
- * button. Per-Route last-loop results live in the Route panel instead (one
- * fact, one home — docs/specs/E9-fleet-and-routes.md — UX skeleton).
+ * The Ledger made visible (#86), now the Headquarters' default tab rather than
+ * its own overlay (owner directive 2026-07-30, points 3–6): the retired Księga
+ * overlay's two tabs collapse into one surface, because the chart and the
+ * transaction log are two lenses on the same fact and the tab bar was spending
+ * a slot on the distinction.
+ *
+ * Layout, per points 5.1/5.2: the company value reads **above** the chart,
+ * left-aligned, sharing its row with the lens toggle — the number is the
+ * headline and the chart is its evidence, which the old
+ * caption-under-the-chart order had backwards. The toggle reuses the
+ * segmented-button idiom `ConstructionTab` already uses for Statek/Budynek
+ * (HeadquartersPanel.tsx), so a second switch idiom never enters the UI.
  */
-export function LedgerOverlay({ onClose }: { onClose: () => void }) {
-  const world = useGameStore((s) => s.world);
-  const [tab, setTab] = useState<Tab>("transactions");
-
-  if (!world) return null;
+export function CompanyValueTab({ world }: { world: World }) {
+  const [lens, setLens] = useState<Lens>("chart");
+  const points = netWorthPoints(world);
+  const latest = points.length > 0 ? points[points.length - 1] : null;
 
   return (
-    <OverlayShell
-      ariaLabel="Księga"
-      title="Księga"
-      onClose={onClose}
-      wide
-      tabs={
-        <Tabs
-          ariaLabel="Zakładki księgi"
-          active={tab}
-          onChange={setTab}
-          tabs={[
-            { id: "transactions", label: "Transakcje" },
-            { id: "value", label: "Wartość firmy" },
-          ]}
-        />
-      }
-    >
-      {tab === "transactions" ? <TransactionsTab world={world} /> : <ValueTab world={world} />}
-    </OverlayShell>
+    <div className="company-value">
+      <div className="company-value__head">
+        <p className="company-value__total">
+          Wartość firmy: {latest === null ? "—" : `₸${Math.round(latest.total)}`}
+        </p>
+        <div className="company-value__lens" role="group" aria-label="Widok wartości firmy">
+          <button
+            type="button"
+            className={lens === "chart" ? "menu-btn menu-btn--active" : "menu-btn"}
+            aria-pressed={lens === "chart"}
+            onClick={() => setLens("chart")}
+          >
+            Wykres
+          </button>
+          <button
+            type="button"
+            className={lens === "transactions" ? "menu-btn menu-btn--active" : "menu-btn"}
+            aria-pressed={lens === "transactions"}
+            onClick={() => setLens("transactions")}
+          >
+            Transakcje
+          </button>
+        </div>
+      </div>
+      {lens === "chart" ? <ValueChart points={points} /> : <TransactionsTab world={world} />}
+    </div>
   );
 }

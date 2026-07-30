@@ -356,6 +356,12 @@ a master spends more time on the Price board than in the route editor.
   2026-07-15.) Grilled 2026-07-22; spec:
   [specs/E16-workbench.md](specs/E16-workbench.md) (grill brief:
   [grill-brief-m4-workbench.md](design-notes/grill-brief-m4-workbench.md)).
+  **Visually re-grilled 2026-07-29 and re-scoped 2026-07-30** (spec §Visual contract): the board's
+  mechanics had shipped while its look had not, so the visual contract was written from a prototype
+  rather than from prose. The Headquarters **Trasy tab is removed outright** — the board owns the
+  roster, the edit seam and the Route's operational controls — and the Headquarters absorbs the retired
+  Księga overlay instead, so the success measure above is now literal: there is no route editor left to
+  spend time in.
 - **Economic events** (Events gradient, level 1): flow shocks, bounty/blight —
   disturbances of production/consumption, never threats to ships. Events enter the
   world as **dispatches** of the region's gazette, *Głos Eteru* (Victorian-press

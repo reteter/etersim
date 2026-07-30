@@ -34,14 +34,17 @@ the grill mockup —
 > did not exist in the repo, so implementers and reviewers alike worked from prose with nothing to
 > diff against.
 > A **visual grill** (owner decision 2026-07-29) settles what the mockup binds before any further
-> board work; this spec gains a visual-contract section from it. Until then, treat the §Design prose
-> below as describing *intent*, not as-built.
+> board work; this spec gains a visual-contract section from it. **That section now exists**
+> — §Visual contract, below, written 2026-07-30 after the prototype was looked at — and it is
+> authoritative wherever the older §Design prose contradicts it. The contradictions are struck in
+> place rather than left for a reader to arbitrate.
 
 Scope in one line:
 the Price Board becomes the game's **workbench** —
 routes are authored on it by placing port Stops and attaching orders against live prices, ships are
 dispatched from it, a single **market-quality signal** reads across the board / PortPanel / offer
-labels, and the Headquarters Trasy tab shrinks to a read-only **route ribbon** roster.
+labels, and ~~the Headquarters Trasy tab shrinks to a read-only **route ribbon** roster~~ **the Headquarters Trasy tab is removed outright, the board absorbing the roster and the Route's operational controls with it**
+(owner directive 2026-07-30 point 8 — §Visual contract).
 
 Explicit non-goals (each parked with its home):
 - **No new route conditionals / auto-sell-at-best / wait-until-full.** Route semantics stay frozen
@@ -59,6 +62,204 @@ Explicit non-goals (each parked with its home):
 ---
 
 ## Design
+
+### Visual contract (visual grill 2026-07-29 + owner directive 2026-07-30)
+
+**This section is authoritative over the §Design prose that follows it.** It exists because the
+prose alone failed once:
+the epic's mechanics shipped and its look did not, and nobody could diff a paragraph against a
+picture (see the as-built drift blockquote above).
+So it was written the other way round on purpose — **the prototype came first, the section second**
+(owner sequencing, 2026-07-29), and everything below describes something that was *looked at* in a
+browser rather than argued about in prose.
+The prototype is `proto/e16-visual-board`;
+the mockup it was measured against is
+[`design-notes/m4-workbench-mockup.html`](../design-notes/m4-workbench-mockup.html).
+
+**The mockup binds the visual language, not the mechanics.** Where the two collide, a decision below
+names the winner explicitly.
+Seven decisions came out of the 2026-07-29 grill (D1–D7, recorded on #468 with their reasoning) and
+eight relocations out of the 2026-07-30 directive (points 1–8, recorded on #469).
+They are restated here as a contract, not re-argued.
+
+#### The cell — position, color and direction (D2, D4, D5)
+
+A price cell carries **three** channels and no more:
+
+- **Position** — bid left, ask right, stacked as the mockup draws them, never `₸12 = ₸13` on one
+  line.
+- **Color** — a dedicated trade pair, `#9a3b2f` rust / `#2c6e49` dark green (dark theme `#db7a68` /
+  `#5fbf8a`), from the mockup's `--sell` / `--buy` tokens. Deliberately **not** the game's existing
+  `#5fbf7f` / `#d9705f`, which already mean **progress** and **warning** (§Laws 9, ADR-0006,
+  incident 0002) — reusing them for prices would have a player reading a warning where none exists.
+- **Direction** — a triangle per quote.
+
+**Color encodes the player's action, not the direction of cash** (D4):
+green = you buy (the ask), rust = you sell (the bid).
+This **inverts one detail of the owner's own dictated layout**, flagged at the table and accepted;
+cell positions stand as dictated, only the color assignment flips.
+The wording follows the same perspective —
+the player's, as `PortPanel` already does (`Sprzedaż` = bid, `Kupno` = ask).
+
+**The price trend leaves the UI entirely** (D2).
+Not restyled —
+removed.
+It was spending a channel on a signal the player does not act on, and the room it freed is what the
+stacked quotes and the triangles now occupy.
+Consequence, named so it is not discovered later:
+`priceSnapshots` loses its **only** UI reader.
+The field stays in the save;
+its fate is **#470**'s, not this section's.
+
+**The market-quality signal renders as intensity, two levels** (D5).
+`strong` is emphasised, `mid` and `weak` render alike, exactly as §The market-quality signal already
+specifies —
+but the emphasis is **opacity + weight**, never the background plaque the code shipped
+(`.price-board__bid--best`).
+A background fill is a third visual channel, not an intensity.
+Rejected:
+the mockup's three-level gradient, and a gradient that lights up only on the focused good (two looks
+for one cell reads as a bug).
+
+#### Authoring runs through the cells, and the ribbon is where a Route lives (D1, D6, D7)
+
+**A good cell is the authoring gesture** (owner directive, superseding this spec's original port-row
+click):
+clicking a cell opens a **radial action menu** at the click point offering `kup` / `sprzedaj` /
+`dostarcz`, and picking one both places the Stop and attaches the order —
+one gesture, not two.
+A cell whose good already carries a market-free order stays **inert** to the click (the #404 rule,
+unchanged in meaning, moved in surface).
+
+**The ribbon is fixed horizontally and grows vertically in two steps** (D6).
+"Fixed height" means *independent of Stop count* —
+ten Stops do not make a taller ribbon;
+the nodes group compactly rather than distributing across the available width.
+Two vertical states only:
+ports added → node + caption tier;
+first good attached → the action row appears beneath.
+Accepted cost:
+the price grid shifts down when the action row appears.
+Rejected:
+reserving the full stack up front on an empty Route.
+
+**The ribbon is not always visible.** The board keeps a **reading mode** and an **authoring mode**;
+the ribbon dock animates open with authoring mode.
+Outside authoring a port-row click still opens that port —
+which is what settles the modality question the grill left open, by the design itself rather than by
+a separate ruling.
+
+**Every Stop's info and controls live in the ribbon** —
+including below the 2-Stop floor `RouteRibbon` itself draws at, which the board covers with its own
+single-Stop mini-rail.
+There is no second dock.
+
+**`qty` and the Margin Gate belong in a context menu on the action row's good** (D7), which is the
+first real use of the radial/context gesture rather than a gesture adopted on principle. **Not built**
+—
+see §Held back, below —
+so the "więcej" drawer described in §Attaching orders is still the as-built home for those fields.
+D7 is the decision;
+the drawer is the current implementation of it.
+
+#### Port role, and the one dim channel (D3 — revised by the prototype)
+
+D3 said:
+the goods a port **produces or consumes** (`ARCHETYPE_PROFILES`) light up while the rest dim, since
+that is a fact about the world like a port's archetype, and so stays on the permitted side of
+§Signal boundary's *data ≠ suggestion* line.
+
+**The prototype falsified two things about it**, and they are recorded as findings rather than
+smoothed over —
+this is what the look-first ordering was for:
+
+1. **It barely discriminates on broad archetypes.** An agrarian port produces-or-consumes 4 of 5
+   goods, so selecting it dims a single column; the effect was only legible when a *free port* was
+   chosen for the screenshot. **This is a property of the decision, not of the rendering** — D3 may
+   need revising rather than restyling.
+2. **D3's role highlight and #395's contextual focus share one dim channel at one strength**, so
+   attaching an order masks the role highlight completely. One channel, two meanings: the §Laws 9
+   shape, in the dimming dimension rather than the color one.
+
+Still open, small:
+whether *producing* and *consuming* get distinguishable treatments or share one.
+The prototype shares one.
+Both findings and this sub-choice are tracked on #469, not settled here.
+
+#### One home per fact — the 2026-07-30 relocations (points 1–8)
+
+The directive's through-line is **one home per fact**, and it cost two surfaces:
+
+- **The top bar's Company slot** (1–2). One slot, two states: `Załóż siedzibę` before founding,
+  `Siedziba` after. Founding needs no docked ship (`foundHeadquarters` validates only that the port
+  exists), so the button targets the **current port selection** — the precedent the `g` sail hotkey
+  set. The savings progress bar stays in `PortPanel`, captioned: the bar is the story of
+  *approaching* the goal, and the top bar has room for the act, not the story.
+- **`Siedziba` absorbs the Ledger** (3–6). The `Księga` overlay is **retired**; its two tabs collapse
+  into one, `Wartość firmy`, which is `Siedziba`'s default tab. The value headline reads *above* the
+  chart, left-aligned, sharing its row with a `Wykres` / `Transakcje` toggle — the number is the
+  answer, the chart its evidence, which the old caption-under-the-chart order had backwards. The
+  toggle reuses `ConstructionTab`'s segmented-button idiom; no second switch idiom enters the UI.
+- **The all-ships transaction log is daily** (7). One row per world day carrying the net thaler
+  delta. At 100x the raw event stream is unreadable, and the question that view answers is "how did
+  the Company do today". Goods-only movements count as zero rather than dropping their day, so the
+  sequence has no gaps. **The per-ship log is unchanged** — its question is the sequence itself.
+- **The Trasy tab is gone** (8). Route authoring, the roster *and* the operational controls (loop
+  metrics, ship assignment, suspend/resume, delete) all live on the board, the last as a strip docked
+  under the ribbon and fed the **saved** Route rather than the draft — metrics are facts about what
+  has been running, and would otherwise flicker against unsaved geometry edits.
+
+**Named consequence of point 8, not a bug.** The retired roster showed every Route's ship,
+suspension state and last-loop net **simultaneously**;
+the board shows one Route at a time.
+"Which of my five Routes is losing money" is now a click-through.
+The owner chose the board without that cost named, so it is named here and carried by **#390** (the
+profitability register), which is the natural home for fixing it.
+
+**Second named consequence.** Until a Headquarters exists, the value chart and the transaction log
+are **unreachable** —
+`HeadquartersPanel` renders nothing without `company.headquarters`.
+That is exactly the early-game phase the savings story lives in, and the `PortPanel` bar covers it.
+
+#### Known defects the contract does *not* excuse (#469 item A, still open)
+
+Three findings from the driver's own review of the prototype are **unfixed in the code this section describes**,
+and are written here so a reader of the contract alone cannot mistake them for the intended look
+(surfaced by the tier-2 review, 2026-07-30):
+
+- **The ribbon splays on short Routes.** With 2 Stops the nodes fly to opposite edges and the leg
+  stretches half the panel — it reads as emptiness, not as a route (`index.css`, the
+  `.route-ribbon__slot:not(:first-child)` flex rule, whose own comment says Stops distribute across
+  the rail regardless of count). **This contradicts D6's "the nodes group compactly"** above; D6 is
+  the contract, the CSS is the defect.
+- **Stop numbering is absent.** The mockup put ① ② in the nodes. Order is **load-bearing** here, not
+  cosmetic — the Margin Gate's reference is *the next sell-stop in Route order* (ADR-0007) — and a loop
+  with a return arc makes "which one is first" a real question.
+- **The `◄ × ►` controls sit between the port name and its order chips** (`RouteRibbon.tsx`), breaking
+  the "this order belongs to this port" reading the mockup gets by putting chips directly under the
+  name.
+
+All three predate the relocations and are tracked on **#469 item A**.
+
+#### Held back by design, not forgotten
+
+- **D7's context menu**, and with it the removal of the "więcej" drawer: both wait on a
+  popover/tooltip component that does not exist in this repo (every hint today is a native `title=`).
+  Iterating on visuals through a half-built interaction layer is how the original drift happened.
+- **`⇄` flip has no home** on the new chip. Flip capability survives through the drawer's kind picker
+  (§Attaching orders point 3 — "the drawer is the complete truth about kind"); whether the one-click
+  shortcut returns is a D7 question.
+- **The board-side one-off "sail here now"** (§Dispatch from the board) is still unbuilt. `sailTo`
+  exists, in the PortPanel.
+- **Column pinning is removed, not deferred** — see §Information density.
+
+#### Coder calls, ratified 2026-07-30
+
+- **The rail's leg line stays grey-blue**, not the mockup's accent cyan: cyan would be a new hue
+  (§Laws 9 / ADR-0006). The mockup loses this one.
+- **A key strip under the grid** explains the triangles and the intensity. It is *not* the #127 trend
+  legend D2 removed — the board had acquired a palette with nothing explaining it.
+- **Order chips shorten past 4 Stops** (`▲ Zboże`), after chips collided at 15.6px on a 7-Stop Route.
 
 ### Core principle — the board is the workbench; the map keeps the pleasure
 
@@ -87,11 +288,17 @@ the assigned Ship gliding along it.
 The ribbon is the single visual language for two surfaces:
 
 - **Editable** in the board (the authoring canvas — this section + the next three).
-- **Read-only** in the Headquarters Trasy tab (the roster — one ribbon per Route).
+- ~~**Read-only** in the Headquarters Trasy tab (the roster — one ribbon per Route).~~ Struck
+  2026-07-30 (point 8): there is no Trasy tab. The read-only mode is not dead code — the roster it
+  was built for is now the board's own Route tabs, and the mode shipped and was judged in the
+  prototype before the tab was removed.
 
 A master learns *one* idiom —
 "planet-Stops in order, ship sails the line" —
 and reads it everywhere.
+That claim is now tested on **one** surface rather than two, which is a weaker test of it than the
+grill intended;
+recorded rather than quietly reinterpreted.
 
 **Loop closure.** A Route is a loop, so the ribbon must read as a cycle, not a dead-end line:
 the return leg (last Stop → Stop 1) is drawn as a subtle return arc plus a **↻** marker.
@@ -121,9 +328,16 @@ editor" [port-sequence] collided here; this resolves it):
 3. **It matches the ribbon and the mockup** — thinking in a sequence of ports is what the surface
    already shows.
 
-**The gesture:** click a port's row (its name / left header) in the board → the port appends to the
-ribbon as a Stop.
-Then attach orders to it (next section).
+**The gesture:**
+~~click a port's row (its name / left header) in the board → the port appends to the ribbon as a Stop. Then attach orders to it (next section).~~
+Superseded 2026-07-30 (§Visual contract — D1): **clicking a good cell**
+opens a radial menu whose choice places the Stop *and* attaches the order in one gesture.
+The spine is unchanged —
+a Route is still an ordered sequence of ports, and the cell click resolves to its port's Stop —
+only the gesture that grows it moved from the row to the cell.
+A port row click keeps its navigate-to-port meaning outside authoring mode.
+Growing a Route past one Stop per port (a revisit — Duskferry → Coppervale → Duskferry) has its own
+explicit `+` control, since a cell click always resolves to the port's *last* Stop.
 A Route needs ≥ 2 Stops over ≥ 2 distinct ports to be assignable (unchanged, `route.ts`).
 
 ### Attaching orders — inferred kind, progressive disclosure, highlight-only pairing
@@ -131,12 +345,16 @@ A Route needs ≥ 2 Stops over ≥ 2 distinct ports to be assignable (unchanged,
 Click a good's cell for a Stop's port → an order attaches to that Stop.
 The gesture is *guided, not dumb, not magic*:
 
-- **Kind inferred from economic context, always overridable.** Clicking in a *best-ask* context
-  defaults to **buy**; a *best-bid* context defaults to **sell**. The common case is one click; the
-  player can flip the kind.
+- ~~**Kind inferred from economic context, always overridable.** Clicking in a *best-ask* context
+  defaults to **buy**; a *best-bid* context defaults to **sell**.~~ Superseded 2026-07-30 (D1): the
+  cell click opens a **radial menu** listing `kup` / `sprzedaj` / `dostarcz`, so the kind is *chosen*
+  rather than inferred-then-corrected. Still one gesture; the inference it replaces was a guess the
+  player had to check.
 - **Qty ceiling and Margin Gate are progressive-disclosure fields.** Hidden behind a "więcej"
   affordance so the frequent case (greedy buy / sell-all) stays a single click, and the E9.1 knobs
-  (`qty` cap, `minMargin`) are there when wanted without cluttering.
+  (`qty` cap, `minMargin`) are there when wanted without cluttering. **D7 relocates this drawer's
+  contents into a context menu on the action row's good** (§Visual contract); the drawer is the
+  as-built home until the popover component exists.
 - **Pairing assist = highlight only, never auto-wire.** When you add a **buy** order for good X, the
   board *highlights* the best-bid port for X as a suggested next Stop — but **you** click to add it.
   This preserves the port-centric spine, the load-bearing order, and player agency. Auto-pairing is
@@ -188,9 +406,10 @@ The board's columns are region-wide goods and cannot do that.
 So the **port row header** carries a marker (glyph + `title`, beside the existing `★` pairing hint)
 whenever the Company has a Storehouse at that port.
 Port-level, not cell-level:
-the cells already carry trend glyph, ask, best-ask/bid highlight, signal intensity and focus
-emphasis, and #414 (resolved 2026-07-28: `role="columnheader"` + focus emphasis moved to
-opacity/weight) was a finding about exactly that channel load —
+the cells already carry ~~trend glyph,~~ (struck 2026-07-30 — D2 removed the trend) bid, ask,
+direction triangles, signal intensity and focus emphasis, and #414 (resolved 2026-07-28:
+`role="columnheader"` + focus emphasis moved to opacity/weight) was a finding about exactly that
+channel load —
 the per-good precision belongs in the drawer, where the choice is made anyway. **Visible always, not only in authoring mode**:
 this is a fact about your own holdings, not a market suggestion, so §Signal boundary's
 *data ≠ suggestion* line puts it on the permitted side.
@@ -216,7 +435,10 @@ The boundary prevents rebuilding the whole trade UI in the board:
 
 - **On the board (first-class, via the ribbon / roster):** assign / unassign a Ship to a Route,
   suspend / resume. These fold in #177 (a selected Ship shows its assigned Route + suspend control) —
-  it is simply the ribbon-inspector for that Ship.
+  it is simply the ribbon-inspector for that Ship. **As-built 2026-07-30 (point 8):** a route-ops
+  strip docked under the board's ribbon, carrying these plus loop metrics and Route deletion — the
+  operational half the retired Trasy tab used to hold. It renders for the Route currently loaded, and
+  only that one (the click-through cost is named in §Visual contract).
 - **A lightweight one-off "sail here now"** for the Controlled Ship (= `sailTo`, suspends an assigned
   Route per existing semantics) — the ad-hoc escape hatch that satisfies "dispatch from the board".
 - **Full manual buy/sell stays in the PortPanel**, reached after docking. No duplication. (Order
@@ -249,7 +471,9 @@ Rendering it later is a rendering change, not a selector change —
 the tier is already there to read.
 
 1. **Board — cell emphasis.** The `strong` tier is the current best-ask/best-bid highlight; `mid`
-   and `weak` render plain. (Generalizes `columnExtremes`.)
+   and `weak` render plain. (Generalizes `columnExtremes`.) **D5 fixes the rendering channel**
+   (2026-07-30): opacity + weight, never the background plaque the code first shipped — a fill is a
+   third channel, not an intensity (§Visual contract).
 2. **PortPanel — action shading** (the owner's TODO): the buy / sell actions shade by carried Cargo
    and free Hold — **bright** = this is the best market for the action, **faded** = possible
    but better ports exist. Buy is meaningless with no free Hold; sell is meaningless with nothing to
@@ -290,8 +514,14 @@ Two tools, over full data (no fog):
   the qty/Margin-Gate "więcej" panel), the board emphasizes X's column and dims the rest —
   legibility follows the task — reverting when not building. Also invokable manually (focus one
   good).
-- **Pinning / collapsing.** The player can hide columns for goods they don't trade, keeping the grid
-  narrow as columns grow. A master handles a handful of goods; the board should show that handful.
+- ~~**Pinning / collapsing.** The player can hide columns for goods they don't trade, keeping the grid
+  narrow as columns grow.~~ **Removed 2026-07-30, not deferred.** The visual rebuild gave every cell a
+  visible border and made it a click target, so a hidden column now reads as a hole in the grid rather
+  than as a tidied one; the hide control left the header row and the pinning state left with it
+  (including #413's "Ukryte kolumny" strand badge, whose case can no longer arise). The density
+  problem it answered is real and returns with E15's two new goods — but a column-hide is not the only
+  answer, and re-adding one to *this* grid is a fresh design question, not a restored feature. Carried
+  by **#471**, gated on E15's board columns (#284).
 
 ### Runtime execution legibility (cluster B symptom c)
 
@@ -321,10 +551,11 @@ discipline; the fleet-resolution selector shipped in the #319 refactor is the pr
 Shape:
 a function of `(ports)` returning, per (port, good), the buy-quality and sell-quality tier (strong /
 mid / weak) plus the best-ask/best-bid port ids for pairing.
-(As-built #392: the tier reads only the current cross-port quotes at qty 1; `priceSnapshots` feeds
-the board's trend arrows, not the quality tier, so it is not a selector input.) This subsumes and
-replaces `PriceBoardOverlay.tsx`'s local `columnExtremes` (that inline helper becomes a consumer of
-the selector, or is deleted in its favor).
+(As-built #392: the tier reads only the current cross-port quotes at qty 1; `priceSnapshots`
+~~feeds the board's trend arrows~~, not the quality tier, so it is not a selector input. **Since D2 removed the trend, `priceSnapshots` has no UI reader at all**
+— the field stays in the save, its fate tracked separately.) This subsumes and replaces
+`PriceBoardOverlay.tsx`'s local `columnExtremes` (that inline helper becomes a consumer of the
+selector, or is deleted in its favor).
 PortPanel action shading and any offer-label computation read the *same* selector —
 three renderings, one source.
 
@@ -390,13 +621,30 @@ a follow-up issue) but those are **data, not suggestions**.
 Data ≠ suggestion is the line:
 the roster shows what your routes *are*, the board signals where the *opportunity* is.
 
-### Trasy roster (`src/ui/HeadquartersPanel.tsx`)
+### ~~Trasy roster~~ → the board owns Routes entirely (`src/ui/PriceBoardOverlay.tsx`)
 
-The Trasy tab's list-based Stop editor is **removed**;
-the tab becomes a read-only roster of `RouteRibbon` rows (one per Route) with per-row metadata
-(assigned Ship count, suspend/resume) and an **"Edytuj →"** entry point that opens that Route in the
-board editor (the roster→board seam — without it, editing an existing Route has no home).
-Route-domain code already cleaved out of build-domain in the #321 refactor, which eases this.
+~~The Trasy tab's list-based Stop editor is **removed**; the tab becomes a read-only roster of `RouteRibbon` rows (one per Route) with per-row metadata (assigned Ship count, suspend/resume) and an **"Edytuj →"** entry point that opens that Route in the board editor.~~
+
+**Superseded 2026-07-30 (point 8).** The whole tab goes, not only its editor.
+`RoutesTab.tsx` is **deleted**;
+its three jobs land in three places on the board:
+
+- the **roster** becomes the authoring bar's Route tabs (`Nowa trasa` + one tab per Route);
+- the **"Edytuj →" seam** becomes those same tabs — picking one loads the Route into the board's own
+  ribbon and grid, dispatching `updateRoute` vs `createRoute` by draft-id identity;
+- the **operational controls** become `src/ui/RouteOpsStrip.tsx`, docked under the ribbon
+  (§Dispatch from the board).
+
+The legality rules #419 extracted into `src/ui/routeAuthoring.ts` are the piece that **must not be rebuilt**:
+they moved surface once already and are now consumed by one surface instead of two, which is the
+outcome the extraction was for.
+Route-domain code cleaved out of build-domain in the #321 refactor, which is what made the deletion
+a small diff rather than a surgery.
+
+**The ordering law is discharged, not waived.** (h) merged before this removal, exactly as
+§Attaching orders → §The market-free kinds requires:
+the board holds all five kinds and no longer overwrites them silently, so deleting the list editor
+strands nothing.
 
 **Hard precondition (#404, 2026-07-28): (h) merges before this removal.** The list editor is the
 only surface that authors `deliver` / `store` / `withdraw` today, and the board both fails to render
@@ -430,19 +678,55 @@ presentation only.
 - Supersedes nothing outright; E9's route-editor description (Trasy list editor) gets a pointer to
   E16 when E16 ships (the list editor is replaced).
 
+**Second sweep, 2026-07-30** (the visual contract + points 1–8 — done in the commit that adds
+§Visual contract, per Documentation law §Decisions propagate):
+
+- **CONTEXT.md** — no new domain concept, so **no new entry** (a checked result, not a skipped step):
+  the directive relocates surfaces for concepts that already exist. Three *existing* entries carried
+  claims that went false and are corrected in place: **Price board** and **Route ribbon** both
+  described the Trasy tab as a read-only roster, and **Building** cited `PortPanel` as the home of the
+  founding button. The **Ledger** entry's "in-game performance board" is now a `Siedziba` tab rather
+  than its own overlay.
+- **PRD §M4** — the E16 bullet's roster clause corrected.
+- **specs/README.md** — this spec's row rewritten (visual contract landed; Trasy removal as-built).
+- **Issues** — #469 carries points 1–8 with their reasoning and the ratified coder calls; #393 is
+  withdrawn (its surface no longer exists); #390 and #284 were retargeted, both of them found by
+  walking the citation this spec's §Trasy roster section carried. Naming them is the check
+  (Documentation law: unstated means unchecked).
+- **New player-facing Polish strings** (no glossary entries — none is a domain concept): `bazowa`,
+  `saldo dnia`, `Obsługa trasy <nazwa>`, `Usuń trasę`, and the two founding captions.
+
 ---
 
 ## Testing
 
 UI epic → **Playwright E2E** is the gate (no sim TDD; nothing in `src/sim` changes).
 
-- **Port-centric build flow:** port-row click adds a Stop; good-cell click attaches an order with
-  the context-inferred kind; the pairing highlight appears on the best-bid port; adding it creates
-  the second Stop; the ribbon shows the loop + ↻.
+> **The visual rebuild rewrote this gate's targets, and the gate is OPEN on `main`** (2026-07-30,
+> owner decision). Fourteen specs were suspended while the prototype was judged by eye — mockups carry
+> no test obligation (owner ruling 2026-07-29), a ruling about a *prototype*, not about a merge. The
+> full run then showed the real number: **32 failing plus those 14, across nine files**, because the
+> rebuild moved surfaces that specs untouched by it still address. Rewriting them was **deliberately
+> not** folded into the merge; it is carried by four issues, one per cluster. **#472 is the one that is
+> not cosmetic** — `storehouse.spec.ts` holds the #404 regression guard proving the board does not
+> silently destroy a `store` order, and that guard is dark until #472 lands. The assertions below are
+> restated against the new surfaces so the rewrite has a target to be written against.
+
+- **Port-centric build flow:** ~~port-row click adds a Stop;~~ a **good-cell click** opens the radial
+  menu, whose choice adds the Stop *and* attaches the order (D1); the pairing highlight appears on the
+  best-bid port; adding it creates the second Stop; the ribbon shows the loop + ↻.
 - **Order equivalence (regression):** a Route authored on the board produces the same assignment /
   Commands as one authored the old way (guard against the surface drifting from `route.ts`
   semantics).
-- **Roster → board edit seam:** "Edytuj →" opens the correct Route in the board editor.
+- **Roster → board edit seam:** ~~"Edytuj →" opens the correct Route in the board editor.~~ Now: a
+  **Route tab** in the board's authoring bar loads that Route into the board's ribbon and grid, and
+  saving dispatches `updateRoute` rather than `createRoute`.
+- **Route ops on the board (point 8):** with an existing Route loaded, the ops strip assigns a Ship,
+  suspends and resumes it, and shows that Route's loop metrics — the capabilities the deleted Trasy tab
+  used to own, asserted where they now live.
+- **Company surfaces (points 1–7):** the top-bar slot founds at the selected port and becomes
+  `Siedziba` afterward; `Siedziba` opens on `Wartość firmy`; its toggle reaches the transaction log;
+  the all-ships log reads one row per day while a ship filter restores per-event rows.
 - **Market-free kinds survive a board edit (the #404 regression guard):** a Route carrying a `store`
   order, opened in the board editor, renders that order as a chip; a plain click on its cell changes
   nothing; and saving round-trips the order unchanged. This is the assertion that would have failed
@@ -452,7 +736,8 @@ UI epic → **Playwright E2E** is the gate (no sim TDD; nothing in `src/sim` cha
   including one with no active build.
 - **Signal single-source:** the same (port, good) reads the same tier on the board and in the
   PortPanel (one selector, asserted across surfaces).
-- **Density tools:** contextual focus dims non-target columns; pinning hides a column.
+- **Density tools:** contextual focus dims non-target columns; ~~pinning hides a column~~ (pinning
+  removed 2026-07-30 — §Information density).
 - **Execution legibility:** a Stop sell-all writes the runtime note; the chip label reads "sprzedaj
   całość · {good}".
 - **Reduced-motion / pause:** ribbon Ship animation stops under `prefers-reduced-motion` and while

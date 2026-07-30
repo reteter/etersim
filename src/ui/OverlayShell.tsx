@@ -4,7 +4,8 @@ import { useOverlayDismiss } from "./useOverlayDismiss";
 /**
  * Shared overlay frame (#181, professor-review-ui-store-2026-07-14 Finding 2):
  * backdrop + panel + title + Close, with a body that owns the max-height/
- * scroll region ONCE. Before this, every overlay (LedgerOverlay,
+ * scroll region ONCE. Before this, every overlay (LedgerOverlay — retired by
+ * E16, its tabs now inside HeadquartersPanel —
  * HeadquartersPanel, PriceBoardOverlay) hand-rolled `.overlay > .overlay__panel
  * > {title, body, Close}` and bolted its own scroll onto an inner list
  * (`.price-board`, `.ledger-list`) — `.overlay__panel` itself had no

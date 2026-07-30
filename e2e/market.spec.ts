@@ -237,7 +237,10 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
     await expect(grainRow.locator('.market-row__held')).toContainText('7');
   });
 
-  test('trend glyph carries a legend explaining the last-day-boundary comparison (#127)', async ({
+  // SKIPPED — E16 visual prototype, #468 **D2** ("the price trend leaves the
+  // UI entirely"): asserts the PortPanel's `Trend` column header and its
+  // tooltip, both removed. #127 is knowingly reversed by D2.
+  test.skip('trend glyph carries a legend explaining the last-day-boundary comparison (#127)', async ({
     page,
   }) => {
     const world = fundedWorld('market-trend-legend');

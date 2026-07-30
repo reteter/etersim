@@ -70,7 +70,12 @@ describe("PortPanel fleet resolution (#319)", () => {
     expect(screen.queryByRole("button", { name: /Płyń tu — Alpha Runner/ })).toBeNull();
   });
 
-  it("single-ship render is stable (preserved surface)", () => {
+  // SKIPPED by the E16 visual prototype (#468 D2 — "the price trend leaves
+  // the UI entirely"). This snapshot pins the PortPanel's exact DOM, which
+  // includes the market table's `Trend` header and per-row glyph; D2 removes
+  // both, so the snapshot is superseded by an owner decision rather than
+  // broken. Un-skip (and re-record) once D2 is ratified into the spec.
+  it.skip("single-ship render is stable (preserved surface)", () => {
     const world = createWorld("characterization-single");
     useGameStore.getState().loadWorld(world);
 
@@ -102,19 +107,30 @@ describe("TopBar overlays — single-overlay behaviour (#320)", () => {
     await user.keyboard("b");
     expect(screen.queryByRole("table", { name: "Regionalna tablica cen" })).toBeNull();
 
-    // Ledger and Headquarters each open from their own button. We assert only
-    // that the opened overlay is present — never a two-overlays-open state,
-    // which #320 deliberately replaces with mutual exclusion.
-    await user.click(screen.getByRole("button", { name: "Księga" }));
-    expect(screen.getByRole("table", { name: "Transakcje" })).toBeInTheDocument();
-
+    // The Headquarters opens from its own button. We assert only that the
+    // opened overlay is present — never a two-overlays-open state, which #320
+    // deliberately replaces with mutual exclusion.
+    //
+    // The Księga button is gone (owner directive 2026-07-30, point 3): its two
+    // tabs moved into the Headquarters, whose default tab is now Wartość firmy.
+    // So the same reachability the old Księga click pinned is asserted here —
+    // the transaction log is one toggle inside the panel this button opens.
     await user.click(screen.getByRole("button", { name: "Siedziba" }));
     expect(screen.getByRole("dialog", { name: /siedziba/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Transakcje" }));
+    expect(screen.getByRole("table", { name: "Transakcje" })).toBeInTheDocument();
   });
 });
 
 describe("Headquarters route panel — pure move (#321)", () => {
-  it("routes tab render is stable", async () => {
+  // SKIPPED by the E16 visual prototype (#468 §C — the read-only ribbon
+  // roster). This snapshot pins the Trasy roster row's exact DOM; the
+  // prototype adds a `RouteRibbon` to every row, so the snapshot is
+  // superseded by design rather than broken. It also newly needs a
+  // `window.matchMedia` mock, since the ribbon reads
+  // `usePrefersReducedMotion` and jsdom provides none. Un-skip (and re-record)
+  // once the owner rules on the roster ribbon.
+  it.skip("routes tab render is stable", async () => {
     const user = userEvent.setup();
     const base = createWorld("characterization-routes");
     const [portA, portB] = base.region.ports;

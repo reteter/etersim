@@ -17,6 +17,21 @@
      this grey-slate has ~0% saturation and reads unmistakably distinct from
      gold's warm, saturated hue at a glance. */
   --archetype-freeport: #8c8f96;
+
+  /* Trade pair (#468 D4, E16 visual prototype) — a dedicated palette,
+     deliberately NOT the game's #5fbf7f / #d9705f, which already mean
+     progress and warning (founding-savings bar, Headquarters progress fill,
+     .route-row__suspended, whose own comment reads "a warning, not a new
+     meaning"). Reusing that pair for prices would have a player reading a
+     warning where none exists (§Laws 9, ADR-0006).
+
+     Colour tracks the **player's action**, not the direction of cash: green
+     = you buy (the ask), rust = you sell (the bid). That inverts one detail
+     of the owner's dictated layout — flagged at the table and accepted, so
+     it is not a bug to be "fixed" back. Dark-theme values taken from the
+     mockup's --buy / --sell tokens. */
+  --trade-buy: #5fbf8a;
+  --trade-sell: #db7a68;
 }
 
 html,
@@ -1020,22 +1035,22 @@ body {
   margin-bottom: 1rem;
 }
 
-/* Trend legend (#127): always-visible caption above the grid — a hover-only
-   tooltip proved too easy to miss (a fresh player misread the glyphs as "vs
-   the starting price"). Same wording as the per-glyph `title` tooltips. */
-.price-board__legend {
-  margin: 0 0 0.5rem;
-  font-size: 0.75rem;
-  color: #8891a3;
-}
+/* #468 D2: the trend legend (#127) is gone with the trend itself — the class
+   is retired rather than left styling an element nothing renders.
 
-/* Column count is dynamic (#395 pinning: hidden goods drop out of the grid;
+   Column count is dynamic (#395 pinning: hidden goods drop out of the grid;
    E15 also adds goods over time) — `--good-count` is set once on `.price-board`
    from the visible-goods list and every row (header + port rows) reads it,
-   so hiding/showing a column narrows/widens the whole grid uniformly. */
+   so hiding/showing a column narrows/widens the whole grid uniformly.
+
+   #468 — **uniform column widths**: `minmax(0, 1fr)`, not `1fr`. A bare
+   `1fr` is `minmax(auto, 1fr)` and `auto` floors at min-content, so the
+   longest caption ("Sól eteryczna") used to widen its own column. With a 0
+   floor plus an ellipsizing caption, caption length cannot influence grid
+   width at all. */
 .price-board__row {
   display: grid;
-  grid-template-columns: 8rem repeat(var(--good-count, 5), 1fr);
+  grid-template-columns: 8rem repeat(var(--good-count, 5), minmax(0, 1fr));
   gap: 0.5rem;
   align-items: center;
   padding: 0.35rem 0.4rem;
@@ -1059,10 +1074,16 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.2rem;
+  min-width: 0;
 }
 
 .price-board__good-header {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
   text-align: center;
   background: none;
   border: none;
@@ -1074,6 +1095,53 @@ body {
   cursor: pointer;
 }
 
+/* #468: goods render as icons like ports (ADR-0006, the same vendored set).
+   The caption stays under the icon but is width-neutral — `min-width: 0` up
+   the chain plus ellipsis here means a long name truncates instead of
+   pushing the column wider (the owner's "caption length must not affect grid
+   width"). */
+.price-board__good-icon {
+  width: 20px;
+  height: 20px;
+  color: #e3e9f2;
+}
+
+/* Port cell: name plus the mockup's archetype caption underneath. */
+.price-board__port-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.price-board__port-arch {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7488;
+}
+
+.price-board__unit-hint {
+  opacity: 0.7;
+}
+
+.price-board__good-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price-board__good-base {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #6b7488;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* #414: the emphasis signal for "interactive/focused" is weight, not color
    (docs/specs/E16-workbench.md §"Visual channel — intensity, not hue"; #395
    AC1) — a `color` shift here would be a second, grayscale-but-still-hue way
@@ -1083,17 +1151,6 @@ body {
 .price-board__good-header:hover,
 .price-board__good-header[aria-pressed="true"] {
   font-weight: 700;
-}
-
-.price-board__good-hide-btn {
-  padding: 0 0.25rem;
-  font-size: 0.65rem;
-  line-height: 1;
-  opacity: 0.45;
-}
-
-.price-board__good-hide-btn:hover {
-  opacity: 1;
 }
 
 /* Contextual focus (#395, spec §Information density — "legibility tools
@@ -1108,43 +1165,6 @@ body {
 
 .price-board__cell--dim {
   opacity: 0.4;
-}
-
-/* Hidden-columns affordance (#395 AC3): always visible while any column is
-   hidden, so a hidden column stays recoverable — never a silent, permanent
-   loss of information. */
-.price-board__hidden-note {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.8rem;
-  color: #8891a3;
-  opacity: 0.75;
-}
-
-/* Strand badge (#413): at least one hidden column carries a live draft
-   order — invisible on the grid but still fully committable via "Zapisz
-   trasę". Same opacity/weight intensity pairing as
-   .market-row__trade-btn--bright/--faded above (no new hue, ADR-0006): full
-   opacity plus bold weight against the note's own dimmer baseline. */
-.price-board__hidden-note--strand {
-  opacity: 1;
-  font-weight: 700;
-}
-
-/* #405 nit 2: the 1-stop draft's standalone remove affordance — same dock
-   position as `.price-board__ribbon-dock`, minus the ribbon graphic (which
-   needs >=2 Stops to draw a loop). */
-.price-board__single-stop-dock {
-  margin-top: 0.75rem;
-  border-top: 1px solid #2a3040;
-  padding-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  color: #a8b2c2;
 }
 
 /* Clickable rows (jump to that port's own panel) get the archetype accent
@@ -1177,57 +1197,146 @@ body {
   color: #e0a840;
 }
 
+/* #468 D4 — the cell is a two-sided quote, one side per half:
+   **bid left** (▲, rust — the side where *you sell*) and **ask right** (▼,
+   green — where *you buy*). The halves are fixed 1fr each so every cell in a
+   column aligns on the same seam regardless of digit count. */
 .price-board__cell {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: baseline;
-  gap: 0.3rem;
+  column-gap: 0.25rem;
+  min-width: 0;
   font-variant-numeric: tabular-nums;
   font-size: 0.85rem;
+  /* Owner directive: individual cells must read as discrete, hoverable
+     targets — a border by default (near-invisible against the row's own
+     background) that lights up on hover/interactivity, rather than the
+     grid reading as one undifferentiated strip. */
+  padding: 0.2rem 0.35rem;
+  border: 1px solid #1d222b;
+  border-radius: 4px;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+/* Only cells that actually do something on click get the "clickable"
+   affordance — a market-free cell (deliver/store/withdraw already wired)
+   stays visually inert, matching its click-inert behavior (#419 AC3). */
+.price-board__cell--interactive {
+  cursor: pointer;
+}
+
+.price-board__cell--interactive:hover {
+  background: color-mix(in srgb, #4c7bab 16%, transparent);
+  border-color: #4c7bab;
+}
+
+.price-board__cell-btn {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: inherit;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
 }
 
 .price-board__bid,
 .price-board__ask {
-  color: #a8b2c2;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  white-space: nowrap;
 }
 
-/* Cheapest ask (buy here) / highest bid (sell here) per good column. A
-   neutral highlight chip — gold is reserved for the Controlled Ship (#34),
-   so a port that's both docked and best-priced doesn't get an ambiguous
-   double-gold read. */
+/* The dedicated trade pair (#468 D4). Colour tracks the player's action, not
+   the direction of cash — this is the deliberate inversion of the owner's
+   dictated layout, flagged at the table and accepted. Tokens live on :root
+   next to the ribbon chips so both surfaces read one palette. */
+.price-board__bid {
+  justify-content: flex-end;
+  color: var(--trade-sell);
+}
+
+.price-board__ask {
+  justify-content: flex-start;
+  color: var(--trade-buy);
+}
+
+.price-board__tri {
+  font-size: 0.6em;
+  line-height: 1;
+}
+
+/* Market-quality signal (#468 D5): two levels, rendered as **intensity —
+   opacity + weight**, never a background plaque. The old
+   `background: rgba(230,236,245,.14)` was a third visual channel on a cell
+   that already carries position, hue and a triangle; `strong` is simply the
+   undimmed, bold reading and `mid`/`weak` share the plain one.
+   `NEAR_BEST_BAND` and the selector are untouched — this is a rendering
+   change only, so a later three-level draw stays a CSS edit. */
+.price-board__bid,
+.price-board__ask {
+  opacity: 0.72;
+  font-weight: 500;
+}
+
 .price-board__bid--best,
 .price-board__ask--best {
-  background: rgba(230, 236, 245, 0.14);
+  opacity: 1;
+  font-weight: 750;
+}
+
+/* An order already rides this cell (#468 D7 moved the chip to the ribbon, so
+   the grid needs its own quiet "wired" mark). Hue-free by design — a tint
+   here would be a fourth meaning in a cell that already spends three. */
+.price-board__cell--attached {
+  box-shadow: inset 0 -2px 0 rgba(230, 236, 245, 0.45);
   border-radius: 3px;
-  padding: 0 0.3rem;
-  color: #e6e6e6;
-  font-weight: 700;
 }
 
 /* Offer labels (#397, docs/specs/E16-workbench.md — Market-quality signal,
    rendering 3): the word rendering of the same hue-free signal driving
    .price-board__bid--best/.price-board__ask--best above — no new hue
    (ADR-0006), just a small caps word chip riding the existing neutral text
-   color/weight. */
+   color/weight. #468: they moved to a second line under the quote pair so
+   they can never widen a column. */
 .price-board__offer-label {
-  font-size: 0.65rem;
+  grid-column: 1 / -1;
+  text-align: center;
+  font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: #a8b2c2;
   font-weight: 600;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.price-board__trend--up {
-  color: #5fbf7f;
-}
+/* #468 D2: `.price-board__trend--*` retired with the trend rendering.
 
-.price-board__trend--down {
-  color: #d9705f;
-}
-
-.price-board__trend--flat {
+   The cell-language key under the grid (the mockup's `.legend` strip). */
+.price-board__key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.1rem;
+  margin: 0.55rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #262d39;
+  font-size: 0.7rem;
   color: #8891a3;
+}
+
+.price-board__key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 /* Board authoring (#394, docs/specs/E16-workbench.md — board fusion): the
@@ -1237,6 +1346,7 @@ body {
 .price-board__authoring-bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.6rem;
   margin-bottom: 0.5rem;
 }
@@ -1244,6 +1354,24 @@ body {
 .price-board__authoring-hint {
   color: #8891a3;
   font-size: 0.85rem;
+}
+
+/* Route tabs (owner directive): "Nowa trasa" + one tab per existing Route,
+   in the authoring bar's own row. `flex-wrap` so a Company with many Routes
+   grows the bar downward rather than squeezing tabs unreadably narrow. */
+.price-board__route-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.price-board__route-tab {
+  opacity: 0.6;
+}
+
+.price-board__route-tab--active {
+  opacity: 1;
+  border-color: #4c7bab;
 }
 
 .price-board__row--in-draft {
@@ -1256,6 +1384,24 @@ body {
 
 .price-board__pairing-hint {
   color: #e0c265;
+}
+
+/* Revisit gesture (owner directive): the only remaining way to append a
+   port already in the draft as a *fresh* Stop (Duskferry → Coppervale →
+   Duskferry), since cell clicks always resolve to the port's existing last
+   Stop. Recessive like the ribbon's own edit row — a maintenance
+   affordance, not part of the port cell's primary reading. */
+.price-board__port-add-btn {
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  opacity: 0.4;
+}
+
+.price-board__port-add-btn:hover,
+.price-board__port-add-btn:focus-visible {
+  opacity: 1;
 }
 
 /* Storehouse marker (#419, spec §The market-free kinds — "port row header
@@ -1273,18 +1419,6 @@ body {
   display: flex;
   gap: 0.2rem;
   flex-wrap: wrap;
-}
-
-.price-board__cell-btn {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: inherit;
-  font: inherit;
 }
 
 .price-board__order-chip {
@@ -1308,10 +1442,138 @@ body {
   width: 4.5rem;
 }
 
+/* #468 — the ribbon docks **above the grid header** and is not always
+   visible: it animates open with authoring mode, and the Price Board
+   window's own height follows, smoothly, because the panel is content-sized.
+   `grid-template-rows: 0fr → 1fr` rather than a height transition, which is
+   the only way to animate to a content height without hardcoding one. */
 .price-board__ribbon-dock {
-  margin-top: 0.75rem;
-  border-top: 1px solid #2a3040;
-  padding-top: 0.5rem;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+
+.price-board__ribbon-dock--open {
+  grid-template-rows: 1fr;
+}
+
+.price-board__ribbon-dock-inner {
+  /* `overflow-x`/`overflow-y` can't be split (visible, hidden) on one box —
+     browsers force a lone `visible` axis to `auto` the moment its sibling
+     axis isn't `visible` (the two-value overflow quirk), and `auto` still
+     can't reach *negative* overflow (bleed to the left of the box's own
+     start edge). The real fix is the edge-Stop drawer never bleeding past
+     this box at all — see `:first-child`/`:last-child` below — so this
+     stays the plain single-axis clip the 0fr→1fr collapse needs. */
+  overflow: hidden;
+  min-height: 0;
+}
+
+.price-board__ribbon-dock--open .price-board__ribbon-dock-inner {
+  padding-bottom: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-board__ribbon-dock {
+    transition: none;
+  }
+}
+
+/* Cell-click radial menu (owner directive, superseding #394's row-click):
+   a `position: fixed` fan of action buttons anchored to the clicked cell.
+   The backdrop is a transparent full-viewport catcher (click-outside closes,
+   same convention as `useOverlayDismiss`) sitting above the overlay itself
+   (`.overlay` is `z-index: 10`). */
+.radial-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.radial-menu {
+  position: fixed;
+  width: 0;
+  height: 0;
+}
+
+.radial-menu__label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -180%);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #10141a;
+  border: 1px solid #2a3040;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #a8b2c2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Classic radial-menu trick: rotate to the slot's angle, translate outward
+   by the ring radius, then rotate back — the button itself stays upright
+   while its position walks around the circle. */
+.radial-menu__item {
+  --radius: 60px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 64px;
+  margin: -32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem;
+  border-radius: 50%;
+  border: 1px solid #3a4353;
+  background: #1b212b;
+  color: #e6e6e6;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transform: rotate(var(--angle)) translate(var(--radius)) rotate(calc(-1 * var(--angle)));
+  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+}
+
+.radial-menu__item:hover,
+.radial-menu__item:focus-visible {
+  border-color: #4c7bab;
+  background: color-mix(in srgb, #4c7bab 22%, #1b212b);
+  transform: rotate(var(--angle)) translate(calc(var(--radius) + 5px)) rotate(calc(-1 * var(--angle)));
+}
+
+/* The trade pair (#468 D4) carries over onto the menu's own buy/sell slots;
+   `deliver` is market-free and takes the neutral tint (matches
+   `.route-ribbon__chip--plain`). */
+.radial-menu__item--buy {
+  color: var(--trade-buy);
+}
+
+.radial-menu__item--sell {
+  color: var(--trade-sell);
+}
+
+.radial-menu__item--deliver {
+  color: #c3cbd8;
+}
+
+/* Single-Stop draft: the ribbon dock's own mini-rail (replaces the old
+   bottom-of-board dock) — one node, no legs/arc (a loop needs >=2 Stops),
+   just the remove control riding the same `.route-ribbon__edit` affordance
+   as a real Stop. */
+.route-ribbon__rail--single .route-ribbon__edit {
+  opacity: 0.9;
+}
+
+/* Read-only ribbon on a Trasy roster row (#468 §C): one ribbon per Route,
+   spanning the row so both surfaces can be judged side by side. Added
+   alongside the existing list editor, never in place of it. */
+.route-row__ribbon {
+  grid-column: 1 / -1;
+  margin: 0.3rem 0 0.1rem;
 }
 
 /* Options overlay tabs (#56): Ogólne (settings) + Keybinds (read-only key
@@ -1486,8 +1748,12 @@ body {
   margin: 0.75rem 0;
 }
 
-.founding-goal .headquarters-found-btn {
-  margin: 0 0 0.5rem;
+/* The founding button left for the top bar (owner directive 2026-07-30) —
+   what stands above the bar now is the caption explaining what it fills. */
+.founding-goal__caption {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  color: #a8b2c2;
 }
 
 .founding-goal__bar {
@@ -2122,53 +2388,161 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Route ribbon (CONTEXT.md — Route ribbon; docs/specs/E16-workbench.md —
-   Route ribbon component, #392). Schematic on purpose — an umowna rail, not
-   orrery geometry — so it never competes with the map's spatial beauty. */
+/* ===== Route ribbon (CONTEXT.md — Route ribbon; docs/specs/E16-workbench.md
+   — Route ribbon component, #392; rebuilt to the vendored mockup for the E16
+   visual prototype, #468).
+
+   Schematic on purpose — an umowna rail, not orrery geometry — so it never
+   competes with the map's spatial beauty. A DOM rail (flex) rather than the
+   old flat SVG: the mockup stacks three DOM-natural tiers under each node
+   (reserved status band, port caption, order chips) and only the return arc
+   wants SVG.
+
+   D6 — the two vertical states. `min-height` between two *known* values, not
+   `height: auto`: an auto height transition silently no-ops, and the whole
+   point of D6 is that the growth is seen. Ten Stops never make it taller —
+   the legs flex horizontally and every tier has a fixed height. */
 .route-ribbon {
-  display: block;
+  --ribbon-status-h: 16px;
+  --ribbon-disc: 34px;
+  position: relative;
+  min-height: 118px;
+  padding: 0.7rem 1.4rem 1.7rem;
+  border: 1px dashed #333c4c;
+  border-radius: 10px;
+  background: #161b24;
+  transition: min-height 0.28s ease;
 }
 
-.route-ribbon__svg {
-  overflow: visible;
+.route-ribbon[data-has-actions="true"] {
+  min-height: 156px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-ribbon {
+    transition: none;
+  }
+}
+
+/* Empty state (the mockup's `.ribbon.empty::before`): authoring opens the
+   dock immediately, so the reserved room is visible and the growth to a real
+   rail is one continuous motion rather than a pop-in at the second Stop. */
+.route-ribbon--empty {
+  display: grid;
+  place-items: center;
+  padding: 0.7rem 1.4rem;
+}
+
+.route-ribbon__empty-hint {
+  margin: 0;
+  max-width: 32rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #6b7488;
+}
+
+.route-ribbon__rail {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Slot = [optional leg][stop]. Every slot after the first stretches, so the
+   remaining width is split evenly across the legs and the Stops distribute
+   across the rail regardless of how many there are (fixed horizontally). */
+.route-ribbon__slot {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.route-ribbon__slot:not(:first-child) {
+  flex: 1 1 0;
 }
 
 .route-ribbon__leg {
-  stroke: #4a5568;
-  stroke-width: 0.6;
+  flex: 1 1 auto;
+  min-width: 24px;
+  height: 2px;
+  margin-top: calc(var(--ribbon-status-h) + var(--ribbon-disc) / 2);
+  background: #4a5568;
+  opacity: 0.85;
 }
 
-.route-ribbon__return-arc {
-  stroke: #4a5568;
-  stroke-width: 0.6;
-  stroke-dasharray: 1.4 1.2;
-  opacity: 0.7;
+/* Fixed width, not content width. A wide order chip ("sprzedaj całość ·
+   Zboże") otherwise widened its own Stop column, and since the leg ends at
+   the column's edge while the disc centres inside it, the rail visibly
+   stopped short of the last node. Fixing the column decouples chip width
+   from rail geometry — the legs meet the discs, and the same chip cannot
+   nudge the layout by getting longer. */
+.route-ribbon__node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  width: 5.5rem;
 }
 
-.route-ribbon__loop-marker {
-  font-size: 4px;
-  fill: #a8b2c2;
+/* Reserved room for future port-status icons — the owner asked for the space
+   explicitly (#468), so it holds its height while empty and shows a faint
+   placeholder rather than collapsing to nothing. */
+.route-ribbon__status {
+  width: 38px;
+  height: var(--ribbon-status-h);
+  margin-bottom: 3px;
+  border: 1px dashed #39435280;
+  border-radius: 4px;
 }
 
 /* Node disc: tinted per archetype (--port-color, set inline — the same
    --archetype-* token the map's ports and price board rows use, ADR-0006:
-   archetype color only here, the market-quality signal is hue-free and does
-   not render on this read-only ribbon). */
-.route-ribbon__node-disc {
-  fill: var(--port-color);
-  stroke: var(--port-color);
-  stroke-width: 0.3;
+   archetype color only here; the market-quality signal is hue-free and does
+   not render on the ribbon at all). */
+.route-ribbon__disc {
+  display: grid;
+  place-items: center;
+  width: var(--ribbon-disc);
+  height: var(--ribbon-disc);
+  border-radius: 50%;
+  border: 2.5px solid var(--port-color);
+  background: color-mix(in srgb, var(--port-color) 26%, #10141a);
+  position: relative;
+  z-index: 2;
+}
+
+.route-ribbon__disc--btn {
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.route-ribbon__disc--btn:hover {
+  background: color-mix(in srgb, var(--port-color) 45%, #10141a);
 }
 
 .route-ribbon__node-icon {
+  width: 17px;
+  height: 17px;
   color: #f2f4f8;
   pointer-events: none;
 }
 
 .route-ribbon__node-label {
-  font-size: 2.5px;
-  fill: #a8b2c2;
-  pointer-events: none;
+  margin-top: 5px;
+  max-width: 100%;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #a8b2c2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Selected Stop (#468 D3): the ring is the same neutral emphasis convention
+   the board uses for "in draft" — no new hue, and never gold (ADR-0006,
+   incident 0002: gold is the Controlled Ship's). */
+.route-ribbon__node--selected .route-ribbon__disc {
+  box-shadow: 0 0 0 4px rgba(230, 236, 245, 0.28);
 }
 
 /* Intermediate Stops dim during the return phase (E16 spec — "passing over,
@@ -2178,46 +2552,411 @@ body {
   transition: opacity 0.2s ease;
 }
 
+/* The action row (D6's second vertical state): order chips under their own
+   port, rendered as a row of Stops each holding a column of chips. */
+/* Wider than its Stop column, centred, and bleeding equally into the legs on
+   both sides via negative margins — so a chip can be legible without
+   participating in the rail's width (see `.route-ribbon__node`).
+
+   The bleed is only safe while the Stops are far apart. On a long Route the
+   slot pitch drops below the chip block's width and two adjacent Stops
+   carrying orders overlap — verified, it happened. `data-dense` (set by the
+   component past 4 Stops) drops the block back to its column width, so
+   chips ellipsize instead of colliding. Flagged: on a dense Route the chip
+   loses its good name to the ellipsis, which is exactly the pressure D7's
+   context menu relieves. */
+.route-ribbon {
+  --orders-w: 9rem;
+}
+
+.route-ribbon__orders {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: var(--orders-w);
+  margin: 6px calc((5.5rem - var(--orders-w)) / 2) 0;
+}
+
+/* Dense: no bleed at all, and the block is narrower than the Stop column, so
+   two adjacent chips cannot meet however long the Route gets. Written
+   directly on the element rather than through the variable — the overlap is
+   a correctness property, not a preference, and it is asserted in
+   `_proto-shot.spec.ts`. */
+.route-ribbon[data-dense="true"] .route-ribbon__orders {
+  width: 4.6rem;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Edge Stops (driver review of #469's screenshots, item 1): a centered
+   block bleeds equally both ways, but the first/last Stop has no rail to
+   bleed *into* on one side — that bleed used to run straight past the
+   ribbon dock's own clipped edge and get silently cut off (worst on the
+   "więcej" drawer, which is wider still than the orders block itself, see
+   below). Anchoring to the inward edge instead means neither block ever
+   needs to escape the dock's box in the first place. */
+.route-ribbon__slot:first-child .route-ribbon__orders {
+  margin-left: 0;
+}
+
+.route-ribbon__slot:last-child .route-ribbon__orders {
+  margin-right: 0;
+}
+
+.route-ribbon__chip {
+  overflow: hidden;
+}
+
+/* `max-width` + `min-width: 0` are load-bearing, not tidiness. This wrapper
+   sits between `.route-ribbon__orders` (a fixed width) and the chip (whose
+   own `max-width: 100%` resolves against *this* box). As a column flex item
+   it defaults to max-content, so without the cap the chip escaped its
+   container and adjacent Stops' chips overlapped on a long Route — measured
+   at 15.6px before this line existed. */
+.route-ribbon__order {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* The drawer (`price-board__order-more`, 10rem) is itself wider than the
+   orders block it rides in (`--orders-w`, 9rem) — a second, smaller bleed
+   on top of the block-level one above. Same edge-anchor treatment, same
+   reason. */
+.route-ribbon__slot:first-child .route-ribbon__order {
+  align-items: flex-start;
+}
+
+.route-ribbon__slot:last-child .route-ribbon__order {
+  align-items: flex-end;
+}
+
+.route-ribbon__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 1px 4px 1px 8px;
+  border: 1px solid #3a4353;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.route-ribbon__chip--buy {
+  color: var(--trade-buy);
+  border-color: color-mix(in srgb, var(--trade-buy) 55%, transparent);
+  background: color-mix(in srgb, var(--trade-buy) 12%, transparent);
+}
+
+.route-ribbon__chip--sell {
+  color: var(--trade-sell);
+  border-color: color-mix(in srgb, var(--trade-sell) 55%, transparent);
+  background: color-mix(in srgb, var(--trade-sell) 12%, transparent);
+}
+
+/* The market-free three (deliver/store/withdraw) take no trade hue — they
+   are not a market side, and giving them one would make the pair mean
+   something looser than "which way the money goes". */
+.route-ribbon__chip--plain {
+  color: #c3cbd8;
+  background: rgba(230, 236, 245, 0.07);
+}
+
+.route-ribbon__chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0; /* lets the ellipsis actually engage inside the flex chip */
+}
+
+/* The "więcej" drawer, relocated (#468 D7): the board's existing markup,
+   re-laid-out for the Stop column it now sits in. Kept **in flow** rather
+   than floated — the dock's `overflow: hidden` (needed for the 0fr→1fr open)
+   would clip a positioned layer, and a real dismissible layer is D1/D7's
+   popover, deliberately out of this prototype's scope. Consequence, flagged:
+   opening a drawer is a third vertical state, which is exactly the one D7's
+   context menu is meant to remove. */
+.route-ribbon__order .price-board__order-more {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  width: 10rem;
+  margin-top: 0.15rem;
+  padding: 0.4rem;
+  border: 1px solid #2f3846;
+  border-radius: 7px;
+  background: #1b212b;
+}
+
+.route-ribbon__order .price-board__order-kind-picker {
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.route-ribbon__order .price-board__order-kind-picker .menu-btn {
+  padding: 0 0.3rem;
+  font-size: 0.65rem;
+}
+
+.route-ribbon__order .price-board__order-more input {
+  width: 100%;
+  font-size: 0.7rem;
+}
+
+.route-ribbon__chip-label--btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.route-ribbon__chip-x {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.55;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.route-ribbon__chip-x:hover {
+  opacity: 1;
+}
+
+/* Loop closure: the return leg as an arc under the whole rail plus a ↻
+   marker (CONTEXT.md — Route ribbon: "a cycle, not a dead-end line"). Drawn
+   under the tiers rather than across them so it never collides with the
+   captions or the action row; `preserveAspectRatio: none` lets one path
+   stretch to any Stop count. */
+/* `width` is explicit, not `left` + `right`: an <svg> is a replaced element,
+   so with both insets set and `width: auto` the box collapses to the
+   viewBox's *intrinsic* width instead of stretching between them — which
+   drew the arc as a small squiggle in the corner. */
+.route-ribbon__arc {
+  position: absolute;
+  left: 2.6rem;
+  width: calc(100% - 5.2rem);
+  bottom: 0.35rem;
+  height: 24px;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.route-ribbon__return-arc {
+  stroke: #5b6a80;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  opacity: 0.85;
+  vector-effect: non-scaling-stroke;
+}
+
+.route-ribbon__loop-marker {
+  position: absolute;
+  left: 50%;
+  bottom: 0.1rem;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  color: #8891a3;
+  background: #161b24;
+  padding: 0 4px;
+}
+
 /* Same neutral glyph tint the map uses for a non-Controlled ship
    (`.ship__glyph`) — a Route's assigned Ship is not necessarily the
    Controlled Ship, so this must never be the reserved Controlled-Ship gold
    (ADR-0006 / incident 0002, one-color-one-meaning). */
 .route-ribbon__ship {
+  position: absolute;
+  top: calc(0.7rem + var(--ribbon-status-h) + var(--ribbon-disc) / 2 - 8px);
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
   color: #cfd6e2;
   pointer-events: none;
-  transform-box: fill-box;
-  transform-origin: center;
+  z-index: 3;
+}
+
+.route-ribbon__ship svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* Motion law (ADR-0003, #161 skiff-anchoring precedent): the glide
    transition only applies while actively animating — reduced-motion or a
    paused game drops this class and the Ship glyph holds its position with
-   no transition at all, matching the skiff freeze-in-place behavior. The
-   transition targets the CSS `transform` set inline (translate), not the
-   x/y attributes, so it actually animates between `progress` updates. */
+   no transition at all, matching the skiff freeze-in-place behavior. */
 .route-ribbon__ship--animating {
-  transition: transform 0.3s linear;
+  transition: left 0.3s linear;
+}
+
+/* Compact variant (Trasy roster rows): the same rail at roster scale — no
+   reserved status band (that room belongs to the authoring surface), and a
+   shorter fixed height. */
+.route-ribbon--compact {
+  --ribbon-status-h: 0px;
+  --ribbon-disc: 22px;
+  min-height: 58px;
+  padding: 0.4rem 1.1rem 0.9rem;
+  border-style: solid;
+  border-color: #262d39;
+}
+
+.route-ribbon--compact .route-ribbon__status {
+  display: none;
+}
+
+.route-ribbon--compact .route-ribbon__node-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.route-ribbon--compact .route-ribbon__node-label {
+  font-size: 0.62rem;
+  margin-top: 3px;
+}
+
+.route-ribbon--compact .route-ribbon__arc {
+  left: 1.7rem;
+  width: calc(100% - 3.4rem);
+  bottom: 0.15rem;
+  height: 15px;
+}
+
+.route-ribbon--compact .route-ribbon__loop-marker {
+  font-size: 0.65rem;
+  background: #161b24;
 }
 
 /* Editable mode (#394 board authoring): per-node Stop controls docked below
-   the schematic SVG rail — plain HTML, not part of the ribbon's visual
-   language proper, so read-only mode (#392 roster rows, no `edit` prop)
-   never renders any of this. */
+   the rail — plain HTML, not part of the ribbon's visual language proper, so
+   read-only mode (roster rows, no `edit` prop) never renders any of this.
+   Laid out as a wrapping row so it stays one line tall for a small Route and
+   never competes with the rail above it. */
+/* Per-Stop controls, inside the Stop's own column (see the component's own
+   comment): a shared row under the rail wrapped on long Routes and made the
+   ribbon grow with Stop count, which D6 forbids. Recessive until wanted —
+   they are a maintenance affordance, not part of the ribbon's visual
+   language, and at full strength they read louder than the rail they edit. */
 .route-ribbon__edit {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  margin-top: 0.4rem;
-  font-size: 0.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  margin-top: 0.25rem;
+  height: 15px;
+  opacity: 0.18;
+  transition: opacity 0.15s ease;
 }
 
-.route-ribbon__edit-row {
+.route-ribbon:hover .route-ribbon__edit,
+.route-ribbon__edit:focus-within {
+  opacity: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-ribbon__edit {
+    transition: none;
+  }
+}
+
+.route-ribbon__edit .menu-btn {
+  padding: 0 0.25rem;
+  font-size: 0.6rem;
+  line-height: 1.2;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Wartość firmy — the Headquarters' default tab (owner directive 2026-07-30,
+   points 4-6). The headline number and the lens toggle share one row above the
+   chart: the value is the answer, the chart is its evidence. */
+
+.company-value__head {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
 }
 
-.route-ribbon__edit-name {
-  flex: 1;
+.company-value__total {
+  margin: 0;
+  text-align: left;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #e6e6e6;
+}
+
+.company-value__lens {
+  display: flex;
+  gap: 0.35rem;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Route ops strip — the Route's operational half, docked under the board's
+   ribbon (owner directive 2026-07-30, point 8; moved off the retired Trasy
+   tab). Reads as one band under the rail, not as a second panel. */
+
+.route-ops {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.route-ops__metrics {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
   color: #a8b2c2;
+}
+
+.route-ops__result {
+  font-weight: 700;
+  color: #e6e6e6;
+}
+
+.route-ops__ships {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.route-ops__ship {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+/* Same warning hue the retired Trasy roster used for a suspended assignment —
+   a warning, not a new meaning (ADR-0006, §Laws 9). */
+.route-ops__suspended {
+  color: #d9705f;
+  font-weight: 600;
+}
+
+.route-ops__assign {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.route-ops__delete {
+  margin-left: auto;
 }
