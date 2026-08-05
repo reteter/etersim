@@ -342,11 +342,17 @@ test.describe('main game UI after start', () => {
     await expect(map.locator('.lane__label')).toHaveCount(0);
   });
 
-  // SKIPPED — E16 visual prototype, #468 **D2** ("the price trend leaves the
-  // UI entirely"). Asserts the PortPanel market table's per-row trend glyph
-  // (`.market-row__trend`), which D2 removes. Everything else this test
-  // covers (5 good rows, prices) still holds.
-  test.skip('port panel shows market table with prices and trends', async ({ page }) => {
+  // SPLIT (partial #474) — was 'port panel shows market table with prices
+  // and trends'. D2 (docs/specs/E16-workbench.md §Visual contract) removes
+  // the price trend from the UI entirely (`.market-row__trend`,
+  // `.market__header`'s Trend column both gone), so the trend column-
+  // alignment half of this test has no subject left. The bid/ask/stock half
+  // survives and is load-bearing (#75) — kept here, re-pointed at the
+  // header's own (now trend-less) column order: Towar / Sprzedaż / Kupno /
+  // Zapas.
+  test('port panel shows market table with prices, columns aligned to their headers (#75)', async ({
+    page,
+  }) => {
     // Select first port on map (click the group that has the handler)
     await page.locator('g.port').first().click({ force: true });
 
@@ -361,27 +367,25 @@ test.describe('main game UI after start', () => {
     await expect(page.locator('.market-row__ask').first()).toContainText('₸');
     await expect(page.locator('.market-row__stock').first()).toBeVisible();
 
-    // Trend/Bid/Ask/Stock columns line up under their headers (#75): each is
+    // Bid/Ask/Stock columns line up under their headers (#75): each is
     // right-aligned within a shared, fixed-width grid track, so it's the
     // right edge (not the left, which shifts with content width) that must
     // match the header's right edge across every row.
     const header = page.locator('.market__header');
     const rightEdge = (box: { x: number; width: number }) => box.x + box.width;
-    const [trendX, bidX, askX, stockX] = await Promise.all(
-      ['span:nth-child(2)', 'span:nth-child(3)', 'span:nth-child(4)', 'span:nth-child(5)'].map(
+    const [bidX, askX, stockX] = await Promise.all(
+      ['span:nth-child(2)', 'span:nth-child(3)', 'span:nth-child(4)'].map(
         async (sel) => rightEdge((await header.locator(sel).boundingBox())!),
       ),
     );
     const rowCount = await page.locator('.market-row').count();
     for (let i = 0; i < rowCount; i++) {
       const row = page.locator('.market-row').nth(i);
-      const [rowTrendX, rowBidX, rowAskX, rowStockX] = await Promise.all([
-        row.locator('.market-row__trend').boundingBox(),
+      const [rowBidX, rowAskX, rowStockX] = await Promise.all([
         row.locator('.market-row__bid').boundingBox(),
         row.locator('.market-row__ask').boundingBox(),
         row.locator('.market-row__stock').boundingBox(),
       ]);
-      expect(rightEdge(rowTrendX!)).toBeCloseTo(trendX, 0);
       expect(rightEdge(rowBidX!)).toBeCloseTo(bidX, 0);
       expect(rightEdge(rowAskX!)).toBeCloseTo(askX, 0);
       expect(rightEdge(rowStockX!)).toBeCloseTo(stockX, 0);
@@ -409,12 +413,13 @@ test.describe('main game UI after start', () => {
     );
   });
 
-  // SKIPPED — E16 visual prototype, #468 **D2**. The bid/ask half of this
-  // test is untouched by the prototype; it fails only on its closing
-  // assertion that "the Trend glyph still renders per row, independent of
-  // bid/ask", which D2 deletes. Worth re-instating minus that line once D2
-  // is ratified — the ask >= bid invariant is real coverage.
-  test.skip('port panel shows two-sided bid/ask per good, ask never below bid, with a real spread somewhere (#61)', async ({
+  // SPLIT (partial #474) — was 'port panel shows two-sided bid/ask per
+  // good, ask never below bid, with a real spread somewhere (#61)'. D2
+  // (docs/specs/E16-workbench.md §Visual contract) removes the price trend
+  // from the UI entirely, dropping only this test's closing assertion
+  // (`.market-row__trend`); the bid/ask invariant itself survives and is
+  // load-bearing (D4 — the two-sided quote).
+  test('port panel shows two-sided bid/ask per good, ask never below bid, with a real spread somewhere (#61)', async ({
     page,
   }) => {
     await page.locator('g.port').first().click({ force: true });
@@ -441,9 +446,6 @@ test.describe('main game UI after start', () => {
       if (ask > bid) sawStrictSpread = true;
     }
     expect(sawStrictSpread).toBe(true);
-
-    // Trend glyph still renders per row, independent of bid/ask.
-    await expect(page.locator('.market-row__trend').first()).toBeVisible();
   });
 });
 
@@ -493,25 +495,14 @@ test.describe('region price board (#62)', () => {
     await expect(dialog.locator('.price-board__bid--best').first()).toBeVisible();
   });
 
-  // SKIPPED — E16 visual prototype, #468 **D2**. The board's trend legend
-  // (`.price-board__legend`) and per-cell glyph both go with the trend.
-  // #127 — which made this legend always-visible after a fresh player
-  // misread the glyphs — is knowingly reversed by D2: the legend goes
-  // because the thing it explained goes.
-  test.skip('shows the trend legend explaining the last-day-boundary comparison (#127)', async ({
-    page,
-  }) => {
-    await page.getByRole('button', { name: /tablica cen/i }).click();
-    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
-
-    // A fresh player misread the glyphs as "vs the starting price" — the
-    // legend must state the real window and explicitly rule that out.
-    await expect(dialog.locator('.price-board__legend')).toContainText('ostatniej granicy dnia');
-    await expect(dialog.locator('.price-board__legend')).toContainText('nie ceny początkowej');
-
-    const glyphTitle = await dialog.locator('.price-board__trend').first().getAttribute('title');
-    expect(glyphTitle).toContain('ostatniej granicy dnia');
-  });
+  // DELETED (partial #474) — #127's trend legend has no subject left to
+  // explain: D2 (docs/specs/E16-workbench.md §Visual contract) removes the
+  // price trend from the UI entirely, and with it `.price-board__legend`
+  // and the per-cell trend glyph this test asserted. Re-pointing would
+  // invent coverage for a removed feature; the board's own replacement key
+  // strip (explaining bid/ask + the intensity signal) is untested-by-design
+  // per the coder-call note in §Visual contract ("flag it in the completion
+  // report as a mockup-sourced addition beyond the literal task list").
 
   test("marks the Controlled Ship's docked port row", async ({ page }) => {
     await page.getByRole('button', { name: /tablica cen/i }).click();
@@ -868,52 +859,16 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
     await expect(headers.nth(1)).toHaveClass(/price-board__good-header--dim/);
   });
 
-  test('pinning: hiding a column narrows the grid and is recoverable via the hidden-columns affordance', async ({
-    page,
-  }) => {
-    await page.getByRole('button', { name: /tablica cen/i }).click();
-    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
-    const headers = dialog.locator('.price-board__good-header');
-    await expect(headers).toHaveCount(GOOD_IDS.length);
-    await expect(dialog.locator('.price-board__hidden-note')).toHaveCount(0);
-
-    const headerRow = dialog.locator('.price-board__row--header');
-    const columnsBefore = await headerRow.evaluate(
-      (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
-    );
-
-    await dialog.locator('.price-board__good-hide-btn').last().click();
-
-    await expect(headers).toHaveCount(GOOD_IDS.length - 1);
-    const note = dialog.locator('.price-board__hidden-note');
-    await expect(note).toBeVisible();
-    await expect(note).toContainText('1');
-
-    const columnsAfter = await headerRow.evaluate(
-      (el) => getComputedStyle(el).gridTemplateColumns.split(' ').length,
-    );
-    expect(columnsAfter).toBe(columnsBefore - 1);
-
-    // Recoverable: the affordance restores every hidden column.
-    await note.getByRole('button').click();
-    await expect(headers).toHaveCount(GOOD_IDS.length);
-    await expect(dialog.locator('.price-board__hidden-note')).toHaveCount(0);
-  });
-
-  test('pinning: hiding the currently-focused good clears the emphasis instead of dimming the whole board', async ({
-    page,
-  }) => {
-    await page.getByRole('button', { name: /tablica cen/i }).click();
-    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
-    const headers = dialog.locator('.price-board__good-header');
-
-    await headers.nth(0).click(); // focus GOOD_IDS[0]
-    await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(GOOD_IDS.length - 1);
-
-    await dialog.locator('.price-board__good-hide-btn').nth(0).click();
-    await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(0);
-    await expect(dialog.locator('.price-board__cell--dim')).toHaveCount(0);
-  });
+  // DELETED (partial #474) — both "pinning:" tests asserted
+  // `.price-board__good-hide-btn` / `.price-board__hidden-note`, the column
+  // hide/restore affordance. Removed 2026-07-30, not deferred
+  // (docs/specs/E16-workbench.md §Information density): the visual rebuild
+  // gave every cell a visible border and a click target, so a hidden column
+  // now reads as a hole in the grid rather than a tidied one — the hide
+  // control left the header row and its state left with it. The density
+  // problem itself is real and returns with E15's two new goods, but a
+  // column-hide is not the only answer; re-adding one to this grid is a
+  // fresh design question tracked on #471, not a restored feature.
 
   // SKIPPED — E16 visual prototype, #468 **D7**: drives the "więcej" drawer
   // through the grid cell, where it no longer lives. The rule under test —
@@ -981,47 +936,14 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
     await expect(dialog.getByRole('button', { name: 'Zapisz trasę' })).toBeDisabled();
   });
 
-  // SKIPPED — E16 visual prototype, #468 **D7**: counts
-  // `.price-board__order-chip` inside a port row to establish the order
-  // exists before hiding its column. The strand badge itself (#413) still
-  // works and is unchanged — only the pre-condition's selector moved to the
-  // ribbon.
-  test.skip('hiding a column that carries a live draft order badges the hidden-columns affordance (#413)', async ({
-    page,
-  }) => {
-    await page.getByRole('button', { name: /tablica cen/i }).click();
-    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
-    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
-
-    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
-    const firstRow = rows.first();
-    await firstRow.click(); // Stop 1
-    // Attach an order for the second good column (index 1) — leave the
-    // first good (index 0) order-free so the negative case below is real.
-    await firstRow.locator('.price-board__cell-btn').nth(1).click();
-    // Confirm the order actually attached before hiding anything —
-    // `handleCellClick` can no-op (inferOrderKind === null), and without
-    // this the strand assertions below could pass/fail for the wrong
-    // reason entirely.
-    await expect(firstRow.locator('.price-board__order-chip')).toHaveCount(1);
-
-    // Hiding an order-free column: no strand — the badge stays plain.
-    await dialog.locator('.price-board__good-hide-btn').nth(0).click();
-    const note = dialog.locator('.price-board__hidden-note');
-    await expect(note).toBeVisible();
-    await expect(note).not.toHaveClass(/price-board__hidden-note--strand/);
-
-    // Hiding the good that actually carries the attached order: the badge
-    // must turn distinct, and stay that way — the order is still fully
-    // committable but now invisible on the grid.
-    await dialog.locator('.price-board__good-hide-btn').nth(0).click(); // now good index 1
-    await expect(note).toHaveClass(/price-board__hidden-note--strand/);
-    await expect(note).toContainText('zlecen'); // Polish stem: zlecenie/zlecenia/zleceń
-
-    // Restoring the hidden columns clears the strand along with the note.
-    await note.getByRole('button', { name: 'Pokaż wszystkie' }).click();
-    await expect(dialog.locator('.price-board__hidden-note')).toHaveCount(0);
-  });
+  // DELETED (partial #474) — the #413 hidden-column strand badge asserted
+  // `.price-board__good-hide-btn` / `.price-board__hidden-note--strand`.
+  // Column pinning (and with it hiding) is removed 2026-07-30, not deferred
+  // (docs/specs/E16-workbench.md §Information density) — the case this
+  // guarded (a live order stranded behind a hidden column) can no longer
+  // arise, since there is no hidden-column state left to strand an order
+  // behind. Re-adding pinning is a fresh design question (#471), not a
+  // restored feature, so this test has no coverage to invent either.
 });
 
 test.describe('price board — grid a11y + focus emphasis (#414)', () => {
