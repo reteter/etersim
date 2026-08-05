@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { createWorld, GOOD_IDS, type Ship, type World } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
+import { boardRows, openBoard, startNewRoute } from './boardAuthoring';
 
 async function startNewGame(page: Page) {
   await page.goto('/');
@@ -782,24 +783,36 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
     await startNewGame(page);
   });
 
+  // #472/#475 rewrite note — the dim channel this describe reads is one of
+  // two things sharing it (docs/specs/E16-workbench.md §Visual contract, the
+  // D3-revision finding: "D3's role highlight and #395's contextual focus
+  // share one dim channel at one strength, so attaching an order masks the
+  // role highlight completely"). Neither test below ever selects a ribbon
+  // Stop disc (`.route-ribbon__disc--btn`, which drives the role highlight
+  // via `selectedStop`), so `roleGoods` stays `null` throughout and every
+  // `--dim` class observed here is unambiguously the contextual-focus
+  // signal, never the role one — the strongest distinction available short
+  // of a second channel, which is the #469 finding itself, not something a
+  // test can manufacture.
   test('contextual focus: attaching an order auto-focuses its column and dims the rest; closing the draft reverts it', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /tablica cen/i }).click();
-    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
-    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    const dialog = await openBoard(page);
+    const rows = boardRows(dialog);
     const portCount = await rows.count();
 
     // Nothing dimmed before any authoring starts.
     await expect(dialog.locator('.price-board__good-header--dim')).toHaveCount(0);
 
-    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+    await startNewRoute(dialog);
     const firstRow = rows.first();
-    await firstRow.click(); // Stop 1
 
     // Attach an order on the first good column (GOOD_IDS[0]) — the
     // "attaching an order for good X" gesture (spec §Information density).
+    // The radial menu's own choice of kind is irrelevant to the dim
+    // assertions below, so any offered action does.
     await firstRow.locator('.price-board__cell-btn').first().click();
+    await dialog.getByRole('menuitem').first().click();
 
     const headers = dialog.locator('.price-board__good-header');
     await expect(headers.nth(0)).not.toHaveClass(/price-board__good-header--dim/);
@@ -825,8 +838,7 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
   test('contextual focus: manual header click focuses a good outside authoring; the latest gesture wins over authoring focus', async ({
     page,
   }) => {
-    await page.getByRole('button', { name: /tablica cen/i }).click();
-    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
+    const dialog = await openBoard(page);
     const headers = dialog.locator('.price-board__good-header');
 
     // Manual focus works with no draft active at all.
@@ -842,11 +854,11 @@ test.describe('price board — density tools (#395, docs/specs/E16-workbench.md 
     // Re-focus manually, then start authoring and attach an order on a
     // *different* good — the authoring attach wins at the moment it fires.
     await headers.nth(0).click();
-    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
-    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
+    await startNewRoute(dialog);
+    const rows = boardRows(dialog);
     const firstRow = rows.first();
-    await firstRow.click();
     await firstRow.locator('.price-board__cell-btn').nth(1).click(); // good index 1
+    await dialog.getByRole('menuitem').first().click();
     await expect(headers.nth(1)).toHaveAttribute('aria-pressed', 'true');
     await expect(headers.nth(0)).toHaveAttribute('aria-pressed', 'false');
     await expect(headers.nth(1)).not.toHaveClass(/price-board__good-header--dim/);
