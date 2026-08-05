@@ -237,28 +237,11 @@ test.describe('market: per-good row refresh (#73/#74/#127)', () => {
     await expect(grainRow.locator('.market-row__held')).toContainText('7');
   });
 
-  // SKIPPED — E16 visual prototype, #468 **D2** ("the price trend leaves the
-  // UI entirely"): asserts the PortPanel's `Trend` column header and its
-  // tooltip, both removed. #127 is knowingly reversed by D2.
-  test.skip('trend glyph carries a legend explaining the last-day-boundary comparison (#127)', async ({
-    page,
-  }) => {
-    const world = fundedWorld('market-trend-legend');
-    const { name } = homePort(world);
-
-    await continueWithWorld(page, world);
-    await openMarket(page, name);
-
-    // The Trend column header and every glyph carry the same tooltip; it
-    // must state the real comparison (last day boundary) and explicitly
-    // rule out the fresh-player misread ("initial price").
-    const headerTitle = await page.locator('.market__header span', { hasText: 'Trend' }).getAttribute('title');
-    expect(headerTitle).toContain('ostatniej granicy dnia');
-    expect(headerTitle).toContain('nie ceny początkowej');
-
-    const glyphTitle = await page.locator('.market-row__trend').first().getAttribute('title');
-    expect(glyphTitle).toBe(headerTitle);
-  });
+  // Deleted (partial #474, D2 / #468 — docs/specs/E16-workbench.md §Visual
+  // contract): "the price trend leaves the UI entirely" — the PortPanel's
+  // `Trend` column header and glyph this test asserted no longer exist, and
+  // #127 (the legend this test guarded) is knowingly reversed by D2. Not
+  // `.skip`ped: a suspended spec claims a debt, and D2 already discharged it.
 });
 
 test.describe('market-quality signal shading (#396, E16 package e)', () => {
