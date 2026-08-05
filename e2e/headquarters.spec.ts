@@ -1,8 +1,18 @@
-import { test, expect, type Locator, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { generateShipName, type World } from '../src/sim';
 import { GOOD_NAME_PL } from '../src/store/goodDisplay';
 import { SAVE_VERSION } from '../src/store/persistence';
 import { DEFAULT_SETTINGS, SETTINGS_KEY, SETTINGS_VERSION, type Settings } from '../src/store/settings';
+import {
+  attachOrder,
+  loadRouteTab,
+  openBoard,
+  qtyInput,
+  removeStop,
+  saveRoute,
+  startNewRoute,
+  toggleOrderDrawer,
+} from './boardAuthoring';
 import { fundedWorld, routeReadyWorld } from './worldFixtures';
 
 /** The first ship's display name (src/sim/world.ts createWorld: `id: "s0"`,
@@ -12,7 +22,7 @@ import { fundedWorld, routeReadyWorld } from './worldFixtures';
 const S0_NAME = generateShipName(0);
 
 /**
- * Headquarters panel E2E (#84, #85). The default starting purse (₸500,
+ * Headquarters panel E2E (#84, #472). The default starting purse (₸500,
  * src/sim/world.ts STARTING_THALERS) can't afford the Headquarters
  * (₸2,500) or produce a fast route loop within a test's time budget, so
  * these tests seed the autosave slot with a hand-built World (funded purse,
@@ -20,18 +30,22 @@ const S0_NAME = generateShipName(0);
  * route creation / assignment through the same UI a player uses. This
  * matches the save format exactly (src/store/persistence.ts SaveFile
  * envelope), so `Continue` on the StartScreen loads it like any other save.
+ *
+ * **#472 rewrite note:** the Headquarters' own "Trasy" tab is gone
+ * (docs/specs/E16-workbench.md §Trasy roster → the board owns Routes
+ * entirely, owner directive 2026-07-30 point 8) — Route authoring, the
+ * roster and the operational controls (assign/suspend/resume/metrics,
+ * `RouteOpsStrip`) all moved to the Price Board. Route-authoring tests below
+ * now go through `./boardAuthoring`'s shared driver instead of this file's
+ * old `createGrainRoute` (removed — its `Nowa trasa` → `Dodaj przystanek` →
+ * chip-table sequence has no equivalent on the board). Headquarters itself
+ * also gained a second tab, "Wartość firmy" (absorbs the retired Księga),
+ * which is now the **default** tab on open (point 4) — tests that only need
+ * "Budowa" must select it explicitly, where before it was the only tab and
+ * needed no click.
  */
 
 const AUTOSAVE_KEY = 'etersim.autosave';
-
-// fundedWorld / routeReadyWorld (a funded World with s0 docked at one end of
-// its shortest lane, ready-to-assign two-Stop Route setup — buy grain at
-// `a`, sell grain at `b`) now live in ./worldFixtures (#272), shared with
-// route-qty-margin-gate.spec.ts. The route itself is still *assigned*
-// through the UI in every test here so #85's ACs (assign, suspend/resume
-// visibility, loop metrics) exercise the real Command path; only the setup
-// a player can't reach in reasonable test time (thalers, ship placement) is
-// hand-built.
 
 function saveJson(world: World): string {
   return JSON.stringify({ version: SAVE_VERSION, world });
@@ -59,31 +73,6 @@ async function continueWithWorld(page: Page, world: World, settings?: Partial<Se
   await page.goto('/');
   await page.getByRole('button', { name: /kontynuuj/i }).click();
   await expect(page.locator('svg.region-map')).toBeVisible();
-}
-
-/** Drives the Trasy tab's editor through the canonical two-Stop route —
- *  buy grain at `a` (Stop 1), sell grain at `b` (Stop 2) — and saves it. */
-async function createGrainRoute(dialog: Locator, a: string, b: string) {
-  await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
-  await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
-  await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
-
-  const stopRows = dialog.locator('.stop-row');
-  await expect(stopRows).toHaveCount(2);
-  await stopRows.nth(0).locator('select').selectOption(a);
-  await stopRows
-    .nth(0)
-    .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Kup — przystanek 1$`) })
-    .click();
-  await stopRows.nth(1).locator('select').selectOption(b);
-  await stopRows
-    .nth(1)
-    .getByRole('button', { name: new RegExp(`^${GOOD_NAME_PL.grain}: Sprzedaj — przystanek 2$`) })
-    .click();
-
-  const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
-  await expect(saveBtn).toBeEnabled();
-  await saveBtn.click();
 }
 
 test.describe('save-injection harness smoke test', () => {
@@ -151,11 +140,13 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     const headquartersBtn = page.getByRole('button', { name: /^Siedziba$/ });
     await expect(headquartersBtn).toBeVisible();
 
-    // PortPanel's Headquarters section shows a build progress bar once a
-    // build exists — place one from the panel first.
+    // "Wartość firmy" is the default tab since the 2026-07-30 relocation
+    // (point 4, the retired Księga's absorption) — Budowa needs an explicit
+    // click, unlike before when it was the panel's only tab.
     await headquartersBtn.click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
+    await dialog.getByRole('tab', { name: 'Budowa' }).click();
     const placeBtn = dialog.getByRole('button', { name: /Zleć budowę/ });
     await expect(placeBtn).toBeEnabled();
 
@@ -184,6 +175,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await expect(page.locator('.headquarters-section .headquarters-progress__row')).toHaveCount(5);
     await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
+    await dialog2.getByRole('tab', { name: 'Budowa' }).click();
 
     // Rush shows a live quote (nonzero — deep purse, nothing bought yet)
     // and executes: the purse drops by exactly the quoted amount.
@@ -209,6 +201,7 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
     await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
+    await dialog.getByRole('tab', { name: 'Budowa' }).click();
 
     await dialog.getByRole('button', { name: /Zleć budowę/ }).click();
     await expect(dialog.locator('.headquarters-stall')).toContainText(/stanie na rezerwie ₸500/);
@@ -221,8 +214,8 @@ test.describe('Headquarters — Budowa tab (#84)', () => {
   });
 });
 
-test.describe('Headquarters — Trasy tab (#85)', () => {
-  test('create route → assign → ship loops in a seeded scenario; last-loop result updates after a loop', async ({
+test.describe('Headquarters — board owns Routes (#472, docs/specs/E16-workbench.md §Trasy roster)', () => {
+  test('author a Route on the board → assign via RouteOpsStrip → ship loops in a seeded scenario; last-loop result updates after a loop', async ({
     page,
   }) => {
     test.setTimeout(60_000);
@@ -237,45 +230,48 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
-    await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /siedziba/i });
-    await dialog.getByRole('tab', { name: 'Trasy' }).click();
+    // Author a two-Stop Route on the board: buy grain at A, sell grain at B.
+    const dialog = await openBoard(page);
+    await startNewRoute(dialog);
+    await attachOrder(dialog, a, 'grain', 'buy');
+    await attachOrder(dialog, b, 'grain', 'sell');
 
-    // Create a two-Stop route: buy grain at A, sell grain at B.
-    await createGrainRoute(dialog, a, b);
+    const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
+    await expect(saveBtn).toBeEnabled();
+    await saveBtn.click();
 
-    // Route now shows in the list with a placeholder last-loop result.
-    const routeRow = dialog.locator('.route-row').first();
-    await expect(routeRow).toBeVisible();
-    await expect(routeRow.locator('.route-row__result')).toContainText('brak jeszcze pętli');
+    // Reload the saved Route via its own tab — RouteOpsStrip (the retired
+    // Trasy tab's operational half) renders only for an *existing* Route.
+    await loadRouteTab(dialog, 'Trasa 1');
+    const ops = dialog.locator('.route-ops');
+    await expect(ops).toBeVisible();
+    await expect(ops.locator('.route-ops__result')).toContainText('brak jeszcze pętli');
 
     // Assign s0.
-    await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
-    await expect(routeRow.locator('.route-row__ship')).toContainText(S0_NAME);
+    await ops.locator('.route-ops__assign select').selectOption({ label: S0_NAME });
+    await ops.getByRole('button', { name: /^Przypisz$/ }).click();
+    await expect(ops.locator('.route-ops__ship')).toContainText(S0_NAME);
 
-    // Map: saving a new route selects it (Trasy tab), highlighting its Stop
-    // ports — clicking the name again would *toggle it off* (RouteRow's
-    // onSelect), so this checks the post-save state directly.
+    // Map: loading a Route selects it, highlighting its Stop ports.
     await expect(page.locator('svg.region-map .port--route-stop')).toHaveCount(2);
 
-    // Run the sim fast enough to close at least one full loop (two Stop-0
-    // visits) — close the modal first, since the overlay covers the TopBar.
+    // Run the sim fast enough to close at least one full loop — close the
+    // modal first, since the overlay covers the TopBar.
     await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
 
-    await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
-    await dialog2.getByRole('tab', { name: 'Trasy' }).click();
-    await expect(dialog2.locator('.route-row__result')).not.toContainText('brak jeszcze pętli', {
+    const dialog2 = await openBoard(page);
+    await loadRouteTab(dialog2, 'Trasa 1');
+    const ops2 = dialog2.locator('.route-ops');
+    await expect(ops2.locator('.route-ops__result')).not.toContainText('brak jeszcze pętli', {
       timeout: 30_000,
     });
 
     // Loop metrics are populated: total Course ticks and last-loop result
     // both render a number (docking fees may legitimately be 0 or a
     // positive figure — asserting presence, not a specific value).
-    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Kurs: \d+t\/pętla/);
-    await expect(dialog2.locator('.route-row__metrics')).toContainText(/Opłaty dokowe\/pętla: \d+/);
+    await expect(ops2.locator('.route-ops__metrics')).toContainText(/Kurs: \d+t\/pętla/);
+    await expect(ops2.locator('.route-ops__metrics')).toContainText(/Opłaty dokowe\/pętla: \d+/);
   });
 
   test('a routed greedy sell shows a runtime note at the Stop it emptied the hold at (#398)', async ({
@@ -288,15 +284,18 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
 
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /siedziba/i });
-    await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // buy grain (Stop 1, A) → sell grain (Stop 2, B), both greedy (no qty).
-    await createGrainRoute(dialog, a, b);
-    const routeRow = dialog.locator('.route-row').first();
-    await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
+    const dialog = await openBoard(page);
+    await startNewRoute(dialog);
+    await attachOrder(dialog, a, 'grain', 'buy');
+    await attachOrder(dialog, b, 'grain', 'sell');
+    await saveRoute(dialog);
+
+    await loadRouteTab(dialog, 'Trasa 1');
+    const ops = dialog.locator('.route-ops');
+    await ops.locator('.route-ops__assign select').selectOption({ label: S0_NAME });
+    await ops.getByRole('button', { name: /^Przypisz$/ }).click();
 
     await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
@@ -317,21 +316,24 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     test.setTimeout(60_000);
     const { world, a, b } = routeReadyWorld('hq-edit');
     const c = world.region.ports.find((p) => p.id !== a && p.id !== b)!.id;
+    const bName = world.region.ports.find((p) => p.id === b)!.name;
     const cName = world.region.ports.find((p) => p.id === c)!.name;
     await continueWithWorld(page, world);
 
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /siedziba/i });
-    await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
     // Route: buy grain at A, sell grain at B.
-    await createGrainRoute(dialog, a, b);
+    const dialog = await openBoard(page);
+    await startNewRoute(dialog);
+    await attachOrder(dialog, a, 'grain', 'buy');
+    await attachOrder(dialog, b, 'grain', 'sell');
+    await saveRoute(dialog);
 
-    const routeRow = dialog.locator('.route-row').first();
-    await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
+    await loadRouteTab(dialog, 'Trasa 1');
+    const ops = dialog.locator('.route-ops');
+    await ops.locator('.route-ops__assign select').selectOption({ label: S0_NAME });
+    await ops.getByRole('button', { name: /^Przypisz$/ }).click();
 
     // Un-pause: the ship executes Stop 0 at A (still paused when we assigned,
     // so nothing ran yet — src/store/gameStore.ts dispatch() applies commands
@@ -343,19 +345,16 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
     await expect(page.locator('.side-panel__subtitle')).toContainText('W drodze', { timeout: 30_000 });
 
     // Pause and edit the Route while the ship is genuinely in flight toward
-    // B: move Stop 2 from B to a third port C.
+    // B: replace Stop 2 (B) with a third port C. The board has no "reassign
+    // this Stop's port" control (a Stop's port IS its identity — chosen by
+    // clicking that port's cell) — the equivalent edit is remove the Stop,
+    // then re-attach at the same (last) position via C's own cell.
     await page.getByRole('button', { name: '⏸' }).click();
-    await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
-    await dialog2.getByRole('tab', { name: 'Trasy' }).click();
-    await dialog2
-      .locator('.route-row')
-      .first()
-      .getByRole('button', { name: /^Edytuj$/ })
-      .click();
-    const editRows = dialog2.locator('.stop-row');
-    await editRows.nth(1).locator('select').selectOption(c);
-    await dialog2.getByRole('button', { name: /^Zapisz trasę$/ }).click();
+    const dialog2 = await openBoard(page);
+    await loadRouteTab(dialog2, 'Trasa 1');
+    await removeStop(dialog2, 1, bName);
+    await attachOrder(dialog2, c, 'grain', 'sell');
+    await saveRoute(dialog2);
     await dialog2.getByRole('button', { name: /^Zamknij$/ }).click();
 
     // Resume: the ship reaches B (the stale destination, no trade — Stop 2
@@ -372,50 +371,49 @@ test.describe('Headquarters — Trasy tab (#85)', () => {
   });
 });
 
-test.describe('Headquarters overlay scroll (#176, via OverlayShell #181)', () => {
-  test('a many-stop route editor stays within the viewport; Save/Cancel are reachable by scrolling', async ({
+test.describe('Board overlay scroll (#176, via OverlayShell #181)', () => {
+  test('the board panel stays within a small viewport; Save is reachable by scrolling the body', async ({
     page,
   }) => {
-    const { world, a, b } = routeReadyWorld('hq-many-stops');
+    // #176's original reproduction (a 12-Stop Trasy list, one row per Stop)
+    // has no equivalent on the board: the ribbon is fixed-height, independent
+    // of Stop count (§Visual contract D6 — "ten Stops do not make a taller
+    // ribbon"), so Stop count alone can no longer grow the panel past the
+    // viewport. The regression this test actually guards is OverlayShell's
+    // own contract (#181: the panel is bounded, `.overlay__body` is the one
+    // scroll region) — reproduced here by shrinking the viewport instead of
+    // manufacturing Stops, which is test-side and touches no app code.
+    const { world, a, b } = routeReadyWorld('hq-overlay-scroll');
     await continueWithWorld(page, world);
+    await page.setViewportSize({ width: 1000, height: 480 });
 
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
-    await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /siedziba/i });
-    await dialog.getByRole('tab', { name: 'Trasy' }).click();
 
-    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
-    // 12 Stops — far more than fits in the viewport at once. Two of them get
-    // distinct ports so Save clears isValid (>=2 Stops, >=2 distinct ports).
-    for (let i = 0; i < 12; i++) {
-      await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
-    }
-    const stopRows = dialog.locator('.stop-row');
-    await expect(stopRows).toHaveCount(12);
-    await stopRows.nth(0).locator('select').selectOption(a);
-    await stopRows.nth(1).locator('select').selectOption(b);
+    const dialog = await openBoard(page);
+    await startNewRoute(dialog);
+    await attachOrder(dialog, a, 'grain', 'buy');
+    await attachOrder(dialog, b, 'grain', 'sell');
 
-    // The panel is bounded to the viewport (OverlayShell's `.overlay__panel`
-    // max-height), never grows past it the way it did pre-fix (#176) — that
-    // unbounded growth, centered by `.overlay` flex layout, clipped both
-    // ends and made Save/Cancel unreachable. A plain `.click()` on Save
-    // would pass even pre-fix (Playwright auto-scrolls to the target), so
-    // the real assertion is the panel's own bounding box, not click success.
     const viewport = page.viewportSize()!;
     const panelBox = await dialog.locator('.overlay__panel').boundingBox();
     expect(panelBox).not.toBeNull();
     expect(panelBox!.height).toBeLessThanOrEqual(viewport.height + 1);
 
-    // Save is reachable by scrolling the body (`.overlay__body`, the shell's
-    // single scroll region) — not just present somewhere off-screen.
+    // The body actually needs to scroll — makes "reachable by scrolling" a
+    // real claim rather than one that would pass whether or not scrolling
+    // happened to be necessary.
+    const body = dialog.locator('.overlay__body');
+    const overflows = await body.evaluate((el) => el.scrollHeight > el.clientHeight);
+    expect(overflows).toBe(true);
+
     const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
     await saveBtn.scrollIntoViewIfNeeded();
     await expect(saveBtn).toBeInViewport();
     await expect(saveBtn).toBeEnabled();
     await saveBtn.click();
 
-    await expect(dialog.locator('.route-row')).toHaveCount(1);
+    await expect(dialog.getByRole('tab', { name: 'Trasa 1' })).toBeVisible();
   });
 });
 
@@ -437,7 +435,7 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await dialog.locator('.overlay__title').click();
     await expect(dialog).toBeVisible();
     // Clicking a tab (deep inside the panel) must not close it either.
-    await dialog.getByRole('tab', { name: 'Trasy' }).click();
+    await dialog.getByRole('tab', { name: 'Budowa' }).click();
     await expect(dialog).toBeVisible();
 
     await dialog.click({ position: { x: 5, y: 5 } });
@@ -457,37 +455,51 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
     await expect(dialog).not.toBeVisible();
   });
 
-  test('"," / "." cycle Budowa/Trasy, wrapping, and are ignored while typing in a text field (#218)', async ({
+  test('"," / "." cycle Wartość firmy/Budowa, wrapping, and are ignored while typing in a text field (#218)', async ({
     page,
   }) => {
-    await continueWithWorld(page, fundedWorld('hq-tab-cycle'));
+    const { world, a, b } = routeReadyWorld('hq-tab-cycle');
+    await continueWithWorld(page, world);
     await page.locator('g.port').first().click({ force: true });
     await page.getByRole('button', { name: /Załóż siedzibę/ }).click();
 
     await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
+    const wartosc = dialog.getByRole('tab', { name: 'Wartość firmy' });
     const budowa = dialog.getByRole('tab', { name: 'Budowa' });
-    const trasy = dialog.getByRole('tab', { name: 'Trasy' });
 
-    await expect(budowa).toHaveAttribute('aria-selected', 'true');
+    await expect(wartosc).toHaveAttribute('aria-selected', 'true');
 
-    // "." advances Budowa -> Trasy, then wraps back to Budowa (only 2 tabs).
-    await page.keyboard.press('.');
-    await expect(trasy).toHaveAttribute('aria-selected', 'true');
+    // "." advances Wartość firmy -> Budowa, then wraps back (only 2 tabs).
     await page.keyboard.press('.');
     await expect(budowa).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('.');
+    await expect(wartosc).toHaveAttribute('aria-selected', 'true');
 
-    // "," retreats the other way, wrapping straight to Trasy.
+    // "," retreats the other way, wrapping straight to Budowa.
     await page.keyboard.press(',');
-    await expect(trasy).toHaveAttribute('aria-selected', 'true');
+    await expect(budowa).toHaveAttribute('aria-selected', 'true');
 
-    // Typing "," inside the Nazwa trasy field (a real text input, RouteEditor)
-    // must reach the field, not cycle the tab back to Budowa.
-    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
-    const nameInput = dialog.getByLabel('Nazwa trasy');
-    await nameInput.fill('a');
-    await nameInput.pressSequentially(',.');
-    await expect(nameInput).toHaveValue('a,.');
-    await expect(trasy).toHaveAttribute('aria-selected', 'true');
+    await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
+
+    // Typing "," / "." inside a real text field must reach the field, not
+    // cycle the tab (the guard `Tabs.tsx`'s `isTypingTarget` implements).
+    // Siedziba itself has no text input left to type into — the Trasy tab's
+    // route-name field left with Routes (§Trasy roster) — so this half
+    // re-points at the board's own qty "więcej" input. `Tabs.tsx` is shared,
+    // generic code: proving the guard on one of its instances proves it for
+    // all (ui.spec.ts's own "cycle the tabs" test already covers the bare
+    // cycling on the board's Ceny/Kontrakty tabs without a text field).
+    const board = await openBoard(page);
+    await startNewRoute(board);
+    await attachOrder(board, a, 'grain', 'buy');
+    await attachOrder(board, b, 'grain', 'sell');
+    await toggleOrderDrawer(board, 0, 'grain');
+    const qty = qtyInput(board, 0, 'grain');
+    const ceny = board.getByRole('tab', { name: 'Ceny · Trasa' });
+
+    await qty.fill('5');
+    await qty.pressSequentially(',.');
+    await expect(ceny).toHaveAttribute('aria-selected', 'true');
   });
 });
