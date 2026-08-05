@@ -652,6 +652,42 @@ the emitted file;
 the driver finished the one remaining mechanical probe inline rather than paying a full transcript
 replay to resume it. |
 
+## E16 e2e rewrite wave — #480 + #481 (2026-08-05)
+
+Two Sonnet coders in parallel worktrees, closing the Playwright gate the visual-contract merge left
+open. **The packages were cut by file, not by issue**:
+#474 and #475 both live inside one `describe` in `ui.spec.ts` (pinning deletions at `:871`/`:903`,
+contextual-focus fixes at `:794`/`:834`), so a 1:1 issue→coder split would have put two agents in
+one block.
+#474 therefore landed as `partial` in both PRs and was closed by the driver afterwards.
+
+The wave's transferable lesson is about **red evidence for a guard**.
+Package A was told to prove the restored #404 guards could fail, and it did so by mutating the
+*assertion* (swapping the expected chip label).
+That proves an assertion is live and reads the right element —
+it does not prove the test detects the regression it exists for.
+The driver re-ran it against the **application** instead:
+emptying `MARKET_FREE_KINDS` in `PriceBoardOverlay.tsx` fails exactly those two tests and leaves the
+file's other four passing.
+Same cost, categorically better evidence, and it is the shape incident 0030 describes —
+a check that cannot fail reads as protection.
+The tier-2 reviewer then refined it further:
+the guard's real detection power sits in the button render-gate, while the internal early-return is
+redundant defence for a path the UI cannot reach.
+
+Both coders returned findings **about their own packages**.
+B established that #470's premise was false (the `"ledger"` union member has live unit-test
+consumers in `gameStore.test.ts`, not just one e2e fixture) and it was routed to the issue before
+the cleanup could start from it.
+A declined to invent UI for a spec whose subject had vanished, suspending it with a citation instead
+—
+which is how #477 was found.
+
+| Date | PR | Issue(s) | Tier | Findings | Fix loop | Cert | Notes |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 08-05 | #480 | #472, #475, partial #474 | 2 | 4 (minor): 1 driver micro-fix, 1 routed to #479, 2 notes | 0 | pass | The wave's heavy half — 6 spec files plus the new shared helper `e2e/boardAuthoring.ts` (cell click → radial menu → save; consumed by 5 files, verified genuinely shared rather than copy-paste). Driver micro-fix `0b1723d`: the rewritten `,`/`.` tab-cycle spec asserted only that the tab did not change, which also passes if the keystrokes never reached the field — a focus assertion restores the strength of the pre-E16 spec it replaced. Routed: `RouteOpsStrip`'s `Wznów` has no coverage anywhere (#479) — the reviewer stated it as "suspend/resume untested", narrowed by the driver to resume-only, since `fleet.spec.ts:156` already covers auto-suspend through the real `sailTo` path. Notes: four helper exports nothing imports; commit `cecc0f7` misattributes seven pre-existing `ui.spec.ts` skips to #473's cluster — they belong to no wave issue and are now #478. |
+| 08-05 | #481 | #473, partial #474 | 2 | 0 | 0 | pass | The mechanical half, and the one with the sharper trap: the all-ships transaction log became one row per world day, so every per-event assertion had to move under a ship filter or silently stop testing its subject. The coder handled it explicitly and added a dedicated spec pinning the daily shape, which had shipped with only `ledgerDaily.test.ts` behind it. Its founding-flow spec was written adversarially — asserting the top-bar button is disabled with no port selected, because a happy-path click could not distinguish "targets the selection" from "targets a fixed port". Deleted `_proto-shot.spec.ts` only after grepping for consumers. |
+
 ## Reading the sample
 
 Judge on trend, not single rows:
