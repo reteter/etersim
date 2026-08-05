@@ -109,6 +109,9 @@ test.describe('Shipyard commission — PortPanel section (#276)', () => {
 
     await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
+    // "Wartość firmy" is the default tab since the 2026-07-30 relocation
+    // (point 4) — Budowa needs an explicit click.
+    await dialog.getByRole('tab', { name: 'Budowa' }).click();
     const placeBtn = dialog.getByRole('button', { name: /Zleć budowę/ });
     await expect(placeBtn).toBeDisabled();
     await expect(placeBtn).toHaveAttribute('title', /stoczni/);

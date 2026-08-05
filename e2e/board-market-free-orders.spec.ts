@@ -9,6 +9,18 @@ import {
   type World,
 } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
+import {
+  attachOrder,
+  cellSpan,
+  chipLabel,
+  loadRouteTab,
+  openBoard,
+  orderKindPickerButtons,
+  pickOrderKind,
+  saveRoute,
+  startNewRoute,
+  toggleOrderDrawer,
+} from './boardAuthoring';
 
 /**
  * Market-free order kinds on the price board (#419, docs/specs/E16-workbench.md
@@ -17,6 +29,17 @@ import { SAVE_VERSION } from '../src/store/persistence';
  * self-contained, matching that file's own precedent) so a `store`/`withdraw`-
  * capable Storehouse exists at game start without waiting out the real Budowa
  * flow within a test's time budget.
+ *
+ * **#472/#475 rewrite note.** The two tests below were suspended
+ * (`test.skip`) at the E16 visual rebuild because they drove the "więcej"
+ * drawer from inside a grid cell — the drawer rode along to the ribbon's
+ * action row (D7), so they are re-pointed here rather than dropped. They
+ * cover the **authoring** and **legality** halves of the market-free story;
+ * the **regression-guard** half (a pre-existing Route carrying a
+ * `store`/`withdraw` order surviving a board edit) is `storehouse.spec.ts`'s
+ * "Board — store/withdraw regression guard (#404, #472)" — a deliberately
+ * different scenario (an existing Route loaded via its tab, never authored
+ * fresh), which is the historically dangerous path #404 closes.
  */
 
 const AUTOSAVE_KEY = 'etersim.autosave';
@@ -74,125 +97,78 @@ function withActiveGranary(seed: string): { world: World; agrarianPortId: string
   return { world, agrarianPortId, otherPortId };
 }
 
-async function openBoardAuthoring(page: Page) {
-  await page.getByRole('button', { name: /tablica cen/i }).click();
-  const dialog = page.getByRole('dialog', { name: /tablica cen/i });
-  await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
-  return dialog;
-}
-
 test.describe('price board — market-free order kinds (#419, docs/specs/E16-workbench.md §The market-free kinds)', () => {
-  // SKIPPED — E16 visual prototype, #468 **D7**: drives the "więcej" drawer
-  // from inside a grid cell. The drawer was NOT removed — it rode along to
-  // the ribbon's action row with its markup, its kind picker and its
-  // `${portId}:${good}` key intact, so every #419 rule this test guards
-  // (drawer authors `store`, a plain cell click leaves it unchanged, the
-  // saved Route round-trips into the Trasy editor) still holds. Only the
-  // gesture path changed: open the chip on the ribbon, not the chip in the
-  // cell. Re-point rather than delete.
-  test.skip('drawer authors a store order; a plain click leaves it unchanged; saving round-trips it into the Trasy editor', async ({
+  test('the drawer authors a store order; a plain click leaves it unchanged; saving round-trips it through the board\'s own Route tab', async ({
     page,
   }) => {
     const { world, agrarianPortId, otherPortId } = withActiveGranary('board-store-regression');
+    const agrarianName = world.region.ports.find((p) => p.id === agrarianPortId)!.name;
     await continueWithWorld(page, world);
 
-    const dialog = await openBoardAuthoring(page);
-    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
-    const agrarianIdx = world.region.ports.findIndex((p) => p.id === agrarianPortId);
-    const otherIdx = world.region.ports.findIndex((p) => p.id === otherPortId);
-    const agrarianRow = rows.nth(agrarianIdx);
-    const otherRow = rows.nth(otherIdx);
+    const dialog = await openBoard(page);
+    await startNewRoute(dialog);
+    await attachOrder(dialog, otherPortId, 'grain', 'buy'); // Stop 1
+    await attachOrder(dialog, agrarianPortId, 'grain', 'sell'); // Stop 2, switched to `store` below
 
-    await agrarianRow.click(); // Stop 1
-    await otherRow.click(); // Stop 2 — a second distinct port, draft becomes valid
+    // The drawer's kind picker is "the complete truth about kind" (#419
+    // AC1/AC3) — switching to `store` here is the only authoring path to a
+    // market-free kind (the radial menu never offers it).
+    await toggleOrderDrawer(dialog, 1, 'grain');
+    await pickOrderKind(dialog, 1, 'grain', 'store');
 
-    // Grain is GOOD_IDS[0] — the agrarian port's own domain good.
-    const grainCell = agrarianRow.locator('.price-board__cell').nth(0);
-    await grainCell.locator('.price-board__cell-btn').click(); // default click: buy or sell, market-inferred
-    const chip = grainCell.locator('.price-board__order-chip');
+    // Chip now reads the market-free kind.
+    await expect(chipLabel(dialog, 1, 'grain')).toHaveText('złóż · Zboże');
 
-    await grainCell.getByRole('button', { name: /więcej opcji/ }).click();
-    await grainCell.getByRole('button', { name: 'Zboże: ustaw zlecenie na Złóż' }).click();
+    // AC3 — a plain click on a market-free cell is inert: the order survives
+    // unchanged; `openRadialMenu` must never reach `chooseRadialAction` for
+    // this cell.
+    await cellSpan(dialog, agrarianName, 'grain').click();
+    await expect(chipLabel(dialog, 1, 'grain')).toHaveText('złóż · Zboże');
 
-    // Chip now reads the market-free kind, with no ⇄ shortcut (AC4).
-    await expect(chip.locator('.price-board__order-chip-label')).toHaveText('Złóż');
-    await expect(chip.getByRole('button', { name: /zmień na/ })).toHaveCount(0);
-    await expect(chip).toHaveCount(1);
+    await saveRoute(dialog);
 
-    // AC3 — a plain click on a market-free cell is inert: label, kind, and
-    // chip count all survive unchanged; `handleCellClick` must never reach
-    // `inferOrderKind` for this cell.
-    await grainCell.locator('.price-board__cell-btn').click();
-    await expect(chip.locator('.price-board__order-chip-label')).toHaveText('Złóż');
-    await expect(chip).toHaveCount(1);
-
-    const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
-    await expect(saveBtn).toBeEnabled();
-    await saveBtn.click();
-    await dialog.getByRole('button', { name: /zamknij/i }).click();
-
-    // Round-trip: the saved Route's Stop 1 (agrarian port, added first)
-    // carries the `store` order, read through the Trasy editor's own
-    // chip (independent rendering — this is not the board reading itself
-    // back, it is the sim's stored Route confirmed via `RoutesTab`).
-    await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const hqDialog = page.getByRole('dialog', { name: /siedziba/i });
-    await hqDialog.getByRole('tab', { name: 'Trasy' }).click();
-    await hqDialog.locator('.route-row').first().getByRole('button', { name: /^Edytuj$/ }).click();
-
-    const storeChip = hqDialog.getByRole('button', { name: /^Zboże: Złóż — przystanek 1$/ });
-    await expect(storeChip).toBeVisible();
-    await expect(storeChip).toHaveAttribute('aria-pressed', 'true');
+    // Round-trip: reloading the saved Route via its own board tab reads the
+    // `store` order back unchanged — the sim's stored Route, not the
+    // board's own unsaved state.
+    await loadRouteTab(dialog, 'Trasa 1');
+    await expect(chipLabel(dialog, 1, 'grain')).toHaveText('złóż · Zboże');
   });
 
-  // SKIPPED — E16 visual prototype, #468 **D7**: same relocation as above.
-  // The **legality rules themselves are untouched** (`legalOrderKinds` in
-  // `src/ui/routeAuthoring.ts` is still the single source both surfaces
-  // read: `deliver` everywhere, `store`/`withdraw` only at an activated
-  // Storehouse and only inside its `storehouseFilter`). This test reaches
-  // them through the cell drawer, which is what moved.
-  test.skip('the drawer offers store/withdraw only for storehouseFilter goods at a Storehouse port, and always offers deliver', async ({
+  test('the drawer offers store/withdraw only for storehouseFilter goods at a Storehouse port, and always offers deliver', async ({
     page,
   }) => {
     const { world, agrarianPortId, otherPortId } = withActiveGranary('board-drawer-legality');
     await continueWithWorld(page, world);
 
-    const dialog = await openBoardAuthoring(page);
-    const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
-    const agrarianIdx = world.region.ports.findIndex((p) => p.id === agrarianPortId);
-    const otherIdx = world.region.ports.findIndex((p) => p.id === otherPortId);
-    const agrarianRow = rows.nth(agrarianIdx);
-    const otherRow = rows.nth(otherIdx);
+    const dialog = await openBoard(page);
+    await startNewRoute(dialog);
+    // Storehouse port, its own domain good (grain) and one outside its
+    // filter (textiles) both attach to the same Stop; the non-Storehouse
+    // port gets its own Stop with an unrelated good (electronics).
+    await attachOrder(dialog, agrarianPortId, 'grain', 'buy');
+    await attachOrder(dialog, agrarianPortId, 'textiles', 'buy');
+    await attachOrder(dialog, otherPortId, 'electronics', 'deliver');
 
-    await agrarianRow.click();
-    await otherRow.click();
-
-    // Storehouse port, its own domain good (grain, GOOD_IDS[0]): the drawer
-    // lists all five kinds (AC1 — "the complete truth about kind").
-    const grainCell = agrarianRow.locator('.price-board__cell').nth(0);
-    await grainCell.locator('.price-board__cell-btn').click();
-    await grainCell.getByRole('button', { name: /więcej opcji/ }).click();
-    const grainPicker = grainCell.locator('.price-board__order-kind-picker button');
+    // Storehouse port, its own domain good: the drawer lists all five kinds
+    // (AC1 — "the complete truth about kind").
+    await toggleOrderDrawer(dialog, 0, 'grain');
+    const grainPicker = orderKindPickerButtons(dialog, 0, 'grain');
     await expect(grainPicker).toHaveCount(5);
     await expect(grainPicker.filter({ hasText: 'Złóż' })).toHaveCount(1);
     await expect(grainPicker.filter({ hasText: 'Pobierz' })).toHaveCount(1);
 
-    // Same Storehouse port, a good OUTSIDE the Granary's own filter
-    // (textiles, GOOD_IDS[1]) — no board-side loosening past `storehouseFilter`.
-    const textilesCell = agrarianRow.locator('.price-board__cell').nth(1);
-    await textilesCell.locator('.price-board__cell-btn').click();
-    await textilesCell.getByRole('button', { name: /więcej opcji/ }).click();
-    const textilesPicker = textilesCell.locator('.price-board__order-kind-picker button');
+    // Same Storehouse port, a good OUTSIDE the Granary's own filter — no
+    // board-side loosening past `storehouseFilter`.
+    await toggleOrderDrawer(dialog, 0, 'textiles');
+    const textilesPicker = orderKindPickerButtons(dialog, 0, 'textiles');
     await expect(textilesPicker).toHaveCount(3);
     await expect(textilesPicker.filter({ hasText: 'Złóż' })).toHaveCount(0);
     await expect(textilesPicker.filter({ hasText: 'Pobierz' })).toHaveCount(0);
 
     // A port with NO Storehouse and no active build site — deliver is still
     // offered (spec point 5: deliberately not gated on a build site).
-    const otherCell = otherRow.locator('.price-board__cell').nth(0);
-    await otherCell.locator('.price-board__cell-btn').click();
-    await otherCell.getByRole('button', { name: /więcej opcji/ }).click();
-    const otherPicker = otherCell.locator('.price-board__order-kind-picker button');
+    await toggleOrderDrawer(dialog, 1, 'electronics');
+    const otherPicker = orderKindPickerButtons(dialog, 1, 'electronics');
     await expect(otherPicker).toHaveCount(3);
     await expect(otherPicker.filter({ hasText: 'Dostarcz' })).toHaveCount(1);
     await expect(otherPicker.filter({ hasText: 'Złóż' })).toHaveCount(0);
@@ -204,8 +180,7 @@ test.describe('price board — market-free order kinds (#419, docs/specs/E16-wor
     const { world, agrarianPortId, otherPortId } = withActiveGranary('board-storehouse-marker');
     await continueWithWorld(page, world);
 
-    await page.getByRole('button', { name: /tablica cen/i }).click();
-    const dialog = page.getByRole('dialog', { name: /tablica cen/i });
+    const dialog = await openBoard(page);
     const rows = dialog.locator('.price-board__row:not(.price-board__row--header)');
     const agrarianIdx = world.region.ports.findIndex((p) => p.id === agrarianPortId);
     const otherIdx = world.region.ports.findIndex((p) => p.id === otherPortId);
@@ -217,7 +192,9 @@ test.describe('price board — market-free order kinds (#419, docs/specs/E16-wor
     await expect(rows.nth(otherIdx).locator('.price-board__storehouse-marker')).toHaveCount(0);
 
     // Authoring mode — still visible, port-level and unaffected by the draft.
-    await dialog.getByRole('button', { name: 'Nowa trasa' }).click();
+    // "Nowa trasa" is a `role="tab"` (the authoring bar's Route tabs strip),
+    // not a plain button, since #468 turned the roster into a tab row.
+    await startNewRoute(dialog);
     await expect(rows.nth(agrarianIdx).locator('.price-board__storehouse-marker')).toHaveCount(1);
   });
 });

@@ -6,22 +6,39 @@ import {
   storeOf,
   tick,
   type CompanyBuilding,
+  type Route,
   type Ship,
   type World,
 } from '../src/sim';
 import { SAVE_VERSION } from '../src/store/persistence';
+import { chipLabel, cellSpan, loadRouteTab, openBoard, saveRoute } from './boardAuthoring';
 
 const S0_NAME = generateShipName(0);
 
 /**
- * Budowa commission choice + PortPanel Storehouse section + route editor
- * store/withdraw chips (#101, docs/specs/E13-guild-buildings.md — UX
- * skeleton). Mirrors `shipyard.spec.ts`'s save-injection harness: the
- * default starting purse/permit can't be reached within a test's time
- * budget, so these tests seed the autosave slot with a hand-built World
- * (rank-2 agrarian permit, funded purse, s0 docked at the Granary's port)
- * before booting the app, then drive commission/store/withdraw through the
- * same UI a player uses.
+ * Budowa commission choice + PortPanel Storehouse section + the board's
+ * store/withdraw regression guard (#101, #404, #472,
+ * docs/specs/E13-guild-buildings.md — UX skeleton;
+ * docs/specs/E16-workbench.md §The market-free kinds). Mirrors
+ * `shipyard.spec.ts`'s save-injection harness: the default starting
+ * purse/permit can't be reached within a test's time budget, so these tests
+ * seed the autosave slot with a hand-built World (rank-2 agrarian permit,
+ * funded purse, s0 docked at the Granary's port) before booting the app,
+ * then drive commission/store/withdraw through the same UI a player uses.
+ *
+ * **#472 rewrite note.** The Trasy tab's list editor — the only surface that
+ * ever authored `store`/`withdraw` before this epic — is deleted
+ * (§Trasy roster → the board owns Routes entirely). The two tests in
+ * "Board — store/withdraw regression guard (#404)" below are that guard:
+ * E16's ordering law ((h) merges before (b), §The market-free kinds) exists
+ * because the board's `handleCellClick` used to fall through to
+ * `inferOrderKind` for any kind it didn't recognize, silently turning a
+ * `store`/`withdraw` order into a `buy`/`sell` the moment an existing Route
+ * carrying one was loaded into the board editor. These tests build that
+ * exact Route **directly** (never through the UI — authoring a fresh
+ * market-free order goes through the ribbon chip's drawer instead, which is
+ * a different code path) and load it via the board's own Route tab, which is
+ * the historically dangerous path (h) closes.
  */
 
 const AUTOSAVE_KEY = 'etersim.autosave';
@@ -114,6 +131,9 @@ test.describe('Budowa tab — commission choice (#101)', () => {
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
     await expect(dialog).toBeVisible();
 
+    // "Wartość firmy" is the default tab since the 2026-07-30 relocation
+    // (point 4) — Budowa needs an explicit click.
+    await dialog.getByRole('tab', { name: 'Budowa' }).click();
     await dialog.getByRole('button', { name: 'Budynek', exact: true }).click();
 
     const guildSelect = dialog.getByLabel('Gildia budynku');
@@ -155,6 +175,7 @@ test.describe('Budowa tab — commission choice (#101)', () => {
 
     await page.getByRole('button', { name: /^Siedziba$/ }).click();
     const dialog = page.getByRole('dialog', { name: /siedziba/i });
+    await dialog.getByRole('tab', { name: 'Budowa' }).click();
     await dialog.getByRole('button', { name: 'Budynek', exact: true }).click();
     await expect(dialog).toContainText(/Brak uprawnień do budowy/);
   });
@@ -206,116 +227,128 @@ test.describe('PortPanel Storehouse section (#101)', () => {
   });
 });
 
-test.describe('Route editor — store/withdraw chips (#101)', () => {
-  test('chips render only for a Stop at a storehouse port, and a store route executes in a seeded scenario', async ({
+/** `withActiveGranary` plus a pre-built, pre-assigned Route carrying a
+ *  market-free order at the Storehouse Stop — the #404 regression's exact
+ *  precondition ("the board only ever builds fresh drafts" was the bug's own
+ *  reason it was unreachable; a pre-existing Route is what makes it
+ *  reachable, per E16 §The market-free kinds "Why this was a blocking
+ *  decision"). Built directly (never through the board's own authoring
+ *  gesture) and the ship pre-assigned, so the test's only UI interaction is
+ *  loading the Route via its tab — isolating the guard from the (already
+ *  separately covered, `board-market-free-orders.spec.ts`) authoring flow. */
+function withGuardRoute(
+  seed: string,
+  kind: 'store' | 'withdraw',
+  opts: { store?: Partial<Record<string, number>> } = {},
+): { world: World; agrarianPortId: string; otherPortId: string; routeName: string } {
+  const { world: w0, agrarianPortId, otherPortId } = withActiveGranary(seed, opts);
+  const routeName = 'Granary Loop';
+  const route: Route =
+    kind === 'store'
+      ? {
+          id: 'guard-route',
+          name: routeName,
+          stops: [
+            { portId: otherPortId, orders: [{ kind: 'buy', good: 'grain' }] },
+            { portId: agrarianPortId, orders: [{ kind: 'store', good: 'grain' }] },
+          ],
+        }
+      : {
+          id: 'guard-route',
+          name: routeName,
+          stops: [
+            { portId: agrarianPortId, orders: [{ kind: 'withdraw', good: 'grain' }] },
+            { portId: otherPortId, orders: [{ kind: 'sell', good: 'grain' }] },
+          ],
+        };
+  const ship: Ship = {
+    ...w0.company.ships[0],
+    assignment: { routeId: route.id, nextStopIndex: 0, suspended: false },
+  };
+  const world: World = { ...w0, company: { ...w0.company, routes: [route], ships: [ship] } };
+  return { world, agrarianPortId, otherPortId, routeName };
+}
+
+test.describe('Board — store/withdraw regression guard (#404, #472)', () => {
+  test('a Route carrying a `store` order, loaded via its Route tab, renders the chip; a plain cell click leaves it unchanged; saving round-trips it', async ({
     page,
   }) => {
     test.setTimeout(60_000);
-    const { world, agrarianPortId, otherPortId } = withActiveGranary('storehouse-route-store');
+    const { world, agrarianPortId, routeName } = withGuardRoute('storehouse-guard-store', 'store');
+    const agrarianName = world.region.ports.find((p) => p.id === agrarianPortId)!.name;
     await continueWithWorld(page, world);
 
-    await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /siedziba/i });
-    await dialog.getByRole('tab', { name: 'Trasy' }).click();
+    const dialog = await openBoard(page);
+    await loadRouteTab(dialog, routeName);
 
-    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
-    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
-    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
-    const stopRows = dialog.locator('.stop-row');
+    // Renders: Stop 2 (agrarian port) carries the `store` chip.
+    await expect(chipLabel(dialog, 1, 'grain')).toHaveText('złóż · Zboże');
 
-    // Stop 1 at the non-storehouse port: no store/withdraw column at all.
-    await stopRows.nth(0).locator('select').selectOption(otherPortId);
-    await expect(stopRows.nth(0).getByRole('button', { name: /Zboże: Złóż — przystanek 1/ })).toHaveCount(0);
+    // Inert: a plain click on that grid cell (not the chip, not the drawer)
+    // must not touch the order — the #404 rule ("a cell already carrying a
+    // market-free order is inert to the plain click").
+    await cellSpan(dialog, agrarianName, 'grain').click();
+    await expect(chipLabel(dialog, 1, 'grain')).toHaveText('złóż · Zboże');
 
-    // Stop 2 at the storehouse port: store/withdraw chips render.
-    await stopRows.nth(1).locator('select').selectOption(agrarianPortId);
-    const storeChip = stopRows.nth(1).getByRole('button', { name: /^Zboże: Złóż — przystanek 2$/ });
-    await expect(storeChip).toBeVisible();
+    // Round-trips: saving and reloading the Route leaves the order unchanged.
+    await saveRoute(dialog);
+    await loadRouteTab(dialog, routeName);
+    await expect(chipLabel(dialog, 1, 'grain')).toHaveText('złóż · Zboże');
 
-    // Buy grain at Stop 1, store it at Stop 2 — a two-Stop loop.
-    await stopRows
-      .nth(0)
-      .getByRole('button', { name: /^Zboże: Kup — przystanek 1$/ })
-      .click();
-    await storeChip.click();
-
-    const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
-    await expect(saveBtn).toBeEnabled();
-    await saveBtn.click();
-
-    const routeRow = dialog.locator('.route-row').first();
-    await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
-
+    // Feature half (E13, #101): the Route actually runs — assign is already
+    // baked into the seeded World, so un-pausing is enough to prove the
+    // `store` Stop order executes, not just that it survives editing.
     await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     await page.getByRole('button', { name: '100x' }).click();
 
+    // The all-ships Transakcje view rolls each day into one "saldo dnia" row
+    // (point 7 — a daily net, not a per-event stream); per-event
+    // descriptions ("Złożono"/"Pobrano"/…) only show once a specific ship is
+    // selected in the filter, which is also what keeps this assertion
+    // ship-specific (s0's own Route, not incidental to some other event).
     await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const dialog2 = page.getByRole('dialog', { name: /siedziba/i });
-    await dialog2.getByRole('tab', { name: 'Trasy' }).click();
-    await expect(dialog2.locator('.route-row__result')).not.toContainText('brak jeszcze pętli', {
-      timeout: 30_000,
-    });
-    await dialog2.getByRole('button', { name: /^Zamknij$/ }).click();
-
-    // The Ledger carries a `store` event — proving the "store" Stop order
-    // actually executed as part of the route loop, not just that the ship
-    // completed one. (A map-click assertion here is flaky: the ship's own
-    // marker can sit on top of the port marker mid-transit and steal the
-    // click — the Ledger overlay is unambiguous.)
-    await page.getByRole('button', { name: /^Księga$/ }).click();
-    const ledgerDialog = page.getByRole('dialog', { name: /księga/i });
+    const hq = page.getByRole('dialog', { name: /siedziba/i });
+    await hq.getByRole('button', { name: 'Transakcje', exact: true }).click();
+    await hq.locator('#ledger-ship-filter').selectOption({ label: S0_NAME });
     await expect(
-      ledgerDialog.locator('.ledger-list__desc').filter({ hasText: 'Złożono' }).first(),
-    ).toBeVisible();
+      hq.locator('.ledger-list__desc').filter({ hasText: 'Złożono' }).first(),
+    ).toBeVisible({ timeout: 30_000 });
   });
 
-  test('a route with a withdraw chip executes: pre-stocked grain moves from the Storehouse into cargo and sells', async ({
+  test('a Route carrying a `withdraw` order, loaded via its Route tab, renders the chip; a plain cell click leaves it unchanged; saving round-trips it', async ({
     page,
   }) => {
     test.setTimeout(60_000);
-    const { world, agrarianPortId, otherPortId } = withActiveGranary('storehouse-route-withdraw', {
+    const { world, agrarianPortId, routeName } = withGuardRoute('storehouse-guard-withdraw', 'withdraw', {
       store: { grain: 40 },
     });
+    const agrarianName = world.region.ports.find((p) => p.id === agrarianPortId)!.name;
     await continueWithWorld(page, world);
 
-    await page.getByRole('button', { name: /^Siedziba$/ }).click();
-    const dialog = page.getByRole('dialog', { name: /siedziba/i });
-    await dialog.getByRole('tab', { name: 'Trasy' }).click();
+    const dialog = await openBoard(page);
+    await loadRouteTab(dialog, routeName);
 
-    await dialog.getByRole('button', { name: /^Nowa trasa$/ }).click();
-    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
-    await dialog.getByRole('button', { name: /^Dodaj przystanek$/ }).click();
-    const stopRows = dialog.locator('.stop-row');
+    // Renders: Stop 1 (agrarian port) carries the `withdraw` chip.
+    await expect(chipLabel(dialog, 0, 'grain')).toHaveText('pobierz · Zboże');
 
-    await stopRows.nth(0).locator('select').selectOption(agrarianPortId);
-    await stopRows
-      .nth(0)
-      .getByRole('button', { name: /^Zboże: Pobierz — przystanek 1$/ })
-      .click();
-    await stopRows.nth(1).locator('select').selectOption(otherPortId);
-    await stopRows
-      .nth(1)
-      .getByRole('button', { name: /^Zboże: Sprzedaj — przystanek 2$/ })
-      .click();
+    // Inert: a plain click on that grid cell leaves the order untouched.
+    await cellSpan(dialog, agrarianName, 'grain').click();
+    await expect(chipLabel(dialog, 0, 'grain')).toHaveText('pobierz · Zboże');
 
-    const saveBtn = dialog.getByRole('button', { name: /^Zapisz trasę$/ });
-    await expect(saveBtn).toBeEnabled();
-    await saveBtn.click();
+    // Round-trips: saving and reloading the Route leaves the order unchanged.
+    await saveRoute(dialog);
+    await loadRouteTab(dialog, routeName);
+    await expect(chipLabel(dialog, 0, 'grain')).toHaveText('pobierz · Zboże');
 
-    const routeRow = dialog.locator('.route-row').first();
-    await routeRow.locator('.route-row__assign select').selectOption({ label: S0_NAME });
-    await routeRow.getByRole('button', { name: /^Przypisz$/ }).click();
-
+    // Feature half: the withdraw+sell loop actually runs — the purse grows
+    // (loop metrics can't resolve here, a documented pre-existing limit,
+    // src/store/routeMetrics.ts `lastLoopWindow`: only a `trade` event at
+    // Stop 0's own port tags a loop boundary, and Stop 0 here is
+    // withdraw-only) — and the Ledger carries the withdraw event that fed it.
     await dialog.getByRole('button', { name: /^Zamknij$/ }).click();
     const beforeThalers = Number((await page.locator('.top-bar__thalers').innerText()).replace(/[^\d]/g, ''));
     await page.getByRole('button', { name: '100x' }).click();
 
-    // Route-row loop metrics can't resolve here (a documented pre-existing
-    // resolution limit, src/store/routeMetrics.ts `lastLoopWindow`: only a
-    // `trade` event at Stop 0's own port tags a loop boundary, and this
-    // route's Stop 0 is withdraw-only, no buy/sell) — the purse growing is
-    // the direct, unambiguous proof the withdraw+sell loop actually ran.
     await expect
       .poll(
         async () => Number((await page.locator('.top-bar__thalers').innerText()).replace(/[^\d]/g, '')),
@@ -323,11 +356,12 @@ test.describe('Route editor — store/withdraw chips (#101)', () => {
       )
       .toBeGreaterThan(beforeThalers);
 
-    // The Ledger carries the withdraw event that fed the sale.
-    await page.getByRole('button', { name: /^Księga$/ }).click();
-    const ledgerDialog = page.getByRole('dialog', { name: /księga/i });
+    await page.getByRole('button', { name: /^Siedziba$/ }).click();
+    const hq = page.getByRole('dialog', { name: /siedziba/i });
+    await hq.getByRole('button', { name: 'Transakcje', exact: true }).click();
+    await hq.locator('#ledger-ship-filter').selectOption({ label: S0_NAME });
     await expect(
-      ledgerDialog.locator('.ledger-list__desc').filter({ hasText: 'Pobrano' }).first(),
+      hq.locator('.ledger-list__desc').filter({ hasText: 'Pobrano' }).first(),
     ).toBeVisible();
   });
 });
