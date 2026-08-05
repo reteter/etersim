@@ -702,15 +702,28 @@ presentation only.
 
 UI epic → **Playwright E2E** is the gate (no sim TDD; nothing in `src/sim` changes).
 
-> **The visual rebuild rewrote this gate's targets, and the gate is OPEN on `main`** (2026-07-30,
-> owner decision). Fourteen specs were suspended while the prototype was judged by eye — mockups carry
-> no test obligation (owner ruling 2026-07-29), a ruling about a *prototype*, not about a merge. The
-> full run then showed the real number: **32 failing plus those 14, across nine files**, because the
-> rebuild moved surfaces that specs untouched by it still address. Rewriting them was **deliberately
-> not** folded into the merge; it is carried by four issues, one per cluster. **#472 is the one that is
-> not cosmetic** — `storehouse.spec.ts` holds the #404 regression guard proving the board does not
-> silently destroy a `store` order, and that guard is dark until #472 lands. The assertions below are
-> restated against the new surfaces so the rewrite has a target to be written against.
+> **The gate is CLOSED on `main`** (2026-08-05). The visual rebuild had rewritten this gate's targets:
+> fourteen specs were suspended while the prototype was judged by eye — mockups carry no test
+> obligation (owner ruling 2026-07-29), a ruling about a *prototype*, not about a merge — and the full
+> run then showed the real number, **32 failing plus those 14, across nine files**, because the rebuild
+> moved surfaces that specs untouched by it still address. Rewriting them was **deliberately not**
+> folded into the merge; it ran afterwards as one wave of four issues (#472–#475, PRs #480 + #481).
+> Full Playwright on `main` @ `1e16687`: **121 passed / 8 skipped / 0 failed**. The assertions below
+> are stated against the new surfaces, which is what the rewrite was written against.
+>
+> **#472 was the half that was not cosmetic.** `storehouse.spec.ts` holds the #404 regression guards
+> proving the board does not silently destroy a `store` order, and they were dark from the
+> visual-contract merge until the wave landed. Their detection power was established by **mutating the
+> application, not the assertion**: emptying `MARKET_FREE_KINDS` in `PriceBoardOverlay.tsx` — the rule
+> whose absence *is* the #404 bug shape — fails exactly those two tests and leaves the file's other
+> four passing.
+>
+> **Residue, tracked rather than folded in.** Eight suspensions survive the wave and none of them is
+> silent: seven board-authoring specs in `ui.spec.ts` that none of the four issues named (**#478** —
+> one of them tests the port-row-click gesture E16 replaced, so it is a delete, not a re-point), and
+> the inactive-gate warning, which lost its only home when `RoutesTab.tsx` was deleted (**#477** — a
+> live E9.1 obligation that E16 dropped without recording the drop). Separately, `RouteOpsStrip`'s
+> `Wznów` has never had coverage in any epic (**#479**).
 
 - **Port-centric build flow:** ~~port-row click adds a Stop;~~ a **good-cell click** opens the radial
   menu, whose choice adds the Stop *and* attaches the order (D1); the pairing highlight appears on the

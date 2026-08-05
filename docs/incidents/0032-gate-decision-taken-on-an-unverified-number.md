@@ -71,3 +71,12 @@ No standing change filed:
 the fix is a habit, and the habit's home is this report plus the §Prevent line above.
 The e2e work the real number exposed is tracked as #472–#475, with #472 flagged as the one carrying
 a dark regression guard (#404).
+
+**Discharged 2026-08-05.** #472–#475 landed as PRs #480 + #481;
+the full Playwright run on `main` reads 121 passed / 8 skipped / 0 failed, and the #404 guards are
+live again —
+their detection power established by mutating the application rather than the assertion.
+Residue tracked as #477, #478 and #479.
+This report's §Prevent line was followed at the point it applies:
+the suite was run *before* the merge decision, on a scratch worktree carrying both branches, and the
+number quoted to the owner came from that run.
