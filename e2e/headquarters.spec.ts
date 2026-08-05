@@ -500,6 +500,9 @@ test.describe('Headquarters overlay dismissal (#126)', () => {
 
     await qty.fill('5');
     await qty.pressSequentially(',.');
+    // The tab staying put only means something if the keystrokes really landed in
+    // the field — otherwise this passes for the wrong reason (wave check, #472).
+    await expect(qty).toBeFocused();
     await expect(ceny).toHaveAttribute('aria-selected', 'true');
   });
 });
