@@ -96,7 +96,8 @@ at each day boundary a guild looks at ports of its archetype whose stock of some
 Equilibrium (beyond a threshold), and posts an offer to *keep supplying it*:
 
 > deliver ≥ **quota** units of **good** to **port** per **settlement period** of
-> **L world days**, for at least **K periods**; flat **fee** per met period.
+> **L world days**, for a term of **K settled periods**; flat **fee** per met period,
+> plus a **completion bonus** when the term is served.
 
 - **Feasible by construction** (owner input — 60-tick lanes): the generator computes
   what the player would: nearest viable source of the good (net-producer or cheapest
@@ -121,6 +122,24 @@ Equilibrium (beyond a threshold), and posts an offer to *keep supplying it*:
   point; missed → no fee, −1 point. **Two consecutive missed periods → the guild
   terminates the contract** (breach, −3). The player may **resign at any time** at the
   same −3 cost, shown before confirming — an obligation, not a trap.
+- **Contracts are fixed-term** (owner decision 2026-08-06, #488 — the 2026-08-06 playtest
+  found a Contract that had renewed silently for two world years). A Contract runs for
+  `termPeriods` **settled** periods and then **completes**: it leaves `Company.contracts`,
+  freeing its (port, good) for the board again. `termPeriods` is what the retired
+  `minPeriods` field becomes — the same tier-scaled number (`2 + tier` → 3…6 periods),
+  reinterpreted from a floor nobody enforced into the term itself.
+- **Missed periods do not advance the term.** The term counts *settled* periods only, so a
+  thin period lengthens the obligation rather than merely stinging. The two-consecutive-miss
+  breach still bounds this: a player alternating met/missed serves the term in at most
+  `2·termPeriods − 1` elapsed periods, and anything worse breaches first. This is the
+  "obligation, not a trap" line holding in both directions — the contract cannot be waited
+  out, and it cannot run forever.
+- **Completion is the only ending that is not a penalty.** Serving the term pays a completion
+  bonus on top of the periods already settled: **one period's fee, and +2 rank points**
+  (both *tuning* — §Laws 7). The money reads as the guild paying for reliability delivered in
+  full; the points make finishing worth roughly two extra settled periods of standing, and
+  sit deliberately below the −3 of walking away, so completing is better than resigning
+  without making resignation unthinkable.
 - The market pays bid for the goods as in any sale; **the market pays for goods, the
   guild pays for reliability, reputation prices history**. A contract whose fee doesn't
   cover the loop's spread-and-fees loss can still be rational — that loss, held
@@ -160,9 +179,17 @@ CONTEXT.md Reserve and Upkeep entries carry the clause.
 - **PriceBoardOverlay grows tabs**: **Ceny** (today's board, unchanged) and
   **Kontrakty** — same overlay, same `B` hotkey; the board becomes the region's
   economic surface. Kontrakty lists: open offers of enrolled guilds (row: guild badge,
-  good → port, quota/period, periods, fee, basis line) and active contracts (period
+  good → port, quota/period, **term**, fee, basis line) and active contracts (period
   progress "42/50 — settles in 2 d", consecutive-miss warning, resign button with the
   cost stated).
+- **The term is stated as a term, and the contract shows where it stands in it** (#488).
+  The offer reads "3 okresy", never "min. 3 okr." — the retired phrasing advertised a floor
+  the design does not have. The active contract carries its term position alongside the
+  period progress ("okres 2 z 3 — 40/70, rozliczenie za 3 d"), which is also what makes a
+  settled period *visible*: `0/70` after a paid period is indistinguishable from `0/70`
+  before the first delivery, and the term counter is the thing that moved. **This overlaps
+  #487 deliberately** — the two issues touch the same row, and shipping them apart would
+  edit it twice.
 - **PortPanel gains a guildhouse section** at guild-seat ports: guild name + icon,
   enroll button with fee (disabled pre-Headquarters or when unaffordable), rank badge
   and points progress once enrolled.
@@ -190,16 +217,33 @@ CONTEXT.md Reserve and Upkeep entries carry the clause.
 
 ### Contracts (`src/sim/contract.ts`, new)
 
-- `ContractOffer = { id, guildId, portId, good, quotaPerPeriod, periodDays, minPeriods,
+- `ContractOffer = { id, guildId, portId, good, quotaPerPeriod, periodDays, termPeriods,
   feePerPeriod, tier, requiredRank, basis: { sourcePortId, roundTripTicks, expectedTrips
-  } }`; `World.contractOffers: readonly ContractOffer[]`. `requiredRank` (issue #226 —
+  } }`; `World.contractOffers: readonly ContractOffer[]`. `termPeriods` replaces
+  `minPeriods` (#488): same generator (`2 + tier`), renamed because the old name described a
+  minimum that nothing enforced and that the design never had. `requiredRank` (issue #226 —
   desperation clause) is stamped by `stampRequiredRanks`, called at the end of
   `refreshContractOffers` over the full survivors+new result: per guild, the
   lowest-`tier` offer gets `requiredRank = 1` (tie-break: deepest shortfall, matching
   the existing candidate sort, then first-seen order as the final tie-break — never
   RNG); every other offer of that guild gets `requiredRank = tier`.
-- `ActiveContract = offer fields + { startTick, periodIndex, deliveredThisPeriod,
-  consecutiveMisses }`; `Company.contracts: readonly ActiveContract[]`.
+- `ActiveContract = offer fields + { startTick, periodIndex, settledPeriods,
+  deliveredThisPeriod, consecutiveMisses }`; `Company.contracts: readonly ActiveContract[]`.
+  **`periodIndex` and `settledPeriods` are two different counters and must stay so** (#488):
+  `periodIndex` counts *elapsed* periods and is the schedule anchor — `periodEndTick` derives
+  from it, so it increments on every settled period whatever the outcome, or the clock stops.
+  `settledPeriods` counts *met* periods and is the term's progress; the contract completes
+  when `settledPeriods === termPeriods`, evaluated in the same settlement phase, after the
+  period's own outcome is applied.
+- **Save migration (#488):** the two field changes are both in the save shape
+  (`World.contractOffers`, `Company.contracts`), so this is a `SAVE_VERSION` bump —
+  15 → 16, `READABLE_VERSIONS = {15, 16}`, following `migrateV13ToV14`'s precedent.
+  `minPeriods` → `termPeriods` is a rename; `settledPeriods` backfills as
+  `min(periodIndex, termPeriods)` on an in-flight contract. That is the one judgment call in
+  the migration: a real settled-period count is not reconstructable from a v15 save, and
+  crediting elapsed periods lets a contract that has already outlived its term complete at the
+  next boundary — which is the outcome the fix exists to produce — without inventing history
+  longer than the contract has actually run.
 - New Commands (all player mutations stay Commands — determinism + E11 replay):
   `enroll(guildId)` (rejected without Headquarters / already enrolled / unaffordable),
   `acceptContract(offerId)` (rejected unless enrolled at rank ≥ `requiredRank` — issue
@@ -240,8 +284,8 @@ snapshot (the E9 snapshot stays last, so the day's fees and fines are inside the
   `upkeep` (shipId), and `settlement` (contractId, guildId, outcome, points
   delta — 2026-07-14 UI grill: the audit trail must carry the *missed* outcome too;
   the notice strip and E11 read it). Emitted at the point of mutation, as E9 mandates.
-- **`settlement.outcome` is a four-way union — `"met" | "missed" | "breached" |
-  "resigned"`** (#94 wave-check finding 1, 2026-07-14): contract *termination*
+- **`settlement.outcome` is a five-way union — `"met" | "missed" | "breached" |
+  "resigned" | "completed"`** (`"completed"` added by #488): contract *termination*
   is part of the audit stream too, not just ordinary period outcomes. A breach
   (two consecutive missed periods) emits exactly one `settlement` event,
   `outcome: "breached"`, carrying the *full* `POINTS_BREACH_OR_RESIGN` delta —
@@ -253,6 +297,14 @@ snapshot (the E9 snapshot stays last, so the day's fees and fines are inside the
   starting from enrollment (0 points) and floored at 0 after each step
   (matching Ranks' "floor at 0"), reproduces that guild's actual stored
   points — a missing termination event would silently undercount it.
+- **Completion emits two events, and no new Ledger kind** (#488). A term served on a met
+  period emits, in order: that period's own `contractFee` + `settlement{outcome:"met"}` as
+  always, then the bonus as a second `contractFee` (the guild paying, same kind, same
+  reader) and a `settlement{outcome:"completed", pointsDelta:+2}`. This keeps the Ledger
+  grammar exactly as it stands — `contractFee` is a `thalers` event, `settlement` is a
+  `pointsDelta` event and never carries money (`src/sim/ledger.test.ts` `KIND_CATEGORY`) —
+  and it keeps the pointsDelta invariant above true by construction, since the completion
+  bonus enters the sum as its own delta rather than as a silent credit.
 - Contract fulfilment counters are state, the Ledger is the audit trail — settlement
   math must be recomputable from `trade` events (asserted by test).
 
