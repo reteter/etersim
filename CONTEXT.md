@@ -779,9 +779,11 @@ _Avoid_:
 karma, favor
 
 **Contract** (PL: kontrakt):
-A continuous service obligation offered by a Guild:
-*keep delivering* ≥ quota units of a Good to a Port per Settlement period, for at least K periods.
-Not a one-shot errand.
+A **fixed-term** service obligation offered by a Guild:
+*keep delivering* ≥ quota units of a Good to a Port per Settlement period, until its Contract term
+is served.
+Not a one-shot errand, and **not a standing order** —
+every Contract ends (owner decision 2026-08-06, #488).
 Offers are generated deterministically from real shortages (stock far below Equilibrium) and sized
 from real geometry (`shortestCourse`, hold capacity) so they are feasible by construction;
 the offer shows its own basis ("expected ~2 trips/period, nearest source: …").
@@ -791,12 +793,25 @@ the market pays for goods, the guild pays for reliability.
 Contracts add no waiting mechanics:
 fulfilment is read from the Ledger after the fact.
 _Avoid_:
-quest, mission, order (collides with Stop orders)
+quest, mission, order (collides with Stop orders), standing order
+
+**Contract term** (PL: termin kontraktu):
+How long a Contract runs, counted in **settled** Settlement periods, not elapsed ones
+(`ContractOffer.termPeriods`, scaled by tier — owner decision 2026-08-06, #488).
+A missed period costs its point and pays no fee, and **does not advance the term** —
+so a thin period lengthens the obligation instead of merely stinging.
+Serving the full term **completes** the Contract:
+it leaves `Company.contracts`, its (Port, Good) becomes eligible for the board again, and the Guild
+pays a completion bonus on top of the periods already settled.
+Completion is the third way a Contract can end, beside breach and resignation —
+and the only one that is not a penalty.
+_Avoid_:
+deadline, duration, minPeriods (the retired field name — it described a floor, and there is none)
 
 **Desperation clause** (PL: klauzula desperacji):
 The rule that keeps Rank gating access without ever locking a Guild's board shut:
 `ContractOffer.requiredRank` is a separate field from `tier`.
-Tier stays the honest job description (distance band → fee, minPeriods);
+Tier stays the honest job description (distance band → fee, Contract term);
 `requiredRank` is what accept actually checks.
 At every board refresh each guild's lowest-tier open offer (ties broken by deepest shortfall, same
 metric the generator's own candidate sort uses) is stamped `requiredRank = 1`;
