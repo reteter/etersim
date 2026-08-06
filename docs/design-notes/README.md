@@ -103,12 +103,12 @@ A brief goes HIST when its grill happens.
 
 Owner playtests, analysed under the Analyst gate (every observation verified against code before
 classification).
-All HIST —
-each one's routing was actioned in its own session;
-kept as the evidence trail behind design decisions.
+A playtest note goes HIST once its routing has been actioned;
+the HIST ones are kept as the evidence trail behind design decisions.
 
 | Note | Status | What it says |
 | --- | --- | --- |
+| [playtest-2026-08-06-workbench](playtest-2026-08-06-workbench.md) | **LIVE** | The #440 general playtest, run against the rebuilt board. Four owner defects + two analyst finds, each verified in code; the qty one carries a named repro. Live for 3b — whether a Contract was ever meant to end is a grill question, not a fix. Also records what the session did **not** produce (#429, #128, M4's own success measure). |
 | [playtest-2026-07-15-contractor](playtest-2026-07-15-contractor.md) | HIST | First field run of E3. Headline: rank/tier progression deadlock — two observations that were one structural finding. |
 | [playtest-2026-07-14-routes-fleet-ux](playtest-2026-07-14-routes-fleet-ux.md) | HIST | Multi-ship route-driven mid-game. Its cluster B forced the E3 UI grill. |
 | [playtest-2026-07-14-pricebar-shipinfo](playtest-2026-07-14-pricebar-shipinfo.md) | HIST | Random-seed run at day 89; the auto-pause note changing TopBar height (#195 guards it today). |
